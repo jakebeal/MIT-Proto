@@ -2,7 +2,7 @@
 <project default="build">
 
    <target name="build" depends="autogen,configure">
-     <echo> Running make.....</echo>
+     <echo> Running make.......</echo>
      <exec dir="." executable="/usr/bin/make" failonerror="true" >
      </exec>     
    </target>
