@@ -27,4 +27,11 @@
         <arg line="clean" />
      </exec>
    </target>
+   <target name="test" >
+     <echo>Starting Proto tests.....</echo>
+     <exec dir="./src/tests" executable="/usr/bin/python" >
+        <arg line="prototest.py" />
+     </exec>
+   </target>
+
 </project>
