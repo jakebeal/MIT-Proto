@@ -1,0 +1,146 @@
+BUGS:
+Ubuntu's version of flex define yywrap differently, breaking the build.
+
+Autotoolsification, general package structure:
+ - replace the platform_ops.h with something from the precompiler or
+   generated at configure time
+ - platforms stuff:
+   - kernel is inter-dependent on sim (or other platforms)
+   - sim should be in a platform subdir
+   - should probably have a --with-platform=foo to select a platform, with
+     whatever magic is required on the backend to make that happen
+ - proto_opcodes.h should be in kernel
+ - ODE support untested
+ - config detection is not used within the source
+   - use the information configure so kindly found for us
+ - release version == PROTO_VERSION??
+ - build and install manpages
+
+Kernel:
+  proto.c kernel does not properly blank all of its neighbors before starting
+    when being simulated with a high max-hood (e.g. 1000) on a 64-bit machine.
+    This can lead to a junk-state on initialization.
+    To test: run gradient, start stepping, right-click before & after 1st compute
+  nbr-lag is calculated on a round granularity only, because time is only updated on execs
+
+Utilities:
+  arg adjacency can be modified by consumption of previous arguments,
+  with unpredictable effects:
+  e.g. './proto -dim 10 10 -n 100 "3"' takes "3" as the 3rd dimension of
+    -dim rather than the program because "-n 100" is consumed before -dim,
+    leaving the remaining command line as '-dim 10 10 "3"'
+
+Visualization:
+  moving in 2D, when viewing at an angle, the lost Z component makes motion slow
+  arrow keys move in the model coordinates, not the viewer coordinates
+
+Simulation:
+  when devices aren't moving, dragging by hand doesn't trigger 
+    fast-pruning on neighbors
+  <MOOT?>fast-pruning sometimes prunes when it doesn't need to
+  <LIVE AGAIN> killing buserrors when devices are moving
+  probe does not behave consistently when applied to a neighbor value
+  button doesn't care what number is specified
+  simulator needs to copy on transmit to avoid the need for serialization
+    premature transmission test: ./proto "(* 100 (int-hood (nbr (tup (sense 1) (sense 2))))" -s 0.1 -v -sv
+  slider isn't yet implemented, and should consume keys
+
+Compiler:
+  Compiler autocloses parens: e.g. "(+ 1 2" is interpreted as "(+ 1 2)" and "(+ 1 2 (+ 3 4" is interpreted as "(+ 1 2 
+(+ 3 4))". I think compiler should display an error instead of silently filling in the parens (which could mask errors 
+and make debugging proto programs much harder).
+
+  (tup (1 2 3)) causes segfault, instead of displaying more helpful 
+message, e.g. (blah 1 2 3) displys "CANNOT FIND BLAH", can we have 
+something like that?
+  the compiler doesn't actually use LIT_INT16, LIT_TUP, or LIT_VEC ops
+  Letfed's optimization causes problems: if a depends on b, but b is not 
+    mentioned, a doesn't update
+  let inconsistently forces values:
+    (let ((t (timer))) (if (< (timer) 5) (timer) t)) => (0,1,2,3,4,1,2,3,4...)
+    (let ((t (timer))) (if 0 t (if (< (timer) 5) (timer) t))) => (0,1,2,3,4,5,6,7,8...)
+    This results from the "let optimization" the compiler does that eliminates some lets.
+  I think the compiler's leaking memory
+  Multiple command line expressions shouldn't need to be wrapped in "ALL"
+  clerror always segfaults: see for example './proto "(max-hood 1 2 3 4 5)"'
+  In a letfed, exports of the feedback value are lagged by an extra round:
+    exa: ./proto "(rep x 0 (any-hood (nbr (or x (sense 1)))))" -s 1 -sync
+    advances only once every 2 rounds, rather than every round
+  The expression "(all (def y () (def x () 3) 4) (x))" binds x in the global 
+    scope; it should be local to within y
+  Map is not working (segfaults).
+  recursion is not working
+  FOLD/VFOLD cannot determine its proper element type w/o reverse-propagation.
+  The "case" function accepts multiple expressions per clause but only uses
+    the first: e.g. "(case 1 (1 2 (red 9)) (3 6))" returns 2 and doesn't 
+    actuate the red LED.
+  Expression (assoc 3 (tup (tup 1 3 1) (tup 3 6 2) (tup 4 7 3))) returns [3 6]
+    rather than [3 6 2].
+  quote can't make tuples (i.e. no tuple literals)
+  Lambdas are handled inconsistently by fold-hood-plus:
+    (fold-hood-plus min (fun (f) (f)) (fun () (mid))) -> each its own ID
+    (fold-hood-plus min (fun (f) (f)) (let ((x (mid))) (fun () (mid)))) ->error
+  gradcast, navgrad use fold-hood because min-hood can't do tuples
+    see: (gradcast (sense 1) (coord))
+  compiler should be able to show code in display, but doesn't
+
+Misc:
+  dumping does not yet implement probe-filtering (dump of *only* 2
+    machines: last with probe[0]=1, last with probe[1]=1: do we need it?
+
+Makefile Related:
+ (REGRESSION): Doesn't seem to be able to find Cygwin's stock GLUT libraries in Cygwin. 
+
+PENDING WORK:
+derivative operator: is kernel deriv-hood appropriate?
+chemical communication
+folding
+script code display
+camera input
+mote link
+confirmation that it still works on hardware platforms
+polygon selection (w. modal mouse)
+voronoi visualizer
+mouse sensor 
+what is the proper scaling for disperse?
+How do we want to update PROTO_VERSION?
+what model is reinitHardware() dealing with?
+import mote code
+import swarm code
+
+
+DONE:
+<MOOT: vanished after Etch upgrade> On CSAIL Debian, photo flash from a '9' doesn't go away.
+<FIXED> vectors sometimes flicker when drawn because tip & body overlap
+<MOOT: decided not to>someday, untabify everything
+<FIXED> infinitesimal currently does not return the correct value
+<MOOT: we aren't doing it>simulation script interpreter & slideshow
+<FIXED> The "+" function accepts vectors of different sizes and unifies by 
+  shortening rather than lengthening: "(+ (tup 1 2) (tup 3))" yields [4]
+  rather than [4 2].  Subtraction does the same.
+<FIXED> Division by zero returns a number rather than NaN.
+<FIXED> The "max" and "min" functions behave inconsistently with vectors of
+  different lengths: e.g. (max (tup -3) (tup -3 2)) -> [-3]
+                          (max (tup -3 2) (tup -3)) -> [-3 2]
+<FIXED> polar-to-rect returns a length 3 vector, rather than 2; does anything 
+  depend on this?
+<FIXED: returns NaN> (sense n) returns values even when given a nonsense number for n
+<FIXED: out-of-bounds is ignored>probe does not check for out-of-bounds probe values
+<MOOT: happens only when mass/step-size makes integration unstable> right now, ODE bots are exploding in velocity for no apparent reason
+<FIXED> the no walls argument '-nw' is not being consumed
+<MOOT: something else fixed this> On a Mac, killing nodes while running 
+  "(green (channel (sense 1) (sense 2) 10))" results in a segfault
+<FIXED> peek_next segfaults on the last argument
+<FIXED> Len does not type-check non-vectors, and will crash (e.g. (len 5) -> bus error); need to have a working tuple type for type-checking
+<FIXED: is_full_screen was uninitialized> in Linux, when the window size is changed, the selection box is drawn offset from its proper location; probably a GLUT problem
+<FIXED>ODE Detection in makefile doesn't work in Ubuntu.
+<MOOT>what should happen to scheduled transmits following set_dt?
+<FIXED>path support
+<DONE>regression testing
+<MOOT>zoom-in and zoom-out keys don't work, and one conflicts with another module. Zoom in/out is now accessed through pageup/down.
+<FIXED> Zoom in/out doesn't work in omar's computer even when using keyboard shortcuts.
+<FIXED> Visualizer.cpp, DrawingPrimitives.cpp, Sim-App.cpp, Utils.h make references to glut stuff even when NO_GL=true is 
+enabled (Problem noticed only in Cygwin).
+<FIXED> (REGRESSION): NO_GL=true causes compilation to fail because odedynamics.cpp expects "Palette" (only when compiling with ODE)
+
+

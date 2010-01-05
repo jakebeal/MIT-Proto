@@ -1,0 +1,2 @@
+(def or (x y)
+  (if x x y))
