@@ -1,0 +1,1 @@
+(def and (x y) (if x y 0))

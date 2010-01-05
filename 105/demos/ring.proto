@@ -1,0 +1,6 @@
+(def ring ()
+  (let ((t (probe (broadcast (sense 1) (if (sense 1) (timer) 0)) 0))
+        (d (probe (gradient (sense 1)) 1)))
+    (if (< (abs (- (* 5 t) d)) 4)
+      (green 1)
+      (blue 1))))
