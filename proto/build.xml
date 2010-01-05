@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<project default="build">
+
+   <target name="build" depends="autogen,configure">
+     <echo> Running make.......</echo>
+     <exec dir="." executable="/usr/bin/make" failonerror="true" >
+     </exec>     
+   </target>
+
+   <target name="autogen">
+     <echo>Running autogen.sh.....</echo>
+     <exec dir="." executable="/bin/sh" failonerror="true" >
+        <arg line="./autogen.sh" />
+     </exec>
+   </target>
+
+   <target name="configure" depends="autogen">
+     <echo>Running configure.....</echo>
+     <exec dir="." executable="/bin/sh" failonerror="true" >
+       <arg line="./configure" />
+     </exec>
+   </target>
+</project>
