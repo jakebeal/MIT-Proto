@@ -20,4 +20,11 @@
        <arg line="./configure" />
      </exec>
    </target>
+
+   <target name="clean" >
+     <echo>Starting make clean...</echo>
+     <exec dir="." executable="/usr/bin/make" failonerror="true" >
+        <arg line="clean" />
+     </exec>
+   </target>
 </project>
