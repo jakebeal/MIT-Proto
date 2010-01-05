@@ -1,2 +1,0 @@
-;; alias for radio-range
-(def comm-range () (radio-range))

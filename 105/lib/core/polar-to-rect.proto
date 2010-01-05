@@ -1,3 +1,0 @@
-(def polar-to-rect (p)
-  (let ((r (1st p)) (a (2nd p)))
-  (tup (* r (cos a)) (* r (sin a)))))

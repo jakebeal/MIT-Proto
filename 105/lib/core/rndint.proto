@@ -1,3 +1,0 @@
-(def rndint (n)
-  (let ((v (rnd 0 n))) 
-    (- v (mod v 1))))

@@ -1,1 +1,0 @@
-(def fold-time (f i x) (letfed ((r i (f r x))) r))

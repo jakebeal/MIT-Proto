@@ -1,1 +1,0 @@
-(def once (x) (letfed ((v x v)) v))
