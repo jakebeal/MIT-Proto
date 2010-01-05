@@ -1,3 +1,0 @@
-(def grad-value (src f)
-  (let ((d (gradient src)))
-    (rep v f (mux src f (2nd (min-hood (nbr (tup d v))))))))

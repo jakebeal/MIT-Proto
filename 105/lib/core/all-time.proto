@@ -1,1 +1,0 @@
-(def all-time (v) (fold-time and #t v))

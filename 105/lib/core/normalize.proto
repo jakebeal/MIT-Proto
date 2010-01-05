@@ -1,6 +1,0 @@
-;; normalizes a vector
-;; if the vector is zero size, however, it will just leave it as is
-(def normalize (v)
-  (if (fold or 0 v)
-      (* (/ 1 (vlen v)) v)
-    v))

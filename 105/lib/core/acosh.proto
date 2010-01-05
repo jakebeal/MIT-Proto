@@ -1,2 +1,0 @@
-(def acosh (x)
-  (log (+ x (sqrt (- (* x x) 1)))))

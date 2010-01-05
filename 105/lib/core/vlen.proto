@@ -1,1 +1,0 @@
-(def vlen (v) (sqrt (vdot v v)))

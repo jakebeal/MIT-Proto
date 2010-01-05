@@ -1,2 +1,0 @@
-(def rect-to-polar (v)
-  (tup (vlen v) (atan2 (2nd v) (1st v))))

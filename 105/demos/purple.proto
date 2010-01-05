@@ -1,3 +1,0 @@
-;; Since (sense 2) shows up as purple in the simulator, this little
-;; program gives it a more intuitive name for demo purposes
-(def purple () (sense 2))

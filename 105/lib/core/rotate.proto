@@ -1,2 +1,0 @@
-(def rotate (radians vector)
-  (polar-to-rect (+ (rect-to-polar vector) (tup 0 radians))))
