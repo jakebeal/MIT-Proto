@@ -1,1 +1,0 @@
-(def min-time (v) (fold-time min (inf) v))

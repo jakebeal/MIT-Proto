@@ -1,2 +1,0 @@
-(def muxor (x y)
-  (mux x x y))
