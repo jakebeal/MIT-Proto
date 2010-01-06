@@ -51,7 +51,7 @@
      </exec>
    </target>
 
-   <target name="test" depends="build" if="time.midnight" >
+   <target name="test"  if="time.midnight" >
      <echo>Starting Proto tests.....</echo>
      <exec dir="./src/tests" executable="/usr/bin/python" >
         <arg line="prototest.py" />
