@@ -38,8 +38,8 @@ You may need to add options such as "--with-x" when you run
 detect your graphics correctly.
 
 If you are using a standard install of Mac OS X, you need to add the
-option "--with-apple-opengl-framwork" when you run "./configure":
-  "./configure --with-apple-opengl-framwork"
+option "--with-apple-opengl-framework" when you run "./configure":
+  "./configure --with-apple-opengl-framework"
 
 Correct installation will put two applications into your path:
 * proto: Proto simulator (incorporating compiler)
@@ -79,7 +79,7 @@ Proto has been tested on the following platforms:
 * Debian Lenny, CSAIL Debian, Ubuntu Gutsy & Hardy, Linux Mint Darnya
 * Fedora Sulphur 9, CentOS 5
 * PC-BSD 1.5.1 [currently not working]
-* Mac OS X: 10.4, 10.5
+* Mac OS X: 10.4, 10.5, 10.6
 * Windows: XP (with Cygwin), Vista (with Cygwin)
 
 If you have the required dependencies, we expect proto to work without
@@ -123,7 +123,8 @@ B. Windows
 
 C. MacOS X
 * If OpenGL and GNU tools aren't already installed, install the
-  following Xcode packages: DevSDK.pkg and OpenGLSDK.pkg
+  following Xcode packages: DevSDK.pkg and OpenGLSDK.pkg.  For recent OS
+  versions (e.g., 10.6), everything is provided by the XCode distribution.
 * If you can't right click (e.g. to zoom), then check the application
   preferences and make sure that multi-button mouse emulation is
   turned on.
@@ -132,7 +133,7 @@ C. MacOS X
   will need to make sure you configure with "--program-prefix=g" to
   have it install as "glibtool" rather than "libtool" (it is renamed
   in Mac OS X to avoid conflict with a different Apple-provided
-  utility)
+  utility).  You shouldn't have any problems in 10.6.
   
 
 D. BSD
