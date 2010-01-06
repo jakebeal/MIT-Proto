@@ -1,13 +1,29 @@
 <?xml version="1.0" ?>
 <project default="build">
 
-   <target name="build" depends="autogen,configure">
+   <target name="build" depends="init,autogen,configure">
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
         <exec dir="." executable="/usr/bin/make" failonerror="true" >
         </exec>     
      <record name="MakeLog.txt" action="stop" />
      <echo>Finished build</echo>
+     <antcall target="test" />
+   </target>
+
+   <target name="init">
+     <tstamp><format property="TSTAMP" pattern="HHmm" /></tstamp>
+     <condition property="time.midnight">
+       <and>
+         <contains string="${TSTAMP}" substring="000" />
+         <not>
+            <contains string="${TSTAMP}" substring="10" />
+         </not>
+         <not>
+            <contains string="${TSTAMP}" substring="20" />
+         </not>
+       </and>
+     </condition>
    </target>
 
    <target name="autogen">
@@ -35,7 +51,7 @@
      </exec>
    </target>
 
-   <target name="test" >
+   <target name="test" depends="build" if="time.midnight" >
      <echo>Starting Proto tests.....</echo>
      <exec dir="./src/tests" executable="/usr/bin/python" >
         <arg line="prototest.py" />
