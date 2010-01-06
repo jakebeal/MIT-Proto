@@ -3,23 +3,29 @@
 
    <target name="build" depends="autogen,configure">
      <echo> Running make.......</echo>
-     <exec dir="." executable="/usr/bin/make" failonerror="true" >
-     </exec>     
+     <record name="MakeLog.txt" action="start" />
+        <exec dir="." executable="/usr/bin/make" failonerror="true" >
+        </exec>     
+     <record name="MakeLog.txt" action="stop" />
      <echo>Finished build</echo>
    </target>
 
    <target name="autogen">
      <echo>Running autogen.sh.....</echo>
-     <exec dir="." executable="/bin/sh" failonerror="true" >
-        <arg line="./autogen.sh" />
-     </exec>
+     <record name="AutogenLog.txt" action="start" />
+        <exec dir="." executable="/bin/sh" failonerror="true" >
+           <arg line="./autogen.sh" />
+        </exec>
+     <record name="AutogenLog.txt" action="stop" />
    </target>
 
    <target name="configure" depends="autogen">
      <echo>Running configure.....</echo>
-     <exec dir="." executable="/bin/sh" failonerror="true" >
-       <arg line="./configure" />
-     </exec>
+     <record name="ConfigureLog.txt" action="start" />
+        <exec dir="." executable="/bin/sh" failonerror="true" >
+            <arg line="./configure" />
+        </exec>
+     <record name="ConfigureLog.txt" action="stop" />
    </target>
 
    <target name="clean" >
@@ -28,6 +34,7 @@
         <arg line="clean" />
      </exec>
    </target>
+
    <target name="test" >
      <echo>Starting Proto tests.....</echo>
      <exec dir="./src/tests" executable="/usr/bin/python" >
