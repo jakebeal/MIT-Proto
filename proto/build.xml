@@ -1,5 +1,12 @@
 <?xml version="1.0" ?>
-<project default="build">
+<project default="main">
+   <!-- this setting will override the setting of time.midnight in init 
+   target so that every build will run tests -->
+   <property name="time.midnight" value="true" />
+
+   <target name="main" depends="init,autogen,configure,build,test">
+     <echo>Starting Ant main target...</echo>
+   </target>
 
    <target name="build" depends="init,autogen,configure">
      <echo> Running make.......</echo>
@@ -8,7 +15,6 @@
         </exec>     
      <record name="MakeLog.txt" action="stop" />
      <echo>Finished build</echo>
-     <antcall target="test" />
    </target>
 
    <target name="init">
