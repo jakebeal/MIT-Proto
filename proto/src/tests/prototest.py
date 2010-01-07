@@ -9,6 +9,7 @@ in the file LICENSE in the MIT Proto distribution's top directory.
 '''
 
 '''
+
 Prototest helps analyze dump files to perform regression testing on
 the proto language core. It reads config file(s) containing "tests"
 each with one or more "assertions", and verifies the assertions. The

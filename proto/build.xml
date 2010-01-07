@@ -41,7 +41,7 @@
      <record name="AutogenLog.txt" action="stop" />
    </target>
 
-   <target name="configure" depends="autogen">
+   <target name="configure" >
      <echo>Running configure.....</echo>
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="." executable="/bin/sh" failonerror="true" >
