@@ -4,7 +4,7 @@
    target so that every build will run tests -->
    <property name="time.midnight" value="true" />
 
-   <target name="main" depends="init,autogen,configure,build,test">
+   <target name="main" depends="init,autogen,configure,build,install,test,uninstall">
      <echo>Starting Ant main target...</echo>
    </target>
 
@@ -64,4 +64,17 @@
      </exec>
    </target>
 
+   <target name="install" failonerror="true" >
+     <echo>Starting make install...</echo>
+     <exec dir="." executable="/usr/bin/make" >
+        <arg line=" install" />
+     </exec>
+   </target>
+
+   <target name="uninstall" failonerror="true" >
+      <echo>Starting uninstall..</echo>
+      <exec dir="." executable="/usr/bin/make" >
+        <arg line=" uninstall" />
+      </exec>
+   </target>
 </project>
