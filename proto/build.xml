@@ -66,15 +66,19 @@
 
    <target name="install"  >
      <echo>Starting make install...</echo>
+     <record name="MakeInstallLog.txt" action="start" />
      <exec dir="." executable="/usr/bin/make" failonerror="true">
         <arg line=" install" />
      </exec>
+     <record name="MakeInstallLog.txt" action="stop" />
    </target>
 
    <target name="uninstall" >
       <echo>Starting uninstall..</echo>
+      <record name="MakeUninstallLog.txt" action="start" />
       <exec dir="." executable="/usr/bin/make" failonerror="true">
         <arg line=" uninstall" />
       </exec>
+      <record name="MakeUninstallLog.txt" action="stop" />
    </target>
 </project>
