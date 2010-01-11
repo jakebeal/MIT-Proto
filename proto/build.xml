@@ -63,7 +63,7 @@
      <record name="TestLog.txt" action="start" />
      <exec dir="./src/tests" executable="/usr/bin/python" >
         <arg line="prototest.py *.test" />
-        <env key="PATH" path="/usr/local/bin:${env.PATH}" />
+      <!--  <env key="PATH" path="/usr/local/bin:${env.PATH}" />  -->
      </exec>
      <record name="TestLog.txt" action="stop" />
    </target>
