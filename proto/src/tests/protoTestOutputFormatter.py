@@ -100,7 +100,7 @@ class ResultFileObject:
         
     def writeToFile(self):
 
-        directory = "/xml/"
+        directory = "xml/"
         fileName = directory + self.testSuite.name + ".xml"
         #self.elementTree.write(sys.stdout,"UTF-8")
         self.elementTree.write(fileName,"UTF-8")
