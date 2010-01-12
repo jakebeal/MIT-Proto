@@ -61,8 +61,9 @@
    <target name="test"  if="time.midnight" >
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
-     <exec dir="./src/tests" executable="/bin/sh" >
-        <arg value="./prototest.py" />
+     <exec dir="./src/tests" executable="/bin/bash" >
+        <arg value="/usr/local/bin/python" />
+        <arg value="prototest.py" />
         <arg value="*.test" />
      </exec>
      <record name="TestLog.txt" action="stop" />
