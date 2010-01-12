@@ -314,10 +314,10 @@ class TestSuite():
     monolithic test file.
     '''
     def __init__(self, tests):
-        print "TestSuite: tests %s" (tests)
+        print "TestSuite: tests " + tests
         if tests == "*.test":
             self.tests = filter((lambda x: x.endswith(".test")),os.listdir('.'))
-            print "tests length: %d" (len(self.test))
+            print "tests length: " + str (len(self.tests))
         else:
             self.tests = tests
         self.test_files = {} #Store test_name: Test
