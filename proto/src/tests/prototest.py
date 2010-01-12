@@ -314,7 +314,10 @@ class TestSuite():
     monolithic test file.
     '''
     def __init__(self, tests):
-        self.tests = tests
+        if tests == "*.test":
+            self.tests = filter((lambda x: x.endswith(".test")),os.listdir('.'))
+        else:
+            self.tests = tests
         self.test_files = {} #Store test_name: Test
         self.failed = False #Default Starting Value
 
