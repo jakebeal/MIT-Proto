@@ -62,7 +62,6 @@
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
      <exec dir="./src/tests" executable="/bin/bash" >
-        <arg value="/usr/local/bin/python" />
         <arg value="prototest.py" />
         <arg value="*.test" />
      </exec>
