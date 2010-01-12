@@ -314,8 +314,8 @@ class TestSuite():
     monolithic test file.
     '''
     def __init__(self, tests):
-        print "TestSuite: tests " + tests
-        if tests == "*.test":
+        print "TestSuite: tests " + tests[0]
+        if tests[0] == "*.test":
             self.tests = filter((lambda x: x.endswith(".test")),os.listdir('.'))
             print "tests length: " + str (len(self.tests))
         else:
