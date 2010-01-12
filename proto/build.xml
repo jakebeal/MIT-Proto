@@ -61,11 +61,14 @@
    <target name="test"  if="time.midnight" >
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
-     <exec dir="./src/tests" executable="/usr/bin/python" >
+     <exec dir="./src/tests" executable="/usr/local/bin/python" >
         <arg line="prototest.py *.test" />
       <!--  <env key="PATH" path="/usr/local/bin:${env.PATH}" />  -->
      </exec>
      <record name="TestLog.txt" action="stop" />
+     <exec dir="./src/tests" executable="/usr/local/bin/python" >
+       <arg line="protoTestOutputFormatter.py *.RESULTS" />
+     </exec>
    </target>
 
    <target name="install"  >
