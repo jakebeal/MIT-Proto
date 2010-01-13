@@ -1,3 +1,10 @@
+'''
+author: G Bays
+purpose: this script is designed to read the Proto *.RESULTS files and
+convert them to Ant JUnit XML format. This will enable build tool Hudson 
+to provide a visual display of the test results.
+'''
+
 import sys, glob
 import xml.etree.cElementTree as ET
 
@@ -21,6 +28,8 @@ class TestCase:
               
         return output
         
+# This class encapsulates the attributes of the testsuite tag.
+# There is one such object per RESULTS file.
 class TestSuite:
     def __init__(self,name):
         self.name = name
@@ -38,7 +47,7 @@ class TestSuite:
               self.protoVersion + "\n"
               
         return output
-
+# Each one of these objects will correspond to a singe RESULTS file.
 class ResultFileObject:
 
     def __init__(self):
@@ -97,7 +106,8 @@ class ResultFileObject:
         
         self.elementTree = ET.ElementTree(root)
 
-        
+# output XML files are written to /proto/src/tests/xml
+# with file names xxxx.test.xml
     def writeToFile(self):
 
         directory = "xml/"
@@ -263,9 +273,7 @@ def main():
   pf = ProcessFiles()
   #print sys.argv
   sys.argv = [item for arg in sys.argv for item in glob.glob(arg)]
-  #pf.readResultFiles(sys.argv[1:])
   pf.processFiles(sys.argv[1:])
-  #pf.outputTestCases()
    
        
 if __name__ == "__main__":
