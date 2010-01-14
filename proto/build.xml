@@ -72,6 +72,10 @@
      </exec>
    </target>
 
+   <target name="cleanDump" depends="test" >
+      <delete dir="./src/tests/dumps" />
+   </target>   
+
    <target name="install"  >
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
