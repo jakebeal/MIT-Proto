@@ -1,5 +1,7 @@
 <?xml version="1.0" ?>
 <project default="main">
+
+   <property file="build.properties" />
    <!-- this setting will override the setting of time.midnight in init 
    target so that every build will run tests -->
    <property name="time.midnight" value="true" />
@@ -61,12 +63,12 @@
    <target name="test"  if="time.midnight" >
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
-     <exec dir="./src/tests" executable="/usr/local/bin/python" >
+     <exec dir="./src/tests" executable="${pythonpath}" >
         <arg value="prototest.py" />
         <arg value="*.test" />
      </exec>
      <record name="TestLog.txt" action="stop" />
-     <exec dir="./src/tests" executable="/usr/local/bin/python" >
+     <exec dir="./src/tests" executable="${pythonpath}" >
        <arg value="protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
