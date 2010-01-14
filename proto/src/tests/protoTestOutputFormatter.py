@@ -109,8 +109,10 @@ class ResultFileObject:
 # output XML files are written to /proto/src/tests/xml
 # with file names xxxx.test.xml
     def writeToFile(self):
-
-        directory = "xml/"
+        if ((sys.platform.startswith("linux")) or (sys.platform.startswith("darwin"))):
+            directory = "xml/"  # this is for linux and OS X
+        else:
+            directory = "/xml/"  # this is for Windows
         fileName = directory + self.testSuite.name + ".xml"
         #self.elementTree.write(sys.stdout,"UTF-8")
         self.elementTree.write(fileName,"UTF-8")
