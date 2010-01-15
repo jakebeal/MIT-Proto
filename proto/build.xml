@@ -75,6 +75,7 @@
    </target>
 
    <target name="cleanDump" depends="test" >
+      <echo>Cleaning dump files...</echo>
       <delete dir="./src/tests/dumps" />
    </target>   
 
