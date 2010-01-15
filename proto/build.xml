@@ -72,9 +72,10 @@
        <arg value="protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
+     <antcall target="cleanDump" />
    </target>
 
-   <target name="cleanDump" depends="test" >
+   <target name="cleanDump" >
       <echo>Cleaning dump files.....</echo>
       <delete dir="./src/tests/dumps" />
    </target>   
