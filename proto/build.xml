@@ -14,7 +14,7 @@
    <target name="build" depends="init,autogen,configure">
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
-        <exec dir="." executable="/usr/bin/make" failonerror="true" >
+        <exec dir="." executable="${makepath}" failonerror="true" >
         </exec>     
      <record name="MakeLog.txt" action="stop" />
      <echo>Finished build</echo>
@@ -38,7 +38,7 @@
    <target name="autogen">
      <echo>Running autogen.sh.....</echo>
      <record name="AutogenLog.txt" action="start" />
-        <exec dir="." executable="/bin/sh" failonerror="true" >
+        <exec dir="." executable="${shellpath}" failonerror="true" >
            <arg line="./autogen.sh" />
         </exec>
      <record name="AutogenLog.txt" action="stop" />
@@ -47,7 +47,7 @@
    <target name="configure" >
      <echo>Running configure.....</echo>
      <record name="ConfigureLog.txt" action="start" />
-        <exec dir="." executable="/bin/sh" failonerror="true" >
+        <exec dir="." executable="${shellpath}" failonerror="true" >
             <arg line="./configure" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
@@ -55,7 +55,7 @@
 
    <target name="clean" >
      <echo>Starting make clean...</echo>
-     <exec dir="." executable="/usr/bin/make" failonerror="true" >
+     <exec dir="." executable="${makepath}" failonerror="true" >
         <arg line="clean" />
      </exec>
    </target>
@@ -83,7 +83,7 @@
    <target name="install"  >
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
-     <exec dir="." executable="/usr/bin/make" failonerror="true">
+     <exec dir="." executable="${makepath}" failonerror="true">
         <arg line=" install" />
      </exec>
      <record name="MakeInstallLog.txt" action="stop" />
@@ -92,7 +92,7 @@
    <target name="uninstall" >
       <echo>Starting uninstall..</echo>
       <record name="MakeUninstallLog.txt" action="start" />
-      <exec dir="." executable="/usr/bin/make" failonerror="true">
+      <exec dir="." executable="${makepath}" failonerror="true">
         <arg line=" uninstall" />
       </exec>
       <record name="MakeUninstallLog.txt" action="stop" />
