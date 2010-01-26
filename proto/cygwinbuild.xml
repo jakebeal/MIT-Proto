@@ -9,7 +9,7 @@
    <property environment="env" />
 
    <target name="main" depends="init,autogen,configure,build,install,test, uninstall">
-     <echo>Starting Ant main target...</echo>
+     <echo>Ant main target...</echo>
    </target>
 
    <target name="build" depends="init,autogen,configure">
