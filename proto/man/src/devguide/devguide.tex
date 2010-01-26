@@ -432,15 +432,36 @@ never have existed.
 \subsection{Future Plug-in System}
 
 The plug-in system to be implemented will replace the current system
-entirely.  Before creating the spatial computer model, the simulator
-will scan the the simulator's platform directory and find all dynamic
-library files (those ending in \var{.dylib}, \var{.so}, or \var{.dll}.
-Each one will be loaded, and if the library contains a symbol named
-\var{get\_proto\_plugins}, that symbol will be invoked as the C
-function: \code{ProtoPluginLibrary* get\_proto\_plugins()}
+entirely.  In the simulator's platform directory, there will be a
+``registry'' file mapping plugin names to dynamic library file stems.
+This file will be in a standard key/value format:
+\begin{itemize}
+\item Each line has format {\tt TYPE NAME = FILESTEM}.  Whitespace (or its
+  absence) will be ignored.
+\item Lines beginning with {\tt \#}' are comments
+\end{itemize}
+This file is used to determine what dynamic library should be loaded
+to retrieve a desired plugin.  The \var{TYPE} is one of \var{Layer},
+\var{TimeModel}, or \var{Distribution} (case matters), and the
+\var{NAME} and \var{FILESTEM} are arbitrary alphanumeric tokens.  When
+the spatial computer is being constructed, a component is looked up
+first by type, then by name (components of different type can have the
+same name without conflict), to find what library should be loaded.  A
+system-appropriate extension is then added to the \var{FILESTEM}
+(e.g. \var{.dylib}, \var{.so}, or \var{.dll}) and the library loaded
+dynamically.
 
-This function returns an object subclassed from the type
-\var{ProtoPluginLibrary}, which is defined:
+A library must contain two symbols, which will be invoked as C functions:
+\begin{itemize}
+\item \code{char* get\_proto\_plugin\_properties()}
+\item \code{ProtoPluginLibrary* get\_proto\_plugins()}
+\end{itemize}
+
+The \var{get\_proto\_plugin\_properties} function returns a C string
+that can be used to build the registry file.
+
+The \var{get\_proto\_plugins} function returns an object subclassed
+from the type \var{ProtoPluginLibrary}, which is defined:
 \begin{quote}
 \begin{verbatim}
 class ProtoPluginLibrary {
