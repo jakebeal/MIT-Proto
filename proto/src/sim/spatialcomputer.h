@@ -11,13 +11,23 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <fstream>
+#include <map>
+#include <string>
+#include <vector>
+#include <exception>
+#include <dlfcn.h>
 #include "sim-hardware.h"
 #include "utils.h"
 #include "proto_platform.h"
 #include "scheduler.h"
+#include "LibRegistry.h"
+#include "ProtoPluginLibrary.h"
+
 
 // prototype classes
 class Device; class SpatialComputer;
+class DllNotFoundException;
 
 /*****************************************************************************
  *  TIME AND SPACE DISTRIBUTIONS                                             *
@@ -196,7 +206,8 @@ class SpatialComputer : public EventConsumer {
 
   std::queue<int> death_q;  // nodes requesting to suicide
   std::queue<CloneReq*> clone_q;  // nodes requesting to reproduce
-  
+  static const string registryFilePath;
+
  public:
   SpatialComputer(Args* args);
   ~SpatialComputer();
@@ -216,6 +227,10 @@ class SpatialComputer : public EventConsumer {
   void dump_selection(FILE* out, int verbosity);
   void dump_frame(SECONDS time, BOOL time_in_name);
   BOOL is_3d() { return volume->dimensions()>2; }
+  virtual Layer* find_layer(char* name, Args* args, int n);
+  virtual TimeModel* find_time_model(char* name, Args* args, int n);
+  virtual Distribution* find_distribution(char* name, Args* args, int n);
+  virtual void  initializePlugins(Args* args, int n);
   
  private:
   void get_volume(Args* args, int n); // shared dist constructor
@@ -225,7 +240,21 @@ class SpatialComputer : public EventConsumer {
   int addLayer(Layer* layer); // add a layer to dynamics & set callback vars
 
   void add_plugin(const char *name, Args *args, int n);
+  void readRegistry (fstream& fin, LibRegistry& out);
+  void* getDLLHandle(string dllName);
   int layer_mask;
+  LibRegistry mLibReg;
+  map<string,void*> mLoadedDLLMap;
+
+  };
+
+class DllNotFoundException: public exception
+{
+public:
+	string message;
+	DllNotFoundException(string msg);
+	~DllNotFoundException() throw();
+	virtual const char* what() const throw();
 };
 
 // global variable set to the spatial computer during visualize(),
