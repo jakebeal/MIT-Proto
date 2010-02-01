@@ -38,6 +38,7 @@ pkginclude_HEADERS = \
 	LibRegistry.h \
 	ProtoPluginLibrary.h
 
+
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \
 	platform_ops.h \
