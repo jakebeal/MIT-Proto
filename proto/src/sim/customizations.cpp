@@ -284,7 +284,7 @@ void SpatialComputer::choose_time_model(Args* args, int n) {
   time_model = new FixedIntervalTime(args,this);
 }
 
-/*
+
 const char *dl_exts[] = { ".so", ".dylib", NULL};
 
 void *dlopenext(const char *name, int flag) {
@@ -301,7 +301,7 @@ void *dlopenext(const char *name, int flag) {
     return hand;
 }
 
-*/
+
 
 
 // have moved function dlopenext to spatialcomputer.cpp
@@ -311,14 +311,12 @@ void SpatialComputer::add_plugin(const char *name, Args *args, int n) {
   Layer *layer;
   int mask;
 
-  //hand = dlopenext(name, RTLD_NOW);
-  hand = NULL;
+  hand = dlopenext(name, RTLD_NOW);
   if(!hand) {
     std::string search = name;
     if(search.find('/') == std::string::npos) {
       search = "proto-" + search;
-      //hand = dlopenext(search.c_str(), RTLD_NOW);
-      hand = NULL;
+      hand = dlopenext(search.c_str(), RTLD_NOW);
     }
   }
   if(!hand)

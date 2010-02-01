@@ -242,6 +242,7 @@ class SpatialComputer : public EventConsumer {
   void add_plugin(const char *name, Args *args, int n);
   void readRegistry (fstream& fin, LibRegistry& out);
   void* getDLLHandle(string dllName);
+  void* dlopenext(const char *name, int flag);
   int layer_mask;
   LibRegistry mLibReg;
   map<string,void*> mLoadedDLLMap;

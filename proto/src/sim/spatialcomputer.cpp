@@ -41,7 +41,7 @@ split (const string &s, const string &token, vector<string> &segments)
 
 const char *dl_exts[] = { ".so", ".dylib", NULL};
 
-void *dlopenext(const char *name, int flag) {
+void* SpatialComputer::dlopenext(const char *name, int flag) {
     const char **ext = dl_exts;
     void *hand = NULL;
 
