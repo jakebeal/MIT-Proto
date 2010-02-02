@@ -39,7 +39,7 @@ split (const string &s, const string &token, vector<string> &segments)
     segments.push_back(s.substr(i, s.length()));
 }
 
-const char *dl_exts[] = { ".so", ".dylib", NULL};
+const char* SpatialComputer::dl_exts[] = { ".so", ".dylib", NULL};
 
 void* SpatialComputer::dlopenext(const char *name, int flag) {
     const char **ext = dl_exts;

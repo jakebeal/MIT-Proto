@@ -246,7 +246,7 @@ class SpatialComputer : public EventConsumer {
   int layer_mask;
   LibRegistry mLibReg;
   map<string,void*> mLoadedDLLMap;
-
+  char* dl_exts[];
   };
 
 class DllNotFoundException: public exception
