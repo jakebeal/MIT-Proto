@@ -636,8 +636,8 @@ SpatialComputer::SpatialComputer(Args* args) {
   just_dumped=FALSE; next_dump = dump_start; snap_vis_time=0;
   // setup customization
   get_volume(args, n);
-  //choose_layers(args,n);             // what types of physics apply
-  initializePlugins(args, n);
+  choose_layers(args,n);             // what types of physics apply
+  //initializePlugins(args, n);
 
   scheduler = new Scheduler(n, time_model->cycle_time());
   // create the actual devices
