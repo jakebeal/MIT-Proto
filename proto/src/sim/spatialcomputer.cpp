@@ -42,7 +42,7 @@ split (const string &s, const string &token, vector<string> &segments)
 const char* SpatialComputer::dl_exts[] = { ".so", ".dylib", NULL};
 
 void* SpatialComputer::dlopenext(const char *name, int flag) {
-    const char **ext = dl_exts;
+    const char **ext = SpatialComputer::dl_exts;
     void *hand = NULL;
 
     while(*ext) {

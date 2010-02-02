@@ -207,6 +207,7 @@ class SpatialComputer : public EventConsumer {
   std::queue<int> death_q;  // nodes requesting to suicide
   std::queue<CloneReq*> clone_q;  // nodes requesting to reproduce
   static const string registryFilePath;
+  static const char* dl_exts[];
 
  public:
   SpatialComputer(Args* args);
@@ -246,7 +247,6 @@ class SpatialComputer : public EventConsumer {
   int layer_mask;
   LibRegistry mLibReg;
   map<string,void*> mLoadedDLLMap;
-  char* dl_exts[];
   };
 
 class DllNotFoundException: public exception
