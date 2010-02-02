@@ -536,6 +536,9 @@ void  SpatialComputer::initializePlugins(Args* args,int n)
 
       distributionPtr = find_distribution(const_cast<char*>(distributionName.c_str()), args, n);
 
+      this->time_model = timeModelPtr;
+      this->distribution = distributionPtr;
+
 }
 
 void
