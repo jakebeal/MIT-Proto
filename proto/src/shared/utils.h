@@ -38,7 +38,7 @@ struct Rect {
   Rect(METERS left, METERS right, METERS bottom, METERS top) {
     l=left; r=right; b=bottom; t=top; 
   }
-  virtual Rect* clone() { new Rect(l,r,b,t); }
+  virtual Rect* clone() { return new Rect(l,r,b,t); }
   virtual int dimensions() { return 2; }
 };
 struct Rect3 : public Rect { 
@@ -47,7 +47,7 @@ struct Rect3 : public Rect {
 	METERS ceiling) : Rect(left,right,bottom,top) {
     f=floor; c=ceiling;
   }
-  virtual Rect* clone() { new Rect3(l,r,b,t,f,c); }
+  virtual Rect* clone() { return new Rect3(l,r,b,t,f,c); }
   virtual int dimensions() { return 3; }
 };
 

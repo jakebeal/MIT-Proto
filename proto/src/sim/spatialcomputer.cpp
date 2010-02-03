@@ -15,44 +15,46 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
  *  MISC DEFS                                                                *
  *****************************************************************************/
 
-Layer::Layer(SpatialComputer* p) { parent=p; can_dump=p->is_dump_default; }
-
-DllNotFoundException::DllNotFoundException(string msg):message(msg) {}
-DllNotFoundException::~DllNotFoundException() throw() {}
-const char* DllNotFoundException::what() const throw()
-{
-	string returnStr = "Error: Library file for plugin or layer " + message + " not found.";
-	return returnStr.c_str();
+Layer::Layer(SpatialComputer* p) {
+  parent = p;
+  can_dump = p->is_dump_default;
 }
 
-
-void
-split (const string &s, const string &token, vector<string> &segments)
-{
-    size_t i = 0;
-    size_t j = 0;
-    while (string::npos != (j = s.find(token, i)))
-    {
-        segments.push_back(s.substr(i, j - i));
-        i = j + token.length();
-    }
-    segments.push_back(s.substr(i, s.length()));
+DllNotFoundException::DllNotFoundException(string msg) :
+  message(msg) {
+}
+DllNotFoundException::~DllNotFoundException() throw () {
+}
+const char* DllNotFoundException::what() const throw () {
+  string returnStr = "Error: Library file for plugin or layer " + message + " not found.";
+  return returnStr.c_str();
 }
 
-const char* SpatialComputer::dl_exts[] = { ".so", ".dylib", NULL};
+void split(const string &s, const string &token, vector<string> &segments) {
+  size_t i = 0;
+  size_t j = 0;
+  while (string::npos != (j = s.find(token, i))) {
+    segments.push_back(s.substr(i, j - i));
+    i = j + token.length();
+  }
+  segments.push_back(s.substr(i, s.length()));
+}
+
+const char* SpatialComputer::dl_exts[] = { ".so", ".dylib", NULL };
 
 void* SpatialComputer::dlopenext(const char *name, int flag) {
-    const char **ext = SpatialComputer::dl_exts;
-    void *hand = NULL;
+  const char **ext = SpatialComputer::dl_exts;
+  void *hand = NULL;
 
-    while(*ext) {
-        std::string search = name;
-        hand = dlopen((search + (*ext)).c_str(), flag);
-        if (hand) break;
-        ext++;
-    }
+  while (*ext) {
+    std::string search = name;
+    hand = dlopen((search + (*ext)).c_str(), flag);
+    if (hand)
+      break;
+    ext++;
+  }
 
-    return hand;
+  return hand;
 }
 
 
@@ -322,274 +324,244 @@ public:
 /*****************************************************************************
  *  SPATIAL COMPUTER                                                         *
  *****************************************************************************/
-const string SpatialComputer::registryFilePath = "C:\\ProtoBBnRepo\\src\\dll_registry.txt";
+const string SpatialComputer::registryFilePath = "../dll_registry.txt";
 
-Layer* SpatialComputer::find_layer(char* name, Args* args, int n)
-{
-	Layer *layerPtr = NULL;
-	string dllName = "";
-	void* dllhandle;
-    vector<RegLine> layerVec;
-    vector<RegLine>::iterator it;
+Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
+  Layer *layerPtr = NULL;
+  string dllName = "";
+  void* dllhandle;
+  vector<RegLine> layerVec;
+  vector<RegLine>::iterator it;
 
-    mLibReg.getLayerList(layerVec);
-    string larg(name);
+  mLibReg.getLayerList(layerVec);
+  string larg(name);
 
-    typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
+  typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
 
-	for (it = layerVec.begin();it != layerVec.end();it++)
-	{
-		if (larg.compare(it->name) == 0)
-		{
-	       dllName = it->libpath;
-		}
-	}
-
-	if (dllName.size() == 0)
-	{
-	   throw DllNotFoundException("No matching library in registry for: " + dllName);
-	}
-
-    dllhandle = getDLLHandle(dllName);
-
-	getPluginsFncPtr getPlugFnc = (getPluginsFncPtr)dlsym(dllhandle,"get_proto_plugins");
-	const char* error = dlerror();
-	if(error)
-	{
-		throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
-	}
-
-	ProtoPluginLibrary* ppl = getPlugFnc();
-
-	layerPtr = ppl->get_layer(name,args,this,n);
-
-	dlclose(dllhandle);
-
-	return layerPtr;
-}
-
-TimeModel* SpatialComputer::find_time_model(char* name, Args* args, int n)
-{
-	TimeModel *timeModelPtr = NULL;
-	string dllName = "";
-	void* dllhandle;
-    vector<RegLine> timeModelVec;
-    vector<RegLine>::iterator it;
-
-    mLibReg.getTimeModelList(timeModelVec);
-    string targ(name);
-
-    typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
-
-	for (it = timeModelVec.begin();it != timeModelVec.end();it++)
-	{
-		if (targ.compare(it->name) == 0)
-		{
-	       dllName = it->libpath;
-		}
-	}
-
-	if (dllName.size() == 0)
-	{
-	   throw DllNotFoundException("No matching library in registry for: " + dllName);
-	}
-
-    dllhandle = getDLLHandle(dllName);
-
-	getPluginsFncPtr getPlugFnc = (getPluginsFncPtr)dlsym(dllhandle,"get_proto_plugins");
-
-	const char* error = dlerror();
-	if(error)
-	{
-		throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
-	}
-
-	ProtoPluginLibrary* ppl = getPlugFnc();
-
-	timeModelPtr = ppl->get_time_model(name,args,this,n);
-
-	return timeModelPtr;
-}
-Distribution* SpatialComputer::find_distribution(char* name, Args* args, int n)
-{
-	Distribution *distributionPtr = NULL;
-	string dllName = "";
-	void* dllhandle;
-    vector<RegLine> distributionVec;
-    vector<RegLine>::iterator it;
-
-    mLibReg.getDistributionList(distributionVec);
-    string darg(name);
-
-    typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
-
-	for (it = distributionVec.begin();it != distributionVec.end();it++)
-	{
-		if (darg.compare(it->name) == 0)
-		{
-	       dllName = it->libpath;
-		}
-	}
-
-	if (dllName.size() == 0)
-	{
-	   throw DllNotFoundException("No matching library in registry for: " + dllName);
-	}
-
-    dllhandle = getDLLHandle(dllName);
-
-	getPluginsFncPtr getPlugFnc = (getPluginsFncPtr)dlsym(dllhandle,"get_proto_plugins");
-
-	const char* error = dlerror();
-	if(error)
-	{
-		throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
-	}
-
-	ProtoPluginLibrary* ppl = getPlugFnc();
-
-	distributionPtr = ppl->get_distribution(name,args,this,n);
-
-	return distributionPtr;
-}
-
-void* SpatialComputer::getDLLHandle(string dllName)
-{
-	void* dllhandle = NULL;
-	// if dll is not in loaded map, load it
-	if (mLoadedDLLMap.find(dllName) == mLoadedDLLMap.end())
-	{
-	   dllhandle = dlopenext(dllName.c_str(), RTLD_NOW);
-	   if(!dllhandle)
-	   {
-	      throw DllNotFoundException("Could not load dll: " + dllName);
-	   }
-	   mLoadedDLLMap.insert(pair<string,void*>(dllName,dllhandle));
-	}
-	else // dll is already loaded
-	{
-		dllhandle = mLoadedDLLMap.find(dllName)->second;
-	}
-
-	return dllhandle;
-}
-
-void  SpatialComputer::initializePlugins(Args* args,int n)
-{
-	vector<string> layerArgsVector;
-	vector<string>::iterator sit;
-    string  timeModelName;
-    string distributionName;
-    bool moreArgs = true;
-	layer_getter getter;
-	void* dllhandle = NULL;
-	string search = "";
-  	fstream fin;
-  	Layer *layerPtr = NULL;
-  	TimeModel* timeModelPtr = NULL;
-  	Distribution* distributionPtr = NULL;
-
-	  while(moreArgs)
-	  {
-		  moreArgs = args->extract_switch("L");
-		  if (moreArgs)
-		  {
-		     string larg = args->pop_next();
-		     layerArgsVector.push_back(larg);
-		  }
-	  }
-
-      if(args->extract_switch("TM"))
-      {
-    	 timeModelName = args->pop_next();
-      }
-
-      if (args->extract_switch("DD"))
-      {
-    	 distributionName = args->pop_next();
-      }
-
-
-	  fin.open(SpatialComputer::registryFilePath.c_str(),ios::in | ios::out);
-	  if (!fin.is_open())
-	  {
-	       throw ifstream::failure("Cannot open registry file.");
-	  }
-
-	  readRegistry(fin,mLibReg);
-
-
-      if (layerArgsVector.size() > 0)
-      {
-		  for (sit = layerArgsVector.begin();sit != layerArgsVector.end();sit++)
-		  {
-			  const char* name = sit->c_str();
-			  layerPtr = find_layer(const_cast<char*>(name), args, n);
-			  if(layerPtr)
-			  {
-			     addLayer(layerPtr);
-		      }
-		  }
-      }
-
-      timeModelPtr = find_time_model(const_cast<char*>(timeModelName.c_str()), args, n);
-
-      distributionPtr = find_distribution(const_cast<char*>(distributionName.c_str()), args, n);
-
-      this->time_model = timeModelPtr;
-      this->distribution = distributionPtr;
-
-}
-
-void
-SpatialComputer::readRegistry (fstream& fin, LibRegistry& out)
-{
-    string registryLine = "";
-    string delimStr = " ";
-    vector<string> segments;
-    LibRegistry libreg;
-
-    if (fin.is_open())
-    {
-        while (!fin.eof())
-        {
-            getline(fin, registryLine, '\n');
-
-            // Ignore comment lines and empty lines.
-            if (registryLine.empty() || '#' == registryLine.at(0))
-                continue;
-
-            size_t equalSignIndex = registryLine.find('=');
-
-            if (equalSignIndex == string::npos)
-                continue;
-
-            split(registryLine,delimStr,segments);
-
-            if (segments.size() == 4)
-            {
-				RegLine reg;
-				reg.type = segments[0];
-				reg.name = segments[1];
-				reg.libpath = segments[3];
-
-				if (reg.type == LibRegistry::LAYER)
-				{
-					out.addToLayerList(reg);
-				}
-				else if (reg.type == LibRegistry::TIME_MODEL)
-				{
-					out.addToTimeModelList(reg);
-				}
-				else if (reg.type == LibRegistry::DISTRIBUTION)
-				{
-					out.addToDistributionList(reg);
-				}
-
-				segments.clear();
-            }
-        }
+  for (it = layerVec.begin(); it != layerVec.end(); it++) {
+    if (larg.compare(it->name) == 0) {
+      dllName = it->libpath;
     }
+  }
+
+  if (dllName.size() == 0) {
+    throw DllNotFoundException("No matching library in registry for: " + dllName);
+  }
+
+  dllhandle = getDLLHandle(dllName);
+
+  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, "get_proto_plugins");
+  const char* error = dlerror();
+  if (error) {
+    throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
+  }
+
+  ProtoPluginLibrary* ppl = getPlugFnc();
+
+  layerPtr = ppl->get_layer(name, args, this, n);
+
+  dlclose(dllhandle);
+
+  return layerPtr;
+}
+
+TimeModel* SpatialComputer::find_time_model(char* name, Args* args, int n) {
+  TimeModel *timeModelPtr = NULL;
+  string dllName = "";
+  void* dllhandle;
+  vector<RegLine> timeModelVec;
+  vector<RegLine>::iterator it;
+
+  mLibReg.getTimeModelList(timeModelVec);
+  string targ(name);
+
+  typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
+
+  for (it = timeModelVec.begin(); it != timeModelVec.end(); it++) {
+    if (targ.compare(it->name) == 0) {
+      dllName = it->libpath;
+    }
+  }
+
+  if (dllName.size() == 0) {
+    throw DllNotFoundException("No matching library in registry for: " + dllName);
+  }
+
+  dllhandle = getDLLHandle(dllName);
+
+  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, "get_proto_plugins");
+
+  const char* error = dlerror();
+  if (error) {
+    throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
+  }
+
+  ProtoPluginLibrary* ppl = getPlugFnc();
+
+  timeModelPtr = ppl->get_time_model(name, args, this, n);
+
+  return timeModelPtr;
+}
+Distribution* SpatialComputer::find_distribution(char* name, Args* args, int n) {
+  Distribution *distributionPtr = NULL;
+  string dllName = "";
+  void* dllhandle;
+  vector<RegLine> distributionVec;
+  vector<RegLine>::iterator it;
+
+  mLibReg.getDistributionList(distributionVec);
+  string darg(name);
+
+  typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
+
+  for (it = distributionVec.begin(); it != distributionVec.end(); it++) {
+    if (darg.compare(it->name) == 0) {
+      dllName = it->libpath;
+    }
+  }
+
+  if (dllName.size() == 0) {
+    throw DllNotFoundException("No matching library in registry for: " + dllName);
+  }
+
+  dllhandle = getDLLHandle(dllName);
+
+  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, "get_proto_plugins");
+
+  const char* error = dlerror();
+  if (error) {
+    throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
+  }
+
+  ProtoPluginLibrary* ppl = getPlugFnc();
+
+  distributionPtr = ppl->get_distribution(name, args, this, n);
+
+  return distributionPtr;
+}
+
+void* SpatialComputer::getDLLHandle(string dllName) {
+  void* dllhandle = NULL;
+  // if dll is not in loaded map, load it
+  if (mLoadedDLLMap.find(dllName) == mLoadedDLLMap.end()) {
+    dllhandle = dlopenext(dllName.c_str(), RTLD_NOW);
+    if (!dllhandle) {
+      throw DllNotFoundException("Could not load dll: " + dllName);
+    }
+    mLoadedDLLMap.insert(pair<string, void*> (dllName, dllhandle));
+  } else // dll is already loaded
+  {
+    dllhandle = mLoadedDLLMap.find(dllName)->second;
+  }
+
+  return dllhandle;
+}
+
+void SpatialComputer::initializePlugins(Args* args, int n) {
+  vector<string> layerArgsVector;
+  vector<string>::iterator sit;
+  string timeModelName;
+  string distributionName;
+  bool moreArgs = true;
+  layer_getter getter;
+  void* dllhandle = NULL;
+  string search = "";
+  fstream fin;
+  Layer *layerPtr = NULL;
+  TimeModel* timeModelPtr = NULL;
+  Distribution* distributionPtr = NULL;
+
+  while (moreArgs) {
+    moreArgs = args->extract_switch("L");
+    if (moreArgs) {
+      string larg = args->pop_next();
+      layerArgsVector.push_back(larg);
+    }
+  }
+
+  if (args->extract_switch("TM")) {
+    timeModelName = args->pop_next();
+  }
+
+  if (args->extract_switch("DD")) {
+    distributionName = args->pop_next();
+  }
+
+  fin.open(SpatialComputer::registryFilePath.c_str(), ios::in | ios::out);
+  if (!fin.is_open()) {
+    throw ifstream::failure("Cannot open registry file.");
+  }
+
+  readRegistry(fin, mLibReg);
+
+  if (layerArgsVector.size() > 0) {
+    for (sit = layerArgsVector.begin(); sit != layerArgsVector.end(); sit++) {
+      const char* name = sit->c_str();
+      layerPtr = find_layer(const_cast<char*> (name), args, n);
+      if (layerPtr) {
+        addLayer(layerPtr);
+      }
+    }
+  }
+
+  timeModelPtr = find_time_model(const_cast<char*> (timeModelName.c_str()), args, n);
+
+  distributionPtr = find_distribution(const_cast<char*> (distributionName.c_str()), args, n);
+
+  if (timeModelPtr) {
+    this->time_model = timeModelPtr;
+  } else {
+    this->time_model = new FixedIntervalTime(args, this);
+  }
+
+  if (distributionPtr) {
+    this->distribution = distributionPtr;
+  } else {
+    Rect *dist_volume = volume->clone();
+    this->distribution = new UniformRandom(n, dist_volume);
+  }
+
+}
+
+void SpatialComputer::readRegistry(fstream& fin, LibRegistry& out) {
+  string registryLine = "";
+  string delimStr = " ";
+  vector<string> segments;
+  LibRegistry libreg;
+
+  if (fin.is_open()) {
+    while (!fin.eof()) {
+      getline(fin, registryLine, '\n');
+
+      // Ignore comment lines and empty lines.
+      if (registryLine.empty() || '#' == registryLine.at(0))
+        continue;
+
+      size_t equalSignIndex = registryLine.find('=');
+
+      if (equalSignIndex == string::npos)
+        continue;
+
+      split(registryLine, delimStr, segments);
+
+      if (segments.size() == 4) {
+        RegLine reg;
+        reg.type = segments[0];
+        reg.name = segments[1];
+        reg.libpath = segments[3];
+
+        if (reg.type == LibRegistry::LAYER) {
+          out.addToLayerList(reg);
+        } else if (reg.type == LibRegistry::TIME_MODEL) {
+          out.addToTimeModelList(reg);
+        } else if (reg.type == LibRegistry::DISTRIBUTION) {
+          out.addToDistributionList(reg);
+        }
+
+        segments.clear();
+      }
+    }
+  }
 
 }
 
