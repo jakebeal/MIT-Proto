@@ -10,10 +10,70 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "spatialcomputer.h"
 #include "visualizer.h"
 
-
 /*****************************************************************************
  *  MISC DEFS                                                                *
  *****************************************************************************/
+
+//note: because the following classes inherit from DeviceTimer,TimeModel, Distribution
+// classes that are defined in this file they have to be here rather than in their own file.
+// Forward declarations of them will not work for inheritance in other files.
+// Classes DeviceTimer, TimeModel, Distribution, and Layer should all be moved to their
+// own class files, so they can be included in other header files.
+
+class FixedTimer2 : public DeviceTimer {
+  SECONDS dt, half_dt, internal_dt, internal_half_dt;
+  flo ratio;
+public:
+  FixedTimer2(flo dt, flo ratio) {
+    this->dt=dt; half_dt=dt/2;
+    internal_dt = dt*ratio; internal_half_dt = dt*ratio/2;
+    this->ratio = ratio;
+  }
+  void next_transmit(SECONDS* d_true, SECONDS* d_internal) {
+    *d_true = half_dt; *d_internal = internal_half_dt;
+  }
+  void next_compute(SECONDS* d_true, SECONDS* d_internal) {
+    *d_true = dt; *d_internal = internal_dt;
+  }
+  DeviceTimer* clone_device() { return new FixedTimer2(dt,internal_dt/dt); }
+  void set_internal_dt(SECONDS dt) {
+    internal_dt = dt;
+    internal_half_dt = dt/2;
+    this->dt = internal_dt/ratio;
+    half_dt = internal_dt/(ratio*2);
+  }
+};
+
+class FixedIntervalTime2 : public TimeModel, public HardwarePatch {
+  BOOL sync;
+  flo dt; flo var;
+  flo ratio; flo rvar;  // ratio is internal/true time
+public:
+  FixedIntervalTime2(Args* args, SpatialComputer* p) {
+    sync = args->extract_switch("-sync");
+    dt = (args->extract_switch("-desired-period"))?args->pop_number():1;
+    var = (args->extract_switch("-desired-period-variance"))
+      ? args->pop_number() : 0;
+    ratio = (args->extract_switch("-desired-ratio"))?args->pop_number():1;
+    rvar = (args->extract_switch("-desired-ratio-variance"))
+      ? args->pop_number() : 0;
+
+    p->hardware.patch(this,SET_DT_FN);
+  }
+
+  DeviceTimer* next_timer(SECONDS* start_lag) {
+    if(sync) { *start_lag=0; return new FixedTimer2(dt,ratio); }
+    *start_lag = urnd(0,dt);
+    flo p = urnd(dt-var,dt+var);
+    flo ip = urnd(ratio-rvar,ratio+rvar);
+    return new FixedTimer2(MAX(0,p),MAX(0,ip));
+  }
+  SECONDS cycle_time() { return dt; }
+  NUM_VAL set_dt (NUM_VAL dt) {
+    ((FixedTimer2*)device->timer)->set_internal_dt(dt);
+    return dt;
+  }
+};
 class UniformRandom2 : public Distribution {
 public:
   UniformRandom2(int n, Rect* volume) : Distribution(n,volume) {}
@@ -524,7 +584,7 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   if (timeModelPtr) {
     this->time_model = timeModelPtr;
   } else {
-    //this->time_model = new FixedIntervalTime(args, this);
+    this->time_model = new FixedIntervalTime2(args, this);
   }
 
   if (distributionPtr) {

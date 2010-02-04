@@ -33,12 +33,15 @@ public:
 
 #endif /* PROTOPLUGINLIBRARY_H_ */
 
-#ifdef __cplusplus /* If this is a C++ compiler, use C linkage */
+
+#ifdef __cplusplus
 
 extern "C" {
 
 ProtoPluginLibrary* get_proto_plugins();
-char* get_proto_plugin_properties();
+const char* get_proto_plugin_properties();
 
 }
 #endif
+
+
