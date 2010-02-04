@@ -49,7 +49,7 @@
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="." executable="${shellpath}" failonerror="true" >
             <arg line="./configure" />
-            <arg line="--prefix=${installdir}/install" />
+            <arg line="--prefix=${installdir}/protoinstall" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
    </target>
