@@ -18,8 +18,14 @@ libsim_la_SOURCES = \
 	wormhole-radio.cpp \
 	multiradio.cpp \
 	LibRegistry.cpp \
-        Distribution.cpp \
-        XGrid.cpp
+	Distribution.cpp \
+	XGrid.cpp \
+	UniformRandom.cpp \
+	FixedPoint.cpp \
+	Grid.cpp \
+	GridRandom.cpp \
+	Cylinder.cpp \
+	Torus.cpp 
 
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS =
@@ -39,9 +45,14 @@ pkginclude_HEADERS = \
 	multiradio.h \
 	LibRegistry.h \
 	ProtoPluginLibrary.h \
-        Distribution.h \
-        XGrid.h
-
+	Distribution.h \
+	XGrid.h \
+	UniformRandom.h \
+	FixedPoint.h \
+	Grid.h \
+	GridRandom.h \
+	Cylinder.h \
+	Torus.h
 
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \

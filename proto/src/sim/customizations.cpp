@@ -25,138 +25,17 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "multiradio.h"
 #include "Distribution.h"
 #include "XGrid.h"
+#include "UniformRandom.h"
+#include "FixedPoint.h"
+#include "Grid.h"
+#include "GridRandom.h"
+#include "Cylinder.h"
+#include "Torus.h"
 /*****************************************************************************
  *  DEVICE DISTRIBUTIONS                                                     *
  *****************************************************************************/
-class UniformRandom : public Distribution {
-public:
-  UniformRandom(int n, Rect* volume) : Distribution(n,volume) {}
-  virtual BOOL next_location(METERS *loc) {
-    loc[0] = urnd(volume->l,volume->r);
-    loc[1] = urnd(volume->b,volume->t);
-    if(volume->dimensions()==3) {
-      Rect3* r = (Rect3*)volume;
-      loc[2] = urnd(r->f,r->c);
-    } else loc[2]=0;
-    return TRUE;
-  }
-};
 
-
-
-class FixedPoint : public UniformRandom {
-public:
-  int fixed; int n_fixes;
-  Population fixes;
-  FixedPoint(Args* args, int n, Rect* volume) : UniformRandom(n,volume) {
-    fixed=0; n_fixes=0;
-    do {
-      n_fixes++;
-      METERS* loc = (METERS*)calloc(3,sizeof(METERS));
-      loc[0]=args->pop_number(); loc[1]=args->pop_number();
-      loc[2]= (str_is_number(args->peek_next()) ? args->pop_number() : 0);
-      fixes.add(loc);
-    } while(args->extract_switch("-fixedpt",FALSE));
-  }
-  virtual ~FixedPoint() {
-    for(int i=0;i<n_fixes;i++) { free(fixes.get(i)); }
-  }
-  BOOL next_location(METERS *loc) {
-    if(fixed<n_fixes) {
-      METERS* src = (METERS*)fixes.get(fixed);
-      for(int i=0;i<3;i++) loc[i]=src[i];
-      fixed++;
-      return TRUE;
-    } else {
-      return UniformRandom::next_location(loc);
-    }
-  }
-};
-
-class Grid : public Distribution {
-public:
-  int rows,columns,layers;
-  int i;
-  Grid(int n, Rect* volume) : Distribution(n,volume) {
-    i=0;
-    if(volume->dimensions()==3) {
-      layers = (int)ceil(pow(n*depth*depth/(width*height), 1.0/3.0));
-      rows = (int)ceil(layers*width/depth);
-      columns = (int)ceil(n/rows/layers);
-    } else {
-      rows = (int)ceil(sqrt(n)*sqrt(width/height));
-      columns = (int)ceil(n/rows);
-      layers = 1;
-    }
-  }
-  BOOL next_location(METERS *loc) {
-    int l = (i%layers), r = (i/layers)%rows, c = (i/(layers*rows));
-    loc[0] = volume->l + c*width/columns;
-    loc[1] = volume->b + r*height/rows;
-    loc[2] = (volume->dimensions()==3)?(((Rect3*)volume)->f+l*depth/layers):0;
-    i++;
-    return TRUE;
-  }
-};
-
-class GridRandom : public Grid {
-public:
-  METERS epsilon;
-  GridRandom(Args* args, int n, Rect* volume) : Grid(n,volume) {
-    epsilon = args->pop_number();
-  }
-  BOOL next_location(METERS *loc) {
-    Grid::next_location(loc);
-    loc[0] += epsilon*((rand()%1000/1000.0) - 0.5);
-    loc[1] += epsilon*((rand()%1000/1000.0) - 0.5);
-    if(volume->dimensions()==3) loc[2] += epsilon*((rand()%1000/1000.0) - 0.5);
-    i++;
-    return TRUE;
-  }
-};
-
-class Cylinder : public Distribution {
-public:
-  METERS r;
-  Cylinder(int n, Rect* volume) : Distribution(n,volume) {
-    r = height / 2;
-  }
-  BOOL next_location(METERS *loc) {
-    loc[0] = urnd(volume->l,volume->r);
-    flo theta = urnd(0, 2 * 3.14159);
-    loc[1] = r * sin(theta);
-    loc[2] = r * cos(theta);
-    return TRUE;
-  }
-};
-
-const flo TWO_PI = 2 * M_PI;
-
-class Torus : public Distribution {
-public:
-  METERS r, r_inner;
-  Torus(Args* args, int n, Rect *volume) : Distribution(n, volume) {
-    METERS outer = MIN(width, height) / 2;
-    flo ratio = (str_is_number(args->peek_next()) ? args->pop_number() : 0.75);
-    r = ratio * outer;
-    r_inner = outer - r;
-  }
-  
-  BOOL next_location(METERS *loc) {
-    flo theta = urnd(0, TWO_PI);
-    if(volume->dimensions() == 3) {
-      flo phi = urnd(0, TWO_PI);
-      flo rad = urnd(0, r_inner);
-      loc[0] = (r + rad * cos(phi)) * cos(theta);
-      loc[1] = (r + rad * cos(phi)) * sin(theta);
-      loc[2] = rad * sin(phi);
-    } else {
-      flo rad = r + urnd(-r_inner, r_inner);
-      loc[0] = rad * cos(theta);
-      loc[1] = rad * sin(theta);
-    }
-  }
-};
+// refactored to their respective cpp files
 
 /*****************************************************************************
  *  CHOICE OF DISTRIBUTION                                                   *
