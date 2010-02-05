@@ -24,6 +24,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "wormhole-radio.h"
 #include "multiradio.h"
 #include "Distribution.h"
+#include "XGrid.h"
 /*****************************************************************************
  *  DEVICE DISTRIBUTIONS                                                     *
  *****************************************************************************/
@@ -41,32 +42,7 @@ public:
   }
 };
 
-// Y is random
-class XGrid : public Distribution {
-public:
-  int rows,columns,layers;
-  int i;
-  XGrid(int n, Rect* volume) : Distribution(n,volume) {
-    i=0;
-    if(volume->dimensions()==3) {
-      layers = (int)ceil(pow(n*depth*depth/(width*height), 1.0/3.0));
-      rows = (int)ceil(layers*width/depth);
-      columns = (int)ceil(n/rows/layers);
-    } else {
-      rows = (int)ceil(sqrt(n)*sqrt(width/height));
-      columns = (int)ceil(n/rows);
-      layers = 1;
-    }
-  }
-  BOOL next_location(METERS *loc) {
-    int l = (i%layers), r = (i/layers)%rows, c = (i/(layers*rows));
-    loc[0] = volume->l + c*width/columns;
-    loc[1] = urnd(volume->b,volume->t);
-    loc[2] = (volume->dimensions()==3)?(((Rect3*)volume)->f+l*depth/layers):0;
-    i++;
-    return TRUE;
-  }
-};
+
 
 class FixedPoint : public UniformRandom {
 public:
