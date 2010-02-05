@@ -23,7 +23,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "unitdiscradio.h"
 #include "wormhole-radio.h"
 #include "multiradio.h"
-
+#include "Distribution.h"
 /*****************************************************************************
  *  DEVICE DISTRIBUTIONS                                                     *
  *****************************************************************************/

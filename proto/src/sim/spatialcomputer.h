@@ -48,21 +48,6 @@ class TimeModel {
   virtual SECONDS cycle_time()=0;
 };
 
-// To create an initial distribution, we must know:
-// - # nodes, volume they occupy, distribution type, any dist-specific args
-class Distribution {
- public:
-  int n; Rect *volume;
-  METERS width, height, depth; // bounding box of volume occupied
-  Distribution(int n, Rect *volume) { // subclasses often take an Args* too
-    this->n=n; this->volume=volume; 
-    width = volume->r-volume->l; height = volume->t-volume->b; depth=0;
-    if(volume->dimensions()==3) depth=((Rect3*)volume)->c-((Rect3*)volume)->f;
-  }
-  // puts location in *loc and returns whether a device should be made
-  virtual BOOL next_location(METERS *loc) { return FALSE; } // loc is a 3-vec
-};
-
 
 /*****************************************************************************
  *  DYNAMICS                                                                 *

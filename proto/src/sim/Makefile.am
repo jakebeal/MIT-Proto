@@ -17,7 +17,8 @@ libsim_la_SOURCES = \
 	radio.cpp \
 	wormhole-radio.cpp \
 	multiradio.cpp \
-	LibRegistry.cpp 
+	LibRegistry.cpp \
+        Distribution.cpp
 
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS =
@@ -36,7 +37,8 @@ pkginclude_HEADERS = \
 	wormhole-radio.h \
 	multiradio.h \
 	LibRegistry.h \
-	ProtoPluginLibrary.h
+	ProtoPluginLibrary.h \
+        Distribution.h
 
 
 simplatdir=$(protoplatdir)/sim
