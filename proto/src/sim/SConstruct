@@ -1,7 +1,7 @@
-include_dirs = Split('. ../shared')
+include_dirs = Split('. ../shared ../kernel')
 
 #libs = Split('xerces-c cv')
 
-source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp')
+source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
 #StaticLibrary(source = source_files, CPPPATH = include_dirs)
 SharedLibrary('distributions', source = source_files, CPPPATH = include_dirs)
