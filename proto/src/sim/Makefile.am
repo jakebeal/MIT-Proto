@@ -25,7 +25,8 @@ libsim_la_SOURCES = \
 	Grid.cpp \
 	GridRandom.cpp \
 	Cylinder.cpp \
-	Torus.cpp 
+	Torus.cpp \
+	SimpleLifeCycle.cpp    
 
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS =
@@ -52,7 +53,8 @@ pkginclude_HEADERS = \
 	Grid.h \
 	GridRandom.h \
 	Cylinder.h \
-	Torus.h
+	Torus.h \
+	SimpleLifeCycle.h 
 
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \

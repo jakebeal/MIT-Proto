@@ -31,6 +31,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "GridRandom.h"
 #include "Cylinder.h"
 #include "Torus.h"
+#include "SimpleLifeCycle.h"
 /*****************************************************************************
  *  DEVICE DISTRIBUTIONS                                                     *
  *****************************************************************************/

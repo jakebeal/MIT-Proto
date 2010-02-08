@@ -1,7 +1,9 @@
 include_dirs = Split('. ../shared ../kernel')
 
-#libs = Split('xerces-c cv')
+# shared library for distributions
+distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
+SharedLibrary('distributions', source = distributions_source_files, CPPPATH = include_dirs)
 
-source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
-#StaticLibrary(source = source_files, CPPPATH = include_dirs)
-SharedLibrary('distributions', source = source_files, CPPPATH = include_dirs)
+# shared library for SimpleLifeCycle plugin
+simple_life_cycle_layer_source_files = Split('SimpleLifeCycle.cpp')
+SharedLibrary('simple-life-cycle', source = simple_life_cycle_layer_source_files, CPPPATH = include_dirs)
