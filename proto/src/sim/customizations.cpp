@@ -32,6 +32,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "Cylinder.h"
 #include "Torus.h"
 #include "SimpleLifeCycle.h"
+#include "Mica2Mote.h"
 /*****************************************************************************
  *  DEVICE DISTRIBUTIONS                                                     *
  *****************************************************************************/

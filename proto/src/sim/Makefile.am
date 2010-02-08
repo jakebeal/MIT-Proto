@@ -26,7 +26,8 @@ libsim_la_SOURCES = \
 	GridRandom.cpp \
 	Cylinder.cpp \
 	Torus.cpp \
-	SimpleLifeCycle.cpp    
+	SimpleLifeCycle.cpp \
+	Mica2Mote.cpp
 
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS =
@@ -54,8 +55,9 @@ pkginclude_HEADERS = \
 	GridRandom.h \
 	Cylinder.h \
 	Torus.h \
-	SimpleLifeCycle.h 
-
+	SimpleLifeCycle.h \
+	Mica2Mote.h
+    
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \
 	platform_ops.h \

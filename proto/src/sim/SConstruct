@@ -7,3 +7,7 @@ SharedLibrary('distributions', source = distributions_source_files, CPPPATH = in
 # shared library for SimpleLifeCycle plugin
 simple_life_cycle_layer_source_files = Split('SimpleLifeCycle.cpp')
 SharedLibrary('simple-life-cycle', source = simple_life_cycle_layer_source_files, CPPPATH = include_dirs)
+
+# shared library for Mica2Motes plugin
+mica2mote_layer_source_files = Split('Mica2Mote.cpp')
+SharedLibrary('mica2mote', source = mica2mote_layer_source_files, CPPPATH = include_dirs)
