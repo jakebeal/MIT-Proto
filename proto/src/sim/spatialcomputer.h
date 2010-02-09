@@ -23,6 +23,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "scheduler.h"
 #include "LibRegistry.h"
 #include "ProtoPluginLibrary.h"
+#include "UniformRandom.h"
 //#include "TimeModels.h"
 
 

@@ -74,19 +74,6 @@ public:
     return dt;
   }
 };
-class UniformRandom2 : public Distribution {
-public:
-  UniformRandom2(int n, Rect* volume) : Distribution(n,volume) {}
-  virtual BOOL next_location(METERS *loc) {
-    loc[0] = urnd(volume->l,volume->r);
-    loc[1] = urnd(volume->b,volume->t);
-    if(volume->dimensions()==3) {
-      Rect3* r = (Rect3*)volume;
-      loc[2] = urnd(r->f,r->c);
-    } else loc[2]=0;
-    return TRUE;
-  }
-};
 
 Layer::Layer(SpatialComputer* p) {
   parent = p;
@@ -591,7 +578,7 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
     this->distribution = distributionPtr;
   } else {
     Rect *dist_volume = volume->clone();
-    this->distribution = new UniformRandom2(n, dist_volume);
+    this->distribution = new UniformRandom(n, dist_volume);
   }
 
 }
