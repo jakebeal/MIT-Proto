@@ -221,7 +221,7 @@ void SpatialComputer::choose_layers(Args* args, int n) {
 
   addLayer(new DebugLayer(args,this));
   addLayer(new SimpleLifeCycle(args,this));
-  addLayer(new PerfectLocalizer(this));
+  addLayer(new PerfectLocalizer(this)); // Default
 
   // other layers
   if(args->extract_switch("-mote-io")) addLayer(new MoteIO(args,this));
@@ -246,7 +246,7 @@ void SpatialComputer::choose_layers(Args* args, int n) {
         addLayer(w); r->add_radio(w);
       }
 
-      UnitDiscRadio *d = new UnitDiscRadio(args, this, n);
+      UnitDiscRadio *d = new UnitDiscRadio(args, this, n); // Default
       addLayer(d); r->add_radio(d);
 
     } else if(args->extract_switch("-wormholes")) {
@@ -258,7 +258,7 @@ void SpatialComputer::choose_layers(Args* args, int n) {
 
 
   if(!(layer_mask & LAYER_PHYSICS)) {
-    physics = new SimpleDynamics(args,this,n);
+    physics = new SimpleDynamics(args,this,n); // Default
   }
 
 
