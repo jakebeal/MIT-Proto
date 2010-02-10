@@ -23,7 +23,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 using namespace std; // allow c-strings, etc; note: shadows 'pair'
 
-int is_optimizing_lets = 1;
+int is_optimizing_lets = 0; // off due to bugs
 
 Path* proto_path;
 string srcdir;
