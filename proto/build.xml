@@ -38,6 +38,7 @@
    <target name="autogen">
      <echo>Running autogen.sh.....</echo>
      <record name="AutogenLog.txt" action="start" />
+        <echo>${os.name}</echo>
         <exec dir="." executable="${shellpath}" failonerror="true" >
            <arg line="./autogen.sh" />
         </exec>
