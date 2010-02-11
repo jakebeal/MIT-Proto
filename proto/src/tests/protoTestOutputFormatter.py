@@ -112,7 +112,7 @@ class ResultFileObject:
         if ((sys.platform.startswith("linux")) or (sys.platform.startswith("darwin"))):
             directory = "xml/"  # this is for linux and OS X
         else:
-            directory = "/xml/"  # this is for Windows
+            directory = "xml/"  # this is for Windows
         fileName = directory + self.testSuite.name + ".xml"
         #self.elementTree.write(sys.stdout,"UTF-8")
         self.elementTree.write(fileName,"UTF-8")
