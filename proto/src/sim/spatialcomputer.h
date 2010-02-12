@@ -21,8 +21,13 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h"
 #include "proto_platform.h"
 #include "scheduler.h"
+#include "Distribution.h"
 #include "LibRegistry.h"
 #include "ProtoPluginLibrary.h"
+#include "UniformRandom.h"
+#include "DeviceTimer.h"
+#include "TimeModel.h"
+#include "customizations.h"
 
 // prototype classes
 class Device; class SpatialComputer;
@@ -33,6 +38,7 @@ class DllNotFoundException;
  *  TIME AND SPACE DISTRIBUTIONS                                             *
  *****************************************************************************/
 // a bit of state attached to a device to say how its time advances
+/*
 class DeviceTimer {
  public:  // both of these report delay from the current compute time
   virtual void next_transmit(SECONDS* d_true, SECONDS* d_internal)=0;
@@ -46,7 +52,7 @@ class TimeModel {
   virtual SECONDS cycle_time()=0;
 };
 
-
+*/
 /*****************************************************************************
  *  DYNAMICS                                                                 *
  *****************************************************************************/

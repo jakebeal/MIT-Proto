@@ -56,7 +56,9 @@ pkginclude_HEADERS = \
 	Cylinder.h \
 	Torus.h \
 	SimpleLifeCycle.h \
-	Mica2Mote.h
+	Mica2Mote.h \
+	DeviceTimer.h \
+	TimeModel.h
     
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \

@@ -12,7 +12,7 @@
 
 using namespace std;
 
-typedef struct RegLine
+struct RegLine
 {
 	string type;
 	string name;
