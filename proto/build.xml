@@ -28,15 +28,16 @@
 
    <target name="setMacProperties" if="isMacOSX">
      <echo>This is a Mac OS X machine.</echo>
-     <property file="mac.properties" />
+     <property name="propFileName" value="mac" />
    </target>
 
    <target name="setLinuxProperties" if="isLinux" >
      <echo>This is a Linux machine.</echo>
-     <property file="linux.properties" />
+     <property name="propFileName" value="linux" />
    </target>
 
    <target name="build" depends="init,autogen,configure">
+     <property file="${propFileName}.properties" />
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
         <exec dir="." executable="${makepath}" failonerror="true" >
@@ -46,6 +47,7 @@
    </target>
 
    <target name="init">
+     <property file="${propFileName}.properties" />
      <tstamp><format property="TSTAMP" pattern="HHmm" /></tstamp>
      <condition property="time.midnight">
        <and>
@@ -61,11 +63,13 @@
    </target>
 
    <target name="autogen">
+     <property file="${propFileName}.properties" />
      <echo>Running autogen.sh.....</echo>
      <record name="AutogenLog.txt" action="start" />
         <echo>${os.name}</echo>
         <echo>${isLinux}</echo>
         <echo>${isMacOSX}</echo>
+        <echo>${propFileName}</echo>
         <exec dir="." executable="${shellpath}" failonerror="true" >
            <arg line="./autogen.sh" />
         </exec>
@@ -73,6 +77,7 @@
    </target>
 
    <target name="configure" >
+     <property file="${propFileName}.properties" />
      <echo>Running configure.....</echo>
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="." executable="${shellpath}" failonerror="true" >
@@ -83,6 +88,7 @@
    </target>
 
    <target name="clean" >
+     <property file="${propFileName}.properties" />
      <echo>Starting make clean...</echo>
      <exec dir="." executable="${makepath}" failonerror="true" >
         <arg line="clean" />
@@ -90,6 +96,7 @@
    </target>
 
    <target name="test"  if="time.midnight" >
+     <property file="${propFileName}.properties" />
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
      <exec dir="./src/tests" executable="${pythonpath}" >
@@ -110,6 +117,7 @@
    </target>   
 
    <target name="install"  >
+     <property file="${propFileName}.properties" />
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
      <exec dir="." executable="${makepath}" failonerror="true">
@@ -119,6 +127,7 @@
    </target>
 
    <target name="uninstall" >
+      <property file="${propFileName}.properties" />
       <echo>Starting uninstall..</echo>
       <record name="MakeUninstallLog.txt" action="start" />
       <exec dir="." executable="${makepath}" failonerror="true">
