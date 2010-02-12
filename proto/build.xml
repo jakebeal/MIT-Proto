@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
-<project default="main">
+<project default="checkOS">
 
    <!-- this setting will override the setting of time.midnight in init 
    target so that every build will run tests -->
    <property name="time.midnight" value="true" />
    <property environment="env" />
 
-   <target name="main" depends="checkOS,init,autogen,configure,build,install,test,uninstall">
+   <target name="main" depends="init,autogen,configure,build,install,test,uninstall">
      <echo>Starting Ant main target...</echo>
    </target>
    
@@ -28,16 +28,20 @@
 
    <target name="setMacProperties" if="isMacOSX">
      <echo>This is a Mac OS X machine.</echo>
-     <property name="propFileName" value="mac" />
+     <antcall target="main" >
+       <param name="propFileName" value="mac.properties" />
+     </antcall>
    </target>
 
    <target name="setLinuxProperties" if="isLinux" >
      <echo>This is a Linux machine.</echo>
-     <property name="propFileName" value="linux" />
+     <antcall target="main" >
+       <param name="propfileName" value="linux.properties" />
+     </antcall>
    </target>
 
    <target name="build" depends="init,autogen,configure">
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
         <exec dir="." executable="${makepath}" failonerror="true" >
@@ -47,7 +51,7 @@
    </target>
 
    <target name="init">
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <tstamp><format property="TSTAMP" pattern="HHmm" /></tstamp>
      <condition property="time.midnight">
        <and>
@@ -63,7 +67,7 @@
    </target>
 
    <target name="autogen">
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <echo>Running autogen.sh.....</echo>
      <record name="AutogenLog.txt" action="start" />
         <echo>${os.name}</echo>
@@ -77,7 +81,7 @@
    </target>
 
    <target name="configure" >
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <echo>Running configure.....</echo>
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="." executable="${shellpath}" failonerror="true" >
@@ -88,7 +92,7 @@
    </target>
 
    <target name="clean" >
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <echo>Starting make clean...</echo>
      <exec dir="." executable="${makepath}" failonerror="true" >
         <arg line="clean" />
@@ -96,7 +100,7 @@
    </target>
 
    <target name="test"  if="time.midnight" >
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
      <exec dir="./src/tests" executable="${pythonpath}" >
@@ -117,7 +121,7 @@
    </target>   
 
    <target name="install"  >
-     <property file="${propFileName}.properties" />
+     <property file="${propFileName}" />
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
      <exec dir="." executable="${makepath}" failonerror="true">
@@ -127,7 +131,7 @@
    </target>
 
    <target name="uninstall" >
-      <property file="${propFileName}.properties" />
+      <property file="${propFileName}" />
       <echo>Starting uninstall..</echo>
       <record name="MakeUninstallLog.txt" action="start" />
       <exec dir="." executable="${makepath}" failonerror="true">
