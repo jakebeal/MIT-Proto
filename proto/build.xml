@@ -34,6 +34,7 @@
 
    <target name="setMacProperties" if="isMacOSX">
      <echo>This is a Mac OS X machine.</echo>
+     <echo>${os.name}.properties</echo>
    </target>
 
    <target name="setLinuxProperties" if="isLinux" >
