@@ -11,37 +11,6 @@
      <echo>Starting Ant main target...</echo>
    </target>
    
-   <target name="checkOS" >
-     <condition property="isLinux">
-       <and>
-         <os family="unix" />
-         <not>
-           <contains string="${os.name}" substring="Mac" />
-         </not>
-       </and>
-     </condition>
-     <condition property="isMacOSX">
-       <contains string="${os.name}" substring="Mac" />
-     </condition>
-     <condition property="propFileName" value="linux.properties">
-       <isset property="${isLinux}" />
-     </condition>
-     <condition property="propFileName" value="mac.properties">
-       <isset property="${isMacOSX}" />
-     </condition>
-     <antcall target="setMacProperties" />
-     <antcall target="setLinuxProperties" />
-   </target>
-
-   <target name="setMacProperties" if="isMacOSX">
-     <echo>This is a Mac OS X machine.</echo>
-     <echo>${os.name}.properties</echo>
-   </target>
-
-   <target name="setLinuxProperties" if="isLinux" >
-     <echo>This is a Linux machine.</echo>
-   </target>
-
    <target name="build" depends="init,autogen,configure">
      <property file="${propFileName}" />
      <echo> Running make.......</echo>
