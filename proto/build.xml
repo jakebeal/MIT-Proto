@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
-<project default="checkOS">
+<project default="main">
 
    <!-- this setting will override the setting of time.midnight in init 
    target so that every build will run tests -->
    <property name="time.midnight" value="true" />
    <property environment="env" />
 
-   <target name="main" depends="init,autogen,configure,build,install,test,uninstall">
+   <target name="main" depends="checkOS,init,autogen,configure,build,install,test,uninstall">
      <echo>Starting Ant main target...</echo>
    </target>
    
@@ -22,22 +22,22 @@
      <condition property="isMacOSX">
        <contains string="${os.name}" substring="Mac" />
      </condition>
+     <condition property="propFileName" value="linux.properties">
+       <isset property="${isLinux}" />
+     </condition>
+     <condition property="propFileName" value="mac.properties">
+       <issset property="${isMacOSX}" />
+     </condition>
      <antcall target="setMacProperties" />
      <antcall target="setLinuxProperties" />
    </target>
 
    <target name="setMacProperties" if="isMacOSX">
      <echo>This is a Mac OS X machine.</echo>
-     <antcall target="main" >
-       <param name="propFileName" value="mac.properties" />
-     </antcall>
    </target>
 
    <target name="setLinuxProperties" if="isLinux" >
      <echo>This is a Linux machine.</echo>
-     <antcall target="main" >
-       <param name="propfileName" value="linux.properties" />
-     </antcall>
    </target>
 
    <target name="build" depends="init,autogen,configure">
