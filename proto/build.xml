@@ -26,7 +26,7 @@
        <isset property="${isLinux}" />
      </condition>
      <condition property="propFileName" value="mac.properties">
-       <issset property="${isMacOSX}" />
+       <isset property="${isMacOSX}" />
      </condition>
      <antcall target="setMacProperties" />
      <antcall target="setLinuxProperties" />
