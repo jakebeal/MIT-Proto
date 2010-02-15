@@ -1534,8 +1534,8 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 	int off = NXT_OP(m);
 	m->pc += off; break; }
       case JMP_16_OP: {
-	m->pc += NXT_OP16(m);
-	break; }
+	int off = NXT_OP16(m);
+	m->pc += off; break; }
       case RET_OP: {
 	POP(res);
 	m->pc = FUN_POP();
