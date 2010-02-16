@@ -9,6 +9,7 @@
 #define	_MICA2MOTE_H
 
 #include "spatialcomputer.h"
+#include "ProtoPluginLibrary.h"
 
 /*****************************************************************************
  *  TESTBED MOTE IO                                                          *

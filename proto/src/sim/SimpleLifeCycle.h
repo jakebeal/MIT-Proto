@@ -9,6 +9,7 @@
 #define	_SIMPLELIFECYCLE_H
 
 #include "spatialcomputer.h"
+#include "ProtoPluginLibrary.h"
 
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *

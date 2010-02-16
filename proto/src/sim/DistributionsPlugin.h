@@ -9,8 +9,11 @@
 #define	_DISTRIBUTIONSPLUGIN_H
 
 #include "ProtoPluginLibrary.h"
+#include <vector>
+using namespace std;
 
-class DistributionsPlugin : public ProtoPluginLibrary {
+class DistributionsPlugin : public ProtoPluginLibrary
+{
 private:
     static vector<string> knownDistributions;
 public:

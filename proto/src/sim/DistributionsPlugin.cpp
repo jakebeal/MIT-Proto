@@ -5,6 +5,8 @@
  * Created on February 5, 2010, 6:47 PM
  */
 
+#include <string>
+using namespace std;
 #include "DistributionsPlugin.h"
 #include "XGrid.h"
 #include "FixedPoint.h"
@@ -12,9 +14,16 @@
 #include "GridRandom.h"
 #include "Cylinder.h"
 #include "Torus.h"
+#include "spatialcomputer.h"
+
 DistributionsPlugin::DistributionsPlugin()
 {
-    knownDistributions.push_back("grideps");
+    knownDistributions.push_back(string("grideps"));
+    knownDistributions.push_back(string("grid"));
+    knownDistributions.push_back(string("xgrid"));
+    knownDistributions.push_back(string("fixedpt"));
+    knownDistributions.push_back(string("cylinder"));
+    knownDistributions.push_back(string("torus"));
 }
 Distribution* DistributionsPlugin::get_distribution(char* name, 
                                                     Args* args,
@@ -56,5 +65,21 @@ Distribution* DistributionsPlugin::get_distribution(char* name,
   // I don't have a distribution that you asked for. Caller must create default(random) distribution.
       return NULL;
 }
+
+//#ifdef __cplusplus
+//
+//extern "C" {
+//
+//ProtoPluginLibrary* get_proto_plugins()
+//{
+//
+//}
+//const char* get_proto_plugin_properties()
+//{
+//
+//}
+//
+//}
+//#endif
 
 

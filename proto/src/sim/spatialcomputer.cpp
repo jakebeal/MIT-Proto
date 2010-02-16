@@ -9,7 +9,9 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "spatialcomputer.h"
 #include "visualizer.h"
-
+#include "ProtoPluginLibrary.h"
+#include "customizations.h"
+#include "UniformRandom.h"
 /*****************************************************************************
  *  MISC DEFS                                                                *
  *****************************************************************************/
