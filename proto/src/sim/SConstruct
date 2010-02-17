@@ -1,8 +1,10 @@
 include_dirs = Split('. ../ ../shared ../kernel')
 
 # shared library for distributions
+libs = Split('sim shared')
+lib_dirs = Split('./.libs ../shared/.libs ')
 distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
-SharedLibrary('distributions', source = distributions_source_files, CPPPATH = include_dirs)
+SharedLibrary('distributions', source = distributions_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
 
 # shared library for SimpleLifeCycle plugin
 simple_life_cycle_layer_source_files = Split('SimpleLifeCycle.cpp')
@@ -12,6 +14,6 @@ SharedLibrary('simple-life-cycle', source = simple_life_cycle_layer_source_files
 mica2mote_layer_source_files = Split('Mica2Mote.cpp')
 SharedLibrary('mica2mote', source = mica2mote_layer_source_files, CPPPATH = include_dirs)
 
-# shared library for Mica2Motes plugin
+# shared library for radio plugin
 radio_models_layer_source_files = Split('RadioModelsPlugin.cpp wormhole-radio.cpp multiradio.cpp')
 SharedLibrary('radiomodels', source = radio_models_layer_source_files, CPPPATH = include_dirs)

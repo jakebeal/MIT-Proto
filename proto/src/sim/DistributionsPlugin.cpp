@@ -6,6 +6,7 @@
  */
 
 #include <string>
+#include <sstream>
 using namespace std;
 #include "DistributionsPlugin.h"
 #include "XGrid.h"
@@ -15,6 +16,8 @@ using namespace std;
 #include "Cylinder.h"
 #include "Torus.h"
 #include "spatialcomputer.h"
+
+
 
 DistributionsPlugin::DistributionsPlugin()
 {
@@ -66,20 +69,35 @@ Distribution* DistributionsPlugin::get_distribution(char* name,
       return NULL;
 }
 
-//#ifdef __cplusplus
-//
-//extern "C" {
-//
-//ProtoPluginLibrary* get_proto_plugins()
-//{
-//
-//}
-//const char* get_proto_plugin_properties()
-//{
-//
-//}
-//
-//}
-//#endif
+string DistributionsPlugin::getProperties()
+{
+    DistributionsPlugin d;
+    stringstream ss;
+    for(int i = 0; i < d.knownDistributions.size(); i++)
+    {
+        ss << "Distribution " << d.knownDistributions[i] << " = distributions" << endl;
+    }
+    
+    return ss.str();
+}
+
+#ifdef __cplusplus
+
+extern "C" {
+
+ProtoPluginLibrary* get_proto_plugins()
+{
+    return new DistributionsPlugin();
+}
+const char* get_proto_plugin_properties()
+{
+    string propS = DistributionsPlugin::getProperties();
+    char *props = new char[propS.size() + 1];
+    props[propS.size()] = '\0';
+    return props;
+}
+
+}
+#endif
 
 
