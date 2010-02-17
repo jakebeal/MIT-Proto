@@ -42,21 +42,7 @@ BOOL evolution_lagging = FALSE; // is the simulator keeping up or not?
 double fps=1.0; // frames-per-second measurement
 BOOL show_time=FALSE;
 
-// obtains the time in seconds (in a system-dependent manner)
-#ifdef __WIN32__
-#include <windows.h>
-double get_real_secs () {
-  DWORD tv = timeGetTime();
-  return (double)(tv / 1000.0);
-}
-#else
-#include <sys/time.h>
-double get_real_secs () { 
-  struct timeval t;
-  gettimeofday(&t, NULL);
-  return (double)(t.tv_sec + t.tv_usec / 1000000.0);
-}
-#endif
+
 
 // evolve all top-level items
 void advance_time() {

@@ -222,4 +222,17 @@ void Population::resize_pop(int new_cap) {
   if(store==NULL) uerror("Population fails to reallocate!");
   capacity=new_cap;
 }
-
+#ifdef __WIN32__
+#include <windows.h>
+double get_real_secs () {
+  DWORD tv = timeGetTime();
+  return (double)(tv / 1000.0);
+}
+#else
+#include <sys/time.h>
+double get_real_secs () {
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  return (double)(t.tv_sec + t.tv_usec / 1000000.0);
+}
+#endif

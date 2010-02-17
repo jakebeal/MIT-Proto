@@ -199,4 +199,8 @@ public:
   virtual BOOL evolve(SECONDS limit) {} // return whether state changed
 };
 
+// obtains the time in seconds (in a system-dependent manner)
+double get_real_secs ();
+
+
 #endif // __UTILS__
