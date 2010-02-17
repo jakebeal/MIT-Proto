@@ -1,5 +1,5 @@
 include_dirs = Split('. ../ ../shared ../kernel')
-libs = Split('sim kernel compiler shared')
+libs = Split('sim kernel compiler shared dl')
 lib_dirs = Split('./.libs ../shared/.libs ../kernel/.libs ../compiler/.libs')
 
 # shared library for distributions
@@ -18,3 +18,7 @@ SharedLibrary('mica2mote', source = mica2mote_layer_source_files, CPPPATH = incl
 # shared library for radio plugin
 radio_models_layer_source_files = Split('RadioModelsPlugin.cpp wormhole-radio.cpp multiradio.cpp')
 SharedLibrary('radiomodels', source = radio_models_layer_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
+
+registry_source_files = Split('createRegistry.cpp')
+registry_libs = Split('dl')
+Program(source = registry_source_files, LIBS = registry_libs)
