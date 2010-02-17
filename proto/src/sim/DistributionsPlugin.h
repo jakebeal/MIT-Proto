@@ -12,6 +12,8 @@
 #include <vector>
 using namespace std;
 
+#define DISTRIBUTIONS_DLL_NAME "distributions"
+
 class DistributionsPlugin : public ProtoPluginLibrary
 {
 private:

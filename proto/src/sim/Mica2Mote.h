@@ -11,6 +11,8 @@
 #include "spatialcomputer.h"
 #include "ProtoPluginLibrary.h"
 
+#define MICA2MOTE_NAME "mote-io"
+#define MICA2MOTE_DLL_NAME "mica2mote"
 /*****************************************************************************
  *  TESTBED MOTE IO                                                          *
  *****************************************************************************/
@@ -50,7 +52,7 @@ private:
 public:
     Mica2MotePlugin();
     Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
-	
+    static string getProperties();
 };
 
 #endif	/* _MICA2MOTE_H */

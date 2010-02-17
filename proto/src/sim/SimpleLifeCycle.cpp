@@ -6,6 +6,8 @@
  */
 
 #include "SimpleLifeCycle.h"
+#include <sstream>
+using namespace std;
 
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *
@@ -88,7 +90,7 @@ BOOL SimpleLifeCycleDevice::handle_key(KeyEvent* key) {
 // Layer implementation
 SimpleLifeCyclePlugin::SimpleLifeCyclePlugin()
 {
-    layerName = "simple-life-cycle";
+    layerName = SIMPLE_LIFE_CYCLE_NAME;
 }
 
 Layer* SimpleLifeCyclePlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, int n)
@@ -99,4 +101,30 @@ Layer* SimpleLifeCyclePlugin::get_layer(char* name, Args* args,SpatialComputer* 
     }
     return NULL;
 }
+
+string SimpleLifeCyclePlugin::getProperties()
+{
+    stringstream ss;
+    ss << "Layer " << SIMPLE_LIFE_CYCLE_NAME << " = " << SIMPLE_LIFE_CYCLE_DLL_NAME << endl;
+    return ss.str();
+}
+
+#ifdef __cplusplus
+
+extern "C" {
+
+ProtoPluginLibrary* get_proto_plugins()
+{
+    return new SimpleLifeCyclePlugin();
+}
+const char* get_proto_plugin_properties()
+{
+    string propS = SimpleLifeCyclePlugin::getProperties();
+    char *props = new char[propS.size() + 1];
+    props[propS.size()] = '\0';
+    return props;
+}
+
+}
+#endif
 

@@ -75,7 +75,7 @@ string DistributionsPlugin::getProperties()
     stringstream ss;
     for(int i = 0; i < d.knownDistributions.size(); i++)
     {
-        ss << "Distribution " << d.knownDistributions[i] << " = distributions" << endl;
+        ss << "Distribution " << d.knownDistributions[i] << " = " << DISTRIBUTIONS_DLL_NAME << endl;
     }
     
     return ss.str();

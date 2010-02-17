@@ -9,6 +9,9 @@
 #define	_RADIOMODELS_H
 
 #include "ProtoPluginLibrary.h"
+#define WORM_HOLES_NAME "wormholes"
+#define MULTI_RADIO_NAME "multiradio"
+#define RADIO_MODELS_DLL_NAME "radiomodels"
 
 // Plugin class
 class RadioModelsPlugin : public ProtoPluginLibrary {
@@ -18,7 +21,7 @@ private:
 public:
     RadioModelsPlugin();
     Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
-
+    static string getProperties();
 };
 
 #endif	/* _RADIOMODELSPLUGIN_H */

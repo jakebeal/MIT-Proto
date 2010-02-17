@@ -11,6 +11,9 @@
 #include "spatialcomputer.h"
 #include "ProtoPluginLibrary.h"
 
+#define SIMPLE_LIFE_CYCLE_NAME "simple-life-cycle"
+#define SIMPLE_LIFE_CYCLE_DLL_NAME SIMPLE_LIFE_CYCLE_NAME
+
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *
  *****************************************************************************/
@@ -47,7 +50,8 @@ private:
 public:
     SimpleLifeCyclePlugin();
     Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
-	
+
+    static string getProperties();
 };
 
 #endif	/* _SIMPLELIFECYCLE_H */
