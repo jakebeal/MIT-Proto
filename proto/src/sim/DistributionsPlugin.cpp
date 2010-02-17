@@ -7,6 +7,7 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
 using namespace std;
 #include "DistributionsPlugin.h"
 #include "XGrid.h"
@@ -77,7 +78,7 @@ string DistributionsPlugin::getProperties()
     {
         ss << "Distribution " << d.knownDistributions[i] << " = " << DISTRIBUTIONS_DLL_NAME << endl;
     }
-    
+//    cout << "Distribution properties:\n" << ss.str() << endl;
     return ss.str();
 }
 
@@ -91,9 +92,12 @@ ProtoPluginLibrary* get_proto_plugins()
 }
 const char* get_proto_plugin_properties()
 {
-    string propS = DistributionsPlugin::getProperties();
+    string propS = DistributionsPlugin::getProperties();    
     char *props = new char[propS.size() + 1];
+    strncpy(props, propS.c_str(), propS.size());
     props[propS.size()] = '\0';
+//    cout << "get_proto_plugin_properties: \n" << props << endl;
+//    cout << "strlen: " << strlen(props) << endl;
     return props;
 }
 

@@ -107,6 +107,7 @@ const char* get_proto_plugin_properties()
 {
     string propS = Mica2MotePlugin::getProperties();
     char *props = new char[propS.size() + 1];
+    strncpy(props, propS.c_str(), propS.size());
     props[propS.size()] = '\0';
     return props;
 }
