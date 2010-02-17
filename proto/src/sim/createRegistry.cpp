@@ -20,7 +20,7 @@ void* dlopenext(const char *name, int flag = RTLD_NOW)
   string prefix = "unkown_lib_prefix";
   string ext = "unknown_lib_extension";
 
-#ifdef __WIN32__
+#ifdef __CYGWIN__ 
     prefix = "";
     ext = ".dll";
   #else // assume other platforms to be Unix/Linux
