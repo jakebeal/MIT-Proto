@@ -9,10 +9,7 @@
 #define	_MICA2MOTE_H
 
 #include "spatialcomputer.h"
-#include "ProtoPluginLibrary.h"
 
-#define MICA2MOTE_NAME "mote-io"
-#define MICA2MOTE_DLL_NAME "mica2mote"
 /*****************************************************************************
  *  TESTBED MOTE IO                                                          *
  *****************************************************************************/

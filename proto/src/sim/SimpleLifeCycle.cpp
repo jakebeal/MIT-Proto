@@ -6,8 +6,6 @@
  */
 
 #include "SimpleLifeCycle.h"
-#include <sstream>
-using namespace std;
 
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *

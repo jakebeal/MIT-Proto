@@ -7,12 +7,12 @@ distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom
 SharedLibrary('distributions', source = distributions_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
 
 # shared library for SimpleLifeCycle plugin
-simple_life_cycle_layer_source_files = Split('SimpleLifeCycle.cpp')
+simple_life_cycle_layer_source_files = Split('SimpleLifeCycle.cpp SimpleLifeCyclePlugin.cpp')
 SharedLibrary('simple-life-cycle', source = simple_life_cycle_layer_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
 #StaticLibrary('simple-life-cycle', source = simple_life_cycle_layer_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
 
 # shared library for Mica2Motes plugin
-mica2mote_layer_source_files = Split('Mica2Mote.cpp')
+mica2mote_layer_source_files = Split('Mica2Mote.cpp Mica2MotePlugin.cpp')
 SharedLibrary('mica2mote', source = mica2mote_layer_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
 
 # shared library for radio plugin

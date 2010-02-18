@@ -9,10 +9,6 @@
 #define	_SIMPLELIFECYCLE_H
 
 #include "spatialcomputer.h"
-#include "ProtoPluginLibrary.h"
-
-#define SIMPLE_LIFE_CYCLE_NAME "simple-life-cycle"
-#define SIMPLE_LIFE_CYCLE_DLL_NAME SIMPLE_LIFE_CYCLE_NAME
 
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *
