@@ -43,16 +43,7 @@ class SimpleLifeCycleDevice : public DeviceLayer {
   void dump_state(FILE* out, int verbosity); // print state to file
 };
 
-// Plugin class
-class SimpleLifeCyclePlugin : public ProtoPluginLibrary {
-private:
-    string layerName;
-public:
-    SimpleLifeCyclePlugin();
-    Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
 
-    static string getProperties();
-};
 
 #endif	/* _SIMPLELIFECYCLE_H */
 

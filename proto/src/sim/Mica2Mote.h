@@ -45,15 +45,5 @@ class DeviceMoteIO : public DeviceLayer {
   void dump_state(FILE* out, int verbosity); // print state to file
 };
 
-// Plugin class
-class Mica2MotePlugin : public ProtoPluginLibrary {
-private:
-    string layerName;
-public:
-    Mica2MotePlugin();
-    Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
-    static string getProperties();
-};
-
 #endif	/* _MICA2MOTE_H */
 

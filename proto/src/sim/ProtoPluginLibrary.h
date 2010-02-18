@@ -10,10 +10,7 @@
 
 #include <stdlib.h> // also provides NULL
 #include "spatialcomputer.h"
-//class Layer;
-//class TimeModel;
-//class Distribution;
-//class SpatialComputer;
+
 
 class ProtoPluginLibrary
 {

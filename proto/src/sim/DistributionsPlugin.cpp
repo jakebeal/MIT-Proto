@@ -16,9 +16,6 @@ using namespace std;
 #include "GridRandom.h"
 #include "Cylinder.h"
 #include "Torus.h"
-#include "spatialcomputer.h"
-
-
 
 DistributionsPlugin::DistributionsPlugin()
 {
