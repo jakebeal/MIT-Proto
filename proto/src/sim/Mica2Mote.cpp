@@ -75,4 +75,3 @@ void DeviceMoteIO::visualize(Device* d) {
 #endif // WANT_GLUT
 }
 
-#endif
