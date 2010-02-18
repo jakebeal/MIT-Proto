@@ -6,6 +6,7 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include <iostream>
 #include "config.h"
 #include "spatialcomputer.h"
 #include "visualizer.h"
@@ -331,7 +332,7 @@ public:
 /*****************************************************************************
  *  SPATIAL COMPUTER                                                         *
  *****************************************************************************/
-const string SpatialComputer::registryFilePath = "../dll_registry.txt";
+const string SpatialComputer::registryFilePath = "src/dll_registry2.txt";
 
 Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
   Layer *layerPtr = NULL;
@@ -339,10 +340,9 @@ Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
   void* dllhandle;
   vector<RegLine> layerVec;
   vector<RegLine>::iterator it;
-
+  
   mLibReg.getLayerList(layerVec);
   string larg(name);
-
   typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
 
   for (it = layerVec.begin(); it != layerVec.end(); it++) {
@@ -357,17 +357,19 @@ Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
 
   dllhandle = getDLLHandle(dllName);
 
-  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, "get_proto_plugins");
+  char pluginStr[255];
+  strcpy(pluginStr,"get_proto_plugins");
+
+  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle,pluginStr);
+
   const char* error = dlerror();
   if (error) {
-    throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
+    throw DllNotFoundException("Could not load symbol get_proto_plugins()to get Layer : " + dllName + error);
   }
 
   ProtoPluginLibrary* ppl = getPlugFnc();
 
   layerPtr = ppl->get_layer(name, args, this, n);
-
-  dlclose(dllhandle);
 
   return layerPtr;
 }
@@ -395,12 +397,17 @@ TimeModel* SpatialComputer::find_time_model(char* name, Args* args, int n) {
   }
 
   dllhandle = getDLLHandle(dllName);
+  if (!dllhandle)
+     cout << "In get_time_model, dllhandle is null.:" << endl;
 
-  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, "get_proto_plugins");
+  char pluginStr2[255];
+  strcpy(pluginStr2,"get_proto_plugins");
+
+  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, pluginStr2);
 
   const char* error = dlerror();
   if (error) {
-    throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
+    throw DllNotFoundException("Could not load symbol get_proto_plugins()to get TimeModel : " + dllName + " ," + error);
   }
 
   ProtoPluginLibrary* ppl = getPlugFnc();
@@ -432,17 +439,24 @@ Distribution* SpatialComputer::find_distribution(char* name, Args* args, int n) 
   }
 
   dllhandle = getDLLHandle(dllName);
+  if (!dllhandle)
+     cout << "In find_distribution, dllhandle is null." << endl;
 
-  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, "get_proto_plugins");
+  char pluginStr[255];
+  strcpy(pluginStr, "get_proto_plugins");
+
+  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, pluginStr);
 
   const char* error = dlerror();
   if (error) {
-    throw DllNotFoundException("Could not load symbol get_proto_plugins() : " + dllName);
+    throw DllNotFoundException("Could not load symbol get_proto_plugins()to get Distribution : " + dllName + error);
   }
 
   ProtoPluginLibrary* ppl = getPlugFnc();
 
   distributionPtr = ppl->get_distribution(name, args, this, n);
+ 
+ //dlclose(dllhandle);
 
   return distributionPtr;
 }
@@ -467,8 +481,8 @@ void* SpatialComputer::getDLLHandle(string dllName) {
 void SpatialComputer::initializePlugins(Args* args, int n) {
   vector<string> layerArgsVector;
   vector<string>::iterator sit;
-  string timeModelName;
-  string distributionName;
+  string timeModelName = "";
+  string distributionName = "";
   bool moreArgs = true;
   layer_getter getter;
   void* dllhandle = NULL;
@@ -477,26 +491,28 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   Layer *layerPtr = NULL;
   TimeModel* timeModelPtr = NULL;
   Distribution* distributionPtr = NULL;
-
+ 
   while (moreArgs) {
-    moreArgs = args->extract_switch("L");
+    moreArgs = args->extract_switch("-L");
     if (moreArgs) {
       string larg = args->pop_next();
+      cout << "larg: " << larg << endl;
       layerArgsVector.push_back(larg);
     }
   }
 
-  if (args->extract_switch("TM")) {
+  if (args->extract_switch("-TM")) {
     timeModelName = args->pop_next();
   }
 
-  if (args->extract_switch("DD")) {
+  if (args->extract_switch("-DD")) {
     distributionName = args->pop_next();
   }
 
   fin.open(SpatialComputer::registryFilePath.c_str(), ios::in | ios::out);
   if (!fin.is_open()) {
-    throw ifstream::failure("Cannot open registry file.");
+     throw ifstream::failure("Cannot open registry file.");
+    // cout << "unable to open registry file. Default plugins will be loaded." <<endl;
   }
 
   readRegistry(fin, mLibReg);
@@ -504,24 +520,49 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   if (layerArgsVector.size() > 0) {
     for (sit = layerArgsVector.begin(); sit != layerArgsVector.end(); sit++) {
       const char* name = sit->c_str();
-      layerPtr = find_layer(const_cast<char*> (name), args, n);
+  
+    try {
+        layerPtr = find_layer(const_cast<char*> (name), args, n);
+      } catch (DllNotFoundException de) {
+        cout << "Failure to retrieve Layer from library. Error: " << de.what() << endl;
+      }
+
       if (layerPtr) {
+        cout << "In initializePlugins, layerPtr is not null." << endl;
         addLayer(layerPtr);
       }
     }
   }
+  
+  try
+  {
+    if (timeModelName.size() > 0)
+       timeModelPtr = find_time_model(const_cast<char*> (timeModelName.c_str()), args, n);
+  }
+  catch (DllNotFoundException de)
+  {
+      cout << "Failure to retrieve TimeModel from library. Default will be used. Error: " << de.what() << endl;
+  }
 
-  timeModelPtr = find_time_model(const_cast<char*> (timeModelName.c_str()), args, n);
-
-  distributionPtr = find_distribution(const_cast<char*> (distributionName.c_str()), args, n);
+  try
+  {
+    if (distributionName.size() > 0)
+       distributionPtr = find_distribution(const_cast<char*> (distributionName.c_str()),args,n);
+  }
+  catch (DllNotFoundException de)
+  {
+    cout << "Failure to retrieve Distribution from library. Default will be used. Error: " << de.what() << endl;
+  }
 
   if (timeModelPtr) {
+    cout << " timeModelPtr is not null." << endl;
     this->time_model = timeModelPtr;
   } else {
     this->time_model = new FixedIntervalTime(args, this);
   }
 
   if (distributionPtr) {
+    cout << " distributionPtr is not null." << endl;
     this->distribution = distributionPtr;
   } else {
     Rect *dist_volume = volume->clone();
@@ -569,7 +610,6 @@ void SpatialComputer::readRegistry(fstream& fin, LibRegistry& out) {
       }
     }
   }
-
 }
 
 // get the spatial layout of the computer, including node distribution
@@ -598,7 +638,7 @@ int SpatialComputer::addLayer(Layer* layer) {
   return (layer->id = dynamics.add(layer));
 }
 
-SpatialComputer::SpatialComputer(Args* args) {
+SpatialComputer::SpatialComputer(Args* args): mLibReg(), mLoadedDLLMap() {
   sim_time=0;
   int n=(args->extract_switch("-n"))?(int)args->pop_number():100; // # devices
   // load dumping variables
@@ -619,7 +659,7 @@ SpatialComputer::SpatialComputer(Args* args) {
   // setup customization
   get_volume(args, n);
   choose_layers(args,n);             // what types of physics apply
-  //initializePlugins(args, n);
+  initializePlugins(args, n);
 
   scheduler = new Scheduler(n, time_model->cycle_time());
   // create the actual devices
