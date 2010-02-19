@@ -514,8 +514,8 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
 
   fin.open(SpatialComputer::registryFilePath.c_str(), ios::in | ios::out);
   if (!fin.is_open()) {
-    throw ifstream::failure("Cannot open registry file.");
-    // cout << "unable to open registry file. Default plugins will be loaded." <<endl;
+   // throw ifstream::failure("Cannot open registry file.");
+     cout << "unable to open registry file. Default plugins will be loaded." <<endl;
   }
 
   readRegistry(fin, mLibReg);
