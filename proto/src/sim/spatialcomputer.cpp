@@ -516,7 +516,11 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   if (!fin.is_open()) {
    // throw ifstream::failure("Cannot open registry file.");
      cout << "unable to open registry file. Default plugins will be loaded." <<endl;
+     this->time_model = new FixedIntervalTime(args, this);
+     Rect* dist_volume = volume->clone();
+     this->distribution = new UniformRandom(n, dist_volume);
   }
+  else {
 
   readRegistry(fin, mLibReg);
 
@@ -567,6 +571,7 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
     Rect *dist_volume = volume->clone();
     this->distribution = new UniformRandom(n, dist_volume);
   }
+ } // end if fin is open
 
 }
 
