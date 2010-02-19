@@ -22,6 +22,7 @@
    </target>
 
    <target name="init">
+     <echo>This file is in the build_files directory</echo>
      <property file="${propFileName}" />
      <tstamp><format property="TSTAMP" pattern="HHmm" /></tstamp>
      <condition property="time.midnight">
