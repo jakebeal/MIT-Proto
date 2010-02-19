@@ -468,7 +468,7 @@ void* SpatialComputer::getDLLHandle(string dllName) {
   void* dllhandle = NULL;
   // if dll is not in loaded map, load it
   if (mLoadedDLLMap.find(dllName) == mLoadedDLLMap.end()) {
-    dllhandle = dlopenext(dllName.c_str(), RTLD_NOW);
+    dllhandle = DllUtils::dlopenext(dllName.c_str(), RTLD_NOW);
     if (!dllhandle) {
       throw DllNotFoundException("Could not load dll: " + dllName);
     }
@@ -614,6 +614,7 @@ void SpatialComputer::readRegistry(fstream& fin, LibRegistry& out) {
       }
     }
   }
+  fin.close();
 }
 
 // get the spatial layout of the computer, including node distribution
