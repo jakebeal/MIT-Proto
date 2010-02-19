@@ -11,36 +11,86 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
-#include "dlfcn.h"
+#include <dlfcn.h>
+#include "utils.h"
+#include <sys/stat.h>
+#include <algorithm>
+#include <dirent.h>
 using namespace std;
 
-void* dlopenext(const char *name, int flag = RTLD_NOW)
+#define REGISTRY_FILE_NAME "plugins_registry.txt"
+
+bool dirExists(string name)
 {
-  //const char **ext = dl_exts;
-  void *hand = NULL;
-  string prefix = "unkown_lib_prefix";
-  string ext = "unknown_lib_extension";
-
-#ifdef __CYGWIN__ 
-    prefix = "";
-    ext = ".dll";
-  #else // assume other platforms to be Unix/Linux
-    prefix = "lib";
-    #ifdef __APPLE__
-        ext = ".dylib" ;
-    #else // assume all other platforms have .so extension
-        ext = ".so";
-    #endif
-#endif
-
-    stringstream ss;
-    ss << prefix << string(name) << ext;
-    string libFileName = ss.str();
+    struct stat st;
+    bool exists = false;
     
-    //cout << "Trying to load dll: " << libFileName << endl;
-    hand = dlopen(libFileName.c_str(), flag); 
+    if(stat(name.c_str(),&st) == 0)
+    {
+        exists = true;        
+    }
+    else
+    {
+        cout << "dir: " << name << " does not exists." << endl;
+    }
+    return exists;
+}
 
-  return hand;
+vector<string> getInstalledPlugins(string dir)
+{
+    vector<string> pluginDlls;
+
+    DIR *dp;
+    struct dirent *dirp;
+
+    if((dp  = opendir(dir.c_str())) == NULL) {
+        cout << "Error("  << ") opening " << dir << endl;
+        return pluginDlls;
+    }
+
+    while ((dirp = readdir(dp)) != NULL) {
+        string name = string(dirp->d_name);
+        if(name != string(".") && name != string("..") )
+            pluginDlls.push_back(name);
+    }
+
+    closedir(dp);
+    
+
+    return pluginDlls;
+}
+
+vector<string> getPluginNames()
+{
+    // assume out working dir has INSTALLED_PLUGINS_DIR
+    vector<string> pluginNames;
+    if(!dirExists(INSTALLED_PLUGINS_DIR))
+    {
+        return pluginNames;
+    }
+
+    vector<string> pluginFiles = getInstalledPlugins(INSTALLED_PLUGINS_DIR);
+    string platformPrefix;
+    string platformExt;
+    DllUtils::getPlatformLib(platformPrefix, platformExt);
+    for(int i = 0; i < pluginFiles.size(); i++)
+    {
+        string dir_ent = pluginFiles[i];
+        string dllName = dir_ent;
+        // Strip prefix from libName.so
+        if(platformPrefix.size() > 0)
+        {
+            dllName.erase(0,platformPrefix.size());
+            //cout << "Stripped prefix: " << dllName << endl;
+        }
+
+        size_t where = dllName.find(platformExt);
+        //cout << "found ext at: " << where << endl;
+        dllName.erase(where);
+        cout << "found plugin: " << dllName << endl;
+        pluginNames.push_back(dllName);
+    }
+    return pluginNames;
 }
 
 typedef const char* (*get_props_func)(void);
@@ -50,26 +100,22 @@ typedef const char* (*get_props_func)(void);
  */
 int main(int argc, char** argv)
 {
-    if(argc < 3)
-    {
-        cout << "Usage " << argv[0] << " registry_file space_separated_lib_names " << endl;
-        return (EXIT_SUCCESS);
-    }
-    int nLibs = argc - 2;
-    vector<string> libNames;
-    string registryFile = argv[1];
-    
-    for(int i = 2; i < argc; i++)
-    {
-        libNames.push_back(argv[i]);
-    }
+   vector<string> libNames = getPluginNames();
+            
+   string registryFile = REGISTRY_FILE_NAME;
+       
     get_props_func props_function_instance = NULL;
     vector<string> allProperties;
     vector<void *> handles;
-    for(int i = 0; i < nLibs; i++)
+    string prefix;
+    string ext;
+    DllUtils::getPlatformLib(prefix,ext);
+    for(int i = 0; i < libNames.size(); i++)
     {
-        //cout << "loading dll: " << libNames[i] << endl;
-        void *handle = dlopenext(libNames[i].c_str());
+        cout << "loading dll: " << libNames[i] << endl;
+        string dllFile = string(INSTALLED_PLUGINS_DIR).append("/").append(prefix).append(libNames[i]).append(ext);
+        cout << "Loading dll file name: " << dllFile << endl;
+        void *handle = dlopen(dllFile.c_str(), RTLD_NOW);
         if(handle == NULL)
         {
             cout << "DLL not found: " << libNames[i] << endl;
