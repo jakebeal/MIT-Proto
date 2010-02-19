@@ -13,7 +13,10 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <string.h>
 #include <queue>
 #include <unistd.h>
-
+#include <dlfcn.h>
+#include <string>
+#include <vector>
+using namespace std;
 /*****************************************************************************
  *  NUMBERS AND DIMENSIONS                                                   *
  *****************************************************************************/
@@ -202,5 +205,11 @@ public:
 // obtains the time in seconds (in a system-dependent manner)
 double get_real_secs ();
 
+#define INSTALLED_PLUGINS_DIR "installed_plugins"
+class DllUtils
+{
+public:
+    static void* dlopenext(const char *name, int flag = RTLD_NOW);    
+};
 
 #endif // __UTILS__

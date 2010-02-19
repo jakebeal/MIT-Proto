@@ -12,6 +12,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <sstream>
+using namespace std;
 
 flo urnd(flo min, flo max) { return min + ((max-min)*rand())/RAND_MAX; }
 
@@ -236,3 +238,33 @@ double get_real_secs () {
   return (double)(t.tv_sec + t.tv_usec / 1000000.0);
 }
 #endif
+
+// DLLUtil methods
+void* DllUtils::dlopenext(const char *name, int flag)
+{
+  //const char **ext = dl_exts;
+  void *hand = NULL;
+  string prefix = "unkown_lib_prefix";
+  string ext = "unknown_lib_extension";
+
+#ifdef __CYGWIN__
+    prefix = "";
+    ext = ".dll";
+  #else // assume other platforms to be Unix/Linux
+    prefix = "lib";
+    #ifdef __APPLE__
+        ext = ".dylib" ;
+    #else // assume all other platforms have .so extension
+        ext = ".so";
+    #endif
+#endif
+
+    stringstream ss;
+    ss << prefix << string(name) << ext;
+    string libFileName = ss.str();
+
+    //cout << "Trying to load dll: " << libFileName << endl;
+    hand = dlopen(libFileName.c_str(), flag);
+
+  return hand;
+}
