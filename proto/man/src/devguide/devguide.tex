@@ -517,6 +517,13 @@ argument \code{-NP {\it name}} can be used to not load a particular
 plugin and \code{-OP {\it name},{\it name},...} can be used to load
 only the specified set of plugins, in the order specified.
 
+\paragraph{Note}
+GNU compilers have severe limitation with respect to linking libraries. 
+In particular, the compiler requires that there must not be any circular dependency 
+between libraries or there must a hierarchical dependency between any two libraries.
+Hence utmost care must be taken to not introduce any circular dependencies between libraries
+and beware of the order in which libraries are specified in makefiles.
+
 \paragraph{Further Extension: Per-Layer Opcodes}
 
 In addition to the plugins described above, the simulator ought to be
