@@ -15,7 +15,7 @@
      <property file="${propFileName}" />
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
-        <exec dir="." executable="${makepath}" failonerror="true" >
+        <exec dir="../proto" executable="${makepath}" failonerror="true" >
         </exec>     
      <record name="MakeLog.txt" action="stop" />
      <echo>Finished build</echo>
@@ -45,7 +45,7 @@
         <echo>${isLinux}</echo>
         <echo>${isMacOSX}</echo>
         <echo>${propFileName}</echo>
-        <exec dir="." executable="${shellpath}" failonerror="true" >
+        <exec dir="../proto" executable="${shellpath}" failonerror="true" >
            <arg line="./autogen.sh" />
         </exec>
      <record name="AutogenLog.txt" action="stop" />
@@ -55,7 +55,7 @@
      <property file="${propFileName}" />
      <echo>Running configure.....</echo>
      <record name="ConfigureLog.txt" action="start" />
-        <exec dir="." executable="${shellpath}" failonerror="true" >
+        <exec dir="../proto" executable="${shellpath}" failonerror="true" >
             <arg line="./configure" />
             <arg line="--prefix=${installdir}/protoinstall" />
         </exec>
@@ -65,7 +65,7 @@
    <target name="clean" >
      <property file="${propFileName}" />
      <echo>Starting make clean...</echo>
-     <exec dir="." executable="${makepath}" failonerror="true" >
+     <exec dir="../proto" executable="${makepath}" failonerror="true" >
         <arg line="clean" />
      </exec>
    </target>
@@ -74,12 +74,12 @@
      <property file="${propFileName}" />
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
-     <exec dir="./src/tests" executable="${pythonpath}" >
+     <exec dir="../proto/src/tests" executable="${pythonpath}" >
         <arg value="prototest.py" />
         <arg value="*.test" />
      </exec>
      <record name="TestLog.txt" action="stop" />
-     <exec dir="./src/tests" executable="${pythonpath}" >
+     <exec dir="../proto/src/tests" executable="${pythonpath}" >
        <arg value="protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
@@ -95,7 +95,7 @@
      <property file="${propFileName}" />
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
-     <exec dir="." executable="${makepath}" failonerror="true">
+     <exec dir="../proto" executable="${makepath}" failonerror="true">
         <arg line=" install" />
      </exec>
      <record name="MakeInstallLog.txt" action="stop" />
@@ -105,7 +105,7 @@
       <property file="${propFileName}" />
       <echo>Starting uninstall..</echo>
       <record name="MakeUninstallLog.txt" action="start" />
-      <exec dir="." executable="${makepath}" failonerror="true">
+      <exec dir="../proto" executable="${makepath}" failonerror="true">
         <arg line=" uninstall" />
       </exec>
       <record name="MakeUninstallLog.txt" action="stop" />
