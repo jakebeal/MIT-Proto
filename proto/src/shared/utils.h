@@ -209,7 +209,12 @@ double get_real_secs ();
 class DllUtils
 {
 public:
-    static void* dlopenext(const char *name, int flag = RTLD_NOW);    
+    // function to dlls from LD_LIBRARY_PATH
+    // dll Name is prefixed and suffixed with platform specific prefix and extension
+    static void* dlopenext(const char *name, int flag = RTLD_NOW);
+    
+    static void getPlatformLib(string& outPrefix, string& outExt);
+    
 };
 
 #endif // __UTILS__

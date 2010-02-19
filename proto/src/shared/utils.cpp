@@ -240,31 +240,43 @@ double get_real_secs () {
 #endif
 
 // DLLUtil methods
+
+ void DllUtils::getPlatformLib(string& outPrefix, string& outExt)
+ {
+    #ifdef __CYGWIN__
+        outPrefix = "";
+        outExt = ".dll";
+    #else // assume other platforms to be Unix/Linux
+        outPrefix = "lib";
+            #ifdef __APPLE__
+                outExt = ".dylib" ;
+            #else // assume all other platforms have .so extension
+                outExt = ".so";
+            #endif
+        #endif
+ }
+
+ void* DllUtils::dlopenextFiles(const char *name, int flag = RTLD_NOW)
+ {
+     
+ }
+
 void* DllUtils::dlopenext(const char *name, int flag)
 {
   //const char **ext = dl_exts;
-  void *hand = NULL;
+  
   string prefix = "unkown_lib_prefix";
   string ext = "unknown_lib_extension";
 
-#ifdef __CYGWIN__
-    prefix = "";
-    ext = ".dll";
-  #else // assume other platforms to be Unix/Linux
-    prefix = "lib";
-    #ifdef __APPLE__
-        ext = ".dylib" ;
-    #else // assume all other platforms have .so extension
-        ext = ".so";
-    #endif
-#endif
+  // get platform specific library prefix and extension
+  DllUtils::getPlatformLib(prefix, ext);
 
     stringstream ss;
     ss << prefix << string(name) << ext;
     string libFileName = ss.str();
 
     //cout << "Trying to load dll: " << libFileName << endl;
-    hand = dlopen(libFileName.c_str(), flag);
+    void *hand = dlopen(libFileName.c_str(), flag);
 
   return hand;
 }
