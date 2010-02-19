@@ -256,11 +256,6 @@ double get_real_secs () {
         #endif
  }
 
- void* DllUtils::dlopenextFiles(const char *name, int flag = RTLD_NOW)
- {
-     
- }
-
 void* DllUtils::dlopenext(const char *name, int flag)
 {
   //const char **ext = dl_exts;
