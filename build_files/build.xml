@@ -89,7 +89,7 @@
 
    <target name="cleanDump" >
       <echo>Cleaning dump files.....</echo>
-      <delete dir="./src/tests/dumps" />
+      <delete dir="../proto/src/tests/dumps" />
    </target>   
 
    <target name="install"  >
