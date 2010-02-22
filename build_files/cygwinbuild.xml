@@ -43,7 +43,7 @@
         <exec dir="${buildfilesdir}" executable="cmd" failonerror="true">
            <arg value="/c" />
            <arg value="bash.bat" />
-           <arg value="${cygprotodir}/runautogen.sh" />
+           <arg value="${buildfilesdir}/runautogen.sh" />
            <arg value="${cygprotodir}" />
         </exec>
      <record name="AutogenLog.txt" action="stop" />
@@ -55,7 +55,7 @@
         <exec dir="${buildfilesdir}" executable="cmd" failonerror="true">
            <arg value="/c" />
            <arg value="bash.bat" />
-           <arg line="${cygprotodir}/runconfigure.sh" />
+           <arg line="${buildfilesdir}/runconfigure.sh" />
            <arg value="${cygprotodir}" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
