@@ -15,11 +15,6 @@
    <target name="build" depends="init,autogen,configure">
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
-      <!--   <exec dir="${protodir}" executable="cmd" failonerror="true">
-           <arg value="/c" />
-           <arg value="${buildfilesdir}/make.bat" />
-           <arg value="${protodir}" />
-        </exec>  -->
        <exec dir="${protodir}" executable="${makepath}" failonerror="true" />   
      <record name="MakeLog.txt" action="stop" />
      <echo>Finished build</echo>

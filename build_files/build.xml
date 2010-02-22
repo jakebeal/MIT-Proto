@@ -12,7 +12,6 @@
    </target>
    
    <target name="build" depends="init,autogen,configure">
-     <property file="${propFileName}" />
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
         <exec dir="../proto" executable="${makepath}" failonerror="true" >
@@ -23,7 +22,6 @@
 
    <target name="init">
      <echo>This file is in the build_files directory</echo>
-     <property file="${propFileName}" />
      <tstamp><format property="TSTAMP" pattern="HHmm" /></tstamp>
      <condition property="time.midnight">
        <and>
@@ -39,7 +37,6 @@
    </target>
 
    <target name="autogen">
-     <property file="${propFileName}" />
      <echo>Running autogen.sh.....</echo>
      <record name="AutogenLog.txt" action="start" />
         <echo>${os.name}</echo>
@@ -53,7 +50,6 @@
    </target>
 
    <target name="configure" >
-     <property file="${propFileName}" />
      <echo>Running configure.....</echo>
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="../proto" executable="${shellpath}" failonerror="true" >
@@ -64,7 +60,6 @@
    </target>
 
    <target name="clean" >
-     <property file="${propFileName}" />
      <echo>Starting make clean...</echo>
      <exec dir="../proto" executable="${makepath}" failonerror="true" >
         <arg line="clean" />
@@ -72,7 +67,6 @@
    </target>
 
    <target name="test"  if="time.midnight" >
-     <property file="${propFileName}" />
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
      <exec dir="../proto/src/tests" executable="${pythonpath}" >
@@ -93,7 +87,6 @@
    </target>   
 
    <target name="install"  >
-     <property file="${propFileName}" />
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
      <exec dir="../proto" executable="${makepath}" failonerror="true">
@@ -103,7 +96,6 @@
    </target>
 
    <target name="uninstall" >
-      <property file="${propFileName}" />
       <echo>Starting uninstall..</echo>
       <record name="MakeUninstallLog.txt" action="start" />
       <exec dir="../proto" executable="${makepath}" failonerror="true">
