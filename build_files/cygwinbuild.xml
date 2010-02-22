@@ -3,7 +3,7 @@
 <project default="main">
 
    <property file="cygwin.properties" />
-   <!-- this setting will override the setting of time.midnight in init 
+   <!-- this will override the setting of time.midnight in init 
    target so that every build will run tests -->
    <property name="time.midnight" value="true" />
    <property environment="env" />
