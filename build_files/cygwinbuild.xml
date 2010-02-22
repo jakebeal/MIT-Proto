@@ -15,9 +15,9 @@
    <target name="build" depends="init,autogen,configure">
      <echo> Running make.......</echo>
      <record name="MakeLog.txt" action="start" />
-        <exec dir="." executable="cmd" failonerror="true" >
+        <exec dir="../proto" executable="cmd" failonerror="true" >
            <arg value="/c" />
-           <arg value="make.bat" />
+           <arg value="../build_files/make.bat" />
            <arg value="${protodir}" />
         </exec>     
      <record name="MakeLog.txt" action="stop" />
@@ -25,6 +25,7 @@
    </target>
 
    <target name="init">
+     <echo>In cygwin build.xml in build_files directory.</echo>
      <tstamp><format property="TSTAMP" pattern="HHmm" /></tstamp>
      <condition property="time.midnight">
        <and>
@@ -45,7 +46,7 @@
         <echo>Running autogen.sh.....</echo>
         <exec dir="${protodir}" executable="cmd" failonerror="true" >
            <arg value="/c" />
-           <arg value="bash.bat" />
+           <arg value="../build_files/bash.bat" />
            <arg value="${cygprotodir}/runautogen.sh" />
            <arg value="${cygprotodir}" />
         </exec>
@@ -57,7 +58,7 @@
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="${protodir}" executable="cmd" failonerror="true" >
            <arg value="/c" />
-           <arg value="bash.bat" />
+           <arg value="../build_files/bash.bat" />
            <arg line="${cygprotodir}/runconfigure.sh" />
            <arg value="${cygprotodir}" />
         </exec>
@@ -66,7 +67,7 @@
 
    <target name="clean" >
      <echo>Starting make clean...</echo>
-     <exec dir="." executable="${makepath}" failonerror="true" >
+     <exec dir="../proto" executable="${makepath}" failonerror="true" >
         <arg line="clean" />
      </exec>
    </target>
@@ -74,7 +75,7 @@
    <target name="test"  if="time.midnight" >
      <echo>Starting Proto tests.....</echo>
      <record name="TestLog.txt" action="start" />
-     <exec dir="./src/tests" executable="${pythonpath}" >
+     <exec dir="..proto//src/tests" executable="${pythonpath}" >
         <arg value="prototest.py" />
         <arg value="--proto" />
         <arg value="${protodir}/src/proto.exe" />
@@ -83,7 +84,7 @@
         <arg value="*.test" />
      </exec>
      <record name="TestLog.txt" action="stop" />
-     <exec dir="./src/tests" executable="${pythonpath}" >
+     <exec dir="../proto//src/tests" executable="${pythonpath}" >
        <arg value="protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
@@ -92,13 +93,13 @@
 
    <target name="cleanDump" >
       <echo>Cleaning dump files.....</echo>
-      <delete dir="./src/tests/dumps" />
+      <delete dir="..proto//src/tests/dumps" />
    </target>   
 
    <target name="install"  >
      <echo>Starting make install...</echo>
      <record name="MakeInstallLog.txt" action="start" />
-     <exec dir="." executable="${makepath}" failonerror="true">
+     <exec dir="../proto" executable="${makepath}" failonerror="true">
         <arg line=" install" />
      </exec>
      <record name="MakeInstallLog.txt" action="stop" />
@@ -107,7 +108,7 @@
    <target name="uninstall" >
       <echo>Starting uninstall..</echo>
       <record name="MakeUninstallLog.txt" action="start" />
-      <exec dir="." executable="${makepath}" failonerror="true">
+      <exec dir="../proto" executable="${makepath}" failonerror="true">
         <arg line=" uninstall" />
       </exec>
       <record name="MakeUninstallLog.txt" action="stop" />
