@@ -60,6 +60,8 @@ Proto depends on the following applications and libraries:
 * OpenGL (and GLUT)
 * X Windows
 * Open Dynamics Engine (ODE) v0.8  [optional]
+* Xmu (X miscellaneous utility routines) and
+* Xi (X input Extension library) (these two X libraries are usually already installed)
 
 If you have all of these installed, you should just be able to run
 'make' in this directory and have the whole thing build correctly.
