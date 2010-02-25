@@ -25,6 +25,7 @@ rm_dll = SharedLibrary('radiomodels', source = radio_models_layer_source_files, 
 Install(dir = installed_plugins_dir, source = rm_dll)
 
 registry_source_files = Split('createRegistry.cpp')
+registry_includes = Split('../shared')
 registry_lib_dirs = Split('../shared/.libs')
 registry_libs = Split('shared dl')
 Program(source = registry_source_files, CPPPATH = registry_includes, LIBPATH = registry_lib_dirs, LIBS = registry_libs)
