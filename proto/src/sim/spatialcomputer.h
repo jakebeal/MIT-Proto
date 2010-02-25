@@ -197,6 +197,7 @@ class SpatialComputer : public EventConsumer {
   std::queue<CloneReq*> clone_q;  // nodes requesting to reproduce
   static const string registryFilePath;
   static const char* dl_exts[];
+  //DefaultsPlugin  mDefaultsPlugin;
 
  public:
   SpatialComputer(Args* args);

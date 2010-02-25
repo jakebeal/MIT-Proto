@@ -13,6 +13,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "ProtoPluginLibrary.h"
 #include "customizations.h"
 #include "UniformRandom.h"
+#include "DefaultsPlugin.h"
+
 /*****************************************************************************
  *  MISC DEFS                                                                *
  *****************************************************************************/
@@ -516,9 +518,14 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   if (!fin.is_open()) {
    // throw ifstream::failure("Cannot open registry file.");
      cout << "unable to open registry file. Default plugins will be loaded." <<endl;
-     this->time_model = new FixedIntervalTime(args, this);
-     Rect* dist_volume = volume->clone();
-     this->distribution = new UniformRandom(n, dist_volume);
+     //this->time_model = new FixedIntervalTime(args, this);
+     //Rect* dist_volume = volume->clone();
+     //this->distribution = new UniformRandom(n, dist_volume);
+     DefaultsPlugin defaultsPlugin;
+     char buffer[255];
+     strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
+     this->time_model = defaultsPlugin.get_time_model(buffer, args, this, n);
+     this->distribution = defaultsPlugin.get_distribution(buffer, args, this, n);
   }
   else {
 
