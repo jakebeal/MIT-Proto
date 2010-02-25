@@ -14,7 +14,10 @@ DefaultsPlugin::DefaultsPlugin():mDistVolume(NULL) {
 
 DefaultsPlugin::~DefaultsPlugin() {
 
-  delete mDistVolume; // since we cloned the Rect ptr, we had better clean it up here.
+ // delete mDistVolume; 
+// since we cloned the Rect ptr, we had better 
+//clean it up here.
+// NO--do not delete here, all tests fail!
 }
 
 Layer* DefaultsPlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, int n)
@@ -42,6 +45,7 @@ Layer* DefaultsPlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, in
 Distribution* DefaultsPlugin::get_distribution(char* name, Args* args,SpatialComputer* cpu, int n)
 {
   mDistVolume = cpu->volume->clone();
+
   if(args->extract_switch("-dist-dim")) {
     mDistVolume->l = args->pop_number();
     mDistVolume->r = args->pop_number();

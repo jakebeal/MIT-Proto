@@ -491,6 +491,8 @@ void SpatialComputer::setDefaultTimeModel(Args* args, int n)
   strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
   // set Time Model to FixedIntervalTime
   this->time_model = defaultsPlugin.get_time_model(buffer, args, this, n);
+  if (!this->time_model)
+    cout << "time_model NULL in setDefaultTimeModel." << endl;
 }
 
 void SpatialComputer::setDefaultDistribution(Args* args, int n)
@@ -501,6 +503,8 @@ void SpatialComputer::setDefaultDistribution(Args* args, int n)
   strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
   // set distribution to UniformRandom
   this->distribution = defaultsPlugin.get_distribution(buffer, args, this, n);
+  if (!this->distribution)
+    cout << " this->distribution NULL in setDefaultdistribution." << endl;
 }
 
 void SpatialComputer::initializePlugins(Args* args, int n) {
