@@ -27,7 +27,9 @@ libsim_la_SOURCES = \
 	Cylinder.cpp \
 	Torus.cpp \
 	SimpleLifeCycle.cpp \
-	Mica2Mote.cpp
+	Mica2Mote.cpp \
+	FixedIntervalTime.cpp \
+	DefaultsPlugin.cpp
 
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS =
@@ -58,7 +60,9 @@ pkginclude_HEADERS = \
 	SimpleLifeCycle.h \
 	Mica2Mote.h \
 	DeviceTimer.h \
-	TimeModel.h
+	TimeModel.h \
+	FixedIntervalTime.h \
+	DefaultsPlugin.h
     
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \

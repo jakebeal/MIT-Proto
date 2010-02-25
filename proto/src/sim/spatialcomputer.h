@@ -25,6 +25,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "LibRegistry.h"
 #include "DeviceTimer.h"
 #include "TimeModel.h"
+#include "FixedIntervalTime.h"
 
 // prototype classes
 class Device; class SpatialComputer;
