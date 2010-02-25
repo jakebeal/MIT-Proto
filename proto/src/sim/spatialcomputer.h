@@ -35,22 +35,7 @@ class DllNotFoundException;
 /*****************************************************************************
  *  TIME AND SPACE DISTRIBUTIONS                                             *
  *****************************************************************************/
-// a bit of state attached to a device to say how its time advances
-/*
-class DeviceTimer {
- public:  // both of these report delay from the current compute time
-  virtual void next_transmit(SECONDS* d_true, SECONDS* d_internal)=0;
-  virtual void next_compute(SECONDS* d_true, SECONDS* d_internal)=0;
-  virtual DeviceTimer* clone_device()=0; // split the timer for a clone dev
-};
-// factory class for producing DeviceTimers
-class TimeModel {
- public:
-  virtual DeviceTimer* next_timer(SECONDS* start_lag)=0;
-  virtual SECONDS cycle_time()=0;
-};
 
-*/
 /*****************************************************************************
  *  DYNAMICS                                                                 *
  *****************************************************************************/
@@ -197,7 +182,6 @@ class SpatialComputer : public EventConsumer {
   std::queue<CloneReq*> clone_q;  // nodes requesting to reproduce
   static const string registryFilePath;
   static const char* dl_exts[];
-  //DefaultsPlugin  mDefaultsPlugin;
 
  public:
   SpatialComputer(Args* args);
@@ -222,6 +206,8 @@ class SpatialComputer : public EventConsumer {
   virtual TimeModel* find_time_model(char* name, Args* args, int n);
   virtual Distribution* find_distribution(char* name, Args* args, int n);
   virtual void  initializePlugins(Args* args, int n);
+  void setDefaultTimeModel(Args* args, int n);
+  void setDefaultDistribution(Args* args, int n);
   
  private:
   void get_volume(Args* args, int n); // shared dist constructor

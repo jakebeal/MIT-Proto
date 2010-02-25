@@ -483,6 +483,26 @@ void* SpatialComputer::getDLLHandle(string dllName) {
   return dllhandle;
 }
 
+void SpatialComputer::setDefaultTimeModel(Args* args, int n)
+{
+  char buffer[255];
+  DefaultsPlugin defaultsPlugin;
+
+  strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
+  // set Time Model to FixedIntervalTime
+  this->time_model = defaultsPlugin.get_time_model(buffer, args, this, n);
+}
+
+void SpatialComputer::setDefaultDistribution(Args* args, int n)
+{
+  char buffer[255];
+  DefaultsPlugin defaultsPlugin;
+
+  strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
+  // set distribution to UniformRandom
+  this->distribution = defaultsPlugin.get_distribution(buffer, args, this, n);
+}
+
 void SpatialComputer::initializePlugins(Args* args, int n) {
   vector<string> layerArgsVector;
   vector<string>::iterator sit;
@@ -518,14 +538,8 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   if (!fin.is_open()) {
    // throw ifstream::failure("Cannot open registry file.");
      cout << "unable to open registry file. Default plugins will be loaded." <<endl;
-     //this->time_model = new FixedIntervalTime(args, this);
-     //Rect* dist_volume = volume->clone();
-     //this->distribution = new UniformRandom(n, dist_volume);
-     DefaultsPlugin defaultsPlugin;
-     char buffer[255];
-     strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
-     this->time_model = defaultsPlugin.get_time_model(buffer, args, this, n);
-     this->distribution = defaultsPlugin.get_distribution(buffer, args, this, n);
+     setDefaultTimeModel(args,n);
+     setDefaultDistribution(args, n);
   }
   else {
 
@@ -568,15 +582,14 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
     cout << " timeModelPtr is not null." << endl;
     this->time_model = timeModelPtr;
   } else {
-    this->time_model = new FixedIntervalTime(args, this);
+    setDefaultTimeModel(args,n);
   }
 
   if (distributionPtr) {
     cout << " distributionPtr is not null." << endl;
     this->distribution = distributionPtr;
   } else {
-    Rect *dist_volume = volume->clone();
-    this->distribution = new UniformRandom(n, dist_volume);
+    setDefaultDistribution(args, n);
   }
  } // end if fin is open
 
