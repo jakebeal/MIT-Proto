@@ -205,7 +205,7 @@ public:
 // obtains the time in seconds (in a system-dependent manner)
 double get_real_secs ();
 
-#define INSTALLED_PLUGINS_DIR "installed_plugins"
+#define INSTALLED_PLUGINS_DIR "plugin_lib"
 class DllUtils
 {
 public:

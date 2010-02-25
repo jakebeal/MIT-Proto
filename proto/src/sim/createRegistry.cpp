@@ -18,7 +18,7 @@
 #include <dirent.h>
 using namespace std;
 
-#define REGISTRY_FILE_NAME "plugins_registry.txt"
+#define REGISTRY_FILE_NAME "registry.txt"
 
 bool dirExists(string name)
 {

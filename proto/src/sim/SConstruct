@@ -1,7 +1,7 @@
 include_dirs = Split('. ../ ../shared ../kernel')
 libs = Split('sim kernel compiler shared dl')
 lib_dirs = Split('./.libs ../shared/.libs ../kernel/.libs ../compiler/.libs')
-installed_plugins_dir = Split('installed_plugins')
+installed_plugins_dir = Split('plugin_lib')
 
 # shared library for distributions
 distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
@@ -25,7 +25,6 @@ rm_dll = SharedLibrary('radiomodels', source = radio_models_layer_source_files, 
 Install(dir = installed_plugins_dir, source = rm_dll)
 
 registry_source_files = Split('createRegistry.cpp')
-registry_includes = Split('../shared ../../boost_1_42_0')
 registry_lib_dirs = Split('../shared/.libs')
 registry_libs = Split('shared dl')
 Program(source = registry_source_files, CPPPATH = registry_includes, LIBPATH = registry_lib_dirs, LIBS = registry_libs)
