@@ -244,6 +244,14 @@ SimpleDynamics::SimpleDynamics(Args* args, SpatialComputer* parent, int n)
   parent->hardware.patch(this,RADIUS_GET_FN);
 }
 
+vector<HardwareFunction> SimpleDynamics::getImplementedHardwareFunctions()
+{
+    vector<HardwareFunction> hardwareFunctions;
+    hardwareFunctions.push_back(MOV_FN);
+    hardwareFunctions.push_back(RADIUS_SET_FN);
+    hardwareFunctions.push_back(RADIUS_GET_FN);
+    return hardwareFunctions;
+}
 
 BOOL SimpleDynamics::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {

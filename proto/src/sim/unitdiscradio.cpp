@@ -58,6 +58,17 @@ UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(a
   for(int i=0;i<num_cells;i++) cells[i] = new Population();
 }
 
+vector<HardwareFunction> UnitDiscRadio::getImplementedHardwareFunctions()
+{
+
+  vector<HardwareFunction> hardwareFunctions;
+    hardwareFunctions.push_back(READ_RADIO_RANGE_FN);
+    hardwareFunctions.push_back(RADIO_SEND_EXPORT_FN);
+    hardwareFunctions.push_back(RADIO_SEND_SCRIPT_PKT_FN);
+    hardwareFunctions.push_back(RADIO_SEND_DIGEST_FN);
+    return hardwareFunctions;
+}
+
 UnitDiscRadio::~UnitDiscRadio() {
   for(int i=0;i<num_cells;i++) delete cells[i]; // populations assumed empty
   free(cells);

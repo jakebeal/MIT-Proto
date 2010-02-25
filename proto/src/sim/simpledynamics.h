@@ -89,6 +89,10 @@ class SimpleDynamics : public BodyDynamics, HardwarePatch {
   void mov(VEC_VAL *val);
   NUM_VAL radius_set (NUM_VAL val);
   NUM_VAL radius_get (VOID);
+
+  // returns a list of function  that it patches/ provides impementation for
+  static vector<HardwareFunction> getImplementedHardwareFunctions();
+  
   // not yet implemented:
   //VEC_VAL *read_ranger (VOID);
   //NUM_VAL read_bump (VOID);

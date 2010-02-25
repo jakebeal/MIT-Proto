@@ -10,6 +10,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #define __BASIC_HARDWARE__
 
 #include "spatialcomputer.h"
+#include <vector>
+using namespace std;
 
 /*****************************************************************************
  *  DEBUG                                                                    *
@@ -58,11 +60,15 @@ public:
  *  PERFECT LOCALIZER                                                        *
  *****************************************************************************/
 class PerfectLocalizer : public Layer, public HardwarePatch {
+    
  public:
   PerfectLocalizer(SpatialComputer* parent);
   void add_device(Device* d);
   VEC_VAL *read_coord_sensor(VOID);
   NUM_VAL read_speed (VOID);
+
+  // returns a list of function  that it patches/ provides impementation for
+  static vector<HardwareFunction> getImplementedHardwareFunctions();
 };
 class PerfectLocalizerDevice : public DeviceLayer {
  public:

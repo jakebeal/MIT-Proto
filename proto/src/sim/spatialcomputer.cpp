@@ -7,6 +7,7 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <iostream>
+#include <algorithm>
 #include "config.h"
 #include "spatialcomputer.h"
 #include "visualizer.h"
@@ -14,6 +15,11 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "customizations.h"
 #include "UniformRandom.h"
 #include "DefaultsPlugin.h"
+
+using namespace std;
+
+
+
 
 /*****************************************************************************
  *  MISC DEFS                                                                *
@@ -50,6 +56,7 @@ void split(const string &s, const string &token, vector<string> &segments) {
   segments.push_back(s.substr(i, s.length()));
 }
 
+// Shouldn't there be .dll as well?
 const char* SpatialComputer::dl_exts[] = { ".so", ".dylib", NULL };
 
 void* SpatialComputer::dlopenext(const char *name, int flag) {
@@ -334,7 +341,7 @@ public:
 /*****************************************************************************
  *  SPATIAL COMPUTER                                                         *
  *****************************************************************************/
-const string SpatialComputer::registryFilePath = "src/dll_registry2.txt";
+const string SpatialComputer::registryFilePath = "registry.txt";
 
 Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
   Layer *layerPtr = NULL;
@@ -483,6 +490,42 @@ void* SpatialComputer::getDLLHandle(string dllName) {
   return dllhandle;
 }
 
+
+bool checkIfLayerImplementsUnpatchedFunctions(vector<HardwareFunction>& unpatchedFuncs, vector<HardwareFunction>& layerFuncs)
+{
+    bool ret = false;
+  for(int i = 0; i < layerFuncs.size(); i++)
+  {
+      HardwareFunction f = layerFuncs[i];
+      vector<HardwareFunction>::iterator it;
+      it = find(unpatchedFuncs.begin(), unpatchedFuncs.end(), f);
+      if(it != unpatchedFuncs.end())
+      {
+          cout << "given layer implements func: " << f << endl;
+          ret = true;
+      }
+  }
+    return ret;
+}
+
+vector<HardwareFunction> getUnpatchedFuncs(SpatialComputer& sc)
+{
+  vector<HardwareFunction> unpatchedFuncs; // necessary funcs that need to be patched
+
+  for(int i = 0; i < sc.hardware.requiredPatches.size(); i++)
+  {
+      HardwareFunction unpatched = sc.hardware.requiredPatches[i];
+//      cout << "i = " << i << " : " << hardware.patch_table[unpatched] << endl;
+      if(sc.hardware.patch_table[unpatched] == &(sc.hardware.base))
+      {
+          cout << "Unpatched OPCODE " << unpatched << endl;
+          unpatchedFuncs.push_back(unpatched);
+      }
+  }
+  return unpatchedFuncs;
+}
+
+
 void SpatialComputer::setDefaultTimeModel(Args* args, int n)
 {
   char buffer[255];
@@ -507,7 +550,9 @@ void SpatialComputer::setDefaultDistribution(Args* args, int n)
     cout << " this->distribution NULL in setDefaultdistribution." << endl;
 }
 
+
 void SpatialComputer::initializePlugins(Args* args, int n) {
+    cout << "Begin initializePlugins" << endl;
   vector<string> layerArgsVector;
   vector<string>::iterator sit;
   string timeModelName = "";
@@ -538,10 +583,11 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
     distributionName = args->pop_next();
   }
 
+  cout << "trying to open regisrty file: " << SpatialComputer::registryFilePath.c_str() << endl;
   fin.open(SpatialComputer::registryFilePath.c_str(), ios::in | ios::out);
   if (!fin.is_open()) {
    // throw ifstream::failure("Cannot open registry file.");
-     cout << "unable to open registry file. Default plugins will be loaded." <<endl;
+     cout << "unable to open registry file: " << SpatialComputer::registryFilePath.c_str() << endl << "Default plugins will be loaded." <<endl;
      setDefaultTimeModel(args,n);
      setDefaultDistribution(args, n);
   }
@@ -597,6 +643,41 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   }
  } // end if fin is open
 
+  // we always add debug layer
+  addLayer(new DebugLayer(args,this));
+
+  // Find unpatched // Universal sensing & actuation ops
+  cout << "Checking for un patched funcs" << endl;
+  vector<HardwareFunction> unpatchedFuncs = getUnpatchedFuncs(*this);
+
+  vector<HardwareFunction> plfuncs = PerfectLocalizer::getImplementedHardwareFunctions();
+  bool implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, plfuncs);
+  if(implementsUnpatchedFunctions)
+  {
+      cout << "Instatiating Perfect localizer" << endl;
+      addLayer(new PerfectLocalizer(this));
+  }
+
+  vector<HardwareFunction> sdfuncs = SimpleDynamics::getImplementedHardwareFunctions();
+  implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, sdfuncs);
+  if(implementsUnpatchedFunctions)
+  {
+      cout << "Instatiating Simple Dynamics" << endl;
+      physics = new SimpleDynamics(args,this, n); // HACK. How do we know if a physics layer has been added or not.
+      addLayer(physics);
+  }
+
+  vector<HardwareFunction> udrfuncs = UnitDiscRadio::getImplementedHardwareFunctions();
+  implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, udrfuncs);
+  if(implementsUnpatchedFunctions)
+  {
+      cout << "Unit Disc Radio" << endl;
+      addLayer(new UnitDiscRadio(args,this, n));
+  }
+
+  unpatchedFuncs = getUnpatchedFuncs(*this);
+  
+  cout << "End initializePlugins" << endl;
 }
 
 void SpatialComputer::readRegistry(fstream& fin, LibRegistry& out) {
@@ -687,7 +768,7 @@ SpatialComputer::SpatialComputer(Args* args): mLibReg(), mLoadedDLLMap() {
   just_dumped=FALSE; next_dump = dump_start; snap_vis_time=0;
   // setup customization
   get_volume(args, n);
-  choose_layers(args,n);             // what types of physics apply
+//  choose_layers(args,n);            // what types of physics apply
   initializePlugins(args, n);
 
   scheduler = new Scheduler(n, time_model->cycle_time());

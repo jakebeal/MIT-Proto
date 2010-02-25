@@ -25,6 +25,7 @@ DistributionsPlugin::DistributionsPlugin()
     knownDistributions.push_back(string("fixedpt"));
     knownDistributions.push_back(string("cylinder"));
     knownDistributions.push_back(string("torus"));
+    cout << "Created distribution plugin " << endl;
 }
 Distribution* DistributionsPlugin::get_distribution(char* name, 
                                                     Args* args,
@@ -44,22 +45,21 @@ Distribution* DistributionsPlugin::get_distribution(char* name,
   }
 
   if(string(name) == string("grideps")) { // random grid
-    return new GridRandom(args,n,dist_volume);
-    //args->extract_switch("-grid"); // with eps, -grid is a null operation
+    return new GridRandom(args,n,dist_volume);    
   }
-  if(string(name) == string("grid")) { // plain grid
+  if(string(name) == string("grid")) { // plain grid    
     return  new Grid(n,dist_volume);
   }
-  if(string(name) == string("xgrid")) { // grid w. random y
+  if(string(name) == string("xgrid")) { // grid w. random y      
     return  new XGrid(n,dist_volume);
   }
-  if(string(name) == string("fixedpt")) {
+  if(string(name) == string("fixedpt")) {      
     return  new FixedPoint(args,n,dist_volume);
   }
-  if(string(name) == string("cylinder")) {
+  if(string(name) == string("cylinder")) {      
     return  new Cylinder(n,dist_volume);
   }
-  if(string(name) == string("torus")) {
+  if(string(name) == string("torus")) {      
     return  new Torus(args,n,dist_volume);
   } 
   

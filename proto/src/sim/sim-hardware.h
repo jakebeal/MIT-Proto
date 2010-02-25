@@ -10,7 +10,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #define __SIM_HARDWARE__
 
 #include "proto.h"
-
+#include <vector>
+using namespace std;
 // posts data without pretty nesting
 void post_stripped_data_to (char *str, DATA *d);
 
@@ -104,10 +105,11 @@ public:
   BOOL is_kernel_debug, is_kernel_trace, is_kernel_debug_script;
   HardwarePatch base;
   HardwarePatch* patch_table[NUM_HARDWARE_FNS];
-  
+  vector<HardwareFunction> requiredPatches; // corresponding to // Universal sensing & actuation ops
   SimulatedHardware();
   void patch(HardwarePatch* p, HardwareFunction fn); // instantiate a fn
   void set_vm_context(Device* d); // prepare globals for kernel execution
+  void dumpPatchTable();
 };
 
 // globals that carry the VM context for kernel hardware calls

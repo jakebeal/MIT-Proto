@@ -8,7 +8,9 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
 #include "spatialcomputer.h"
+#include <iostream>
 
+using namespace std;
 /*****************************************************************************
  *  SIMULATED HARDWARE                                                       *
  *****************************************************************************/
@@ -17,11 +19,43 @@ SimulatedHardware* hardware=NULL;
 Device* device=NULL;
 
 SimulatedHardware::SimulatedHardware() {
+    std::cout << "SimulatedHardware base ptr: " << &base << std::endl;
   for(int i=0;i<NUM_HARDWARE_FNS;i++) patch_table[i]=&base;
+
+  requiredPatches.push_back(SET_DT_FN); // SET_DT_OP
+  requiredPatches.push_back(MOV_FN); // MOV_OP
+  requiredPatches.push_back(SET_PROBE_FN); // PROBE_OP
+  requiredPatches.push_back(READ_RADIO_RANGE_FN); // HOOD_RADIUS_OP
+  // AREA_OP ; func called in proto.c is machine_area. Which FUNC
+//  requiredPatches.push_back(); 
+  requiredPatches.push_back(FLEX_FN); // FLEX_OP
+  // INFINITESIMAL_OP ; func called in proto.c is machine_area. Which FUNC
+//  requiredPatches.push_back();
+//  requiredPatches.push_back(); // DT_OP ??
+  requiredPatches.push_back(READ_RANGER_FN); // NBR_RANGE_OP. TODO Check with Jake
+//  requiredPatches.push_back(); // NBR_BEARING_OP
+//  requiredPatches.push_back(); // NBR_VEC_OP
+//  requiredPatches.push_back(); // NBR_LAG_OP
+//  requiredPatches.push_back(); // MID_OP
+  requiredPatches.push_back(READ_SPEED_FN); // SPEED_OP
+  requiredPatches.push_back(READ_BEARING_FN); // BEARING_OP
+  
+//  dumpPatchTable();
 }
 
 void SimulatedHardware::patch(HardwarePatch* p, HardwareFunction fn) {
+    printf("\n Patching Func: %i \n", fn);
+    
   patch_table[fn]=p;
+
+//  dumpPatchTable();
+}
+void SimulatedHardware::dumpPatchTable()
+{
+    for(int i = 0; i<NUM_HARDWARE_FNS;i++)
+  {
+      std::cout << "Patch table i = " << i << " : " << patch_table[i] << std::endl;
+  }
 }
 
 // The kernel lives in C on a single device

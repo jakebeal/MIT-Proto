@@ -38,6 +38,9 @@ class UnitDiscRadio : public RadioSim {
   int radio_send_digest (uint8_t version, uint16_t script_len, 
 			 uint8_t *digest);
   
+  // returns a list of function  that it patches/ provides impementation for
+  static vector<HardwareFunction> getImplementedHardwareFunctions();
+
   friend class UnitDiscDevice;
  protected:
   // storage: gridded in range-size squares to cover screen

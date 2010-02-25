@@ -188,9 +188,19 @@ void DebugDevice::visualize() {
  *  PERFECT LOCALIZER                                                        *
  *****************************************************************************/
 PerfectLocalizer::PerfectLocalizer(SpatialComputer* parent) : Layer(parent) {
+       
   parent->hardware.patch(this,READ_COORD_SENSOR_FN);
   parent->hardware.patch(this,READ_SPEED_FN);
+
 }
+vector<HardwareFunction> PerfectLocalizer::getImplementedHardwareFunctions()
+{
+    vector<HardwareFunction> hardwareFunctions;
+    hardwareFunctions.push_back(READ_COORD_SENSOR_FN);
+    hardwareFunctions.push_back(READ_SPEED_FN);
+    return hardwareFunctions;
+}
+
 void PerfectLocalizer::add_device(Device* d) {
   d->layers[id] = new PerfectLocalizerDevice(d);
 }
