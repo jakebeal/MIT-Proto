@@ -278,7 +278,7 @@ void* DllUtils::dlopenext(const char *name, int flag)
     void *hand = dlopen(pathStr, flag);
     //cout << "Trying to load dll: " << libFileName << endl;
     if (!hand) {
-      void *hand = dlopen(libFileName.c_str(), flag);
+      hand = dlopen(libFileName.c_str(), flag);
     }
 
   return hand;
