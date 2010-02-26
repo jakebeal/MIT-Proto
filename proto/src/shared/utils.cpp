@@ -270,8 +270,16 @@ void* DllUtils::dlopenext(const char *name, int flag)
     ss << prefix << string(name) << ext;
     string libFileName = ss.str();
 
+    char pathStr[80];
+    strcpy(pathStr,"./");
+    strcat(pathStr,INSTALLED_PLUGINS_DIR);
+    strcat(pathStr,libFileName.c_str());
+    // try to find library in plugins directory first, then of of LD_LIBRARY_PATH.
+    void *hand = dlopen(pathStr, flag);
     //cout << "Trying to load dll: " << libFileName << endl;
-    void *hand = dlopen(libFileName.c_str(), flag);
+    if (!hand) {
+      void *hand = dlopen(libFileName.c_str(), flag);
+    }
 
   return hand;
 }

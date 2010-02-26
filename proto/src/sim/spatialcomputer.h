@@ -208,6 +208,7 @@ class SpatialComputer : public EventConsumer {
   virtual void  initializePlugins(Args* args, int n);
   void setDefaultTimeModel(Args* args, int n);
   void setDefaultDistribution(Args* args, int n);
+  void setDefaultLayer(const char* name, Args* args, int n);
   
  private:
   void get_volume(Args* args, int n); // shared dist constructor
