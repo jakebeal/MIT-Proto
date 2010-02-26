@@ -677,7 +677,9 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   {
       cout << "Instatiating Simple Dynamics" << endl;
       // HACK. How do we know if a physics layer has been added or not.
-      setDefaultLayer(DefaultsPlugin::SIMPLE_DYNAMICS.c_str(), args, n);
+     // setDefaultLayer(DefaultsPlugin::SIMPLE_DYNAMICS.c_str(), args,n);
+     physics = new SimpleDynamics(args, this, n);
+     addLayer(physics);
   }
 
   vector<HardwareFunction> udrfuncs = UnitDiscRadio::getImplementedHardwareFunctions();
