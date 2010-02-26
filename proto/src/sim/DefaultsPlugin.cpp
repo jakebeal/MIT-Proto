@@ -7,6 +7,11 @@
 
 #include "DefaultsPlugin.h"
 
+const string DefaultsPlugin::DEBUG_LAYER = "DebugLayer";
+const string DefaultsPlugin::PERFECT_LOCALIZER = "PerfectLocalizer";
+const string DefaultsPlugin::UNIT_DISC_RADIO = "UnitDiscRadio";
+const string DefaultsPlugin::SIMPLE_DYNAMICS = "SimpleDynamics";
+
 DefaultsPlugin::DefaultsPlugin():mDistVolume(NULL) {
 
 
@@ -25,16 +30,16 @@ Layer* DefaultsPlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, in
    string nameStr = name;
    Layer* layerPtr = NULL;
 
-   if (nameStr.compare("DebugLayer") == 0){
+   if (nameStr.compare(DEBUG_LAYER) == 0){
      layerPtr = new DebugLayer(args, cpu);
    }
-   else if (nameStr.compare("PerfectLocalizer") == 0){
+   else if (nameStr.compare(PERFECT_LOCALIZER) == 0){
      layerPtr = new PerfectLocalizer(cpu);
    }
-   else if (nameStr.compare("UnitDiscRadio") == 0){
+   else if (nameStr.compare(UNIT_DISC_RADIO) == 0){
      layerPtr = new UnitDiscRadio(args, cpu, n);
    }
-   else if (nameStr.compare("SimpleDynamics") == 0){
+   else if (nameStr.compare(SIMPLE_DYNAMICS) == 0){
      layerPtr = new SimpleDynamics(args, cpu, n);
    }
 

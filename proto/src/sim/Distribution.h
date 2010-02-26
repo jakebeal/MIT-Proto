@@ -17,6 +17,7 @@ class Distribution {
   int n; Rect *volume;
   METERS width, height, depth; // bounding box of volume occupied
   Distribution(int n, Rect *volume);
+  virtual ~Distribution();
   // puts location in *loc and returns whether a device should be made
   virtual BOOL next_location(METERS *loc);// loc is a 3-vec
 };

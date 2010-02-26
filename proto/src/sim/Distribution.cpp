@@ -15,6 +15,12 @@
     width = volume->r-volume->l; height = volume->t-volume->b; depth=0;
     if(volume->dimensions()==3) depth=((Rect3*)volume)->c-((Rect3*)volume)->f;
   }
+
+  Distribution::~Distribution() {
+    delete volume;
+    volume = NULL;
+  }
+
   // puts location in *loc and returns whether a device should be made
   BOOL Distribution::next_location(METERS *loc) { return FALSE; } // loc is a 3-vec
 

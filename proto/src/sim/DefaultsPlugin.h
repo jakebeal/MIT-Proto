@@ -29,6 +29,11 @@ public:
 
   TimeModel* get_time_model(char* name, Args* args,SpatialComputer* cpu, int n);
 
+  static const string DEBUG_LAYER;
+  static const string PERFECT_LOCALIZER;
+  static const string UNIT_DISC_RADIO;
+  static const string SIMPLE_DYNAMICS;
+
 private:
   Rect* mDistVolume;
 };
