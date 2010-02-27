@@ -1,7 +1,7 @@
 // a place to put some complex, composed programs
 
-//test: $(PROTO) -n 100 -grid -dim 50 50 -r 6 -D -dump-after 20 -NDall -Dvalue -stop-after 50.5 "(red (gradient (= (coord) (tup 20 -25))))"
-test: $(PROTO) -n 100 -grid -dim 50 50 -r 6 -headless -D -dump-after 100 -NDall -Dvalue -stop-after 100.5 "(red (gradient (and (= (1st (coord)) 20) (= (2nd (coord)) -25))))"
+//test: $(PROTO) -n 100 -DD grid -dim 50 50 -r 6 -D -dump-after 20 -NDall -Dvalue -stop-after 50.5 "(red (gradient (= (coord) (tup 20 -25))))"
+test: $(PROTO) -n 100 -DD grid -dim 50 50 -r 6 -headless -D -dump-after 100 -NDall -Dvalue -stop-after 100.5 "(red (gradient (and (= (1st (coord)) 20) (= (2nd (coord)) -25))))"
 = 10 3 90
 = 91 3 0
 = 1 3 45

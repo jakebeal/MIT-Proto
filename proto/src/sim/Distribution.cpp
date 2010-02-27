@@ -17,7 +17,7 @@
   }
 
   Distribution::~Distribution() {
-    delete volume;
+    delete volume; // FIXME Should we be deleting volume here given the fact that volume was not created here?? PM
     volume = NULL;
   }
 

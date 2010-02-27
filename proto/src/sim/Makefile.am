@@ -71,3 +71,20 @@ simplat_DATA = \
 EXTRA_DIST = $(simplat_DATA)
 
 SUBDIRS=plugins
+
+run_scons:
+	scons
+
+run_createRegistry: run_scons
+	./createRegistry
+    
+copy_registry_file:run_createRegistry
+	cp registry.txt ../tests
+	cp -r plugin_lib ../tests    
+    
+install-exec-hook: copy_registry_file	
+	
+uninstall-local:
+	rm ../tests/registry.txt
+	rm -rf ../tests/plugin-lib
+	

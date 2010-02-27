@@ -44,7 +44,7 @@ SimulatedHardware::SimulatedHardware() {
 }
 
 void SimulatedHardware::patch(HardwarePatch* p, HardwareFunction fn) {
-    printf("\n Patching Func: %i \n", fn);
+    //printf("\n Patching Func: %i \n", fn);
     
   patch_table[fn]=p;
 

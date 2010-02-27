@@ -518,7 +518,7 @@ vector<HardwareFunction> getUnpatchedFuncs(SpatialComputer& sc)
 //      cout << "i = " << i << " : " << hardware.patch_table[unpatched] << endl;
       if(sc.hardware.patch_table[unpatched] == &(sc.hardware.base))
       {
-          cout << "Unpatched OPCODE " << unpatched << endl;
+          //cout << "Unpatched OPCODE " << unpatched << endl;
           unpatchedFuncs.push_back(unpatched);
       }
   }
@@ -634,7 +634,10 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
 
   try {
     if (distributionName.size() > 0)
+    {
+      cout << "Trying to load distributionName: " << distributionName << endl;
       distributionPtr = find_distribution(const_cast<char*> (distributionName.c_str()), args, n);
+      }
   } catch (DllNotFoundException de) {
     cout << "Failure to retrieve Distribution from library. Default will be used. Error: "
         << de.what() << endl;
