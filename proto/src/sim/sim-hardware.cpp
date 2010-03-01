@@ -19,7 +19,7 @@ SimulatedHardware* hardware=NULL;
 Device* device=NULL;
 
 SimulatedHardware::SimulatedHardware() {
-    std::cout << "SimulatedHardware base ptr: " << &base << std::endl;
+//    std::cout << "SimulatedHardware base ptr: " << &base << std::endl;
   for(int i=0;i<NUM_HARDWARE_FNS;i++) patch_table[i]=&base;
 
   requiredPatches.push_back(SET_DT_FN); // SET_DT_OP

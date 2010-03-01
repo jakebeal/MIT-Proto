@@ -13,6 +13,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <stdarg.h>
 #include <ctype.h>
 #include <sstream>
+#include <iostream>
 using namespace std;
 
 flo urnd(flo min, flo max) { return min + ((max-min)*rand())/RAND_MAX; }
@@ -270,14 +271,17 @@ void* DllUtils::dlopenext(const char *name, int flag)
     ss << prefix << string(name) << ext;
     string libFileName = ss.str();
 
-    char pathStr[80];
-    strcpy(pathStr,"./");
-    strcat(pathStr,INSTALLED_PLUGINS_DIR);
-    strcat(pathStr,libFileName.c_str());
+    stringstream ss_dir;
+
+    ss_dir << INSTALLED_PLUGINS_DIR << libFileName;
+    
     // try to find library in plugins directory first, then of of LD_LIBRARY_PATH.
-    void *hand = dlopen(pathStr, flag);
-    //cout << "Trying to load dll: " << libFileName << endl;
+
+//    cout << "Trying to load dll: " << ss_dir.str() << endl;
+    void *hand = dlopen(ss_dir.str().c_str(), flag);
+    
     if (!hand) {
+//      cout << "Trying to load dll: " << libFileName << endl;
       hand = dlopen(libFileName.c_str(), flag);
     }
 

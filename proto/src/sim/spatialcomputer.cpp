@@ -501,7 +501,7 @@ bool checkIfLayerImplementsUnpatchedFunctions(vector<HardwareFunction>& unpatche
       it = find(unpatchedFuncs.begin(), unpatchedFuncs.end(), f);
       if(it != unpatchedFuncs.end())
       {
-          cout << "given layer implements func: " << f << endl;
+//          cout << "given layer implements func: " << f << endl;
           ret = true;
       }
   }
@@ -564,7 +564,7 @@ void SpatialComputer::setDefaultLayer(const char* name, Args* args, int n)
 
 
 void SpatialComputer::initializePlugins(Args* args, int n) {
-    cout << "Begin initializePlugins" << endl;
+//    cout << "Begin initializePlugins" << endl;
   vector<string> layerArgsVector;
   vector<string>::iterator sit;
   string timeModelName = "";
@@ -595,7 +595,7 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
     distributionName = args->pop_next();
   }
 
-  cout << "trying to open registry file: " << SpatialComputer::registryFilePath.c_str() << endl;
+//  cout << "trying to open registry file: " << SpatialComputer::registryFilePath.c_str() << endl;
   fin.open(SpatialComputer::registryFilePath.c_str(), ios::in | ios::out);
   if (!fin.is_open()) {
    // throw ifstream::failure("Cannot open registry file.");
@@ -635,10 +635,11 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   try {
     if (distributionName.size() > 0)
     {
-      cout << "Trying to load distributionName: " << distributionName << endl;
+//      cout << "Trying to load distributionName: " << distributionName << endl;
       distributionPtr = find_distribution(const_cast<char*> (distributionName.c_str()), args, n);
       }
   } catch (DllNotFoundException de) {
+      // We need to instantiate defaults here??
     cout << "Failure to retrieve Distribution from library. Default will be used. Error: "
         << de.what() << endl;
   }
@@ -663,14 +664,14 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   setDefaultLayer(DefaultsPlugin::DEBUG_LAYER.c_str(), args, n);
 
   // Find unpatched // Universal sensing & actuation ops
-  cout << "Checking for un patched funcs" << endl;
+//  cout << "Checking for un patched funcs" << endl;
   vector<HardwareFunction> unpatchedFuncs = getUnpatchedFuncs(*this);
 
   vector<HardwareFunction> plfuncs = PerfectLocalizer::getImplementedHardwareFunctions();
   bool implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, plfuncs);
   if(implementsUnpatchedFunctions)
   {
-      cout << "Instatiating Perfect localizer" << endl;
+      cout << "Instantiating Perfect localizer" << endl;
       setDefaultLayer(DefaultsPlugin::PERFECT_LOCALIZER.c_str(), args, n);
   }
 
@@ -678,7 +679,7 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, sdfuncs);
   if(implementsUnpatchedFunctions)
   {
-      cout << "Instatiating Simple Dynamics" << endl;
+      cout << "Instantiating Simple Dynamics" << endl;
       // HACK. How do we know if a physics layer has been added or not.
      // setDefaultLayer(DefaultsPlugin::SIMPLE_DYNAMICS.c_str(), args,n);
      physics = new SimpleDynamics(args, this, n);
@@ -689,13 +690,13 @@ void SpatialComputer::initializePlugins(Args* args, int n) {
   implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, udrfuncs);
   if(implementsUnpatchedFunctions)
   {
-      cout << "Unit Disc Radio" << endl;
+      cout << "Instantiating Unit Disc Radio" << endl;
       setDefaultLayer(DefaultsPlugin::UNIT_DISC_RADIO.c_str(), args, n);
   }
 
   unpatchedFuncs = getUnpatchedFuncs(*this);
   
-  cout << "End initializePlugins" << endl;
+//  cout << "End initializePlugins" << endl;
 }
 
 void SpatialComputer::readRegistry(fstream& fin, LibRegistry& out) {
