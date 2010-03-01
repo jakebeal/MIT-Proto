@@ -27,6 +27,10 @@ AC_PROG_MAKE_SET
 AC_PROG_LEX
 AX_WITH_PYTHON([echo "no python found"; exit 1; : ]) # only needed for tests
 
+AC_PATH_PROG([SCONSPATH],[scons.bat], [no])
+if test "$SCONSPATH" = "no"; then
+   AC_PATH_PROG([SCONSPATH],[scons])
+fi
 ## options for the user
 
 PROTO_WITH_GLUT
