@@ -73,7 +73,7 @@ EXTRA_DIST = $(simplat_DATA)
 SUBDIRS=plugins
 
 run_scons:
-	$(SCONSPATH)
+	scons
 
 run_createRegistry: run_scons
 	./createRegistry
