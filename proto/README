@@ -62,6 +62,8 @@ Proto depends on the following applications and libraries:
 * Open Dynamics Engine (ODE) v0.8  [optional]
 * Xmu (X miscellaneous utility routines) and
 * Xi (X input Extension library) (these two X libraries are usually already installed)
+* Python 2.5 or later
+* SCons -- install into Python, instructions below.
 
 If you have all of these installed, you should just be able to run
 'make' in this directory and have the whole thing build correctly.
@@ -86,7 +88,12 @@ Proto has been tested on the following platforms:
 
 If you have the required dependencies, we expect proto to work without
 any problems.
-
+For all systems, install SCons into Python:
+  1. Download compressed SCons: http://www.scons.org/download.php
+  2. Unzip
+  3. cd to unzipped SCons directory
+  4. type at the command line:
+     python setup.py install
 
 3. PLATFORM-SPECIFIC INSTRUCTIONS:
 
@@ -122,6 +129,8 @@ B. Windows
 * USING ODE: The easiest way is to get use the "Autotools" method with
   Cygwin (as described in ODE's install notes). You will need to tell
   Cygwin to install "libtool" to install ode this way.
+* Install Python into cygwin.
+* Install SCons into Python.
 
 C. MacOS X
 * If OpenGL and GNU tools aren't already installed, install the
