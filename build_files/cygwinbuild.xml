@@ -80,7 +80,7 @@
         <arg value="*.test" />
      </exec>
      <record name="TestLog.txt" action="stop" />
-     <exec dir="${protodir}/src/tests" executable="${pythonpath}" >
+     <exec dir="${cygprotodir}/src/tests" executable="${cygpythonpath}">
        <arg value="protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
