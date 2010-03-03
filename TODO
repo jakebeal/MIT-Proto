@@ -1,0 +1,10 @@
+- separate the plugins from the proto core project
+- add a default registry to the core project & its install
+- command-line option for plugin path for development
+- command-line option for where to get the registry
+- scons vs. opengl build failure
+- make registry file, plugins go to the actual install directory
+- time model & distribution defaults need to be instantiated if
+  not found in registry
+- a physics layer is a layer that implements MOV_FN
+

@@ -63,10 +63,11 @@ Proto depends on the following applications and libraries:
 * Xmu (X miscellaneous utility routines) and
 * Xi (X input Extension library) (these two X libraries are usually already installed)
 * Python 2.5 or later
-* SCons -- install into Python, instructions below.
+* SCons 1.2.0 -- install into Python, instructions below.
 
 If you have all of these installed, you should just be able to run
 'make' in this directory and have the whole thing build correctly.
+In order to run proto, you will need to install it with 'make install'
 
 Furthermore, each platform has its own additional requirements. See
 README under particular platform directories
