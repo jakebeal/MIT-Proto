@@ -1,5 +1,5 @@
 include_dirs = Split('. ../ ../shared ../kernel')
-libs = Split('sim kernel compiler shared gl glut dl')
+libs = Split('sim kernel compiler shared dl')
 lib_dirs = Split('./.libs ../shared/.libs ../kernel/.libs ../compiler/.libs')
 installed_plugins_dir = Split('plugin_lib')
 
