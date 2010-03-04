@@ -2,9 +2,7 @@ include_dirs = Split('. ../ ../shared ../kernel')
 libs = Split('sim kernel compiler shared gl glu dl')
 lib_dirs = Split('./.libs ../shared/.libs ../kernel/.libs ../compiler/.libs')
 installed_plugins_dir = Split('plugin_lib')
-u = Tool('opengl')
-env = Environment()
-u(env)
+
 # shared library for distributions
 distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
 dist_dll = env.SharedLibrary('distributions', source = distributions_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
