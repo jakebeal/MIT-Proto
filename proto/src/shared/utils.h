@@ -85,7 +85,7 @@ struct Strbuf {
   Strbuf() { idx=0; }
 };
 
-BOOL str_is_number(char* str);
+BOOL str_is_number(const char* str);
 // these next three functions do not promise their values will remain
 // past the next call to any of the three: they're for string construction
 const char* bool2str(BOOL b);
@@ -96,10 +96,10 @@ const char* int2str(int num);
  *  NOTIFICATION FUNCTIONS                                                   *
  *****************************************************************************/
 // (since we may want to change the "printf" behavior on some platforms)
-extern "C" void uerror (char* message, ...);
-extern "C" void debug(char* dstring, ...);
-extern "C" void post(char* pstring, ...);
-extern "C" void post_into(Strbuf *buf, char* pstring, ...);
+extern "C" void uerror (const char* message, ...);
+extern "C" void debug(const char* dstring, ...);
+extern "C" void post(const char* pstring, ...);
+extern "C" void post_into(Strbuf *buf, const char* pstring, ...);
 
 /*****************************************************************************
  *  COMMAND LINE ARGUMENT SUPPORT                                            *

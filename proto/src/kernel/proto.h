@@ -283,8 +283,8 @@ extern void exec_machine (TICKS ticks, TIME time);
 
 #define Null ((void*)0)
 
-extern void uerror(char* dstring, ...);
-extern void POST(char* string, ...);
+extern void uerror(const char* dstring, ...);
+extern void POST(const char* string, ...);
 extern void post_data_to (char *str, DATA *d);
 extern void post_data (DATA *d);
 

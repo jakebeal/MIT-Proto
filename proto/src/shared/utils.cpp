@@ -21,7 +21,7 @@ flo urnd(flo min, flo max) { return min + ((max-min)*rand())/RAND_MAX; }
 /*****************************************************************************
  *  NOTIFICATION FUNCTIONS                                                   *
  *****************************************************************************/
-void uerror (char* message, ...) {
+void uerror (const char* message, ...) {
   void **x = 0;
   va_list ap;
   va_start(ap, message);
@@ -40,7 +40,7 @@ void post_into(Strbuf *buf, char* pstring, ...) {
   fflush(stdout);
 }
 
-void debug(char* dstring, ...) {
+void debug(const char* dstring, ...) {
   char buf[1024];
   va_list ap;
   va_start(ap, dstring);
@@ -50,7 +50,7 @@ void debug(char* dstring, ...) {
   fflush(stderr);
 }
 
-void post(char* pstring, ...) {
+void post(const char* pstring, ...) {
   va_list ap;
   va_start(ap, pstring);
   vprintf(pstring, ap);
@@ -149,7 +149,7 @@ void Args::undefault(BOOL *target,char* pos,char* neg) {
  *  STRING UTILITIES                                                         *
  *****************************************************************************/
 // does the string contain a number after any initial whitespace?
-BOOL str_is_number(char* str) {
+BOOL str_is_number(const char* str) {
   if(str==NULL) return FALSE;
   int i=0;
   while(isspace(str[i])) { i++; } // remove whitespace
