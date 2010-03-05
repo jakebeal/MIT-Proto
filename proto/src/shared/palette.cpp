@@ -14,7 +14,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
  *  PALETTE                                                                  *
  *****************************************************************************/
 static BOOL palette_initialized = FALSE;
-static char* color_names[PALETTE_SIZE];
+static const char* color_names[PALETTE_SIZE];
 
 void set_color_names(); // defined below
 
