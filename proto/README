@@ -41,6 +41,16 @@ If you are using a standard install of Mac OS X, you need to add the
 option "--with-apple-opengl-framework" when you run "./configure":
   "./configure --with-apple-opengl-framework"
 
+Building proto requires the presence of certain libraries. This
+requirement may not always be obvious. One of these is the implicit
+dependence of glut on certain -lXmu and -Xi libraries. If you are
+building a non-headless version of proto, it may appear that the
+-lglut library is missing. While this may in fact be the case, it may
+also be the case that either or both of -lXmu and -lXi are missing. In
+general, if a certain library appears to be missing, examine the
+corresponding ax_check_*.m4 configuration file to see what other
+libraries are also required.
+
 Correct installation will put two applications into your path:
 * proto: Proto simulator (incorporating compiler)
 * p2b:   Proto standalone compiler
