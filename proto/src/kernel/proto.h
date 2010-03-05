@@ -63,8 +63,12 @@ typedef FLO NUM_VAL;
 typedef uint16_t FUN_VAL;
 typedef uint32_t BIN_VAL;
 
+#ifndef TRUE
 #define TRUE 1
+#endif
+#ifndef FALSE
 #define FALSE 0
+#endif
 
 #include "proto_opcodes.h"
 #include "proto_platform.h"

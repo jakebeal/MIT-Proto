@@ -26,12 +26,12 @@ class Compiler : public EventConsumer {
   BOOL is_show_code;
   BOOL is_dump_code;
   BOOL is_dump_ast;
-  char* last_script;
+  const char* last_script;
   
   Compiler(Args* args);
   ~Compiler();
   void init_standalone(Args* args); // setup output files as standalone app
-  uint8_t* compile(char *str, int* len); // len is filled in w. output length
+  uint8_t* compile(const char *str, int* len); // len is filled in w. output length
   void visualize();
   BOOL handle_key(KeyEvent* key);
   void set_platform(string path);

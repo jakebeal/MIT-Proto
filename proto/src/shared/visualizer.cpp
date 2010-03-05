@@ -27,8 +27,8 @@ Visualizer::Visualizer(Args* args)
   glutInitWindowPosition (100, 100); // default position
   glutInitDisplayMode (GLUT_DEPTH | GLUT_RGBA | GLUT_DOUBLE);
   glutInit(&args->argc, args->argv); // allows user override of geometry
-  char* default_name = "Proto Simulator";
-  char* name = 
+  const char* default_name = "Proto Simulator";
+  const char* name = 
     (args->extract_switch("-window-name")) ? name=args->pop_next()
     : default_name;
   window = glutCreateWindow(name); // title window with cmd line

@@ -151,7 +151,7 @@ flo glutStrokeHeight (void *font) {
 }
 
 // Measure the size of a piece of text when drawn in the specified font.
-flo stroke_text_size (void* font, char* text, flo *height) {
+flo stroke_text_size (void* font, const char* text, flo *height) {
   int i; float l = 0.0;
   for (i=0; i<strlen(text); i++) { l += glutStrokeWidth(font, text[i]); }
   *height = glutStrokeHeight(font);
@@ -198,7 +198,7 @@ flo stroke_multitext_size (void* font, int n, char** strs, flo *height) {
   return w;
 }
 
-void stroke_text (void *font, char *txt) {
+void stroke_text (void *font, const char *txt) {
   int i;
   glPushMatrix();
   for (i=0; i<strlen(txt); i++)
@@ -209,7 +209,7 @@ void stroke_text (void *font, char *txt) {
 // Draw text centered in a box of specified width and height
 // Text is scaled to the box based on width only: height adjusts to
 // keep the characters proportional
-void draw_text_raw (TXT_DIR td, flo w, flo h, char *txt) {
+void draw_text_raw (TXT_DIR td, flo w, flo h, const char *txt) {
   int i;
   float tw, ts, th, aw, ah;
   glPushMatrix();
@@ -234,7 +234,7 @@ void draw_text_raw (TXT_DIR td, flo w, flo h, char *txt) {
   glPopMatrix();
 }
 
-void draw_centered_text_block_raw (flo w, flo h, char *txt) {
+void draw_centered_text_block_raw (flo w, flo h, const char *txt) {
   int i, j, n;
   float tw, ts, th, aw, ah;
   char str[MAX_STR];
@@ -253,7 +253,7 @@ void draw_centered_text_block_raw (flo w, flo h, char *txt) {
   glPopMatrix();
 }
 
-void draw_justified_text_block_raw (flo w, flo h, char *txt) {
+void draw_justified_text_block_raw (flo w, flo h, const char *txt) {
   int i, j, n;
   float bh, bw, ah, aw, bs;
   float tw, th;
@@ -282,7 +282,7 @@ void draw_justified_text_block_raw (flo w, flo h, char *txt) {
   glPopMatrix();
 }
 
-void draw_text_block_raw (TXT_DIR td, flo w, flo h, char *txt) {
+void draw_text_block_raw (TXT_DIR td, flo w, flo h, const char *txt) {
   switch (td) {
   case TD_LEFT:     draw_justified_text_block_raw(w, h, txt); break;
   case TD_RIGHT:    draw_justified_text_block_raw(w, h, txt); break;
@@ -290,7 +290,7 @@ void draw_text_block_raw (TXT_DIR td, flo w, flo h, char *txt) {
   }
 }
 
-void draw_text_block (TXT_DIR td, flo w, flo h, char *txt) {
+void draw_text_block (TXT_DIR td, flo w, flo h, const char *txt) {
   glPushAttrib(GL_LINE_BIT | GL_CURRENT_BIT); // save state
   glLineWidth(2);
   draw_text_block_raw(td, w, h, txt);
@@ -303,7 +303,7 @@ flo flo_rnd (flo min, flo max) {
 }
 
 
-void draw_text_block_fuzz (TXT_DIR td, flo s, int n, flo w, flo h, char *txt) {
+void draw_text_block_fuzz (TXT_DIR td, flo s, int n, flo w, flo h, const char *txt) {
   int i, j, k; 
   glPushAttrib(GL_LINE_BIT | GL_CURRENT_BIT); // save state
   glLineWidth(n > 0 ? 3 : 2);
@@ -327,14 +327,14 @@ void draw_text_block_fuzz (TXT_DIR td, flo s, int n, flo w, flo h, char *txt) {
 // Draw text centered in a box of specified width and height
 // Text is scaled to the box based on width only: height adjusts to
 // keep the characters proportional
-void draw_text_justified (TXT_DIR td, flo w, flo h, char *txt) {
+void draw_text_justified (TXT_DIR td, flo w, flo h, const char *txt) {
   glPushAttrib(GL_LINE_BIT | GL_CURRENT_BIT); // save state
   glLineWidth(2);
   draw_text_raw(td, w, h, txt);
   glPopAttrib();
 }
 
-void draw_text (flo w, flo h, char *txt) {
+void draw_text (flo w, flo h, const char *txt) {
   draw_text_justified(TD_CENTERED, w, h, txt);
 }
 
@@ -342,7 +342,7 @@ void draw_text (flo w, flo h, char *txt) {
 // Draw text centered in a box of specified width and height
 // Text is scaled to the box based on width only: height adjusts to
 // keep the characters proportional
-void draw_text_halo (flo w, flo h, char *txt) {
+void draw_text_halo (flo w, flo h, const char *txt) {
   glPushAttrib(GL_LINE_BIT | GL_CURRENT_BIT); // save state
   glLineWidth(2);
   draw_rect(w,h);

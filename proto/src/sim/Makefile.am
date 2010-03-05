@@ -63,7 +63,7 @@ pkginclude_HEADERS = \
 	TimeModel.h \
 	FixedIntervalTime.h \
 	DefaultsPlugin.h
-    
+
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \
 	platform_ops.h \
@@ -73,18 +73,18 @@ EXTRA_DIST = $(simplat_DATA)
 SUBDIRS=plugins
 
 run_scons:
-	scons
+	scons "glut_libs=$(GLUT_LIBS)" "glu_libs=$(GLU_LIBS)" "gl_libs=$(GL_LIBS)"
 
 run_createRegistry: run_scons
 	./createRegistry
-    
+
 copy_registry_file:run_createRegistry
 	cp registry.txt ../tests
 	cp -r plugin_lib ../tests    
-    
+
 install-exec-hook: copy_registry_file	
-	
+
 uninstall-local:
 	rm ../tests/registry.txt
 	rm -rf ../tests/plugin-lib
-	
+

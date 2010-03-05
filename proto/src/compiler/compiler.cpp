@@ -2768,7 +2768,7 @@ void init_compiler () {
   init_ops();
 }
 
-uint8_t *compile_script (char *str, int *len, int is_dump_ast) {
+uint8_t *compile_script (const char *str, int *len, int is_dump_ast) {
   // post("SCRIPT %s\n", str);
   Obj* obj = read_from_str(str);
   Script* s = compile(obj, is_dump_ast);
@@ -2972,7 +2972,7 @@ void Compiler::init_standalone(Args* args) {
   }
 }
 
-uint8_t* Compiler::compile(char *str, int* len) {
+uint8_t* Compiler::compile(const char *str, int* len) {
   last_script=str;
   uint8_t* bytes = compile_script(str,len,is_dump_ast);
   if(is_dump_code) dump_instructions(1,*len,bytes);
