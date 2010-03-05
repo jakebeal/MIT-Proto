@@ -87,8 +87,8 @@ void Args::remove(int i) {
 #define MAX_SWITCHES 200
 static int num_switch_tests = 0;
 static char switch_rec[MAX_SWITCHES][64]; // remember a set of <64-byte args
-BOOL Args::extract_switch(char *sw) { return extract_switch(sw,TRUE); }
-BOOL Args::extract_switch(char *sw, BOOL warn) {
+BOOL Args::extract_switch(const char *sw) { return extract_switch(sw,TRUE); }
+BOOL Args::extract_switch(const char *sw, BOOL warn) {
   if(ARG_SAFE && warn) { // warns the user if a switch is overloaded
     for(int i=0;i<num_switch_tests;i++) {
       if(strcmp(sw,switch_rec[i])==0) {
@@ -103,7 +103,7 @@ BOOL Args::extract_switch(char *sw, BOOL warn) {
   if(find_switch(sw)) { remove(argp); return TRUE; }
   return FALSE;
 }
-BOOL Args::find_switch(char *sw) {
+BOOL Args::find_switch(const char *sw) {
   for(argp=1;argp<argc;argp++) {
     if(strcmp(argv[argp],sw)==0) { 
       last_switch = argv[argp];
@@ -139,7 +139,7 @@ double Args::pop_number() {
 
 // if pos is present, value set to TRUE; if neg is present, value set to FALSE
 // if neither, value is unchanged; if both, value is set to FALSE;
-void Args::undefault(BOOL *target,char* pos,char* neg) {
+void Args::undefault(BOOL *target,const char* pos,const char* neg) {
   BOOL pp = extract_switch(pos), np = extract_switch(neg);
   if(pp) { *target = !np; } else if(np) { *target = FALSE; }
 }

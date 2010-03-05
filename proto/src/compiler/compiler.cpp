@@ -33,12 +33,12 @@ struct AST;
 
 /****** VARIABLES ******/
 struct VAR {
-  char *name; 
+  const char *name; 
   TYPE *type; 
   int   n_refs;
   AST  *ast;
 
-  VAR(char* name, TYPE *type) {
+  VAR(const char* name, TYPE *type) {
     this->name=name; this->type=type; n_refs=0; ast=NULL;
   }
 };
@@ -81,7 +81,7 @@ typedef enum {
   ONE_NUM_KIND, ONE_FUN_KIND, ONE_OP_KIND, ONE_GOP_KIND,
   NUM_TYPE_KINDS
 } TYPE_KIND;
-char* type_kind_name[NUM_TYPE_KINDS]={"NUL","ANY","NUM","VEC","TUP","FUN","ONE_NUM","ONE_FUN","ONE_OP","ONE_GOP"};
+const char* type_kind_name[NUM_TYPE_KINDS]={"NUL","ANY","NUM","VEC","TUP","FUN","ONE_NUM","ONE_FUN","ONE_OP","ONE_GOP"};
 
 struct TYPE { 
   TYPE_KIND kind;
@@ -305,7 +305,7 @@ T& list_nth(list<T> *lst, int n) {
 // ASTs are program elements ("abstract syntax tree")
 // They need to be renamed at some point, because AST isn't quite right
 struct AST {
-  char* name;
+  const char* name;
   TYPE  *type; 
   AST_WALKER walkers[N_WALKERS];
 
@@ -349,7 +349,7 @@ bool test_mode = false;
 extern FILE* dump_target; // declared later
 inline FILE* error_log() { return (test_mode ? dump_target : stderr); }
 
-void cerror (AST* ast, char* message, ...) {
+void cerror (AST* ast, const char* message, ...) {
   va_list ap;
   ast->print(); fprintf(error_log(),"\n");
   va_start(ap, message);
@@ -359,7 +359,7 @@ void cerror (AST* ast, char* message, ...) {
   return; 
 }
 
-void clerror (char* name, list<AST*> *args, char* message, ...) {
+void clerror (const char* name, list<AST*> *args, const char* message, ...) {
   va_list ap;
   fprintf(error_log(),"(%s", name);
   for (typeof(args->begin()) it = args->begin();
@@ -512,15 +512,15 @@ typedef void (*AST_EMIT)(AST_OP_CALL* val, Script* script);
 extern void default_ast_op_call_emit(AST_OP_CALL* ast, Script* script);
 
 struct AST_OP : public AST {
-  char      *name;
-  char      *opname;
+  const char      *name;
+  const char      *opname;
   OPCODE    code;
   int        arity;
   int        is_nary;
   TYPE_INFER type_infer;
   AST_EMIT   emit_fn; // this is a leftover of some sort...
 
-  AST_OP(char *name, char *opname, OPCODE code, int arity, int is_nary, TYPE *type, TYPE_INFER type_infer) {
+  AST_OP(const char *name, const char *opname, OPCODE code, int arity, int is_nary, TYPE *type, TYPE_INFER type_infer) {
     AST::name="OP";
     this->name=name; this->opname=opname; this->code=code;
     this->arity=arity; this->is_nary=is_nary; this->type=type;
@@ -572,13 +572,13 @@ struct AST_OP_CALL : public AST {
 };
 
 struct AST_FUN : public AST{
-  char       *name;
+  const char       *name;
   FUN_TYPE   *fun_type;
   list<VAR*> *vars;
   Obj        *body;
   AST        *ast_body;
 
-  AST_FUN(char *name, list<VAR*> *vars, Obj *body, AST *ast_body);
+  AST_FUN(const char *name, list<VAR*> *vars, Obj *body, AST *ast_body);
   void print() {
     int i;
     fprintf(error_log(),"(FUN (");
@@ -741,7 +741,7 @@ void emit_def_fun_op (int n, Script* script) {
   else script->add_op16(DEF_FUN16_OP, n);
 }
 
-AST_FUN::AST_FUN(char *name, list<VAR*> *vars, Obj *body, AST *ast_body) {
+AST_FUN::AST_FUN(const char *name, list<VAR*> *vars, Obj *body, AST *ast_body) {
   AST::name="FUN"; walkers[0]=&ast_fun_lift_walk; walkers[1]=&ast_fun_walk;
   this->name = name; this->vars = vars;
   this->type     = new ONE_FUN_TYPE(this);
@@ -1234,7 +1234,7 @@ list<VAR*> *user_ops;
 extern VAR* lookup_name (const char *name, list<VAR*> *bindings);
 
 AST_OP *add_op_full
-    (char *name, char *opname, OPCODE code, int arity, int is_nary, 
+    (const char *name, const char *opname, OPCODE code, int arity, int is_nary, 
      FUN_TYPE *fun_type, TYPE_INFER type_infer) {
   AST_OP *op = (AST_OP*)new AST_OP(name, opname, code, arity, is_nary, (TYPE*)fun_type, type_infer);
   VAR *var = lookup_name(name, ops);
@@ -1244,7 +1244,7 @@ AST_OP *add_op_full
     // post("FOUND OLD OP %s\n", name);
     switch (var->type->kind) {
     case ONE_OP_KIND: {
-      AST_GOP *gop = (AST_GOP*)new AST_GOP(name, arity, is_nary, (TYPE*)fun_type);
+      AST_GOP *gop = (AST_GOP*)new AST_GOP((char*)name, arity, is_nary, (TYPE*)fun_type);
       AST_OP *oop  = ((ONE_OP_TYPE*)var->type)->op;
       TYPE *type   = new ONE_GOP_TYPE(gop);
       // post("ADDING OP TO NEW GOP\n");
@@ -1269,36 +1269,36 @@ AST_OP *add_op_full
 extern TYPE* op_type_infer (AST* ast_);
 
 AST_OP *add_op_named
-    (char *name, char *opname, OPCODE code, int arity, int is_nary, 
+    (const char *name, const char *opname, OPCODE code, int arity, int is_nary, 
      FUN_TYPE *fun_type) {
   return add_op_full
     (name, opname, code, arity, is_nary, fun_type, &op_type_infer);
 }
 
 AST_OP *add_op_typed
-    (char *name, OPCODE code, int arity, int is_nary, 
+    (const char *name, OPCODE code, int arity, int is_nary, 
      FUN_TYPE *fun_type, TYPE_INFER type_infer) {
   return add_op_full(name, name, code, arity, is_nary, fun_type, type_infer);
 }
 
 AST_OP *add_op_named_typed
-    (char *name, char *opname, OPCODE code, int arity, int is_nary, 
+    (const char *name, const char *opname, OPCODE code, int arity, int is_nary, 
      FUN_TYPE *fun_type, TYPE_INFER type_infer) {
   return add_op_full(name, opname, code, arity, is_nary, fun_type, type_infer);
 }
 
 AST_OP *add_op
-    (char *name, OPCODE code, int arity, int is_nary, FUN_TYPE *fun_type) {
+    (const char *name, OPCODE code, int arity, int is_nary, FUN_TYPE *fun_type) {
   return add_op_full
     (name, name, code, arity, is_nary, fun_type, &op_type_infer);
 }
 
-AST_OP *def_op_alias (char *name, AST_OP *op) {
+AST_OP *def_op_alias (const char *name, AST_OP *op) {
   ops->push_front(new VAR(name, new ONE_OP_TYPE(op)));
   return op;
 }
 
-char *cpy_str (char *s) {
+char *cpy_str (const char *s) {
   char *r = (char*)MALLOC(strlen(s)+1);
   strcpy(r, s);
   return r;
@@ -1746,7 +1746,7 @@ extern "C" AST_OP* lookup_op_by_code (int code, char **name) {
            it2 != gop_ops->end(); it2++) {
         AST_OP *o = *it2;
         if (o->code == code) {
-          *name = o->opname;
+          *name = (char*)o->opname;
           return o;
         }
       }
@@ -1754,7 +1754,7 @@ extern "C" AST_OP* lookup_op_by_code (int code, char **name) {
       ONE_OP_TYPE *type = (ONE_OP_TYPE*)var->type;
       AST_OP *o = type->op;
       if (o->code == code) {
-        *name = o->opname;
+        *name = (char*)o->opname;
         return o;
       }
     }
@@ -1825,7 +1825,7 @@ AST* parse_reference (const char *name, list<VAR*> *env) {
   switch (type->kind) {
   case ONE_OP_KIND: {
     AST_OP *op = ((ONE_OP_TYPE*)type)->op;
-    return parse_op_ref(op->name, (FUN_TYPE*)(op->type), env); }
+    return parse_op_ref((char*)op->name, (FUN_TYPE*)(op->type), env); }
   case ONE_GOP_KIND: {
     AST_GOP *gop = ((ONE_GOP_TYPE*)type)->gop;
     return parse_op_ref(gop->name, (FUN_TYPE*)(gop->type), env); }
@@ -1994,7 +1994,7 @@ Obj* rewrite_fold_hood_star(Obj *expr, Obj **nexprs, int *n) {
   return form;
 }
 
-Obj* hood_folder (char *name, List *args, Obj *merge, Obj *cmp) {
+Obj* hood_folder (const char *name, List *args, Obj *merge, Obj *cmp) {
   switch (lst_len(args)) {
   case 1:
     return merge;
@@ -2087,11 +2087,11 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
                NULL);
     char *str;
     if (n == 0) // no tup optimization
-      str = "(fold-hood (fun (r e) ($folder r $nexpr)) $init 0)";
+      str = (char*)"(fold-hood (fun (r e) ($folder r $nexpr)) $init 0)";
     else if (n == 1) // no tup optimization
-      str = "(fold-hood (fun (r e) ($folder r $nexpr)) $init . $nexprs)";
+      str = (char*)"(fold-hood (fun (r e) ($folder r $nexpr)) $init . $nexprs)";
     else
-      str = "(fold-hood (fun (r t) ($folder r $nexpr)) $init (tup . $nexprs))";
+      str = (char*)"(fold-hood (fun (r t) ($folder r $nexpr)) $init (tup . $nexprs))";
     Obj *form = read_qq(str, qqenv);
     AST *ast  = parse(form, env);
     // if ((List*)nexprs == lisp_nil)
@@ -2113,11 +2113,11 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
                NULL);
     char *str;
     if (n == 0) // no tup optimization
-      str = "(fold-hood-plus $folder (fun (e) $nexpr) 0)";
+      str = (char*)"(fold-hood-plus $folder (fun (e) $nexpr) 0)";
     else if (n == 1) { // no tup optimization
-      str = "(fold-hood-plus $folder (fun (e) $nexpr) . $nexprs)";
+      str = (char*)"(fold-hood-plus $folder (fun (e) $nexpr) . $nexprs)";
     } else
-      str = "(fold-hood-plus $folder (fun (t) $nexpr) (tup . $nexprs))";
+      str = (char*)"(fold-hood-plus $folder (fun (t) $nexpr) (tup . $nexprs))";
     Obj *form = read_qq(str, qqenv);
     // post_form(form); post("YUK\n");
     AST *ast  = parse(form, env);
@@ -2206,7 +2206,7 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
     Obj *getters = build_getters(name, 0, (List*)fields);
     Obj *ds      = _list(all_sym,
                          _list(def_sym,
-                               cat_sym2("new-", name),
+                               cat_sym2((char*)"new-", name),
                                          fields,
                                PAIR(tup_sym, fields),
                                NULL),
@@ -2302,7 +2302,7 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
                "$len-ss", new Number(lst_len(args)), 
                NULL);
     char *str
-       = "(letfed ((vei (tup (null $1st-ss) 0) \
+      = (char*)"(letfed ((vei (tup (null $1st-ss) 0) \
                         (let* ((idx (elt vei 1)) \
                                (ve (select (mod idx $len-ss) . $ss))) \
                           (if (elt ve 1) (tup ve idx) \
@@ -2907,7 +2907,7 @@ Compiler::Compiler(Args* args) {
   is_dump_ast = args->extract_switch("--print-ast");
   init_compiler();
   if(args->extract_switch("--platform")) set_platform(args->pop_next());
-  last_script="";
+  last_script=(char*)"";
 }
 
 Compiler::~Compiler() {
@@ -2954,7 +2954,7 @@ void Compiler::set_platform(string plat) {
 void Compiler::init_standalone(Args* args) {
   is_dump_code |= args->extract_switch("-D");
   bool dump_to_stdout = true;
-  char *dump_dir = "dumps", *dump_stem = "dump";
+  char *dump_dir = (char*)"dumps", *dump_stem = (char*)"dump";
   if(args->extract_switch("-dump-dir"))
     { dump_dir = args->pop_next(); dump_to_stdout=false; }
   if(args->extract_switch("-dump-stem"))

@@ -37,7 +37,7 @@ void print_token (Token *token) {
   }
 }
 
-Token *new_token (Token_type type, char *name, int max_size) {
+Token *new_token (Token_type type, const char *name, int max_size) {
   Token *tok = (Token*)MALLOC(sizeof(Token));
   char  *buf = (char*)MALLOC(strlen(name)+1);
   if (strlen(name) > max_size)
@@ -58,7 +58,7 @@ Token *new_token (Token_type type, char *name, int max_size) {
 #define H_CHR    '#'
 #define C_CHR    '\''
 
-Token *read_token (char *string, int *start) {
+Token *read_token (const char *string, int *start) {
   int  is_str = 0;
   int  i = *start;
   int  j = 0;
@@ -149,7 +149,7 @@ Token *read_token (char *string, int *start) {
   }
 }
 
-extern Obj *read_from (Token *token, char *string, int *start);
+extern Obj *read_from (Token *token, const char *string, int *start);
 
 List *read_list (char *string, int *start) {
   List *_list  = lisp_nil;
@@ -196,7 +196,7 @@ Obj *new_sym_or_num(char *name) {
     return new Symbol(name);
 }
 
-Obj *read_from (Token *token, char *string, int *start) {
+Obj *read_from (Token *token, const char *string, int *start) {
   // post("READING FROM %s\n", &string[*start]);
   switch (token->type) {
   case Token_quote:
@@ -214,14 +214,14 @@ Obj *read_from (Token *token, char *string, int *start) {
   case Token_true:        return new Number(1);
   case Token_false:       return new Number(0);
   case Token_symbol:      return new_sym_or_num(token->name);
-  case Token_left_paren:  return read_list(string, start);
+  case Token_left_paren:  return read_list((char*)string, start);
   case Token_right_paren: uerror("Unbalanced parens\n");
   case Token_eof:         return NULL;
   default:                uerror("Unknown token type %d\n", token->type);
   }
 }
 
-Obj *read_object (char *string, int *start) {
+Obj *read_object (const char *string, int *start) {
   Token *token = read_token(string, start);
   return read_from(token, string, start);
 }
@@ -259,7 +259,7 @@ List *read_objects_from_dirs (string filename, Path *path) {
   delete file; return res;
 }
 
-List *qq_env (char *str, Obj *val, ...) {
+List *qq_env (const char *str, Obj *val, ...) {
   int i, n;
   va_list ap;
   List *res = PAIR(PAIR(new Symbol(str), PAIR(val, lisp_nil)), lisp_nil);
@@ -275,7 +275,7 @@ List *qq_env (char *str, Obj *val, ...) {
   return lst_rev(res);
 }
 
-Obj *read_from_str (char *str) {
+Obj *read_from_str (const char *str) {
   int    j = 0;
   Obj *obj = read_object(str, &j);
   return obj;
@@ -323,7 +323,7 @@ Obj *copy_eval_quasi_quote(Obj *obj, List *env) {
     uerror("Unknown quasi quote element %s", obj->typeName());
 }
 
-Obj *read_qq (char *str, List *env) {
+Obj *read_qq (const char *str, List *env) {
   Obj *obj = read_from_str(str);
   return copy_eval_quasi_quote(obj, env);
 }

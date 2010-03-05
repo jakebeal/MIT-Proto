@@ -33,12 +33,12 @@ typedef struct {
   char *name;
 } Token;
 
-extern Obj *read_object (char *string, int *start);
+extern Obj *read_object (const char *string, int *start);
 
-extern List *qq_env (char *str, Obj *val, ...);
-extern Obj *read_qq (char *str, List *env);
+extern List *qq_env (const char *str, Obj *val, ...);
+extern Obj *read_qq (const char *str, List *env);
 
-extern Obj *read_from_str (char *str);
+extern Obj *read_from_str (const char *str);
 
 
 // New-style path handling

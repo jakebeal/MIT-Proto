@@ -19,7 +19,7 @@ void post_stripped_data_to (char *str, DATA *d);
 // their dynamics available to the kernel.
 class HardwarePatch {
 public:
-  void hardware_error(char* name) {
+  void hardware_error(const char* name) {
     uerror("Attempt to use unimplemented hardware function '%s'",name);
   }
 

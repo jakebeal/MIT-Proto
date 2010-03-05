@@ -116,17 +116,17 @@ class Args {
   Args(int argc, char** argv) { 
     argp=1; this->argc=argc; 
     this->argv=argv; 
-    last_switch="(no switch yet)";
+    last_switch=(char*)"(no switch yet)";
   }
-  BOOL find_switch(char *sw); // tests if sw is in the list, leaves ptr there
-  BOOL extract_switch(char *sw); // like find_switch, but deletes it if it is
-  BOOL extract_switch(char *sw, BOOL warn); // allows safety to be disabled
+  BOOL find_switch(const char *sw); // tests if sw is in the list, leaves ptr there
+  BOOL extract_switch(const char *sw); // like find_switch, but deletes it if it is
+  BOOL extract_switch(const char *sw, BOOL warn); // allows safety to be disabled
   char* pop_next(); // removes the argument at the pointer and returns it
   char* peek_next(); // returns the argument at the pointer w/o removing
   double pop_number(); // like pop_next, but converts to number
   void goto_first(); // returns the pointer to the start of the arguments
   void remove(int i); // shrinks the list, deleting the ith argument
-  void undefault(BOOL *value,char* pos,char* neg); // modify a default switch
+  void undefault(BOOL *value,const char* pos,const char* neg); // modify a default switch
 };
 
 /*****************************************************************************
