@@ -71,7 +71,7 @@ void Palette::substitute_color(ColorName c, ColorName overlay) {
 	     colors[overlay][2], colors[overlay][3]);
 }
 
-void Palette::overlay_from_file(char* filename) {
+void Palette::overlay_from_file(const char* filename) {
   FILE* file;
   if((file = fopen(filename, "r"))==NULL) {
     debug("WARNING: Couldn't open palette file %s.\n",filename); 
