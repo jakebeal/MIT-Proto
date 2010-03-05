@@ -1,5 +1,15 @@
+import os
+
 include_dirs = Split('. ../ ../shared ../kernel')
+
 libs = Split('sim kernel compiler shared dl')
+for lib in Split(ARGUMENTS.get('glut_libs', '')):
+   if not (lib in libs): libs.append(lib)
+for lib in Split(ARGUMENTS.get('glu_libs', '')):
+   if not (lib in libs): libs.append(lib)
+for lib in Split(ARGUMENTS.get('gl_libs', '')):
+   if not (lib in libs): libs.append(lib)
+
 lib_dirs = Split('./.libs ../shared/.libs ../kernel/.libs ../compiler/.libs')
 installed_plugins_dir = Split('plugin_lib')
 
