@@ -80,7 +80,7 @@ void Palette::overlay_from_file(const char* filename) {
     while(fgets(buf,255,file)) {
       line++;
       char name[255]; flo r, g, b, a;
-      int n = sscanf(buf,"%s %f %f %f %f",&name,&r,&g,&b,&a);
+      int n = sscanf(buf,"%255s %f %f %f %f",name,&r,&g,&b,&a);
       if(n==EOF || n==0 || name[0]=='#') continue; // whitespace or comment
       if(n>=4) {
 	if(n==4) a=1;
