@@ -27,11 +27,19 @@ identified a bug in MIT Proto, email proto-bugs@csail.mit.edu
 MIT PROTO INSTALLATION HELP
 
 This version of Proto has been set up to build with GNU autotools, and
-to install in a standard location in your system.  First, though, you
-need to generate the configuration files by running "./autogen.sh".
-This will create build files appropriate to your systems.  From there,
-you should be able to just follow the instructions in INSTALL and have
-everything build and install correctly.  
+to install in a standard location in your system. These tools may not
+be installed and installation varies from. Sections below list
+packages needed in order to provide the necessary tools and libraries:
+
+Ubuntu Linux (beyond basic install)
+  sudo apt-get install autoconf libtool build-essential libglu1-mesa-dev freeglut3-dev mesa-common-dev libxmu-dev libxi-dev flex scons
+
+
+Once the build enviornment you can start to build, First, you need to
+generate the configuration files by running "./autogen.sh". This will
+create build files appropriate to your systems. From there, you should
+be able to just follow the instructions in INSTALL and have everything
+build and install correctly.
 
 You may need to add options such as "--with-x" when you run
 "./configure" if the configuration software does not automatically
