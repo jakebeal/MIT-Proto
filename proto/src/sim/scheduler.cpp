@@ -144,7 +144,7 @@ void Scheduler::test() {
     sch->set_bound((i+1)*0.7);
     int got = sch->pop_next_event(&e);
     if(got) {
-      printf("[%d, %f, %f %d %d]\n",e.target,e.true_time,e.internal_time,
+      printf("[%p, %f, %f %d %d]\n",e.target,e.true_time,e.internal_time,
              e.type,e.uid);
     } else {
       printf("Pop returned no event through slot %d after %f\n",

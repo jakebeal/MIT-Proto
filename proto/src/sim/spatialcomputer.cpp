@@ -1041,7 +1041,7 @@ void SpatialComputer::dump_state(FILE* out) {
 }
 
 void SpatialComputer::dump_header(FILE* out) {
-  fprintf(out,"% \"UID\" \"TICKS\" \"TIME\""); // device fields
+  fprintf(out,"%% \"UID\" \"TICKS\" \"TIME\""); // device fields
   physics->dump_header(out);
   for(int i=0;i<dynamics.max_id();i++)
     { Layer* d = (Layer*)dynamics.get(i); if(d) d->dump_header(out); }
