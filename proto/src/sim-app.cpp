@@ -415,8 +415,11 @@ int main (int argc, char *argv[]) {
 
   process_app_args(args);
   compiler = new Compiler(args);  // first the compiler
-  compiler->set_platform("sim");
+  //compiler->set_platform("sim");
   computer = new SpatialComputer(args); // then the computer
+  string defops;
+  computer->appendDefops(defops);
+  compiler->setDefops(defops);
   BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(!headless) {
     vis = new Visualizer(args); // start visualizer

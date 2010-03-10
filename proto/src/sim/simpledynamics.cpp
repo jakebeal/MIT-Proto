@@ -9,6 +9,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "simpledynamics.h"
 #include "visualizer.h"
+#include "proto_vm.h"
 
 /*****************************************************************************
  *  VEKTOR OPS                                                               *
@@ -240,16 +241,22 @@ SimpleDynamics::SimpleDynamics(Args* args, SpatialComputer* parent, int n)
   }
   // register to simulate hardware
   parent->hardware.patch(this,MOV_FN);
-  parent->hardware.patch(this,RADIUS_SET_FN);
-  parent->hardware.patch(this,RADIUS_GET_FN);
+  parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_set_op, "radius-set scalar scalar"));
+  parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_get_op, "radius scalar"));
+}
+
+void SimpleDynamics::radius_set_op(MACHINE* machine) {
+  radius_set(NUM_PEEK(0));
+}
+
+void SimpleDynamics::radius_get_op(MACHINE* machine) {
+  NUM_PUSH(radius_get());
 }
 
 vector<HardwareFunction> SimpleDynamics::getImplementedHardwareFunctions()
 {
     vector<HardwareFunction> hardwareFunctions;
     hardwareFunctions.push_back(MOV_FN);
-    hardwareFunctions.push_back(RADIUS_SET_FN);
-    hardwareFunctions.push_back(RADIUS_GET_FN);
     return hardwareFunctions;
 }
 

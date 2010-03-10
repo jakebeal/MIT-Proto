@@ -1,4 +1,5 @@
 #include "Mica2Mote.h"
+#include "proto_vm.h"
 
 
 /*****************************************************************************
@@ -7,14 +8,49 @@
 MoteIO::MoteIO(Args* args, SpatialComputer* parent) : Layer(parent) {
   args->undefault(&can_dump,"-Dmoteio","-NDmoteio");
   // register patches
-  parent->hardware.patch(this,SET_SPEAK_FN);
-  parent->hardware.patch(this,READ_LIGHT_SENSOR_FN);
-  parent->hardware.patch(this,READ_MICROPHONE_FN);
-  parent->hardware.patch(this,READ_TEMP_FN);
-  parent->hardware.patch(this,READ_SHORT_FN);
-  parent->hardware.patch(this,READ_BUTTON_FN);
-  parent->hardware.patch(this,READ_SLIDER_FN);
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::speak_op, "speak scalar scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::light_op, "light scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::sound_op, "sound scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::temp_op, "temp scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::conductive_op, "conductive scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::button_op, "button scalar scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::slider_op, "slider scalar scalar scalar scalar scalar scalar scalar"));
 }
+
+void MoteIO::speak_op(MACHINE* machine) {
+  set_speak(NUM_PEEK(0));
+}
+
+void MoteIO::light_op(MACHINE* machine) {
+  NUM_PUSH(read_light_sensor());
+}
+
+void MoteIO::sound_op(MACHINE* machine) {
+  NUM_PUSH(read_microphone());
+}
+
+void MoteIO::temp_op(MACHINE* machine) {
+  NUM_PUSH(read_temp());
+}
+
+void MoteIO::conductive_op(MACHINE* machine) {
+  NUM_PUSH(read_short());
+}
+
+void MoteIO::button_op(MACHINE* machine) {
+  NUM_PUSH(read_button((int) NUM_POP()));
+}
+
+void MoteIO::slider_op(MACHINE* machine) {
+  int     dkey = (int)NUM_PEEK(5);
+  int     ikey = (int)NUM_PEEK(4);
+  NUM_VAL init = NUM_PEEK(3);
+  NUM_VAL incr = NUM_PEEK(2);
+  NUM_VAL min  = NUM_PEEK(1);
+  NUM_VAL max  = NUM_PEEK(0);
+  NPOP(6); NUM_PUSH(read_slider(dkey, ikey, init, incr, min, max));
+}
+
 void MoteIO::add_device(Device* d) {
   d->layers[id] = new DeviceMoteIO(this,d);
 }

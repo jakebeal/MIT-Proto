@@ -19,6 +19,15 @@ class MoteIO : public Layer, public HardwarePatch {
   void add_device(Device* d);
   BOOL handle_key(KeyEvent* event);
   void dump_header(FILE* out); // list log-file fields
+ private:
+  void speak_op(MACHINE* machine);
+  void light_op(MACHINE* machine);
+  void sound_op(MACHINE* machine);
+  void temp_op(MACHINE* machine);
+  void conductive_op(MACHINE* machine);
+  void button_op(MACHINE* machine);
+  void slider_op(MACHINE* machine);
+
   // hardware emulation
   void set_speak (NUM_VAL period);
   NUM_VAL read_light_sensor(VOID);

@@ -2853,8 +2853,14 @@ void parse_external_op(SExpr* ex) {
   SE_List *l = (SE_List*)ex;
   if(!(*l->children[0]=="defop")) uerror("%s is not a defop",ex->to_str().c_str());
   if(l->len() < 3) uerror("defop has too few arguments");
-  if(!l->children[1]->isSymbol()) uerror("defop op not symbol");
-  int op = op_num(((SE_Symbol*)l->children[1])->name);
+  int op;
+  if (l->children[1]->isSymbol()) {
+    op = op_num(((SE_Symbol*) l->children[1])->name);
+  } else if (l->children[1]->isScalar()) {
+    op = (int) ((SE_Scalar*) l->children[1])->value;
+  } else {
+    uerror("defop op not symbol or number");
+  }
   if(!l->children[2]->isSymbol()) uerror("defop fn not symbol");
   string sfun = ((SE_Symbol*)l->children[2])->name;
   char* fun = new char[sfun.size()+1];
@@ -2884,6 +2890,19 @@ void read_opfile(string filename) {
   delete opfile;
 }
 
+void Compiler::setDefops(string defops) {
+  SExpr* ex = read_sexpr("defops", defops);
+  if(ex==NULL) uerror("Could not read defops %s",defops.c_str());
+  if(!ex->isList()) uerror("%s is not an opfile",defops.c_str());
+  SE_List* l = (SE_List*) ex; // is either a defop or an all
+  if(!l->children[0]->isSymbol()) uerror("%s is not an opfile",defops.c_str());
+  if(*l->children[0]=="all") {
+    for(int i=1;i<l->len();i++) parse_external_op(l->children[i]);
+  } else {
+    parse_external_op(l);
+  }
+}
+  
 
 /***** COMPILER WRAPPER CLASS *****/
 extern list<string>* read_enum(istream* in, ostream* out=NULL);

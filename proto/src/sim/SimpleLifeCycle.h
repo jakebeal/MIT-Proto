@@ -21,9 +21,12 @@ class SimpleLifeCycle : public Layer, public HardwarePatch {
   SimpleLifeCycle(Args* args, SpatialComputer* parent);
   void add_device(Device* d);
   // hardware patch functions
+  void dump_header(FILE* out); // list log-file fields
+ private:
+  void die_op(MACHINE* machine);
+  void clone_op(MACHINE* machine);
   void die (NUM_VAL val);
   void clone_machine (NUM_VAL val);
-  void dump_header(FILE* out); // list log-file fields
 };
 
 class SimpleLifeCycleDevice : public DeviceLayer {

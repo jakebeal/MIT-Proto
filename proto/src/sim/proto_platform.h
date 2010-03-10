@@ -55,8 +55,6 @@ extern int is_tracing_val;
 extern int is_script_debug_val;
 extern int MAX_MEM_SIZE;
 
-#include "platform_ops.h"
-
 extern void die (NUM_VAL val);
 extern void clone_machine (NUM_VAL val);
 extern VEC_VAL *read_coord_sensor (VOID);

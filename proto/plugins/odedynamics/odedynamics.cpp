@@ -335,7 +335,7 @@ ODEDynamics::ODEDynamics(Args* args, SpatialComputer* p, int n)
   args->undefault(&can_dump,"-Ddynamics","-NDdynamics");
   // register to simulate hardware
   parent->hardware.patch(this,MOV_FN);
-  parent->hardware.patch(this,READ_BUMP_FN);
+  parent->hardware.registerOpcode(new OpHandler<ODEDynamics>("BUMP_OP", this, &ODEDynamics::bump_op, "bump boolean"));
   // Initialize ODE and make the walls
   world = dWorldCreate();
   space = dHashSpaceCreate(0);
@@ -356,6 +356,10 @@ ODEDynamics::~ODEDynamics() {
   dGeomDestroy(pen);
   dSpaceDestroy(space);
   dWorldDestroy(world);
+}
+
+void ODEDynamics::bump_op(MACHINE* machine) {
+  NUM_PUSH(read_bump());
 }
 
 BOOL ODEDynamics::handle_key(KeyEvent* key) {

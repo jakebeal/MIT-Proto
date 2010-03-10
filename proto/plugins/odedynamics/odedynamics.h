@@ -95,6 +95,7 @@ class ODEDynamics : public BodyDynamics, HardwarePatch {
  private:
   void make_walls();
   void reset_escapes(); // used when the walls are inescapable
+  void ODEDynamics::bump_op(MACHINE* machine);
 };
 
 #endif //__ODEDYNAMICS__

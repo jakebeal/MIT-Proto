@@ -11,6 +11,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "proto.h"
 #include <vector>
+#include <string>
 using namespace std;
 // posts data without pretty nesting
 void post_stripped_data_to (char *str, DATA *d);
@@ -85,31 +86,62 @@ public:
 // A list of all the functions that can be supplied with a HardwarePatch,
 // for use in applying the patches in a SimulatedHardware
 enum HardwareFunction {
-  MOV_FN, FLEX_FN, DIE_FN, CLONE_MACHINE_FN, 
-  CAM_GET_FN, RADIUS_GET_FN, RADIUS_SET_FN, 
-  SET_R_LED_FN, SET_G_LED_FN, SET_B_LED_FN, SET_PROBE_FN, SET_SPEAK_FN, 
-  SET_DT_FN, SET_IS_FOLDING_FN, READ_FOLD_COMPLETE_FN, 
-  SET_CHANNEL_FN, READ_CHANNEL_FN, DRIP_CHANNEL_FN, GRAD_CHANNEL_FN,
-  READ_RADIO_RANGE_FN, READ_LIGHT_SENSOR_FN, READ_MICROPHONE_FN, 
-  READ_TEMP_FN, READ_SHORT_FN, READ_SENSOR_FN, READ_COORD_SENSOR_FN, 
-  READ_MOUSE_SENSOR_FN, READ_RANGER_FN, READ_BEARING_FN, READ_SPEED_FN, 
-  READ_BUMP_FN, READ_BUTTON_FN, READ_SLIDER_FN, 
-  RADIO_SEND_EXPORT_FN, RADIO_SEND_SCRIPT_PKT_FN, RADIO_SEND_DIGEST_FN,
+  MOV_FN, FLEX_FN,
+  SET_PROBE_FN,
+  SET_DT_FN,
+  READ_RADIO_RANGE_FN,
+  READ_BEARING_FN,
+  READ_SPEED_FN,
+  RADIO_SEND_EXPORT_FN,
+  RADIO_SEND_SCRIPT_PKT_FN,
+  RADIO_SEND_DIGEST_FN,
   NUM_HARDWARE_FNS
 };
+
+class OpHandlerBase {
+ public:
+  virtual void operator()(MACHINE* machine){}
+  int opcode;
+  const char* defop;
+};
+
+template <class Tclass> class OpHandler : public OpHandlerBase {
+ private:
+  void (Tclass::*fnp)(MACHINE* machine);
+  Tclass* pThis;
+ public:
+  OpHandler(Tclass* _pThis, void (Tclass::*_fnp)(MACHINE* machine), const char* _defop) {
+    fnp = _fnp;
+    pThis = _pThis;
+    defop = _defop;
+  }
+  virtual void operator()(MACHINE* machine) {
+    (*pThis.*fnp)(machine);
+  }
+};
+
+#define PLATFORM_OPCODE_MAX_COUNT 256
+#define PLATFORM_OPCODE_OFFSET CORE_CMD_OPS
 
 // This class dispatches kernel hardware calls to the appropriate patches
 class Device;
 class SimulatedHardware {
+  OpHandlerBase* opHandlers[PLATFORM_OPCODE_MAX_COUNT];
+  int opHandlerCount;
+
 public:
   BOOL is_kernel_debug, is_kernel_trace, is_kernel_debug_script;
   HardwarePatch base;
   HardwarePatch* patch_table[NUM_HARDWARE_FNS];
   vector<HardwareFunction> requiredPatches; // corresponding to // Universal sensing & actuation ops
+  vector<const char*> requiredOpcodes;
   SimulatedHardware();
   void patch(HardwarePatch* p, HardwareFunction fn); // instantiate a fn
   void set_vm_context(Device* d); // prepare globals for kernel execution
   void dumpPatchTable();
+  int registerOpcode(OpHandlerBase* opHandler);
+  void dispatchOpcode(uint8_t op);
+  void appendDefops(string& defops);
 };
 
 // globals that carry the VM context for kernel hardware calls

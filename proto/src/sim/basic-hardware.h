@@ -37,11 +37,19 @@ public:
   BOOL handle_key(KeyEvent* event);
   // hardware emulation
   void set_probe (DATA* val, uint8_t index); // debugging data probe
+  void dump_header(FILE* out); // list log-file fields
+ private:
+  void leds_op(MACHINE* machine);
+  void red_op(MACHINE* machine);
+  void green_op(MACHINE* machine);
+  void blue_op(MACHINE* machine);
+  void rgb_op(MACHINE* machine);
+  void hsv_op(MACHINE* machine);
+  void sense_op(MACHINE* machine);
   void set_r_led (NUM_VAL val);
   void set_g_led (NUM_VAL val);
   void set_b_led (NUM_VAL val);
   NUM_VAL read_sensor (uint8_t n); // for "user" sensors
-  void dump_header(FILE* out); // list log-file fields
 };
 
 class DebugDevice : public DeviceLayer {
@@ -64,11 +72,13 @@ class PerfectLocalizer : public Layer, public HardwarePatch {
  public:
   PerfectLocalizer(SpatialComputer* parent);
   void add_device(Device* d);
-  VEC_VAL *read_coord_sensor(VOID);
   NUM_VAL read_speed (VOID);
 
   // returns a list of function  that it patches/ provides impementation for
   static vector<HardwareFunction> getImplementedHardwareFunctions();
+ private:
+  void coord_op(MACHINE* machine);
+  VEC_VAL* read_coord_sensor(VOID);
 };
 class PerfectLocalizerDevice : public DeviceLayer {
  public:
@@ -76,6 +86,35 @@ class PerfectLocalizerDevice : public DeviceLayer {
   PerfectLocalizerDevice(Device* container) : DeviceLayer(container) 
     { coord_sense = NULL; }
   void copy_state(DeviceLayer*) {} // no state worth copying
+};
+
+class LeftoverLayer : public Layer {
+ public:
+  LeftoverLayer(SpatialComputer* parent);
+ private:
+  void ranger_op(MACHINE* machine);
+  void mouse_op(MACHINE* machine);
+  void local_fold_op(MACHINE* machine);
+  void fold_complete_op(MACHINE* machine);
+  void channel_op(MACHINE* machine);
+  void drip_op(MACHINE* machine);
+  void concentration_op(MACHINE* machine);
+  void channel_grad_op(MACHINE* machine);
+  void cam_op(MACHINE* machine);
+
+  VEC_VAL* read_ranger();
+  VEC_VAL* read_mouse_sensor();
+  BOOL set_is_folding(int n, int k);
+  BOOL read_fold_complete(int n);
+  NUM_VAL set_channel(int n, int k);
+  NUM_VAL drip_channel(int n, int k);
+  NUM_VAL read_channel(int n);
+  VEC_VAL* grad_channel(int n);
+  NUM_VAL cam_get(int n);
+
+  void hardware_error(const char* name) {
+    uerror("Attempt to use unimplemented hardware function '%s'",name);
+  }
 };
 
 #endif // __BASIC_HARDWARE__

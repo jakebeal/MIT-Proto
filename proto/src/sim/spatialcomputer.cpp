@@ -1066,3 +1066,6 @@ void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
   just_dumped = TRUE; // prime drawing to flash
 }
 
+void SpatialComputer::appendDefops(string& s) {
+  hardware.appendDefops(s);
+}

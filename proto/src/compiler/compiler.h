@@ -35,6 +35,7 @@ class Compiler : public EventConsumer {
   void visualize();
   BOOL handle_key(KeyEvent* key);
   void set_platform(string path);
+  void setDefops(string defops);
 };
 
 #endif //__COMPILER__

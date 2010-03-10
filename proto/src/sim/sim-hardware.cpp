@@ -9,6 +9,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "spatialcomputer.h"
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 /*****************************************************************************
@@ -32,7 +33,8 @@ SimulatedHardware::SimulatedHardware() {
   // INFINITESIMAL_OP ; func called in proto.c is machine_area. Which FUNC
 //  requiredPatches.push_back();
 //  requiredPatches.push_back(); // DT_OP ??
-  requiredPatches.push_back(READ_RANGER_FN); // NBR_RANGE_OP. TODO Check with Jake
+  requiredOpcodes.push_back("READ_RANGER_OP");
+  // NBR_RANGE_OP. TODO Check with Jake
 //  requiredPatches.push_back(); // NBR_BEARING_OP
 //  requiredPatches.push_back(); // NBR_VEC_OP
 //  requiredPatches.push_back(); // NBR_LAG_OP
@@ -41,6 +43,33 @@ SimulatedHardware::SimulatedHardware() {
   requiredPatches.push_back(READ_BEARING_FN); // BEARING_OP
   
 //  dumpPatchTable();
+
+    opHandlerCount = 0;
+}
+
+int SimulatedHardware::registerOpcode(OpHandlerBase* opHandler) {
+  opHandlers[opHandlerCount] = opHandler;
+  opHandler->opcode = opHandlerCount++ + PLATFORM_OPCODE_OFFSET;
+  return opHandler->opcode;
+}
+
+void SimulatedHardware::dispatchOpcode(uint8_t op) {
+  int ix = op - PLATFORM_OPCODE_OFFSET;
+  if (ix < 0 || ix >= opHandlerCount) {
+    // TODO Out-of-range should throw exception or something
+    return;
+  }
+  (*opHandlers[ix])(machine);
+}
+
+void SimulatedHardware::appendDefops(string& defops) {
+  stringstream ss;
+  for (int ix = 0; ix < opHandlerCount; ix++) {
+    OpHandlerBase* opHandler = opHandlers[ix];
+    ss << "(defop " << (ix + PLATFORM_OPCODE_OFFSET) << " " <<  opHandler->defop << ")\n";
+  }
+  defops = ss.str();
+  std::cout << "defops = " << defops.c_str() << "\n";
 }
 
 void SimulatedHardware::patch(HardwarePatch* p, HardwareFunction fn) {
@@ -90,75 +119,18 @@ void mov (VEC_VAL *val)
 { hardware->patch_table[MOV_FN]->mov(val); }
 void flex (NUM_VAL val) 
 { hardware->patch_table[FLEX_FN]->flex(val); }
-NUM_VAL cam_get (int k) 
-{ return hardware->patch_table[CAM_GET_FN]->cam_get(k); }
-NUM_VAL radius_get (VOID)
-{ return hardware->patch_table[RADIUS_GET_FN]->radius_get(); }
-NUM_VAL radius_set (NUM_VAL val) 
-{ return hardware->patch_table[RADIUS_SET_FN]->radius_set(val); }
-void die (NUM_VAL val) 
-{ hardware->patch_table[DIE_FN]->die(val); }
-void clone_machine (NUM_VAL val) 
-{ hardware->patch_table[CLONE_MACHINE_FN]->clone_machine(val); }
-void set_r_led (NUM_VAL val) 
-{ hardware->patch_table[SET_R_LED_FN]->set_r_led(val); }
-void set_g_led (NUM_VAL val) 
-{ hardware->patch_table[SET_G_LED_FN]->set_g_led(val); }
-void set_b_led (NUM_VAL val) 
-{ hardware->patch_table[SET_B_LED_FN]->set_b_led(val); }
 void set_probe (DATA* d, uint8_t p) 
 { hardware->patch_table[SET_PROBE_FN]->set_probe(d,p); }
 
 void set_dt (NUM_VAL dt)
 { hardware->patch_table[SET_DT_FN]->set_dt(dt);}
 
-void set_is_folding (BOOL val, int k) 
-{ hardware->patch_table[SET_IS_FOLDING_FN]->set_is_folding(val,k); }
-BOOL read_fold_complete (int val) 
-{ return hardware->patch_table[READ_FOLD_COMPLETE_FN]->
-    read_fold_complete(val); }
-
-NUM_VAL set_channel (NUM_VAL diffusion, int k) 
-{ return hardware->patch_table[SET_CHANNEL_FN]->set_channel(diffusion,k); }
-NUM_VAL read_channel (int k) 
-{ return hardware->patch_table[READ_CHANNEL_FN]->read_channel(k); }
-NUM_VAL drip_channel (NUM_VAL val, int k) 
-{ return hardware->patch_table[DRIP_CHANNEL_FN]->drip_channel(val,k); }
-VEC_VAL *grad_channel (int k) 
-{ return hardware->patch_table[GRAD_CHANNEL_FN]->grad_channel(k); }
 NUM_VAL read_radio_range (VOID) 
 { return hardware->patch_table[READ_RADIO_RANGE_FN]->read_radio_range(); }
-NUM_VAL read_light_sensor (VOID) 
-{ return hardware->patch_table[READ_LIGHT_SENSOR_FN]->read_light_sensor(); }
-NUM_VAL read_microphone (VOID) 
-{ return hardware->patch_table[READ_MICROPHONE_FN]->read_microphone(); }
-NUM_VAL read_temp (VOID) 
-{ return hardware->patch_table[READ_TEMP_FN]->read_temp(); }
-NUM_VAL read_short (VOID) 
-{ return hardware->patch_table[READ_SHORT_FN]->read_short(); }
-NUM_VAL read_sensor (uint8_t n) 
-{ return hardware->patch_table[READ_SENSOR_FN]->read_sensor(n); }
-VEC_VAL *read_coord_sensor (VOID) 
-{ return hardware->patch_table[READ_COORD_SENSOR_FN]->read_coord_sensor(); }
-VEC_VAL *read_mouse_sensor (VOID) 
-{ return hardware->patch_table[READ_MOUSE_SENSOR_FN]->read_mouse_sensor(); }
-VEC_VAL *read_ranger (VOID) 
-{ return hardware->patch_table[READ_RANGER_FN]->read_ranger(); }
 NUM_VAL read_bearing (VOID) 
 { return hardware->patch_table[READ_BEARING_FN]->read_bearing(); }
 NUM_VAL read_speed (VOID) 
 { return hardware->patch_table[READ_SPEED_FN]->read_speed(); }
-NUM_VAL read_bump (VOID) 
-{ return hardware->patch_table[READ_BUMP_FN]->read_bump(); }
-NUM_VAL read_button (uint8_t n) 
-{ return hardware->patch_table[READ_BUTTON_FN]->read_button(n); }
-NUM_VAL read_slider (uint8_t ikey, uint8_t dkey, NUM_VAL init, NUM_VAL incr, 
-                     NUM_VAL min, NUM_VAL max) {
-  return hardware->patch_table[READ_SLIDER_FN]->
-    read_slider(ikey,dkey,init,incr,min,max);
-}
-void set_speak (NUM_VAL period) 
-{ hardware->patch_table[SET_SPEAK_FN]->set_speak(period); }
 
 int radio_send_export (uint8_t version, uint8_t timeout, uint8_t n, 
                        uint8_t len, COM_DATA *buf) {

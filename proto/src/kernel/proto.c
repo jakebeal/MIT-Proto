@@ -179,12 +179,6 @@ MAYBE_INLINE VEC_VAL* vec_add (VEC_VAL *vec, DATA *val) {
   return vec;
 }
 
-MAYBE_INLINE DATA *vec_elt (VEC_VAL *vec, int i) {
-  if (i < 0 || i >= vec->n)
-    uerror("UNBOUND VEC ELT %d > %d\n", i, vec->n);
-  return &vec->elts[i];
-}
-
 INLINE void init_data (DATA *dat, TAG tag, DATA_VAL val) {
   dat->is_dead = FALSE;
   dat->tag     = tag;
@@ -844,9 +838,6 @@ void exec_machine (TICKS ticks, TIME time) {
 INLINE uint8_t n_hood (VOID) {
   return machine->n_hood;
 }
-
-INLINE NUM_VAL num_vec_elt (VEC_VAL *v, int i) { return NUM_GET(vec_elt(v, i)); }
-INLINE NUM_VAL num_vec_elt_set (VEC_VAL *v, int i, NUM_VAL x) { return NUM_SET(vec_elt(v, i), x); }
 
 //
 // VECTOR OPERATIONS
@@ -1712,7 +1703,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
       case FLEX_OP:
 	flex(NUM_PEEK(0)); break;
       default:
-	uerror("UNKNOWN OPCODE %d %d\n", op, MAX_CMD_OPS);
+	uerror("UNKNOWN OPCODE %d %d\n", op, CORE_CMD_OPS);
       }
     } else {
       platform_operation(op); // call out to platform-specific code

@@ -7,6 +7,8 @@
 
 #include "SimpleLifeCycle.h"
 
+#include "proto_vm.h"
+
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *
  *****************************************************************************/
@@ -16,8 +18,16 @@ SimpleLifeCycle::SimpleLifeCycle(Args* args, SpatialComputer* p) : Layer(p) {
   clone_delay = args->extract_switch("-clone-delay")?(int)args->pop_number():1;
   args->undefault(&can_dump,"-Dclone","-NDclone");
   // register hardware functions
-  parent->hardware.patch(this,DIE_FN);
-  parent->hardware.patch(this,CLONE_MACHINE_FN);
+  parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::die_op, "die scalar boolean"));
+  parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::clone_op, "clone scalar boolean"));
+}
+
+void SimpleLifeCycle::die_op(MACHINE* machine) {
+  die(NUM_PEEK(0));
+}
+
+void SimpleLifeCycle::clone_op(MACHINE* machine) {
+  clone_machine(NUM_PEEK(0));
 }
 
 void SimpleLifeCycle::add_device(Device* d) {

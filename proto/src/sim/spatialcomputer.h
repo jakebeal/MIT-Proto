@@ -209,6 +209,7 @@ class SpatialComputer : public EventConsumer {
   void setDefaultTimeModel(Args* args, int n);
   void setDefaultDistribution(Args* args, int n);
   void setDefaultLayer(const char* name, Args* args, int n);
+  void appendDefops(std::string& s);
   
  private:
   void get_volume(Args* args, int n); // shared dist constructor

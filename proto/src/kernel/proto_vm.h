@@ -46,4 +46,15 @@ INLINE uint16_t NXT_OP16 (MACHINE *m) {
   return ((((uint16_t)(NXT_OP(m)))<<8) + ((uint16_t)(NXT_OP(m))));
 }
 
+MAYBE_INLINE DATA *vec_elt (VEC_VAL *vec, int i) {
+  if (i < 0 || i >= vec->n)
+    uerror("UNBOUND VEC ELT %d > %d\n", i, vec->n);
+  return &vec->elts[i];
+}
+
+INLINE NUM_VAL num_vec_elt (VEC_VAL *v, int i) { return NUM_GET(vec_elt(v, i)); }
+INLINE NUM_VAL num_vec_elt_set (VEC_VAL *v, int i, NUM_VAL x) { return NUM_SET(vec_elt(v, i), x); }
+
+
+
 #endif // __PROTO_VM
