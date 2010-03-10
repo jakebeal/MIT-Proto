@@ -37,7 +37,6 @@ libsim_la_LDFLAGS =
 pkginclude_HEADERS = \
 	basic-hardware.h \
 	customizations.h \
-	platform_ops.h \
 	proto_platform.h \
 	scheduler.h \
 	sim-hardware.h \
@@ -66,7 +65,6 @@ pkginclude_HEADERS = \
 
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \
-	platform_ops.h \
 	platform_ops.proto
 EXTRA_DIST = $(simplat_DATA)
 
