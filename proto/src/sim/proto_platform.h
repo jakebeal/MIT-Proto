@@ -55,33 +55,6 @@ extern int is_tracing_val;
 extern int is_script_debug_val;
 extern int MAX_MEM_SIZE;
 
-extern void die (NUM_VAL val);
-extern void clone_machine (NUM_VAL val);
-extern VEC_VAL *read_coord_sensor (VOID);
-extern VEC_VAL *read_ranger (VOID);
-extern NUM_VAL read_sensor (uint8_t n);
-extern NUM_VAL read_button (uint8_t n);
-extern NUM_VAL read_slider (uint8_t ikey, uint8_t dkey, NUM_VAL init, NUM_VAL incr, NUM_VAL min, NUM_VAL max);
-extern NUM_VAL read_light_sensor (VOID);
-extern NUM_VAL read_microphone (VOID);
-extern void    set_speak (NUM_VAL period);
-extern NUM_VAL read_temp (VOID);
-extern VEC_VAL *read_mouse_sensor (VOID);
-extern NUM_VAL read_short (VOID);
-extern void set_is_folding (BOOL val, int k);
-extern BOOL read_fold_complete (int val);
-extern void set_r_led (NUM_VAL val);
-extern void set_g_led (NUM_VAL val);
-extern void set_b_led (NUM_VAL val);
-extern NUM_VAL radius_get (VOID);
-extern NUM_VAL radius_set (NUM_VAL val);
-extern NUM_VAL read_bump (VOID);
-extern NUM_VAL set_channel (NUM_VAL diffusion, int k);
-extern NUM_VAL read_channel (int k);
-extern NUM_VAL drip_channel (NUM_VAL val, int k);
-extern VEC_VAL *grad_channel (int k);
-extern NUM_VAL cam_get (int k);
-
 #ifdef __cplusplus
 }
 #endif 
