@@ -1,0 +1,4 @@
+# shared library for distributions
+distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
+dist_dll = SharedLibrary('distributions', source = distributions_source_files, CPPPATH = include_dirs, LIBS = libs, LIBPATH = lib_dirs)
+Install(dir = installed_plugins_dir, source = dist_dll)

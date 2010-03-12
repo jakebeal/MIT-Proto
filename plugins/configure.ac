@@ -8,7 +8,7 @@ AC_PREREQ(2.60)
 # latest release.
 AC_INIT([proto], [1], [proto-bugs@csail.mit.edu])
 
-AC_CONFIG_SRCDIR([src/compiler/compiler.cpp])
+AC_CONFIG_SRCDIR([src/plugins/plugins.cpp])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_HEADER([src/config.h])
@@ -68,15 +68,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([floor gettimeofday memset pow select sqrt strcasecmp strrchr])
 
 AC_CONFIG_FILES([Makefile
-                 lib/Makefile
-                 lib/core/Makefile
                  src/Makefile
-                 src/compiler/Makefile
-                 src/kernel/Makefile
-                 src/motelink/Makefile
-                 src/shared/Makefile
-                 src/sim/Makefile
-                 src/sim/plugins/Makefile
-                 src/tests/Makefile
+                 src/plugins/Makefile
                 ])
 AC_OUTPUT
