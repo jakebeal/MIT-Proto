@@ -1,9 +1,9 @@
-include_dirs = Split('. ../ ../shared ../kernel')
+include_dirs = Split('. /usr/local/include/proto')
 
-libs = Split('sim kernel compiler shared dl')
+libs = Split('')
 
 lib_dirs = Split('')
-installed_plugins_dir = Split('plugin_lib')
+installed_plugins_dir = Split('../../plugin_lib')
 
 # shared library for distributions
 distributions_source_files = Split('XGrid.cpp FixedPoint.cpp Grid.cpp GridRandom.cpp Cylinder.cpp Torus.cpp DistributionsPlugin.cpp')
