@@ -65,12 +65,47 @@ void DebugLayer::rgb_op(MACHINE* machine) {
   set_b_led(num_vec_elt(vec, 2));
 }
 
+// CLIP forces the number x into the range [min,max]
+#define CLIP(x, min, max) MAX(min, MIN(max, x))
+
+// Convert hue/saturation/value to red/green/blue.  Output returned in args.
+void my_hsv_to_rgb (flo h, flo s, flo v, flo *r, flo *g, flo *b) {
+  flo rt, gt, bt;
+  s = CLIP(s, 0, 1);
+  if (s == 0.0) {
+    rt = gt = bt = v;
+  } else {
+    int i;
+    flo h_temp = (h == 360.0) ? 0.0 : h;
+    flo f, p, q, t; 
+    h_temp /= 60.0;
+    i = (int)h_temp;
+    f = h_temp - i;
+    p = v*(1-s);
+    q = v*(1-(s*f));
+    t = v*(1-(s*(1-f)));
+    switch (i) {
+    case 0: rt = v; gt = t; bt = p; break;
+    case 1: rt = q; gt = v; bt = p; break;
+    case 2: rt = p; gt = v; bt = t; break;
+    case 3: rt = p; gt = q; bt = v; break;
+    case 4: rt = t; gt = p; bt = v; break;
+    case 5: rt = v; gt = p; bt = q; break;
+    }
+  }
+  //! Why are these commented out? --jsmb 5/12/06
+  // rt = CLIP(rt, 0, 255);
+  // gt = CLIP(gt, 0, 255);
+  // bt = CLIP(bt, 0, 255);
+  *r = rt*255; *g = gt*255; *b = bt*255;
+}
+
 void DebugLayer::hsv_op(MACHINE* machine) {
   int off = NXT_OP(machine);
   VEC_VAL *rgb = VEC_GET(GLO_GET(off));
   VEC_VAL *hsv = VEC_PEEK(0);
   flo r, g, b;
-  hsv_to_rgb(num_vec_elt(hsv, 0), num_vec_elt(hsv, 1), num_vec_elt(hsv, 2), &r, &g, &b);
+  my_hsv_to_rgb(num_vec_elt(hsv, 0), num_vec_elt(hsv, 1), num_vec_elt(hsv, 2), &r, &g, &b);
   num_vec_elt_set(rgb, 0, r);
   num_vec_elt_set(rgb, 1, g);
   num_vec_elt_set(rgb, 2, b);
