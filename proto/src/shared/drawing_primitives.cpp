@@ -11,6 +11,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <math.h>
 #include "visualizer.h"
 
+#ifdef WANT_GLUT // Covers all but color conversions
+
 // ******   DRAWING PRIMITIVES   ******
 // These all draw a simple object centered at (0,0,0), assuming that 
 // translation to the appropriate part of space is handled by the caller.
@@ -380,6 +382,7 @@ void draw_pixmap
   */
   glPopMatrix();
 }
+#endif // WANT_GLUT
 
 // CLIP forces the number x into the range [min,max]
 #define CLIP(x, min, max) MAX(min, MIN(max, x))

@@ -10,11 +10,11 @@ INCLUDES = \
 	-I$(top_srcdir)/src
 
 libshared_la_SOURCES = \
-	utils.cpp
+	utils.cpp \
+        drawing_primitives.cpp
 if WANT_GLUT
 libshared_la_SOURCES += \
         Trackball.cpp \
-        drawing_primitives.cpp \
         palette.cpp \
         visualizer.cpp
 endif

@@ -70,19 +70,19 @@ EXTRA_DIST = $(simplat_DATA)
 
 SUBDIRS=plugins
 
-run_scons:
-	scons "glut_libs=$(GLUT_LIBS)" "glu_libs=$(GLU_LIBS)" "gl_libs=$(GL_LIBS)"
-
-run_createRegistry: run_scons
-	./createRegistry
-
-copy_registry_file:run_createRegistry
-	cp registry.txt ../tests
-	cp -r plugin_lib ../tests    
-
-install-exec-hook: copy_registry_file	
-
-uninstall-local:
-	rm ../tests/registry.txt
-	rm -rf ../tests/plugin-lib
+# run_scons:
+#	scons "glut_libs=$(GLUT_LIBS)" "glu_libs=$(GLU_LIBS)" "gl_libs=$(GL_LIBS)"
+#
+# run_createRegistry: run_scons
+#	./createRegistry
+#
+# copy_registry_file:run_createRegistry
+# 	cp registry.txt ../tests
+#	cp -r plugin_lib ../tests    
+#
+# install-exec-hook: copy_registry_file	
+# 
+# uninstall-local:
+#	rm ../tests/registry.txt
+#	rm -rf ../tests/plugin-lib
 
