@@ -1,6 +1,9 @@
 This directory contains several pieces of demo code to give you a feel
 for Proto program.  Each file has instructions for how to run it in
-Proto.
+Proto.  
+
+NOTE: If you want to run these demos without installing proto, you will
+need to adjust the paths to find the proto applicaiton and library.
 
 All files in this directory and its subdirectories are
 Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and
