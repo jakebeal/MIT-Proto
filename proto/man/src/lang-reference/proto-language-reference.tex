@@ -32,7 +32,7 @@ This is a reference to all of the currently working functions in the
 Proto language.  For a reference of commonly used simulator and
 language commands, see the {\bf Proto Quick Start}.  For a tutorial on
 the Proto language, see the document {\bf Thinking In Proto}.  For
-installation instructions, see the {\bf Proto Installation Guide}.
+installation instructions, see the {\bf README}.
 For a user manual for the simulator, see the {\bf Proto Simulator User
   Manual}.  For information on how to extend the functionality of the
 simulator, see the {\bf Proto Simulator Developer Reference}.
@@ -95,7 +95,7 @@ shown in Figure~\ref{f:types}.
 
 \begin{figure}[hp]
 \centering
-\includegraphics{figures/types.eps}
+\includegraphics{figures/types.pdf}
 \caption{Proto data types; arrows indicate subset relationships.}
 \label{f:types}
 \end{figure}
@@ -237,10 +237,10 @@ not currently implemented: \var{when}, \var{unless}.
 
 
 \section{Lambdas}
-\function{(FUN (.arg ...) ,@body)}{\lambda}{Creates an anonymous
+\function{(LAMBDA (.arg ...) ,@body)}{\lambda}{Creates an anonymous
   function with as many arguments as there are \var{arg} identifiers.
   The body is evaluated within an extended scope where the \var{arg}
-  identifiers are bound to arguments to the function.}
+  identifiers are bound to arguments to the function.  The function \var{fun} is an alias for \var{lambda}}
 
 \function{(apply ,f|\type{\lambda} ,args|\type{T})}{A}{Call function
   \var{f} with arguments bound to the elements of \var{args}.  The arity

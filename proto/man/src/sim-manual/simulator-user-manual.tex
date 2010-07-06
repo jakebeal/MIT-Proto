@@ -46,7 +46,7 @@
 \maketitle
 
 This is the user manual for the 2nd generation Proto simulator.  For
-installation instructions, see the {\bf Proto Installation Guide}.  For
+installation instructions, see the {\bf README}.  For
 a reference of commonly used simulator and language commands, see the
 {\bf Proto Quick Start}.  For a tutorial on the Proto language, see
 the document {\bf Thinking In Proto}.  For a reference to the Proto
@@ -168,6 +168,18 @@ The display background is colored \color{BACKGROUND}{0}{0}{0}{0.5}.
   in the simulation's coordinate system.}
 \simmouse{LEFT DRAG}{Rotate display.}
 \simmouse{RIGHT DRAG}{Zoom display; toward center zooms out, away zooms in.}
+
+In addition, the display is produced using OpenGL and GLUT, and
+consumes a standard set of command-line arguments for that framework.
+Unlike other arguments, these arguments {\em must} come before the
+code to be executed.  Useful GLUT arguments include:
+\simarg{-display DISPLAY}{Put simulator window on display device
+  \var{DIPLAY}, defaulting to the current display.}
+\simarg{-geometry WxH [+X [+Y]]}{Size the siulator window to width
+  \var{W} and height \var{H}, putting the top-left corner \var{X}
+  pixels from the left and \var{Y} pixels from the top.  Defaults are
+  640x480 with corner at (100,100).}
+
   
 \paragraph{Selection:}
 Selected devices are indicated with a thin ring
@@ -628,19 +640,19 @@ import of more 1st generation simulator functions.
 
 \begin{figure}[hp]
 \centering
-\includegraphics[width=6in]{figures/keyboard-lower.eps}
+\includegraphics[width=6in]{figures/keyboard-lower.pdf}
 \caption{Lower case keyboard assignments}
 \end{figure}
 
 \begin{figure}[hp]
 \centering
-\includegraphics[width=6in]{figures/keyboard-upper.eps}
+\includegraphics[width=6in]{figures/keyboard-upper.pdf}
 \caption{Upper case keyboard assignments}
 \end{figure}
 
 \begin{figure}[hp]
 \centering
-\includegraphics[width=6in]{figures/keyboard-ctrl.eps}
+\includegraphics[width=6in]{figures/keyboard-ctrl.pdf}
 \caption{Control-key keyboard assignments}
 \end{figure}
 
