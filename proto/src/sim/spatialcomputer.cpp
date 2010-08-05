@@ -759,7 +759,7 @@ void SpatialComputer::get_volume(Args* args, int n) {
   if(dimensions==2)
     volume=new Rect(-width/2, width/2, -height/2, height/2);
   else
-    volume=new Rect3(-width/2, width/2, -height/2, height/2, -depth/2, depth);
+    volume=new Rect3(-width/2, width/2, -height/2, height/2, -depth/2, depth/2);
 }
 
 // add the layer to dynamics and set its ID, for use in hardware callbacks
@@ -767,7 +767,7 @@ int SpatialComputer::addLayer(Layer* layer) {
   return (layer->id = dynamics.add(layer));
 }
 
-SpatialComputer::SpatialComputer(Args* args): mLibReg(), mLoadedDLLMap() {
+SpatialComputer::SpatialComputer(Args* args, bool own_dump): mLibReg(), mLoadedDLLMap() {
   sim_time=0;
   int n=(args->extract_switch("-n"))?(int)args->pop_number():100; // # devices
   // load dumping variables
@@ -782,8 +782,11 @@ SpatialComputer::SpatialComputer(Args* args): mLibReg(), mLoadedDLLMap() {
   is_show_snaps = !args->extract_switch("-no-dump-snaps");
   dump_start = args->extract_switch("-dump-after") ? args->pop_number() : 0;
   dump_period = args->extract_switch("-dump-period") ? args->pop_number() : 1;
-  dump_dir = args->extract_switch("-dump-dir") ? args->pop_next() : "dumps";
-  dump_stem = args->extract_switch("-dump-stem") ? args->pop_next() : "dump";
+  is_own_dump_file=own_dump; // create dump files unless told otherwise
+  if(own_dump) {
+    dump_dir = args->extract_switch("-dump-dir") ? args->pop_next() : "dumps";
+    dump_stem = args->extract_switch("-dump-stem") ? args->pop_next() : "dump";
+  }
   just_dumped=FALSE; next_dump = dump_start; snap_vis_time=0;
   // setup customization
   get_volume(args, n);
@@ -1050,19 +1053,25 @@ void SpatialComputer::dump_header(FILE* out) {
 }
 
 void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
-  char buf[1000];
-  // ensure that the directory exists
-  snprintf(buf, 1000, "mkdir -p %s", dump_dir); system(buf);
-  // open the file
-  if(time_in_name)
-    sprintf(buf,"%s/%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
-  else
-    sprintf(buf,"%s/%s%.2f.log",dump_dir,dump_stem,time);
-  FILE* out = fopen(buf,"w");
-  if(out==NULL) { post("Unable to open dump file '%s'\n",buf); return; }
+  if(is_own_dump_file) { // manage the file ourselves
+    char buf[1000];
+    // ensure that the directory exists
+    snprintf(buf, 1000, "mkdir -p %s", dump_dir); system(buf);
+    // open the file
+    if(time_in_name)
+      sprintf(buf,"%s/%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
+    else
+      sprintf(buf,"%s/%s%.2f.log",dump_dir,dump_stem,time);
+    dump_file = fopen(buf,"w");
+    if(dump_file==NULL) { post("Unable to open dump file '%s'\n",buf); return; }
+  } else {
+    if(dump_file==NULL) {post("Can't dump: no output file supplied\n"); return;}
+  }
   // output all the state
-  dump_header(out); dump_state(out);
-  fclose(out); // close the file
+  dump_header(dump_file); dump_state(dump_file);
+  if(is_own_dump_file) {
+    fclose(dump_file); // close the file
+  }
   just_dumped = TRUE; // prime drawing to flash
 }
 

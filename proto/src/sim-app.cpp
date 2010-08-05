@@ -12,16 +12,28 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math
+#if __USE_NEOCOMPILER__
+#include "neocompiler.h"
+#else
+#include "compiler-utils.h" // ordinarily included by neocompiler
 #include "compiler.h"  // should also end up pulling in these two #defines
+#endif
 #include "visualizer.h"
 #include "motelink.h"
 
 void shutdown_app(void);
 
+#if __USE_NEOCOMPILER__
+NeoCompiler* compiler = NULL;
+#else
 Compiler* compiler = NULL;
+#endif
 SpatialComputer* computer = NULL;
 MoteLink* motelink = NULL;
 Visualizer* vis = NULL;
+
+BOOL test_mode = FALSE;
+char dump_name[1000]; // for controlling all outputs when test_mode is true
 
 /*****************************************************************************
  *  TIMING AND UPDATE LOOP                                                   *
@@ -400,6 +412,20 @@ void process_app_args(Args *args) {
   if(args->extract_switch("-ratio")) time_ratio = args->pop_number();
   // minimum amount of time to advance in each simulation step
   step_size =((args->extract_switch("-s"))?args->pop_number():0.01/time_ratio);
+  // is the system in test mode (and should put all output to the same spot)
+  test_mode = args->extract_switch("--test-mode");
+  if(test_mode) {
+    const char* dump_dir = 
+      args->extract_switch("-dump-dir") ? args->pop_next() : "dumps";
+    const char* dump_stem =
+      args->extract_switch("-dump-stem") ? args->pop_next() : "dump";
+    
+    // ensure that the directory exists
+    snprintf(dump_name, 1000, "mkdir -p %s", dump_dir);
+    (void)system(dump_name);
+    sprintf(dump_name,"%s/%s.log",dump_dir,dump_stem);
+    cperr = cpout = new ofstream(dump_name); // begin by making compiler output
+  }
 }
 
 int main (int argc, char *argv[]) {
@@ -414,9 +440,15 @@ int main (int argc, char *argv[]) {
   srand(seed);
 
   process_app_args(args);
+#if __USE_NEOCOMPILER__
+  compiler = new NeoCompiler(args);  // first the compiler
+  compiler->set_platform("sim");
+  computer = new SpatialComputer(args,!test_mode); // then the computer
+#else
   compiler = new Compiler(args);  // first the compiler
   //compiler->set_platform("sim");
-  computer = new SpatialComputer(args); // then the computer
+  computer = new SpatialComputer(args,!test_mode); // then the computer
+#endif
   string defops;
   computer->appendDefops(defops);
   compiler->setDefops(defops);
@@ -439,6 +471,11 @@ int main (int argc, char *argv[]) {
       for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
       post("\n");
     }
+  }
+  // if in test mode, swap the C++ file for a C file for the SpatialComputer
+  if(test_mode) {
+    delete cpout;
+    computer->dump_file = fopen(dump_name,"a");
   }
   // and start!
   if(headless) {

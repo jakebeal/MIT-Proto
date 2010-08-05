@@ -345,9 +345,9 @@ AST *ast_optimize_lets (AST *ast) {
 }
 
 /******* ERROR REPORTING *******/
-bool test_mode = false;
+bool oldc_test_mode = false; // Note: 'oldc_' deconflicts w. neocompiler
 extern FILE* dump_target; // declared later
-inline FILE* error_log() { return (test_mode ? dump_target : stderr); }
+inline FILE* error_log() { return (oldc_test_mode ? dump_target : stderr); }
 
 void cerror (AST* ast, const char* message, ...) {
   va_list ap;
@@ -355,7 +355,7 @@ void cerror (AST* ast, const char* message, ...) {
   va_start(ap, message);
   vfprintf(error_log(),message, ap);  fprintf(error_log(),"\n");
   va_end(ap);
-  exit(test_mode ? 0 : 1);
+  exit(oldc_test_mode ? 0 : 1);
   return; 
 }
 
@@ -372,7 +372,7 @@ void clerror (const char* name, list<AST*> *args, const char* message, ...) {
   vfprintf(error_log(), message, ap);
   fprintf(error_log(),"\n");
   va_end(ap);
-  exit(test_mode ? 0 : 1);
+  exit(oldc_test_mode ? 0 : 1);
   return;
 }
 
@@ -2921,7 +2921,7 @@ Compiler::Compiler(Args* args) {
     proto_path->add_to_path(args->pop_next());
   
   is_show_code = args->extract_switch("-k");
-  test_mode = args->extract_switch("--test-compiler");
+  oldc_test_mode = args->extract_switch("--test-compiler");
   is_dump_code = args->extract_switch("--instructions");
   is_dump_ast = args->extract_switch("--print-ast");
   init_compiler();

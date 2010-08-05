@@ -20,15 +20,28 @@ int main (int argc, char *argv[]) {
 
   if(args->extract_switch("--test")) { run_test_suite(); exit(0); }
 
+#if __USE_NEOCOMPILER__
+  NeoCompiler* neocompiler = new NeoCompiler(args);
+  neocompiler->init_standalone(args);
+#else
   Compiler* compiler = new Compiler(args);
   compiler->init_standalone(args);
+#endif
 
   // load the script
   int len;
   if(args->argc==1) {
+#if __USE_NEOCOMPILER__
+    post("WARNING: NOTHING TO COMPILE");
+#else
     uint8_t* s = compiler->compile("(app)",&len);
+#endif
   } else if(args->argc==2) {
+#if __USE_NEOCOMPILER__
+    uint8_t* s = neocompiler->compile(args->argv[args->argc-1],&len);
+#else
     uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
+#endif
   } else {
     post("WARNING: %d unhandled arguments:",args->argc-2);
     for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);

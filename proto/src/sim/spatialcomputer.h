@@ -161,10 +161,11 @@ class SpatialComputer : public EventConsumer {
   flo display_mag; // magnifier for body display
   Population selection;     // the list of devices currently selected
   // dumping variables
-  BOOL is_dump, is_probe_filter, is_show_snaps, just_dumped;
+  BOOL is_dump, is_probe_filter, is_show_snaps, just_dumped, is_own_dump_file;
   SECONDS dump_start, dump_period, next_dump, snap_vis_time;
   const char* dump_dir;  // directory where dumps will go
   const char* dump_stem; // start of the dump file name
+  FILE* dump_file;
   
   // system state
   SECONDS sim_time;         // time (initially zero)
@@ -184,7 +185,7 @@ class SpatialComputer : public EventConsumer {
   static const char* dl_exts[];
 
  public:
-  SpatialComputer(Args* args);
+  SpatialComputer(Args* args, bool own_dump);
   ~SpatialComputer();
   void load_script(uint8_t* script, int len);
   void load_script_at_selection(uint8_t* script, int len);
