@@ -242,23 +242,23 @@ double get_real_secs () {
 
 // DLLUtil methods
 
- void DllUtils::getPlatformLib(string& outPrefix, string& outExt)
- {
-    #ifdef __CYGWIN__
-        outPrefix = "";
-        outExt = ".dll";
-    #else // assume other platforms to be Unix/Linux
-        outPrefix = "lib";
-            #ifdef __APPLE__
-                outExt = ".dylib" ;
-            #else // assume all other platforms have .so extension
-                outExt = ".so";
-            #endif
-        #endif
- }
+string DllUtils::PLUGIN_DIR = string(PLUGINDIR);
 
-void* DllUtils::dlopenext(const char *name, int flag)
-{
+void DllUtils::getPlatformLib(string& outPrefix, string& outExt) {
+#ifdef __CYGWIN__
+  outPrefix = "";
+  outExt = ".dll";
+#else // assume other platforms to be Unix/Linux
+  outPrefix = "lib";
+#ifdef __APPLE__
+  outExt = ".dylib" ;
+#else // assume all other platforms have .so extension
+  outExt = ".so";
+#endif
+#endif
+}
+
+void* DllUtils::dlopenext(const char *name, int flag) {
   //const char **ext = dl_exts;
   
   string prefix = "unkown_lib_prefix";
@@ -267,23 +267,22 @@ void* DllUtils::dlopenext(const char *name, int flag)
   // get platform specific library prefix and extension
   DllUtils::getPlatformLib(prefix, ext);
 
-    stringstream ss;
-    ss << prefix << string(name) << ext;
-    string libFileName = ss.str();
+  stringstream ss;
+  ss << prefix << string(name) << ext;
+  string libFileName = ss.str();
+  
+  stringstream ss_dir;
 
-    stringstream ss_dir;
-
-    ss_dir << INSTALLED_PLUGINS_DIR << libFileName;
-    
-    // try to find library in plugins directory first, then of of LD_LIBRARY_PATH.
-
-//    cout << "Trying to load dll: " << ss_dir.str() << endl;
-    void *hand = dlopen(ss_dir.str().c_str(), flag);
-    
-    if (!hand) {
-//      cout << "Trying to load dll: " << libFileName << endl;
-      hand = dlopen(libFileName.c_str(), flag);
-    }
-
+  ss_dir << PLUGIN_DIR << libFileName;
+  
+  // try to find library in plugins directory first, then of of LD_LIBRARY_PATH.
+  //    cout << "Trying to load dll: " << ss_dir.str() << endl;
+  void *hand = dlopen(ss_dir.str().c_str(), flag);
+  
+  if (!hand) {
+    //      cout << "Trying to load dll: " << libFileName << endl;
+    hand = dlopen(libFileName.c_str(), flag);
+  }
+  
   return hand;
 }

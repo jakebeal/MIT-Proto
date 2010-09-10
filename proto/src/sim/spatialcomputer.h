@@ -243,6 +243,10 @@ extern SpatialComputer* vis_context;
 
 typedef Layer* (*layer_getter) (Args *args, SpatialComputer *cpu, int n);
 
-
+extern "C" {
+  Device* current_device();
+  SimulatedHardware* current_hardware();
+  MACHINE* current_machine();
+}
 
 #endif // __SPATIALCOMPUTER__

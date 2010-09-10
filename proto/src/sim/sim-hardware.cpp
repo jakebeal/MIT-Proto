@@ -19,6 +19,11 @@ using namespace std;
 SimulatedHardware* hardware=NULL;
 Device* device=NULL;
 
+Device* current_device() { return device; }
+SimulatedHardware* current_hardware() { return hardware; }
+MACHINE* current_machine() { return machine; }
+
+
 SimulatedHardware::SimulatedHardware() {
 //    std::cout << "SimulatedHardware base ptr: " << &base << std::endl;
   for(int i=0;i<NUM_HARDWARE_FNS;i++) patch_table[i]=&base;

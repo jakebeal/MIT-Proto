@@ -18,33 +18,10 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 using namespace std;
 
-
-
-
 /*****************************************************************************
  *  MISC DEFS                                                                *
  *****************************************************************************/
-
-//note: because the following classes inherit from DeviceTimer,TimeModel, Distribution
-// classes that are defined in this file they have to be here rather than in their own file.
-// Forward declarations of them will not work for inheritance in other files.
-// Classes DeviceTimer, TimeModel, Distribution, and Layer should all be moved to their
-// own class files, so they can be included in other header files.
-
-Layer::Layer(SpatialComputer* p) {
-  parent = p;
-  can_dump = p->is_dump_default;
-}
-
-DllNotFoundException::DllNotFoundException(string msg) :
-  message(msg) {
-}
-DllNotFoundException::~DllNotFoundException() throw () {
-}
-const char* DllNotFoundException::what() const throw () {
-  string returnStr = "Error: Library file for plugin or layer " + message + " not found.";
-  return returnStr.c_str();
-}
+// TODO: THESE FUNCTIONS ARE EITHER DUPLICATE OR INCORRECTLY LOCATED!
 
 void split(const string &s, const string &token, vector<string> &segments) {
   size_t i = 0;
@@ -341,7 +318,7 @@ public:
 /*****************************************************************************
  *  SPATIAL COMPUTER                                                         *
  *****************************************************************************/
-const string SpatialComputer::registryFilePath = "registry.txt";
+const string SpatialComputer::registryFilePath = string(DllUtils::PLUGIN_DIR).append("registry.txt");
 
 Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
   Layer *layerPtr = NULL;

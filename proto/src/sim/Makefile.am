@@ -1,4 +1,5 @@
-noinst_LTLIBRARIES = libsim.la
+noinst_LTLIBRARIES = libsim.la 
+lib_LTLIBRARIES = libprotoplugin.la
 
 INCLUDES = \
 	-I$(top_srcdir)/src \
@@ -11,28 +12,24 @@ libsim_la_SOURCES = \
 	kernel_extension.cpp \
 	scheduler.cpp \
 	sim-hardware.cpp \
-	simpledynamics.cpp \
-	spatialcomputer.cpp \
 	unitdiscradio.cpp \
-	radio.cpp \
-	wormhole-radio.cpp \
-	multiradio.cpp \
-	LibRegistry.cpp \
-	Distribution.cpp \
-	XGrid.cpp \
+	simpledynamics.cpp \
 	UniformRandom.cpp \
-	FixedPoint.cpp \
-	Grid.cpp \
-	GridRandom.cpp \
-	Cylinder.cpp \
-	Torus.cpp \
-	SimpleLifeCycle.cpp \
-	Mica2Mote.cpp \
 	FixedIntervalTime.cpp \
+	spatialcomputer.cpp \
 	DefaultsPlugin.cpp
 
 libsim_la_CPPFLAGS =
-libsim_la_LDFLAGS =
+libsim_la_LDFLAGS = 
+libsim_la_LIBADD = \
+	libprotoplugin.la
+
+libprotoplugin_la_SOURCES = \
+	LibRegistry.cpp \
+	Distribution.cpp \
+	radio.cpp \
+	plugin-support.cpp
+libprotoplugin_la_LDFLAGS = -export-dynamic
 
 pkginclude_HEADERS = \
 	basic-hardware.h \
@@ -49,13 +46,7 @@ pkginclude_HEADERS = \
 	LibRegistry.h \
 	ProtoPluginLibrary.h \
 	Distribution.h \
-	XGrid.h \
 	UniformRandom.h \
-	FixedPoint.h \
-	Grid.h \
-	GridRandom.h \
-	Cylinder.h \
-	Torus.h \
 	SimpleLifeCycle.h \
 	Mica2Mote.h \
 	DeviceTimer.h \
@@ -66,23 +57,79 @@ pkginclude_HEADERS = \
 simplatdir=$(protoplatdir)/sim
 simplat_DATA = \
 	platform_ops.proto
+
+buildregistrydir=$(plugindir)
+buildregistry_SOURCES = \
+	createRegistry.cpp
+buildregistry_LDADD = \
+	../shared/libshared.la libsim.la
+buildregistry_LDFLAGS = -lltdl -export-dynamic
+buildregistry_PROGRAMS = \
+	buildregistry
+
 EXTRA_DIST = $(simplat_DATA)
 
-SUBDIRS=plugins
+# Basic plugins
+pkglib_LTLIBRARIES = libdistributions.la libsimplelifecycle.la libmica2mote.la libradiomodels.la
+pluginflags = -dynamiclib -avoid-version #-no-undefined
+pluginlibs = ../shared/libshared.la libprotoplugin.la
+# On non-Mac systems, might need to have -dynamiclib removed, -module added, or other such changes
+
+# shared library for distributions
+libdistributions_la_SOURCES = \
+	XGrid.cpp \
+	FixedPoint.cpp \
+	Grid.cpp \
+	GridRandom.cpp \
+	Cylinder.cpp \
+	Torus.cpp \
+	Distribution.cpp \
+	UniformRandom.cpp \
+	DistributionsPlugin.cpp
+libdistributions_la_LIBADD = $(pluginlibs)
+libdistributions_la_LDFLAGS = $(pluginflags)
+
+# shared library for SimpleLifeCycle plugin
+libsimplelifecycle_la_SOURCES = \
+	SimpleLifeCycle.cpp \
+	SimpleLifeCyclePlugin.cpp
+libsimplelifecycle_la_LIBADD = $(pluginlibs)
+libsimplelifecycle_la_LDFLAGS = $(pluginflags)
+
+# shared library for Mica2Motes plugin
+libmica2mote_la_SOURCES = \
+	Mica2Mote.cpp \
+	Mica2MotePlugin.cpp
+libmica2mote_la_LIBADD = $(pluginlibs)
+libmica2mote_la_LDFLAGS = $(pluginflags)
+
+# shared library for radio plugin
+libradiomodels_la_SOURCES = \
+	wormhole-radio.cpp \
+	multiradio.cpp \
+	RadioModelsPlugin.cpp
+libradiomodels_la_LIBADD = $(pluginlibs)
+libradiomodels_la_LDFLAGS = $(pluginflags)
+
+#SUBDIRS=plugins
 
 # run_scons:
-#	scons "glut_libs=$(GLUT_LIBS)" "glu_libs=$(GLU_LIBS)" "gl_libs=$(GL_LIBS)"
+# 	scons "glut_libs=$(GLUT_LIBS)" "glu_libs=$(GLU_LIBS)" "gl_libs=$(GL_LIBS)"
 #
 # run_createRegistry: run_scons
-#	./createRegistry
+# 	./createRegistry
 #
 # copy_registry_file:run_createRegistry
-# 	cp registry.txt ../tests
-#	cp -r plugin_lib ../tests    
+# 	cp registry.txt $(simplatdir)
+# 	cp -r plugin_lib $(simplatdir)
+# 	cp 
 #
 # install-exec-hook: copy_registry_file	
-# 
-# uninstall-local:
+#
+#uninstall-local:
 #	rm ../tests/registry.txt
 #	rm -rf ../tests/plugin-lib
 
+
+install-data-hook:
+	$(buildregistrydir)/buildregistry

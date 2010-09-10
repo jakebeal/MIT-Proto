@@ -6,4 +6,8 @@ AC_DEFUN([PROTO_PROTOLIBDIR], [
     protoplatdir="${datarootdir}/proto/platforms"
     AC_SUBST(protoplatdir)
     AC_DEFINE_DIR([PROTOPLATDIR], [protoplatdir], [base directory for platform-specific files])
+
+    plugindir="${prefix}/lib/proto/"
+    AC_SUBST(plugindir)
+    AC_DEFINE_DIR([PLUGINDIR], [plugindir], [base directory for plugin libraries])
 ])

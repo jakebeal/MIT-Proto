@@ -75,4 +75,3 @@ TimeModel* DefaultsPlugin::get_time_model(char* name, Args* args,SpatialComputer
    return timeModelPtr;
 
 }
-

@@ -25,7 +25,6 @@ DistributionsPlugin::DistributionsPlugin()
     knownDistributions.push_back(string("fixedpt"));
     knownDistributions.push_back(string("cylinder"));
     knownDistributions.push_back(string("torus"));
-    cout << "Created distribution plugin " << endl;
 }
 Distribution* DistributionsPlugin::get_distribution(char* name, 
                                                     Args* args,
