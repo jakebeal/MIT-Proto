@@ -1,28 +1,55 @@
-/* 
- * File:   SimpleLifeCyclePlugin.h
- * Author: prakash
- *
- * Created on February 18, 2010, 5:25 PM
- */
+/* Plugin providing simple cloning and apoptosis model
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
-#ifndef _SIMPLELIFECYCLEPLUGIN_H
-#define	_SIMPLELIFECYCLEPLUGIN_H
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "ProtoPluginLibrary.h"
+#ifndef _SIMPLELIFECYCLEPLUGIN_
+#define	_SIMPLELIFECYCLEPLUGIN_
 
-#define SIMPLE_LIFE_CYCLE_NAME "simple-life-cycle"
-#define SIMPLE_LIFE_CYCLE_DLL_NAME SIMPLE_LIFE_CYCLE_NAME
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
+#define LAYER_NAME "simple-life-cycle"
+#define DLL_NAME "libsimplelifecycle"
 
-// Plugin class
-class SimpleLifeCyclePlugin : public ProtoPluginLibrary {
-private:
-    string layerName;
-public:
-    SimpleLifeCyclePlugin();
-    Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
+/*************** Layer ***************/
+class SimpleLifeCycle : public Layer, public HardwarePatch {
+ public:
+  flo clone_delay;               // minimum time between clonings
 
-    static string getProperties();
+  SimpleLifeCycle(Args* args, SpatialComputer* parent);
+  void add_device(Device* d);
+  // hardware patch functions
+  void dump_header(FILE* out); // list log-file fields
+ private:
+  void die_op(MACHINE* machine);
+  void clone_op(MACHINE* machine);
+  void die (NUM_VAL val);
+  void clone_machine (NUM_VAL val);
 };
 
-#endif	/* _SIMPLELIFECYCLEPLUGIN_H */
+class SimpleLifeCycleDevice : public DeviceLayer {
+ public:
+  SimpleLifeCycle* parent;
+  BOOL clone_cmd;            // request for cloning is active
+  flo clone_timer;           // timer for delay between clonings
+  SimpleLifeCycleDevice(SimpleLifeCycle* parent, Device* container);
+  void update();
+  BOOL handle_key(KeyEvent* event);
+  void clone_me();
+  void copy_state(DeviceLayer* src) {} // to be called during cloning
+  void dump_state(FILE* out, int verbosity); // print state to file
+};
 
+/*************** Plugin Interface ***************/
+class SimpleLifeCyclePlugin : public ProtoPluginLibrary {
+public:
+  void* get_sim_plugin(string type, string name, Args* args, 
+                       SpatialComputer* cpu, int n);
+  void* get_compiler_plugin(string type, string name, Args* args);
+  static string inventory();
+};
+
+#endif	// _SIMPLELIFECYCLEPLUGIN_

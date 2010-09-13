@@ -181,6 +181,19 @@ const char* int2str(int num) {
   sprintf(buffer,"%d",num); return buffer;
 }
 
+void print_indented(int n, string s, bool trim_trailing_newlines) {
+  int loc = 0;
+  while(true) {
+    int newloc = s.find('\n',loc);
+    if(!trim_trailing_newlines || newloc-loc>0) {
+      for(int i=0;i<n;i++) cout << " ";
+      cout << s.substr(loc,newloc-loc) << endl;
+    }
+    loc=newloc+1; if(newloc<0) return;
+  }
+}
+
+
 /*****************************************************************************
  *  POPULATION CLASS                                                         *
  *****************************************************************************/
@@ -225,6 +238,10 @@ void Population::resize_pop(int new_cap) {
   if(store==NULL) uerror("Population fails to reallocate!");
   capacity=new_cap;
 }
+
+/*****************************************************************************
+ *  GETING TIME                                                              *
+ *****************************************************************************/
 #ifdef __WIN32__
 #include <windows.h>
 double get_real_secs () {
@@ -239,50 +256,3 @@ double get_real_secs () {
   return (double)(t.tv_sec + t.tv_usec / 1000000.0);
 }
 #endif
-
-// DLLUtil methods
-
-string DllUtils::PLUGIN_DIR = string(PLUGINDIR);
-
-void DllUtils::getPlatformLib(string& outPrefix, string& outExt) {
-#ifdef __CYGWIN__
-  outPrefix = "";
-  outExt = ".dll";
-#else // assume other platforms to be Unix/Linux
-  outPrefix = "lib";
-#ifdef __APPLE__
-  outExt = ".dylib" ;
-#else // assume all other platforms have .so extension
-  outExt = ".so";
-#endif
-#endif
-}
-
-void* DllUtils::dlopenext(const char *name, int flag) {
-  //const char **ext = dl_exts;
-  
-  string prefix = "unkown_lib_prefix";
-  string ext = "unknown_lib_extension";
-
-  // get platform specific library prefix and extension
-  DllUtils::getPlatformLib(prefix, ext);
-
-  stringstream ss;
-  ss << prefix << string(name) << ext;
-  string libFileName = ss.str();
-  
-  stringstream ss_dir;
-
-  ss_dir << PLUGIN_DIR << libFileName;
-  
-  // try to find library in plugins directory first, then of of LD_LIBRARY_PATH.
-  //    cout << "Trying to load dll: " << ss_dir.str() << endl;
-  void *hand = dlopen(ss_dir.str().c_str(), flag);
-  
-  if (!hand) {
-    //      cout << "Trying to load dll: " << libFileName << endl;
-    hand = dlopen(libFileName.c_str(), flag);
-  }
-  
-  return hand;
-}

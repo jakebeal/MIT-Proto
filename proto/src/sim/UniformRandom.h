@@ -8,7 +8,8 @@
 #ifndef _UNIFORMRANDOM_H
 #define	_UNIFORMRANDOM_H
 
-#include "Distribution.h"
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
 
 class UniformRandom : public Distribution {
 public:

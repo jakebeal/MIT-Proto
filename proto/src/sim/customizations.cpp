@@ -23,7 +23,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "unitdiscradio.h"
 #include "wormhole-radio.h"
 #include "multiradio.h"
-#include "Distribution.h"
+#include "proto_plugin.h"
 #include "XGrid.h"
 #include "UniformRandom.h"
 #include "FixedPoint.h"
@@ -31,7 +31,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "GridRandom.h"
 #include "Cylinder.h"
 #include "Torus.h"
-#include "SimpleLifeCycle.h"
 #include "Mica2Mote.h"
 #include "FixedIntervalTime.h"
 /*****************************************************************************
@@ -166,7 +165,7 @@ void SpatialComputer::choose_layers(Args* args, int n) {
   }
 
   addLayer(new DebugLayer(args,this));
-  addLayer(new SimpleLifeCycle(args,this));
+  //addLayer(new SimpleLifeCycle(args,this));
   addLayer(new PerfectLocalizer(this)); // Default
 
   // other layers

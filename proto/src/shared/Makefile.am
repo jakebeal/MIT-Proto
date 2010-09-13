@@ -9,8 +9,11 @@ noinst_LTLIBRARIES = libshared.la
 INCLUDES = \
 	-I$(top_srcdir)/src
 
+libshared_la_LDFLAGS = -lltdl -export-dynamic
+
 libshared_la_SOURCES = \
-	utils.cpp
+	utils.cpp \
+	plugin_manager.cpp
 if WANT_GLUT
 libshared_la_SOURCES += \
         drawing_primitives.cpp \
@@ -23,9 +26,10 @@ endif
 
 pkginclude_HEADERS = \
 	utils.h \
+	proto_plugin.h \
+	plugin_manager.h \
 	Trackball.h \
 	drawing_primitives.h \
 	palette.h \
 	proto_opcodes.h \
 	visualizer.h
-

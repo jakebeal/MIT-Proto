@@ -11,12 +11,14 @@ Layer::Layer(SpatialComputer* p) {
   can_dump = p->is_dump_default;
 }
 
-DllNotFoundException::DllNotFoundException(string msg) :
-  message(msg) {
+// To create an initial distribution, we must know:
+// - # nodes, volume they occupy, distribution type, any dist-specific args
+
+Distribution::Distribution(int n, Rect *volume) { // subclasses often take an Args* too
+  this->n=n; this->volume=volume;
+  width = volume->r-volume->l; height = volume->t-volume->b; depth=0;
+  if(volume->dimensions()==3) depth=((Rect3*)volume)->c-((Rect3*)volume)->f;
 }
-DllNotFoundException::~DllNotFoundException() throw () {
-}
-const char* DllNotFoundException::what() const throw () {
-  string returnStr = "Error: Library file for plugin or layer " + message + " not found.";
-  return returnStr.c_str();
-}
+
+// puts location in *loc (a 3-vector) and returns to make a new device
+BOOL Distribution::next_location(METERS *loc) { return FALSE; }

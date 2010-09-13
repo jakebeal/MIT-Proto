@@ -8,7 +8,8 @@
 #ifndef _GRID_H
 #define	_GRID_H
 
-#include "Distribution.h"
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
 
 class Grid : public Distribution {
 public:

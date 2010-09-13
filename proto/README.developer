@@ -6,7 +6,14 @@ do the following things before checking in the code:
    In manuals, things may be marked with "\bugs{}" "\broken{}"
    or "\experimental{}" when they aren't working right.
 2. Add regression tests to verify that your changes work
-3. Keep lines to 80 characters
+3. Follow the style of existing code:
+   - Start every file with the standard licensing header
+   - Code should be dense but readable
+     - Keep lines to 80 characters
+     - indent with 2 spaces / indent
+     - Short comment go on the same line as code
+   - Each file should contain a single, whole, thematically coherent
+     module: this isn't Java so lots of little files aren't mandatory
 
 Doing these immediately will help prevent version skew and
 accumulation of small tasks into large & painful tasks.

@@ -12,6 +12,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h"
 #include "compiler.h"
 
+#define __USE_NEOCOMPILER__ 0
+
 void run_test_suite(); // testing kludge
 
 int main (int argc, char *argv[]) {

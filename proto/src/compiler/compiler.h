@@ -12,8 +12,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <inttypes.h>
 #include <string>
 
-#define __USE_NEOCOMPILER__ 0
-
 using namespace std;
 
 extern void init_compiler(void);

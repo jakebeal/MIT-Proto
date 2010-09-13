@@ -10,43 +10,26 @@
 #include <sstream>
 using namespace std;
 
-Mica2MotePlugin::Mica2MotePlugin()
-{
-    layerName = MICA2MOTE_NAME;
-}
-Layer* Mica2MotePlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, int n)
-{
-    if(layerName == string(name))
-    {
-        new MoteIO(args,cpu);
-    }
-    return NULL;
+void* Mica2MotePlugin::get_sim_plugin(string type, string name, Args* args, 
+                                      SpatialComputer* cpu, int n) {
+  if(type==LAYER_PLUGIN) {
+    if(name==MICA2MOTE_NAME) { return new MoteIO(args,cpu); }
+  }
 }
 
-string Mica2MotePlugin::getProperties()
-{
-    stringstream ss;
-    ss << "Layer " << MICA2MOTE_NAME << " = " << MICA2MOTE_DLL_NAME << endl;
-    return ss.str();
+void* Mica2MotePlugin::get_compiler_plugin(string type,string name,Args* args) {
+  // TODO: implement compiler plugins
+  uerror("Compiler plugins not yet implemented");
 }
 
-#ifdef __cplusplus
+string Mica2MotePlugin::inventory() {
+  return "# Some types of Mica2 Mote I/O\n" +
+    registry_entry(LAYER_PLUGIN,MICA2MOTE_NAME,DLL_NAME);
+}
 
 extern "C" {
-
-ProtoPluginLibrary* get_proto_plugins()
-{
-    return new Mica2MotePlugin();
+  ProtoPluginLibrary* get_proto_plugin_library()
+  { return new Mica2MotePlugin(); }
+  const char* get_proto_plugin_inventory()
+  { return (new string(Mica2MotePlugin::inventory()))->c_str(); }
 }
-const char* get_proto_plugin_properties()
-{
-    string propS = Mica2MotePlugin::getProperties();
-    char *props = new char[propS.size() + 1];
-    strncpy(props, propS.c_str(), propS.size());
-    props[propS.size()] = '\0';
-    return props;
-}
-
-}
-
-#endif

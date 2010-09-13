@@ -1,53 +1,34 @@
-/* 
- * File:   SimpleLifeCyclePlugin.cpp
- * Author: prakash
- * 
- * Created on February 18, 2010, 5:25 PM
- */
+/* Plugin providing simple cloning and apoptosis model
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
+
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "SimpleLifeCyclePlugin.h"
-#include "SimpleLifeCycle.h"
-#include <sstream>
-using namespace std;
 
-SimpleLifeCyclePlugin::SimpleLifeCyclePlugin()
-{
-    layerName = SIMPLE_LIFE_CYCLE_NAME;
+void* SimpleLifeCyclePlugin::get_sim_plugin(string type,string name,Args* args, 
+                                            SpatialComputer* cpu, int n) {
+  if(type == LAYER_PLUGIN) {
+    if(name == LAYER_NAME) { return new SimpleLifeCycle(args, cpu); }
+  }
+  return NULL;
 }
 
-Layer* SimpleLifeCyclePlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, int n)
-{
-    if(string(name) == layerName)
-    {
-        return new SimpleLifeCycle(args, cpu);
-    }
-    return NULL;
+void* SimpleLifeCyclePlugin::get_compiler_plugin(string type, string name, Args* args) {
+  // TODO: implement compiler plugins
+  uerror("Compiler plugins not yet implemented");
 }
 
-string SimpleLifeCyclePlugin::getProperties()
-{
-    stringstream ss;
-    ss << "Layer " << SIMPLE_LIFE_CYCLE_NAME << " = " << SIMPLE_LIFE_CYCLE_DLL_NAME << endl;
-    return ss.str();
+string SimpleLifeCyclePlugin::inventory() {
+  return "# Cloning and apoptosis\n" +
+    registry_entry(LAYER_PLUGIN,LAYER_NAME,DLL_NAME);
 }
-
-#ifdef __cplusplus
 
 extern "C" {
-
-ProtoPluginLibrary* get_proto_plugins()
-{
-    return new SimpleLifeCyclePlugin();
+  ProtoPluginLibrary* get_proto_plugin_library() 
+  { return new SimpleLifeCyclePlugin(); }
+  const char* get_proto_plugin_inventory()
+  { return (new string(SimpleLifeCyclePlugin::inventory()))->c_str(); }
 }
-const char* get_proto_plugin_properties()
-{
-    string propS = SimpleLifeCyclePlugin::getProperties();
-    char *props = new char[propS.size() + 1];
-    strncpy(props, propS.c_str(), propS.size());
-    props[propS.size()] = '\0';
-    return props;
-}
-
-}
-#endif
-

@@ -1,77 +1,51 @@
-/*
- * DefaultsPlugin.cpp
- *
- *  Created on: Feb 24, 2010
- *      Author: gbays
- */
+/* Collection of the default plugins built into the simulator 
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
+
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "DefaultsPlugin.h"
+#include "plugin_manager.h"
 
-const string DefaultsPlugin::DEBUG_LAYER = "DebugLayer";
-const string DefaultsPlugin::PERFECT_LOCALIZER = "PerfectLocalizer";
-const string DefaultsPlugin::UNIT_DISC_RADIO = "UnitDiscRadio";
-const string DefaultsPlugin::SIMPLE_DYNAMICS = "SimpleDynamics";
+#define DLL_NAME "ProtoSimDefaults"
+#define FIXTIME "FixedIntervalTime"
+#define URANDOM "UniformRandom"
+#define DEBUGLAYER "DebugLayer"
+#define SIMPLEDYNAMICS "SimpleDynamics"
+#define PERFECTLOCALIZER "PerfectLocalizer"
+#define UNITDISCRADIO "UnitDiscRadio"
 
-DefaultsPlugin::DefaultsPlugin():mDistVolume(NULL) {
+bool DefaultsPlugin::initialized = false;
 
-
+void DefaultsPlugin::register_defaults() {
+  if(initialized) return;
+  ProtoPluginLibrary* lib = new DefaultsPlugin();
+  plugins.register_lib(TIMEMODEL_PLUGIN,FIXTIME,DLL_NAME,lib);
+  plugins.register_lib(DISTRIBUTION_PLUGIN,URANDOM,DLL_NAME,lib);
+  plugins.register_lib(LAYER_PLUGIN,DEBUGLAYER,DLL_NAME,lib);
+  plugins.register_lib(LAYER_PLUGIN,SIMPLEDYNAMICS,DLL_NAME,lib);
+  plugins.register_lib(LAYER_PLUGIN,PERFECTLOCALIZER,DLL_NAME,lib);
+  plugins.register_lib(LAYER_PLUGIN,UNITDISCRADIO,DLL_NAME,lib);
+  initialized = true;
 }
 
-DefaultsPlugin::~DefaultsPlugin() {
-
- // delete mDistVolume; 
-// since we cloned the Rect ptr, we had better 
-//clean it up here.
-// NO--do not delete here, all tests fail!
-}
-
-Layer* DefaultsPlugin::get_layer(char* name, Args* args,SpatialComputer* cpu, int n)
-{
-   string nameStr = name;
-   Layer* layerPtr = NULL;
-
-   if (nameStr.compare(DEBUG_LAYER) == 0){
-     layerPtr = new DebugLayer(args, cpu);
-   }
-   else if (nameStr.compare(PERFECT_LOCALIZER) == 0){
-     layerPtr = new PerfectLocalizer(cpu);
-   }
-   else if (nameStr.compare(UNIT_DISC_RADIO) == 0){
-     layerPtr = new UnitDiscRadio(args, cpu, n);
-   }
-   else if (nameStr.compare(SIMPLE_DYNAMICS) == 0){
-     layerPtr = new SimpleDynamics(args, cpu, n);
-   }
-
-   return layerPtr;
-
-}
-
-Distribution* DefaultsPlugin::get_distribution(char* name, Args* args,SpatialComputer* cpu, int n)
-{
-  mDistVolume = cpu->volume->clone();
-
-  if(args->extract_switch("-dist-dim")) {
-    mDistVolume->l = args->pop_number();
-    mDistVolume->r = args->pop_number();
-    mDistVolume->b = args->pop_number();
-    mDistVolume->t = args->pop_number();
-    if(mDistVolume->dimensions()==3) {
-      ((Rect3*)mDistVolume)->f = args->pop_number();
-      ((Rect3*)mDistVolume)->c = args->pop_number();
-    }
+void* DefaultsPlugin::get_sim_plugin(string type, string name, Args* args, 
+                                     SpatialComputer* cpu, int n) {
+  if(type==TIMEMODEL_PLUGIN) {
+    if(name==FIXTIME) { return new FixedIntervalTime(args, cpu); }
+  } else if(type==DISTRIBUTION_PLUGIN) {
+    if(name==URANDOM) { return new UniformRandom(n, cpu->volume); }
+  } else if(type==LAYER_PLUGIN) {
+    if(name==DEBUGLAYER) { return new DebugLayer(args,cpu); }
+    if(name==SIMPLEDYNAMICS) { return new SimpleDynamics(args,cpu,n); }
+    if(name==UNITDISCRADIO) { return new UnitDiscRadio(args,cpu,n); }
+    if(name==PERFECTLOCALIZER) { return new PerfectLocalizer(cpu); }
   }
-
-  Distribution* distPtr = new UniformRandom(n, mDistVolume);
-
-  return distPtr;
-
+  return NULL;
 }
 
-TimeModel* DefaultsPlugin::get_time_model(char* name, Args* args,SpatialComputer* cpu, int n)
-{
-   TimeModel* timeModelPtr = new FixedIntervalTime(args, cpu);
-
-   return timeModelPtr;
-
+void* DefaultsPlugin::get_compiler_plugin(string type, string name, Args* args){
+  uerror("Compiler plugins not being handled yet"); // TODO: handle compiler plugins
 }

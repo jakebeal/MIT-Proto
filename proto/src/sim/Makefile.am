@@ -1,14 +1,18 @@
 noinst_LTLIBRARIES = libsim.la 
-lib_LTLIBRARIES = libprotoplugin.la
+lib_LTLIBRARIES = libprotosimplugin.la
 
 INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/shared \
 	-I$(top_srcdir)/src/kernel
 
+libprotosimplugin_la_SOURCES = \
+	radio.cpp \
+	plugin-support.cpp
+libprotosimplugin_la_LDFLAGS = -export-dynamic
+
 libsim_la_SOURCES = \
 	basic-hardware.cpp \
-	customizations.cpp \
 	kernel_extension.cpp \
 	scheduler.cpp \
 	sim-hardware.cpp \
@@ -22,18 +26,10 @@ libsim_la_SOURCES = \
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS = 
 libsim_la_LIBADD = \
-	libprotoplugin.la
-
-libprotoplugin_la_SOURCES = \
-	LibRegistry.cpp \
-	Distribution.cpp \
-	radio.cpp \
-	plugin-support.cpp
-libprotoplugin_la_LDFLAGS = -export-dynamic
+	libprotosimplugin.la
 
 pkginclude_HEADERS = \
 	basic-hardware.h \
-	customizations.h \
 	proto_platform.h \
 	scheduler.h \
 	sim-hardware.h \
@@ -43,20 +39,12 @@ pkginclude_HEADERS = \
 	radio.h \
 	wormhole-radio.h \
 	multiradio.h \
-	LibRegistry.h \
-	ProtoPluginLibrary.h \
-	Distribution.h \
 	UniformRandom.h \
-	SimpleLifeCycle.h \
 	Mica2Mote.h \
 	DeviceTimer.h \
 	TimeModel.h \
 	FixedIntervalTime.h \
 	DefaultsPlugin.h
-
-simplatdir=$(protoplatdir)/sim
-simplat_DATA = \
-	platform_ops.proto
 
 buildregistrydir=$(plugindir)
 buildregistry_SOURCES = \
@@ -67,12 +55,10 @@ buildregistry_LDFLAGS = -lltdl -export-dynamic
 buildregistry_PROGRAMS = \
 	buildregistry
 
-EXTRA_DIST = $(simplat_DATA)
-
 # Basic plugins
 pkglib_LTLIBRARIES = libdistributions.la libsimplelifecycle.la libmica2mote.la libradiomodels.la
 pluginflags = -dynamiclib -avoid-version #-no-undefined
-pluginlibs = ../shared/libshared.la libprotoplugin.la
+pluginlibs = ../shared/libshared.la libprotosimplugin.la
 # On non-Mac systems, might need to have -dynamiclib removed, -module added, or other such changes
 
 # shared library for distributions
@@ -83,7 +69,6 @@ libdistributions_la_SOURCES = \
 	GridRandom.cpp \
 	Cylinder.cpp \
 	Torus.cpp \
-	Distribution.cpp \
 	UniformRandom.cpp \
 	DistributionsPlugin.cpp
 libdistributions_la_LIBADD = $(pluginlibs)
@@ -111,25 +96,6 @@ libradiomodels_la_SOURCES = \
 libradiomodels_la_LIBADD = $(pluginlibs)
 libradiomodels_la_LDFLAGS = $(pluginflags)
 
-#SUBDIRS=plugins
-
-# run_scons:
-# 	scons "glut_libs=$(GLUT_LIBS)" "glu_libs=$(GLU_LIBS)" "gl_libs=$(GL_LIBS)"
-#
-# run_createRegistry: run_scons
-# 	./createRegistry
-#
-# copy_registry_file:run_createRegistry
-# 	cp registry.txt $(simplatdir)
-# 	cp -r plugin_lib $(simplatdir)
-# 	cp 
-#
-# install-exec-hook: copy_registry_file	
-#
-#uninstall-local:
-#	rm ../tests/registry.txt
-#	rm -rf ../tests/plugin-lib
-
-
+# run the registry builder once everything's installed
 install-data-hook:
 	$(buildregistrydir)/buildregistry

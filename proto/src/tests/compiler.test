@@ -1,10 +1,10 @@
 // a place to put some complex, composed programs
 
-test: $(P2B) --platform "sim" --test-compiler "(red 3)"
+test: $(P2B) -L DebugLayer --test-compiler "(red 3)"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 1, 1, DEF_FUN_3_OP, LIT_3_OP, RED_OP, RET_OP, EXIT_OP };
 is 1 _ uint16_t script_len = 14;
 
-test: $(P2B) --platform "sim" --test-compiler "(if (sense 1) (* 4 (sense 2)) (1st (2nd (tup (sense 3) (tup 4 5))))))"
+test: $(P2B) -L DebugLayer --test-compiler "(if (sense 1) (* 4 (sense 2)) (1st (2nd (tup (sense 3) (tup 4 5))))))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 3, 0, 0, 5, 2, DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, DEF_FUN_OP, 32, LIT_1_OP, SENSE_OP, IF_OP, 23, LIT_3_OP, SENSE_OP, LIT_4_OP, LIT8_OP, 5, TUP_OP, 0, 2, TUP_OP, 1, 2, LET_1_OP, REF_0_OP, LIT_1_OP, ELT_OP, POP_LET_1_OP, LET_1_OP, REF_0_OP, LIT_0_OP, ELT_OP, POP_LET_1_OP, JMP_OP, 4, LIT_4_OP, LIT_2_OP, SENSE_OP, MUL_OP, RET_OP, EXIT_OP };
 is 1 _ uint16_t script_len = 46;
 

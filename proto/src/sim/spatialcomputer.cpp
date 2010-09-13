@@ -1,5 +1,5 @@
 /* Top-level spatial computer classes
-Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+Copyright (C) 2005-2010, Jonathan Bachrach, Jacob Beal, and contributors 
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -7,50 +7,16 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <iostream>
+#include <set>
 #include <algorithm>
 #include "config.h"
 #include "spatialcomputer.h"
 #include "visualizer.h"
-#include "ProtoPluginLibrary.h"
-#include "customizations.h"
-#include "UniformRandom.h"
+#include "plugin_manager.h"
 #include "DefaultsPlugin.h"
+#include "customizations.h"
 
 using namespace std;
-
-/*****************************************************************************
- *  MISC DEFS                                                                *
- *****************************************************************************/
-// TODO: THESE FUNCTIONS ARE EITHER DUPLICATE OR INCORRECTLY LOCATED!
-
-void split(const string &s, const string &token, vector<string> &segments) {
-  size_t i = 0;
-  size_t j = 0;
-  while (string::npos != (j = s.find(token, i))) {
-    segments.push_back(s.substr(i, j - i));
-    i = j + token.length();
-  }
-  segments.push_back(s.substr(i, s.length()));
-}
-
-// Shouldn't there be .dll as well?
-const char* SpatialComputer::dl_exts[] = { ".so", ".dylib", NULL };
-
-void* SpatialComputer::dlopenext(const char *name, int flag) {
-  const char **ext = SpatialComputer::dl_exts;
-  void *hand = NULL;
-
-  while (*ext) {
-    std::string search = name;
-    hand = dlopen((search + (*ext)).c_str(), flag);
-    if (hand)
-      break;
-    ext++;
-  }
-
-  return hand;
-}
-
 
 /*****************************************************************************
  *  DEVICE                                                                   *
@@ -318,406 +284,6 @@ public:
 /*****************************************************************************
  *  SPATIAL COMPUTER                                                         *
  *****************************************************************************/
-const string SpatialComputer::registryFilePath = string(DllUtils::PLUGIN_DIR).append("registry.txt");
-
-Layer* SpatialComputer::find_layer(char* name, Args* args, int n) {
-  Layer *layerPtr = NULL;
-  string dllName = "";
-  void* dllhandle;
-  vector<RegLine> layerVec;
-  vector<RegLine>::iterator it;
-
-  mLibReg.getLayerList(layerVec);
-  string larg(name);
-  typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
-
-  for (it = layerVec.begin(); it != layerVec.end(); it++) {
-    if (larg.compare(it->name) == 0) {
-      dllName = it->libpath;
-    }
-  }
-
-  if (dllName.size() == 0) {
-    throw DllNotFoundException("No matching library in registry for: " + dllName);
-  }
-
-  dllhandle = getDLLHandle(dllName);
-
-  char pluginStr[255];
-  strcpy(pluginStr, "get_proto_plugins");
-
-  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, pluginStr);
-
-  const char* error = dlerror();
-  if (error) {
-    throw DllNotFoundException("Could not load symbol get_proto_plugins()to get Layer : " + dllName
-        + error);
-  }
-
-  ProtoPluginLibrary* ppl = getPlugFnc();
-
-  layerPtr = ppl->get_layer(name, args, this, n);
-
-  return layerPtr;
-}
-
-TimeModel* SpatialComputer::find_time_model(char* name, Args* args, int n) {
-  TimeModel *timeModelPtr = NULL;
-  string dllName = "";
-  void* dllhandle;
-  vector<RegLine> timeModelVec;
-  vector<RegLine>::iterator it;
-
-  mLibReg.getTimeModelList(timeModelVec);
-  string targ(name);
-
-  typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
-
-  for (it = timeModelVec.begin(); it != timeModelVec.end(); it++) {
-    if (targ.compare(it->name) == 0) {
-      dllName = it->libpath;
-    }
-  }
-
-  if (dllName.size() == 0) {
-    throw DllNotFoundException("No matching library in registry for: " + dllName);
-  }
-
-  dllhandle = getDLLHandle(dllName);
-  if (!dllhandle)
-    cout << "In get_time_model, dllhandle is null.:" << endl;
-
-  char pluginStr2[255];
-  strcpy(pluginStr2, "get_proto_plugins");
-
-  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, pluginStr2);
-
-  const char* error = dlerror();
-  if (error) {
-    throw DllNotFoundException("Could not load symbol get_proto_plugins()to get TimeModel : "
-        + dllName + " ," + error);
-  }
-
-  ProtoPluginLibrary* ppl = getPlugFnc();
-
-  timeModelPtr = ppl->get_time_model(name, args, this, n);
-
-  return timeModelPtr;
-}
-Distribution* SpatialComputer::find_distribution(char* name, Args* args, int n) {
-  Distribution *distributionPtr = NULL;
-  string dllName = "";
-  void* dllhandle;
-  vector<RegLine> distributionVec;
-  vector<RegLine>::iterator it;
-
-  mLibReg.getDistributionList(distributionVec);
-  string darg(name);
-
-  typedef ProtoPluginLibrary* (*getPluginsFncPtr)();
-
-  for (it = distributionVec.begin(); it != distributionVec.end(); it++) {
-    if (darg.compare(it->name) == 0) {
-      dllName = it->libpath;
-    }
-  }
-
-  if (dllName.size() == 0) {
-    throw DllNotFoundException("No matching library in registry for: " + dllName);
-  }
-
-  dllhandle = getDLLHandle(dllName);
-  if (!dllhandle)
-    cout << "In find_distribution, dllhandle is null." << endl;
-
-  char pluginStr[255];
-  strcpy(pluginStr, "get_proto_plugins");
-
-  getPluginsFncPtr getPlugFnc = (getPluginsFncPtr) dlsym(dllhandle, pluginStr);
-
-  const char* error = dlerror();
-  if (error) {
-    throw DllNotFoundException("Could not load symbol get_proto_plugins()to get Distribution : "
-        + dllName + error);
-  }
-
-  ProtoPluginLibrary* ppl = getPlugFnc();
-
-  distributionPtr = ppl->get_distribution(name, args, this, n);
-
-  //dlclose(dllhandle);
-
-  return distributionPtr;
-}
-
-void* SpatialComputer::getDLLHandle(string dllName) {
-  void* dllhandle = NULL;
-  // if dll is not in loaded map, load it
-  if (mLoadedDLLMap.find(dllName) == mLoadedDLLMap.end()) {
-    dllhandle = DllUtils::dlopenext(dllName.c_str(), RTLD_NOW);
-    if (!dllhandle) {
-      throw DllNotFoundException("Could not load dll: " + dllName);
-    }
-    mLoadedDLLMap.insert(pair<string, void*> (dllName, dllhandle));
-  } else // dll is already loaded
-  {
-    dllhandle = mLoadedDLLMap.find(dllName)->second;
-  }
-
-  return dllhandle;
-}
-
-
-bool checkIfLayerImplementsUnpatchedFunctions(vector<HardwareFunction>& unpatchedFuncs, vector<HardwareFunction>& layerFuncs)
-{
-    bool ret = false;
-  for(int i = 0; i < layerFuncs.size(); i++)
-  {
-      HardwareFunction f = layerFuncs[i];
-      vector<HardwareFunction>::iterator it;
-      it = find(unpatchedFuncs.begin(), unpatchedFuncs.end(), f);
-      if(it != unpatchedFuncs.end())
-      {
-//          cout << "given layer implements func: " << f << endl;
-          ret = true;
-      }
-  }
-    return ret;
-}
-
-vector<HardwareFunction> getUnpatchedFuncs(SpatialComputer& sc)
-{
-  vector<HardwareFunction> unpatchedFuncs; // necessary funcs that need to be patched
-
-  for(int i = 0; i < sc.hardware.requiredPatches.size(); i++)
-  {
-      HardwareFunction unpatched = sc.hardware.requiredPatches[i];
-//      cout << "i = " << i << " : " << hardware.patch_table[unpatched] << endl;
-      if(sc.hardware.patch_table[unpatched] == &(sc.hardware.base))
-      {
-          //cout << "Unpatched OPCODE " << unpatched << endl;
-          unpatchedFuncs.push_back(unpatched);
-      }
-  }
-  return unpatchedFuncs;
-}
-
-
-void SpatialComputer::setDefaultTimeModel(Args* args, int n)
-{
-  char buffer[255];
-  DefaultsPlugin defaultsPlugin;
-
-  strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
-  // set Time Model to FixedIntervalTime
-  this->time_model = defaultsPlugin.get_time_model(buffer, args, this, n);
-  if (!this->time_model)
-    cout << "time_model NULL in setDefaultTimeModel." << endl;
-}
-
-void SpatialComputer::setDefaultDistribution(Args* args, int n)
-{
-  char buffer[255];
-  DefaultsPlugin defaultsPlugin;
-
-  strcpy(buffer, "dummyName"); // the name is not checked in either method in DefaultsPlugin
-  // set distribution to UniformRandom
-  this->distribution = defaultsPlugin.get_distribution(buffer, args, this, n);
-  if (!this->distribution)
-    cout << " this->distribution NULL in setDefaultdistribution." << endl;
-}
-
-void SpatialComputer::setDefaultLayer(const char* name, Args* args, int n)
-{
-  DefaultsPlugin defaultsPlugin;
-  Layer* layerPtr = defaultsPlugin.get_layer(const_cast<char*>(name), args, this, n);
-  if (!layerPtr) {
-    cout << "layerPtr for layer " << name << " NULL in SpatialComputer::setDefaultLayer" << endl;
-  } else {
-    addLayer(layerPtr);
-  }
-
-}
-
-
-void SpatialComputer::initializePlugins(Args* args, int n) {
-//    cout << "Begin initializePlugins" << endl;
-  vector<string> layerArgsVector;
-  vector<string>::iterator sit;
-  string timeModelName = "";
-  string distributionName = "";
-  bool moreArgs = true;
-  layer_getter getter;
-  void* dllhandle = NULL;
-  string search = "";
-  fstream fin;
-  Layer *layerPtr = NULL;
-  TimeModel* timeModelPtr = NULL;
-  Distribution* distributionPtr = NULL;
-
-  while (moreArgs) {
-    moreArgs = args->extract_switch("-L");
-    if (moreArgs) {
-      string larg = args->pop_next();
-      cout << "larg: " << larg << endl;
-      layerArgsVector.push_back(larg);
-    }
-  }
-
-  if (args->extract_switch("-TM")) {
-    timeModelName = args->pop_next();
-  }
-
-  if (args->extract_switch("-DD")) {
-    distributionName = args->pop_next();
-  }
-
-//  cout << "trying to open registry file: " << SpatialComputer::registryFilePath.c_str() << endl;
-  fin.open(SpatialComputer::registryFilePath.c_str(), ios::in | ios::out);
-  if (!fin.is_open()) {
-   // throw ifstream::failure("Cannot open registry file.");
-     cout << "unable to open registry file: " << SpatialComputer::registryFilePath.c_str() << endl << "Default plugins will be loaded." <<endl;
-     setDefaultTimeModel(args,n);
-     setDefaultDistribution(args, n);
-  }
-  else {
-
-  readRegistry(fin, mLibReg);
-
-  if (layerArgsVector.size() > 0) {
-    for (sit = layerArgsVector.begin(); sit != layerArgsVector.end(); sit++) {
-      const char* name = sit->c_str();
-
-      try {
-        layerPtr = find_layer(const_cast<char*> (name), args, n);
-      } catch (DllNotFoundException de) {
-        cout << "Failure to retrieve Layer from library. Error: " << de.what() << endl;
-      }
-
-      if (layerPtr) {
-        cout << "In initializePlugins, layerPtr is not null." << endl;
-        addLayer(layerPtr);
-      }
-    }
-  }
-
-  try {
-    if (timeModelName.size() > 0)
-      timeModelPtr = find_time_model(const_cast<char*> (timeModelName.c_str()), args, n);
-  } catch (DllNotFoundException de) {
-    cout << "Failure to retrieve TimeModel from library. Default will be used. Error: "
-        << de.what() << endl;
-  }
-
-  try {
-    if (distributionName.size() > 0)
-    {
-//      cout << "Trying to load distributionName: " << distributionName << endl;
-      distributionPtr = find_distribution(const_cast<char*> (distributionName.c_str()), args, n);
-      }
-  } catch (DllNotFoundException de) {
-      // We need to instantiate defaults here??
-    cout << "Failure to retrieve Distribution from library. Default will be used. Error: "
-        << de.what() << endl;
-  }
-
-  if (timeModelPtr) {
-    cout << " timeModelPtr is not null." << endl;
-    this->time_model = timeModelPtr;
-  } else {
-    setDefaultTimeModel(args,n);
-  }
-
-  if (distributionPtr) {
-    cout << " distributionPtr is not null." << endl;
-    this->distribution = distributionPtr;
-  } else {
-    setDefaultDistribution(args, n);
-  }
- } // end if fin is open
-
-  // we always add debug layer
-
-  setDefaultLayer(DefaultsPlugin::DEBUG_LAYER.c_str(), args, n);
-
-  // Find unpatched // Universal sensing & actuation ops
-//  cout << "Checking for un patched funcs" << endl;
-  vector<HardwareFunction> unpatchedFuncs = getUnpatchedFuncs(*this);
-
-  vector<HardwareFunction> plfuncs = PerfectLocalizer::getImplementedHardwareFunctions();
-  bool implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, plfuncs);
-  if(implementsUnpatchedFunctions)
-  {
-      cout << "Instantiating Perfect localizer" << endl;
-      setDefaultLayer(DefaultsPlugin::PERFECT_LOCALIZER.c_str(), args, n);
-  }
-
-  vector<HardwareFunction> sdfuncs = SimpleDynamics::getImplementedHardwareFunctions();
-  implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, sdfuncs);
-  if(implementsUnpatchedFunctions)
-  {
-      cout << "Instantiating Simple Dynamics" << endl;
-      // HACK. How do we know if a physics layer has been added or not.
-     // setDefaultLayer(DefaultsPlugin::SIMPLE_DYNAMICS.c_str(), args,n);
-     physics = new SimpleDynamics(args, this, n);
-     addLayer(physics);
-  }
-
-  vector<HardwareFunction> udrfuncs = UnitDiscRadio::getImplementedHardwareFunctions();
-  implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, udrfuncs);
-  if(implementsUnpatchedFunctions)
-  {
-      cout << "Instantiating Unit Disc Radio" << endl;
-      setDefaultLayer(DefaultsPlugin::UNIT_DISC_RADIO.c_str(), args, n);
-  }
-
-  unpatchedFuncs = getUnpatchedFuncs(*this);
-  
-//  cout << "End initializePlugins" << endl;
-}
-
-void SpatialComputer::readRegistry(fstream& fin, LibRegistry& out) {
-  string registryLine = "";
-  string delimStr = " ";
-  vector<string> segments;
-  LibRegistry libreg;
-
-  if (fin.is_open()) {
-    while (!fin.eof()) {
-      getline(fin, registryLine, '\n');
-
-      // Ignore comment lines and empty lines.
-      if (registryLine.empty() || '#' == registryLine.at(0))
-        continue;
-
-      size_t equalSignIndex = registryLine.find('=');
-
-      if (equalSignIndex == string::npos)
-        continue;
-
-      split(registryLine, delimStr, segments);
-
-      if (segments.size() == 4) {
-        RegLine reg;
-        reg.type = segments[0];
-        reg.name = segments[1];
-        reg.libpath = segments[3];
-
-        if (reg.type == LibRegistry::LAYER) {
-          out.addToLayerList(reg);
-        } else if (reg.type == LibRegistry::TIME_MODEL) {
-          out.addToTimeModelList(reg);
-        } else if (reg.type == LibRegistry::DISTRIBUTION) {
-          out.addToDistributionList(reg);
-        }
-
-        segments.clear();
-      }
-    }
-  }
-  fin.close();
-}
-
 // get the spatial layout of the computer, including node distribution
 void SpatialComputer::get_volume(Args* args, int n) {
   // spatial layout
@@ -734,9 +300,22 @@ void SpatialComputer::get_volume(Args* args, int n) {
     }
   }
   if(dimensions==2)
-    volume=new Rect(-width/2, width/2, -height/2, height/2);
+    vis_volume=new Rect(-width/2, width/2, -height/2, height/2);
   else
-    volume=new Rect3(-width/2, width/2, -height/2, height/2, -depth/2, depth/2);
+    vis_volume=new Rect3(-width/2,width/2,-height/2,height/2,-depth/2,depth/2);
+
+  // Now get the distribution volume (defaults to same as visual)
+  volume = vis_volume->clone();
+  if(args->extract_switch("-dist-dim")) {
+    volume->l = args->pop_number();
+    volume->r = args->pop_number();
+    volume->b = args->pop_number();
+    volume->t = args->pop_number();
+    if(volume->dimensions()==3) {
+      ((Rect3*)volume)->f = args->pop_number();
+      ((Rect3*)volume)->c = args->pop_number();
+    }
+  }
 }
 
 // add the layer to dynamics and set its ID, for use in hardware callbacks
@@ -744,7 +323,7 @@ int SpatialComputer::addLayer(Layer* layer) {
   return (layer->id = dynamics.add(layer));
 }
 
-SpatialComputer::SpatialComputer(Args* args, bool own_dump): mLibReg(), mLoadedDLLMap() {
+SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
   sim_time=0;
   int n=(args->extract_switch("-n"))?(int)args->pop_number():100; // # devices
   // load dumping variables
@@ -767,8 +346,7 @@ SpatialComputer::SpatialComputer(Args* args, bool own_dump): mLibReg(), mLoadedD
   just_dumped=FALSE; next_dump = dump_start; snap_vis_time=0;
   // setup customization
   get_volume(args, n);
-//  choose_layers(args,n);            // what types of physics apply
-  initializePlugins(args, n);
+  initialize_plugins(args, n);
 
   scheduler = new Scheduler(n, time_model->cycle_time());
   // create the actual devices
@@ -804,6 +382,101 @@ SpatialComputer::~SpatialComputer() {
     { Layer* ec = (Layer*)dynamics.get(i); if(ec) delete ec; }
 }
 
+/*****************************************************************************
+ *  SPATIAL COMPUTER: PLUGINS                                                *
+ *****************************************************************************/
+bool checkIfLayerImplementsUnpatchedFunctions(vector<HardwareFunction>& unpatchedFuncs, vector<HardwareFunction>& layerFuncs) {
+  bool ret = false;
+  for(int i = 0; i < layerFuncs.size(); i++) {
+    HardwareFunction f = layerFuncs[i];
+    vector<HardwareFunction>::iterator it;
+    it = find(unpatchedFuncs.begin(), unpatchedFuncs.end(), f);
+    if(it != unpatchedFuncs.end()) {
+      //          cout << "given layer implements func: " << f << endl;
+      ret = true;
+    }
+  }
+  return ret;
+}
+
+vector<HardwareFunction> getUnpatchedFuncs(SpatialComputer& sc) {
+  vector<HardwareFunction> unpatchedFuncs; // core fns that must be patched
+
+  for(int i = 0; i < sc.hardware.requiredPatches.size(); i++) {
+    HardwareFunction unpatched = sc.hardware.requiredPatches[i];
+    // cout << "i = " << i << " : " << hardware.patch_table[unpatched] << endl;
+    if(sc.hardware.patch_table[unpatched] == &(sc.hardware.base)) {
+      //cout << "Unpatched OPCODE " << unpatched << endl;
+      unpatchedFuncs.push_back(unpatched);
+    }
+  }
+  return unpatchedFuncs;
+}
+
+int SpatialComputer::addLayer(char* layer,Args* args,int n) {
+  HardwarePatch* old_mov = hardware.patch_table[MOV_FN]; 
+  Layer* l = (Layer*)plugins.get_sim_plugin(LAYER_PLUGIN,layer,args,this,n);
+  if(l==NULL) uerror("Could not obtain simulator layer '%s'",layer);
+  if(old_mov != hardware.patch_table[MOV_FN]) { // physics -> MOV_FN changed
+    if(physics!=NULL) uerror("Cannot install second physics plugin: %s",layer);
+    physics=(BodyDynamics*)l; return -1;
+  } else { 
+    return addLayer(l);
+  }
+}
+
+void SpatialComputer::initialize_plugins(Args* args, int n) {
+  DefaultsPlugin::register_defaults(); // make sure defaults exist
+  
+  const char* s;
+  // If we fail to get the required plugins, we abort with an error
+  // Obtain the time model
+  s = (args->extract_switch("-TM"))?args->pop_next():"FixedIntervalTime";
+  time_model=(TimeModel*)plugins.get_sim_plugin(TIMEMODEL_PLUGIN,s,args,this,n);
+  if(time_model==NULL) uerror("Could not obtain time model '%s'",s);
+
+  // Obtain the distribution
+  s=(args->extract_switch("-DD"))?args->pop_next():"UniformRandom";
+  distribution =
+    (Distribution*)plugins.get_sim_plugin(DISTRIBUTION_PLUGIN,s,args,this,n);
+  if(distribution==NULL) uerror("Could not obtain distribution '%s'",s);
+  
+  // Obtain the layers
+  physics = NULL; // make sure we start w. the physics known missing
+  set<string> layers;
+  while(args->extract_switch("-L",false)) {
+    char* layer = args->pop_next();
+    if(layers.count(string(layer))) 
+      post("WARNING: ignoring duplicate request for layer '%s'",layer);
+    addLayer(layer,args,n); layers.insert(layer);
+  }
+  // simulator always uses DebugLayer:
+  if(!layers.count("DebugLayer")) { addLayer("DebugLayer",args,n); }
+  
+  // Find unpatched universal sensing & actuation ops, add defaults
+  vector<HardwareFunction> unpatchedFuncs = getUnpatchedFuncs(*this);
+  
+  vector<HardwareFunction> plfuncs = PerfectLocalizer::getImplementedHardwareFunctions();
+  bool implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, plfuncs);
+  if(implementsUnpatchedFunctions) { addLayer("PerfectLocalizer",args,n); }
+
+  if(!physics) addLayer("SimpleDynamics",args,n);
+  //if(!physics) physics = new SimpleDynamics(args,this,n);
+
+  vector<HardwareFunction> udrfuncs = UnitDiscRadio::getImplementedHardwareFunctions();
+  implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, udrfuncs);
+  if(implementsUnpatchedFunctions) { addLayer("UnitDiscRadio",args,n); }
+
+  unpatchedFuncs = getUnpatchedFuncs(*this);
+  //if(unpatchedFuncs.size()) 
+  //  uerror("Simulator cannot load: missing required hardware functions.");
+  // TODO: deal with missing hardware question
+}
+
+
+/*****************************************************************************
+ *  SPATIAL COMPUTER: OPERATION                                              *
+ *****************************************************************************/
 // for the initial loading only
 void SpatialComputer::load_script(uint8_t* script, int len) {
   for(int i=0;i<devices.max_id();i++) { 

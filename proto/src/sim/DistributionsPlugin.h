@@ -1,31 +1,24 @@
-/* 
- * File:   DistributionsPlugin.h
- * Author: prakash
- *
- * Created on February 5, 2010, 6:47 PM
- */
+/* A collection of simple distributions
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
-#ifndef _DISTRIBUTIONSPLUGIN_H
-#define	_DISTRIBUTIONSPLUGIN_H
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "ProtoPluginLibrary.h"
-#include <vector>
-using namespace std;
+#ifndef _DISTRIBUTIONS_PLUGIN_
+#define	_DISTRIBUTIONS_PLUGIN_
 
-#define DISTRIBUTIONS_DLL_NAME "distributions"
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
 
-class DistributionsPlugin : public ProtoPluginLibrary
-{
-private:
-    vector<string> knownDistributions; // static member variables lead to undefined symbols in dll.
+class DistributionsPlugin : public ProtoPluginLibrary {
 public:
-    DistributionsPlugin();
-    Distribution* get_distribution(char* name,
-                                                    Args* args,
-                                                    SpatialComputer* cpu,
-                                                    int n);
-    static string getProperties();
+  void* get_sim_plugin(string type, string name, Args* args,
+                       SpatialComputer* cpu, int n);
+  void* get_compiler_plugin(string type, string name, Args* args) {return NULL;}
+  static string inventory();
 };
 
-#endif	/* _DISTRIBUTIONSPLUGIN_H */
+#endif // _DISTRIBUTIONS_PLUGIN_
 

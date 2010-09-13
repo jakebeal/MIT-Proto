@@ -8,7 +8,8 @@
 #ifndef _XGRID_H
 #define	_XGRID_H
 
-#include "Distribution.h"
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
 
 // Y is random
 class XGrid : public Distribution {

@@ -9,6 +9,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // This file describes how to load all of the needed modules, manage
 // the evolution of time, and dispatch events.
 
+#define __USE_NEOCOMPILER__ 0
+
 #include "config.h"
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math

@@ -8,7 +8,8 @@
 #ifndef _TORUS_H
 #define	_TORUS_H
 
-#include "Distribution.h"
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
 
 class Torus : public Distribution {
 public:

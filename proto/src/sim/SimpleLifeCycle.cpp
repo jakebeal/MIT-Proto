@@ -1,12 +1,12 @@
-/* 
- * File:   SimpleLifeCycle.cpp
- * Author: prakash
- * 
- * Created on February 8, 2010, 12:27 PM
- */
+/* Plugin providing simple cloning and apoptosis model
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
-#include "SimpleLifeCycle.h"
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include "SimpleLifeCyclePlugin.h"
 #include "proto_vm.h"
 
 /*****************************************************************************

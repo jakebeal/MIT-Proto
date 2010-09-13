@@ -538,6 +538,6 @@ def main():
     sys.exit(1)
 
 if __name__ == "__main__":
-    print os.getcwd()
-    print os.listdir('.')
+    #print os.getcwd()
+    #print os.listdir('.')
     main()

@@ -1,9 +1,10 @@
-/* 
- * File:   Mica2Mote.h
- * Author: prakash
- *
- * Created on February 8, 2010, 1:17 PM
- */
+/* Plugin providing emulation of some common I/O devices on Mica2 Motes
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
+
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #ifndef _MICA2MOTE_H
 #define	_MICA2MOTE_H

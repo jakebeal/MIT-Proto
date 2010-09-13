@@ -1,41 +1,34 @@
-/*
- * DefaultsPlugin.h
- *
- *  Created on: Feb 24, 2010
- *      Author: gbays
- */
+/* Plugin containing default Distribution, TimeModel, and Layers
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
+
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
+
+#ifndef DEFAULTSPLUGIN_H_
+#define DEFAULTSPLUGIN_H_
+
 #include <string>
-#include "ProtoPluginLibrary.h"
+#include "proto_plugin.h"
 #include "spatialcomputer.h"
 #include "sim-hardware.h"
 #include "basic-hardware.h"
 #include "simpledynamics.h"
 #include "unitdiscradio.h"
-#include "Distribution.h"
 #include "UniformRandom.h"
 #include "FixedIntervalTime.h"
 
-#ifndef DEFAULTSPLUGIN_H_
-#define DEFAULTSPLUGIN_H_
-
 class DefaultsPlugin : public ProtoPluginLibrary {
-public:
-  DefaultsPlugin();
-  virtual ~DefaultsPlugin();
+ public:
+  static void register_defaults();
 
-  Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
+  void* get_sim_plugin(string type, string name, Args* args,
+                       SpatialComputer* cpu, int n);
+  void* get_compiler_plugin(string type, string name, Args* args);
 
-  Distribution* get_distribution(char* name, Args* args,SpatialComputer* cpu, int n);
-
-  TimeModel* get_time_model(char* name, Args* args,SpatialComputer* cpu, int n);
-
-  static const string DEBUG_LAYER;
-  static const string PERFECT_LOCALIZER;
-  static const string UNIT_DISC_RADIO;
-  static const string SIMPLE_DYNAMICS;
-
-private:
-  Rect* mDistVolume;
+ private:
+  static bool initialized;
 };
 
 #endif /* DEFAULTSPLUGIN_H_ */

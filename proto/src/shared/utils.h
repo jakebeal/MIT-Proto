@@ -91,6 +91,8 @@ BOOL str_is_number(const char* str);
 const char* bool2str(BOOL b);
 const char* flo2str(float num, int precision=2);
 const char* int2str(int num);
+// prints a block of text with n spaces in front of each line
+void print_indented(int n, string s, bool trim_trailing_newlines=0);
 
 /*****************************************************************************
  *  NOTIFICATION FUNCTIONS                                                   *
@@ -204,14 +206,5 @@ public:
 
 // obtains the time in seconds (in a system-dependent manner)
 double get_real_secs ();
-
-class DllUtils {
-public:
-    // function to dlls from LD_LIBRARY_PATH
-    // dll Name is prefixed and suffixed with platform specific prefix and extension
-    static void* dlopenext(const char *name, int flag = RTLD_NOW);
-    static void getPlatformLib(string& outPrefix, string& outExt);
-    static string PLUGIN_DIR;
-};
 
 #endif // __UTILS__

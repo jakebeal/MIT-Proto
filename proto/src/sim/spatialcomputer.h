@@ -21,35 +21,32 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h"
 #include "proto_platform.h"
 #include "scheduler.h"
-#include "Distribution.h"
-#include "LibRegistry.h"
 #include "DeviceTimer.h"
 #include "TimeModel.h"
 #include "FixedIntervalTime.h"
 
 // prototype classes
 class Device; class SpatialComputer;
-class DllNotFoundException;
-
 
 /*****************************************************************************
  *  TIME AND SPACE DISTRIBUTIONS                                             *
  *****************************************************************************/
 
+// To create an initial distribution, we must know:
+// - # nodes, volume they occupy, distribution type, any dist-specific args
+class Distribution {
+ public:
+  int n; Rect *volume;
+  METERS width, height, depth; // bounding box of volume occupied
+  Distribution(int n, Rect *volume);
+  virtual ~Distribution() {}
+  // puts location in *loc and returns whether a device should be made
+  virtual BOOL next_location(METERS *loc);// loc is a 3-vec
+};
+
 /*****************************************************************************
  *  DYNAMICS                                                                 *
  *****************************************************************************/
-// this is the global aspect of a dynamics layer
-enum layer_type {
-  LAYER_OTHER        = 0x0,
-  LAYER_RADIO        = 0x1,
-  LAYER_PHYSICS      = 0x2,
-  LAYER_TIME         = 0x4,
-  /* Distributions are not currently Layer s, so we can' load them
-     using the current dynamic loading system. */
-  /*  LAYER_DISTRIBUTION = 0x8, */
-};
-
 class Layer : public EventConsumer {
  public:
   int id;          // what number layer this is, for lookup during callbacks
@@ -64,7 +61,6 @@ class Layer : public EventConsumer {
   virtual void device_moved(Device* d) {}  // adjust for device motion
   // removal, updates handled through DeviceLayer
   virtual void dump_header(FILE* out) {} // field names in ""s for a data file
-  virtual layer_type get_type() { return LAYER_OTHER; }
 };
 
 // this is the device-specific instantiation of a layer
@@ -171,6 +167,7 @@ class SpatialComputer : public EventConsumer {
   SECONDS sim_time;         // time (initially zero)
   TimeModel *time_model;    // how time evolves on each device
   Distribution *distribution; // how devices are scattered in space
+  Rect* vis_volume;         // preferred visualized spatial volume
   Rect* volume;             // space (start bounds: fixed, but may be exceeded)
   Population devices;       // computation (set of devices)
   BodyDynamics *physics;    // dynamics of bodies, always first evaluated
@@ -181,8 +178,6 @@ class SpatialComputer : public EventConsumer {
 
   std::queue<int> death_q;  // nodes requesting to suicide
   std::queue<CloneReq*> clone_q;  // nodes requesting to reproduce
-  static const string registryFilePath;
-  static const char* dl_exts[];
 
  public:
   SpatialComputer(Args* args, bool own_dump);
@@ -198,55 +193,26 @@ class SpatialComputer : public EventConsumer {
   void update_selection();
   void render_selection(); // render for selection
   void drag_selection(flo* delta);
+  // dumping routines
   void dump_header(FILE* out); // print a header for a Matlab-style data file
   void dump_state(FILE* out); // print log info for all devices
   void dump_selection(FILE* out, int verbosity);
   void dump_frame(SECONDS time, BOOL time_in_name);
+  // configuration routines
   BOOL is_3d() { return volume->dimensions()>2; }
-  virtual Layer* find_layer(char* name, Args* args, int n);
-  virtual TimeModel* find_time_model(char* name, Args* args, int n);
-  virtual Distribution* find_distribution(char* name, Args* args, int n);
-  virtual void  initializePlugins(Args* args, int n);
-  void setDefaultTimeModel(Args* args, int n);
-  void setDefaultDistribution(Args* args, int n);
-  void setDefaultLayer(const char* name, Args* args, int n);
   void appendDefops(std::string& s);
-  
+
  private:
+  void initialize_plugins(Args* args, int n);
   void get_volume(Args* args, int n); // shared dist constructor
-  void choose_distribution(Args* args, int n); // custom dist selector
-  void choose_layers(Args* args, int n); // custom layer selector
-  void choose_time_model(Args* args, int n); // custom timing selector
   int addLayer(Layer* layer); // add a layer to dynamics & set callback vars
-
-  void add_plugin(const char *name, Args *args, int n);
-  void readRegistry (fstream& fin, LibRegistry& out);
-  void* getDLLHandle(string dllName);
-  void* dlopenext(const char *name, int flag);
-  int layer_mask;
-  LibRegistry mLibReg;
-  map<string,void*> mLoadedDLLMap;
+  int addLayer(char* layer,Args* args,int n);// get layer from plugin, then add
   };
-
-class DllNotFoundException: public exception
-{
-public:
-	string message;
-	DllNotFoundException(string msg);
-	~DllNotFoundException() throw();
-	virtual const char* what() const throw();
-};
 
 // global variable set to the spatial computer during visualize(),
 // to avoid passing it around continually
 extern SpatialComputer* vis_context;
 
 typedef Layer* (*layer_getter) (Args *args, SpatialComputer *cpu, int n);
-
-extern "C" {
-  Device* current_device();
-  SimulatedHardware* current_hardware();
-  MACHINE* current_machine();
-}
 
 #endif // __SPATIALCOMPUTER__

@@ -1,29 +1,28 @@
-/* 
- * File:   RadioModels.h
- * Author: prakash
- *
- * Created on February 8, 2010, 1:41 PM
- */
+/* Plugin providing wormhole radios and radio model superposition
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
-#ifndef _RADIOMODELSPLUGIN_H
-#define	_RADIOMODELS_H
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "ProtoPluginLibrary.h"
+#ifndef _RADIOMODELSPLUGIN_
+#define	_RADIOMODELSPLUGIN_
+
+#include "proto_plugin.h"
 
 #define WORM_HOLES_NAME "wormholes"
 #define MULTI_RADIO_NAME "multiradio"
-#define RADIO_MODELS_DLL_NAME "radiomodels"
+#define DLL_NAME "libradiomodels"
 
 // Plugin class
 class RadioModelsPlugin : public ProtoPluginLibrary {
-private:
-    string wormholesName;
-    string multiradioName;
 public:
-    RadioModelsPlugin();
-    Layer* get_layer(char* name, Args* args,SpatialComputer* cpu, int n);
-    static string getProperties();
+  void* get_sim_plugin(string type, string name, Args* args, 
+                       SpatialComputer* cpu, int n);
+  void* get_compiler_plugin(string type, string name, Args* args);
+  static string inventory();
 };
 
-#endif	/* _RADIOMODELSPLUGIN_H */
+#endif	// _RADIOMODELSPLUGIN_
 

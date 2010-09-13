@@ -22,6 +22,7 @@ Palette::Palette() {
   if(!palette_initialized) { set_color_names(); palette_initialized=TRUE; }
   for(int i=0;i<PALETTE_SIZE;i++) stack_depth[i]=0;
   default_palette(); 
+  overlay_from_file("local.pal",false); // check for default override
 }
 
 void Palette::use_color(ColorName c) {
@@ -71,10 +72,11 @@ void Palette::substitute_color(ColorName c, ColorName overlay) {
 	     colors[overlay][2], colors[overlay][3]);
 }
 
-void Palette::overlay_from_file(const char* filename) {
+void Palette::overlay_from_file(const char* filename, bool warnfail) {
   FILE* file;
   if((file = fopen(filename, "r"))==NULL) {
-    debug("WARNING: Couldn't open palette file %s.\n",filename); 
+    if(warnfail)
+      debug("WARNING: Couldn't open palette file %s.\n",filename); 
   } else {
     char buf[255]; int line=0;
     while(fgets(buf,255,file)) {

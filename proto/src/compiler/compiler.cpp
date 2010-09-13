@@ -20,6 +20,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "lisp.h"
 #include "reader.h"
 #include "compiler.h"
+//#include "proto_plugin.h"
 
 using namespace std; // allow c-strings, etc; note: shadows 'pair'
 
@@ -2925,46 +2926,16 @@ Compiler::Compiler(Args* args) {
   is_dump_code = args->extract_switch("--instructions");
   is_dump_ast = args->extract_switch("--print-ast");
   init_compiler();
-  if(args->extract_switch("--platform")) set_platform(args->pop_next());
+  if(args->extract_switch("--platform")) {
+    args->pop_next();
+    post("Warning: paleocompiler ignoring  --platform argument");
+  }
   last_script=(char*)"";
 }
 
 Compiler::~Compiler() {
   delete proto_path;
   srcdir = "";
-}
-
-void Compiler::set_platform(string plat) {
-  string platdir;
-
-  if (srcdir != "") {
-    // use the platform dir in the source directory
-    platdir = srcdir + "/src/" + plat;
-  } else {
-    // use the install location
-    platdir = PROTOPLATDIR;
-    platdir += "/";
-    platdir += plat;
-  }
-
-  ifstream* platform_file = new ifstream();
-  platform_file->open((platdir+"/platform_ops.h").c_str());
-  if (!platform_file->good())
-    uerror("Could not find platform_ops.h in '%s'",platdir.c_str());
-
-  list<string>* p_ops = read_enum(platform_file);
-  if(p_ops == NULL) { uerror("Invalid platform file.");
-  } else {
-    int op_num=CORE_CMD_OPS;
-    for(int i=op_num;i<256;i++) op_names[i]=""; // wipe out any old info
-    for(list<string>::iterator i=p_ops->begin(); i!=p_ops->end(); i++) {
-      op_names[op_num] = (*i); downcase(op_names[op_num]); op_num++;
-    }
-    delete p_ops;
-  }
-  delete platform_file;
-
-  read_opfile((platdir+"/platform_ops.proto").c_str());
 }
 
 // When being run standalone, -D controls dumping (it's normally 

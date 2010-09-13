@@ -41,7 +41,8 @@ class Palette {
   
  public:
   Palette();                   // create a default palette
-  void overlay_from_file(const char* filename); // replace colors with file values
+  // replace colors with values from filename
+  void overlay_from_file(const char* filename, bool warnfail=true);
   void default_palette();      // initialize the default palette [user fn]
   void use_color(ColorName c); // make the current color C
   void scale_color(ColorName c,flo r, flo g, flo b, flo a); // multiply

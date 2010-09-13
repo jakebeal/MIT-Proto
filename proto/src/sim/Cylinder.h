@@ -8,7 +8,8 @@
 #ifndef _CYLINDER_H
 #define	_CYLINDER_H
 
-#include "Distribution.h"
+#include "proto_plugin.h"
+#include "spatialcomputer.h"
 
 class Cylinder : public Distribution {
 public:

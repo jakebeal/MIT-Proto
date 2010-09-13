@@ -80,6 +80,10 @@ command can be invoked multiple times, loading multiple palettes.
 Palettes load in the order they are specified on the command line,
 with later entries possibly overriding earlier ones.}
 
+The simulator also always searches for a palette file named
+\var{local.pal} in the current directory.  If this file is found, it
+is loaded before any explicitly named palettes from the command line.
+
 Palette files are formatted as follows:
 \begin{itemize}
 \item Whitespace is ignored
