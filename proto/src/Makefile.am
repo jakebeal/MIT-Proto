@@ -32,6 +32,7 @@ proto_LDADD = \
 	motelink/libmotelink.la \
 	sim/libsim.la \
 	sim/libprotosimplugin.la \
+	shared/libshared.la \
 	kernel/libkernel.la
 
 proto_LDFLAGS = \
