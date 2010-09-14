@@ -13,7 +13,7 @@ in the file LICENSE in the MIT Proto distribution's top directory.  */
 #include "spatialcomputer.h"
 
 class RadioSim : public Layer, public HardwarePatch {
-  public:
+ public:
   // model options
   float tx_error;            // probability of failure on transmit
   float rx_error;            // probability of failure before reception
@@ -23,9 +23,9 @@ class RadioSim : public Layer, public HardwarePatch {
   int connect_display_mode; // fuzzy=0, locally sharp=1, or sharp=2
 
   RadioSim(Args *args, SpatialComputer *parent);
-  ~RadioSim();
-
-  BOOL handle_key(KeyEvent* key);
+  virtual ~RadioSim();
+  
+  virtual BOOL handle_key(KeyEvent* key);
 
 protected:
   BOOL try_tx();

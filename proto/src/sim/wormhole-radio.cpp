@@ -35,14 +35,8 @@ BOOL WormHoleRadio::handle_key(KeyEvent *key) {
 }
 
 void WormHoleRadio::add_device(Device* d) {
-  Device *o;
-  int i;
-
   d->layers[id] = new WormHoleRadioDevice(this,d);
-
-  if(--devices_left == 0) {
-    attach_wormholes();
-  }
+  if(--devices_left == 0) {attach_wormholes();} // connect when last device made
 }
 
 void WormHoleRadio::attach_wormholes() {

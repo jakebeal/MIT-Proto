@@ -10,9 +10,11 @@ in the file LICENSE in the MIT Proto distribution's top directory.  */
 #ifndef __WORMHOLERADIO__
 #define __WORMHOLERADIO__
 
+#include "proto_plugin.h"
 #include "spatialcomputer.h"
 #include "radio.h"
 #include <set>
+using namespace std;
 
 class WormHoleRadioDevice;
 
@@ -44,7 +46,7 @@ private:
 class WormHoleRadioDevice : public DeviceLayer {
   WormHoleRadio *parent;
 
-  std::set<WormHoleRadioDevice*> nbrs;
+  set<WormHoleRadioDevice*> nbrs;
 
   friend class WormHoleRadio;
 

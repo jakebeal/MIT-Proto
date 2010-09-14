@@ -1,5 +1,4 @@
 /* Multiple Radio Simulation
-
 Copyright (C) 2009, Nelson Elhage and contributors listed in the
 AUTHORS file in the MIT Proto distribution's top directory.
 

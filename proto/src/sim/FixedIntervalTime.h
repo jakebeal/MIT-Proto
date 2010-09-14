@@ -1,18 +1,16 @@
-/*
- * FixedIntervalTime2.h
- *
- *  Created on: Feb 24, 2010
- *      Author: gbays
- */
+/* Model for precise clocks with varying frequency and phase
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
-#include "TimeModel.h"
-#include "sim-hardware.h"
-#include "spatialcomputer.h"
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #ifndef FIXEDINTERVALTIME_H_
 #define FIXEDINTERVALTIME_H_
 
-class SpatialComputer;
+#include "sim-hardware.h"
+#include "spatialcomputer.h"
 
 class FixedTimer : public DeviceTimer {
   SECONDS dt, half_dt, internal_dt, internal_half_dt;
@@ -35,7 +33,7 @@ class FixedIntervalTime : public TimeModel, public HardwarePatch {
   flo ratio; flo rvar;  // ratio is internal/true time
 public:
   FixedIntervalTime(Args* args, SpatialComputer* p);
-  virtual ~FixedIntervalTime();
+  virtual ~FixedIntervalTime() {}
 
   DeviceTimer* next_timer(SECONDS* start_lag);
 

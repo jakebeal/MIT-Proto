@@ -7,8 +7,10 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <sstream>
+#include "config.h"
 #include "Mica2MotePlugin.h"
 #include "proto_vm.h"
+#include "visualizer.h"
 using namespace std;
 
 /*****************************************************************************
@@ -109,6 +111,7 @@ BOOL DeviceMoteIO::handle_key(KeyEvent* key) {
   return FALSE;
 }
 
+#define SENSOR_RADIUS_FACTOR 4
 void DeviceMoteIO::visualize(Device* d) {
 #ifdef WANT_GLUT
   flo rad = d->body->display_radius();

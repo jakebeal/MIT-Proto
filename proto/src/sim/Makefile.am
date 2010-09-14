@@ -18,7 +18,6 @@ libsim_la_SOURCES = \
 	sim-hardware.cpp \
 	unitdiscradio.cpp \
 	simpledynamics.cpp \
-	UniformRandom.cpp \
 	FixedIntervalTime.cpp \
 	spatialcomputer.cpp \
 	DefaultsPlugin.cpp
@@ -40,8 +39,6 @@ pkginclude_HEADERS = \
 	unitdiscradio.h \
 	radio.h \
 	UniformRandom.h \
-	DeviceTimer.h \
-	TimeModel.h \
 	FixedIntervalTime.h
 
 buildregistrydir=$(plugindir)
@@ -49,19 +46,18 @@ buildregistry_SOURCES = \
 	createRegistry.cpp
 buildregistry_LDADD = \
 	../shared/libshared.la libsim.la
-buildregistry_LDFLAGS = -lltdl -export-dynamic
+buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic
 buildregistry_PROGRAMS = \
 	buildregistry
 
 # Basic plugins
 pkglib_LTLIBRARIES = libdistributions.la libsimplelifecycle.la libmica2mote.la libradiomodels.la
-pluginflags = -dynamiclib -avoid-version #-no-undefined
-pluginlibs = ../shared/libshared.la libprotosimplugin.la
+pluginflags = -dynamiclib -avoid-version
+pluginlibs = libprotosimplugin.la
 # On non-Mac systems, might need to have -dynamiclib removed, -module added, or other such changes
 
 # shared library for distributions
 libdistributions_la_SOURCES = \
-	UniformRandom.cpp \
 	DistributionsPlugin.cpp
 libdistributions_la_LIBADD = $(pluginlibs)
 libdistributions_la_LDFLAGS = $(pluginflags)

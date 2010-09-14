@@ -21,9 +21,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h"
 #include "proto_platform.h"
 #include "scheduler.h"
-#include "DeviceTimer.h"
-#include "TimeModel.h"
-#include "FixedIntervalTime.h"
 
 // prototype classes
 class Device; class SpatialComputer;
@@ -38,11 +35,25 @@ class Distribution {
  public:
   int n; Rect *volume;
   METERS width, height, depth; // bounding box of volume occupied
-  Distribution(int n, Rect *volume);
+  Distribution(int n, Rect *volume); // subclasses often take an Args* too
   virtual ~Distribution() {}
   // puts location in *loc and returns whether a device should be made
-  virtual BOOL next_location(METERS *loc);// loc is a 3-vec
+  virtual BOOL next_location(METERS *loc) { return FALSE; };// loc is a 3-vec
 };
+
+class DeviceTimer {
+ public:  // both of these report delay from the current compute time
+  virtual void next_transmit(SECONDS* d_true, SECONDS* d_internal)=0;
+  virtual void next_compute(SECONDS* d_true, SECONDS* d_internal)=0;
+  virtual DeviceTimer* clone_device()=0; // split the timer for a clone dev
+};
+
+class TimeModel {
+ public:
+  virtual DeviceTimer* next_timer(SECONDS* start_lag)=0;
+  virtual SECONDS cycle_time()=0;
+};
+
 
 /*****************************************************************************
  *  DYNAMICS                                                                 *

@@ -14,6 +14,7 @@ RadioSim::RadioSim(Args* args, SpatialComputer* p) : Layer(p) {
   tx_error = (args->extract_switch("-txerr"))?args->pop_number():0.0;
   rx_error = (args->extract_switch("-rxerr"))?args->pop_number():0.0;
 
+  is_show_backoff = args->extract_switch("-show-radio-backoff");
   is_show_connectivity = args->extract_switch("-c");
   connect_display_mode = 
     (args->extract_switch("-sharp-connections")) ? 2 :

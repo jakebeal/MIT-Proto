@@ -65,6 +65,9 @@ int main(int argc, char** argv) {
     lt_dlhandle handle = lt_dlopenext(dllFile.c_str());
     if(handle == NULL) { // Vague msg because ltdl currently stomps error info
       cout << "unable to open (unlinked symbol problem?)\n";
+      cout << lt_dlerror() << endl;
+      void* h2 = dlopen((dllFile+".dylib").c_str(),RTLD_NOW);
+      cout << dlerror() << endl;
     } else {
       void *fp = lt_dlsym(handle, "get_proto_plugin_inventory");
       if(fp==NULL) { cout << "not a Proto plugin (no inventory)\n";
@@ -90,3 +93,4 @@ int main(int argc, char** argv) {
 Device* device = NULL;
 SimulatedHardware* hardware = NULL;
 MACHINE* machine = NULL;
+void* palette = NULL;
