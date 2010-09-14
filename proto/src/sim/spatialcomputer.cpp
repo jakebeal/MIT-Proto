@@ -14,7 +14,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "visualizer.h"
 #include "plugin_manager.h"
 #include "DefaultsPlugin.h"
-#include "customizations.h"
 
 using namespace std;
 
