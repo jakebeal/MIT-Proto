@@ -53,7 +53,9 @@ building a non-headless version of proto, it may appear that the
 also be the case that either or both of -lXmu and -lXi are missing. In
 general, if a certain library appears to be missing, examine the
 corresponding ax_check_*.m4 configuration file to see what other
-libraries are also required.
+libraries are also required.  Similarly, if you get an error telling
+you to run autoconf again, run "./autogen.sh" and "./configure" again
+and the error will likely resolve itself.
 
 Correct installation will put two applications into your path:
 * proto: Proto simulator (incorporating compiler)
@@ -69,15 +71,13 @@ the 3D shape of the dots better.
 
 Proto depends on the following applications and libraries:
 * GNU C/C++ (v. 4.0 or later)
-* GNU autotools	(usually bundled with GNU C/C++; libtool must be v. 1.8 or later)
+* GNU autotools	(usually bundled with GNU C/C++; libtool must be at least v. 1.8)
 * flex 		(usually bundled with GNU C/C++)
 * OpenGL (and GLUT)
 * X Windows
 * Open Dynamics Engine (ODE) v0.8  [optional]
 * Xmu (X miscellaneous utility routines) and
 * Xi (X input Extension library) (these two X libraries are usually already installed)
-* Python 2.5 or later
-* SCons 1.2.0 -- install into Python, instructions below.
 
 If you have all of these installed, you should just be able to run
 'make' in this directory and have the whole thing build correctly.
@@ -103,12 +103,7 @@ Proto has been tested on the following platforms:
 
 If you have the required dependencies, we expect proto to work without
 any problems.
-For all systems, install SCons into Python:
-  1. Download compressed SCons: http://www.scons.org/download.php
-  2. Unzip
-  3. cd to unzipped SCons directory
-  4. type at the command line:
-     python setup.py install
+
 
 3. PLATFORM-SPECIFIC INSTRUCTIONS:
 
@@ -117,8 +112,9 @@ A. Linux
 Installing the Required Packages:
 * Debian/Ubuntu/derivatives: 
   Use the following command to install required packages: 
-  "sudo apt-get install autoconf libtool build-essential libglu1-mesa-dev 
-   freeglut3-dev mesa-common-dev libxmu-dev libxi-dev flex scons"
+  "sudo apt-get install autoconf libtool build-essential
+   libglu1-mesa-dev freeglut3-dev mesa-common-dev libxmu-dev libxi-dev
+   flex"
   You may need to substitute "libxi6-dev" for "libxi-dev".
   To use ODE, add "libode0-dev" to the list.
   Make sure libtool is newer than version 1.8. You need Ubuntu 8.10 or
@@ -146,8 +142,7 @@ B. Windows
 * USING ODE: The easiest way is to get use the "Autotools" method with
   Cygwin (as described in ODE's install notes). You will need to tell
   Cygwin to install "libtool" to install ode this way.
-* Install Python into cygwin.
-* Install SCons into Python.
+* Install Python into cygwin if you want to run regression testing.
 
 C. MacOS X
 * If OpenGL and GNU tools aren't already installed, install the

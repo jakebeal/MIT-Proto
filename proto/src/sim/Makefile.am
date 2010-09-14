@@ -40,7 +40,6 @@ pkginclude_HEADERS = \
 	wormhole-radio.h \
 	multiradio.h \
 	UniformRandom.h \
-	Mica2Mote.h \
 	DeviceTimer.h \
 	TimeModel.h \
 	FixedIntervalTime.h \
@@ -63,12 +62,6 @@ pluginlibs = ../shared/libshared.la libprotosimplugin.la
 
 # shared library for distributions
 libdistributions_la_SOURCES = \
-	XGrid.cpp \
-	FixedPoint.cpp \
-	Grid.cpp \
-	GridRandom.cpp \
-	Cylinder.cpp \
-	Torus.cpp \
 	UniformRandom.cpp \
 	DistributionsPlugin.cpp
 libdistributions_la_LIBADD = $(pluginlibs)
@@ -76,14 +69,12 @@ libdistributions_la_LDFLAGS = $(pluginflags)
 
 # shared library for SimpleLifeCycle plugin
 libsimplelifecycle_la_SOURCES = \
-	SimpleLifeCycle.cpp \
 	SimpleLifeCyclePlugin.cpp
 libsimplelifecycle_la_LIBADD = $(pluginlibs)
 libsimplelifecycle_la_LDFLAGS = $(pluginflags)
 
 # shared library for Mica2Motes plugin
 libmica2mote_la_SOURCES = \
-	Mica2Mote.cpp \
 	Mica2MotePlugin.cpp
 libmica2mote_la_LIBADD = $(pluginlibs)
 libmica2mote_la_LDFLAGS = $(pluginflags)

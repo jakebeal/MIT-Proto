@@ -11,7 +11,59 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "proto_plugin.h"
 #include "spatialcomputer.h"
+#include "UniformRandom.h"
 
+/*************** Various Distributions ***************/
+// Y is random
+class FixedPoint : public UniformRandom {
+public:
+  int fixed; int n_fixes;
+  Population fixes;
+  FixedPoint(Args* args, int n, Rect* volume);
+  virtual ~FixedPoint();
+  BOOL next_location(METERS *loc); 
+};
+
+class Grid : public Distribution {
+public:
+  int rows,columns,layers;
+  int i;
+  Grid(int n, Rect* volume) ;
+  BOOL next_location(METERS *loc) ;
+};
+
+class XGrid : public Distribution {
+public:
+  int rows,columns,layers;
+  int i;
+  XGrid(int n, Rect* volume);
+  BOOL next_location(METERS *loc);
+};
+
+class GridRandom : public Grid {
+public:
+  METERS epsilon;
+  GridRandom(Args* args, int n, Rect* volume);
+  BOOL next_location(METERS *loc);
+};
+
+class Cylinder : public Distribution {
+public:
+  METERS r;
+  Cylinder(int n, Rect* volume);
+  BOOL next_location(METERS *loc);
+};
+
+class Torus : public Distribution {
+public:
+  METERS r, r_inner;
+  Torus(Args* args, int n, Rect *volume);
+
+  BOOL next_location(METERS *loc); 
+};
+
+
+/*************** Plugin Interface ***************/
 class DistributionsPlugin : public ProtoPluginLibrary {
 public:
   void* get_sim_plugin(string type, string name, Args* args,
