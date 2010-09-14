@@ -29,7 +29,7 @@ public:
   int rows,columns,layers;
   int i;
   Grid(int n, Rect* volume) ;
-  BOOL next_location(METERS *loc) ;
+  virtual BOOL next_location(METERS *loc) ;
 };
 
 class XGrid : public Distribution {

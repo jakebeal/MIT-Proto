@@ -23,12 +23,16 @@ class ProtoPluginManager {
                        SpatialComputer* cpu, int n);
   // Used to get compiler extensions, or just the opcode part of a sim plugin
   void* get_compiler_plugin(string type, string name, Args* args);
+  // Accessor for get_plugin_inventory: NO NOT USE THIS TO MODIFY IT!
+  map<string, map<string,string> >* get_plugin_inventory() 
+    { ensure_initialized(); return &registry; }
 
   static string PLUGIN_DIR;
   static string REGISTRY_FILE_NAME;
 
   void register_lib(string type,string name,string key,ProtoPluginLibrary* lib)
   { registry[type][name] = key; open_libs[key] = lib; }
+
  private:
   bool initialized;
   map<string, map<string,string> > registry; // type -> name -> library

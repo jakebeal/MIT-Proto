@@ -1,0 +1,26 @@
+// Test grid and simple-dynamics
+test: $(PROTO) -m -DD grid "(mov (tup (green 1) 2 3))" -l -L DebugLayer -stop-after 10.5 -NDall -Ddynamics -Ddebug -Ddebug-mask 0x70 -D -dump-after 10
+~= 1 3 -56 1
+~= 1 4 -31 1
+= 1 5 0
+= 1 10 0
+= 1 11 1
+= 1 12 0
+~= 25 3 -23 1
+~= 25 4 -31 1
+= 25 5 0
+~= 37 6 1.0
+~= 37 7 2.0
+~= 37 8 3.0
+
+// Test gridrandom and lifecycle
+test: $(PROTO) -DD grid "(if (mod (mid) 3) (sum-hood 1) (die 1))" -L simple-life-cycle -n 400 -r 10 -stop-after 5.5 -D -dump-after 5 -Dvalue
+= 1 0 1
+= 1 3 4
+= 42 0 63
+= 42 3 7
+
+// 
+
+// TODO: Test duplicate loading of plugins
+// TODO: Test overriding default load of 

@@ -28,6 +28,8 @@ libsim_la_LDFLAGS =
 libsim_la_LIBADD = \
 	libprotosimplugin.la
 
+# Note: scheduler.h is not user-interesting, but is used by spatialcomputer.h
+# TODO: proto_platform.h should go in sim subdir
 pkginclude_HEADERS = \
 	basic-hardware.h \
 	proto_platform.h \
@@ -37,13 +39,10 @@ pkginclude_HEADERS = \
 	spatialcomputer.h \
 	unitdiscradio.h \
 	radio.h \
-	wormhole-radio.h \
-	multiradio.h \
 	UniformRandom.h \
 	DeviceTimer.h \
 	TimeModel.h \
-	FixedIntervalTime.h \
-	DefaultsPlugin.h
+	FixedIntervalTime.h
 
 buildregistrydir=$(plugindir)
 buildregistry_SOURCES = \

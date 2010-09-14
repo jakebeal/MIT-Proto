@@ -102,7 +102,6 @@ BOOL GridRandom::next_location(METERS *loc) {
   loc[0] += epsilon*((rand()%1000/1000.0) - 0.5);
   loc[1] += epsilon*((rand()%1000/1000.0) - 0.5);
   if(volume->dimensions()==3) loc[2] += epsilon*((rand()%1000/1000.0) - 0.5);
-  i++;
   return TRUE;
 }
 

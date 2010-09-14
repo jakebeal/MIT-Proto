@@ -14,6 +14,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math
+#include "plugin_manager.h"
 #if __USE_NEOCOMPILER__
 #include "neocompiler.h"
 #else
@@ -400,6 +401,23 @@ void shutdown_app() {
 
 // handle command-line arguments for top-level application
 void process_app_args(Args *args) {
+  // Should we just display the plugin inventory and exit?
+  if(args->extract_switch("--plugins")) {
+    map<string, map<string,string> > *pm = plugins.get_plugin_inventory();
+    cout << "Displaying available plugins (by type):\n";
+    map<string, map<string,string> >::iterator i = pm->begin();
+    for(; i!=pm->end(); i++) {
+      cout << "  " << i->first << ": ";
+      map<string,string>::iterator j = i->second.begin();
+      if(j!=i->second.end()) { cout << j->first; j++; }
+      for(; j!=i->second.end(); j++) { cout << ", " << j->first; }
+      cout << endl;
+    }
+    cout << "All plugins displayed; exiting.\n";
+    exit(0);
+  }
+
+
   // should the simulator start paused?
   is_stepping = args->extract_switch("-step");
   // maximum time for simulation (useful for headless execution)

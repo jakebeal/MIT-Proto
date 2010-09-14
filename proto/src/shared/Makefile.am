@@ -1,9 +1,3 @@
-# TODO:
-# SUBS = utils.o
-# ifndef NO_GL
-#   SUBS += Trackball.o drawing_primitives.o palette.o visualizer.o
-# endif
-
 noinst_LTLIBRARIES = libshared.la
 
 INCLUDES = \
@@ -22,12 +16,11 @@ libshared_la_SOURCES += \
         visualizer.cpp
 endif
 
-# TODO conditional here
-
+# Note: headers don't need gl/glut-conditional install
+#  those that use graphics info manage conditional internally
 pkginclude_HEADERS = \
 	utils.h \
 	proto_plugin.h \
-	plugin_manager.h \
 	Trackball.h \
 	drawing_primitives.h \
 	palette.h \
