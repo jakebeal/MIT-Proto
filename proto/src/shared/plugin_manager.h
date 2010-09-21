@@ -22,13 +22,15 @@ class ProtoPluginManager {
   void* get_sim_plugin(string type, string name, Args* args, 
                        SpatialComputer* cpu, int n);
   // Used to get compiler extensions, or just the opcode part of a sim plugin
-  void* get_compiler_plugin(string type, string name, Args* args);
+  void* get_compiler_plugin(string type, string name, Args* args, int* max_op);
   // Accessor for get_plugin_inventory: NO NOT USE THIS TO MODIFY IT!
   map<string, map<string,string> >* get_plugin_inventory() 
     { ensure_initialized(); return &registry; }
 
-  static string PLUGIN_DIR;
-  static string REGISTRY_FILE_NAME;
+  static string PLUGIN_DIR; // Where DLLs go
+  static string REGISTRY_FILE_NAME; // Where the registry goes
+  static string PLATFORM_DIR; // Where .proto extension files go
+  static string PLATFORM_OPFILE; // The default .proto file for a platform
 
   void register_lib(string type,string name,string key,ProtoPluginLibrary* lib)
   { registry[type][name] = key; open_libs[key] = lib; }
@@ -37,6 +39,7 @@ class ProtoPluginManager {
   bool initialized;
   map<string, map<string,string> > registry; // type -> name -> library
   map<string, ProtoPluginLibrary*> open_libs; // open library name -> object
+  ProtoPluginLibrary* get_plugin_lib(string type, string name);
   void ensure_initialized();
   bool read_registry();
 };

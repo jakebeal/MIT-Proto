@@ -60,7 +60,6 @@ class Mica2MotePlugin : public ProtoPluginLibrary {
 public:
   void* get_sim_plugin(string type, string name, Args* args, 
                        SpatialComputer* cpu, int n);
-  void* get_compiler_plugin(string type, string name, Args* args);
   static string inventory();
 };
 

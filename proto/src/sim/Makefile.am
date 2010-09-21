@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES = libsim.la 
+noinst_LTLIBRARIES = libsim.la libdefaultplugin.la
 lib_LTLIBRARIES = libprotosimplugin.la
 
 INCLUDES = \
@@ -11,21 +11,25 @@ libprotosimplugin_la_SOURCES = \
 	plugin-support.cpp
 libprotosimplugin_la_LDFLAGS = -export-dynamic
 
-libsim_la_SOURCES = \
+libdefaultplugin_la_SOURCES = \
 	basic-hardware.cpp \
-	kernel_extension.cpp \
-	scheduler.cpp \
-	sim-hardware.cpp \
 	unitdiscradio.cpp \
 	simpledynamics.cpp \
 	FixedIntervalTime.cpp \
-	spatialcomputer.cpp \
 	DefaultsPlugin.cpp
+libdefaultplugin_la_LDFLAGS = -export-dynamic
+
+libsim_la_SOURCES = \
+	kernel_extension.cpp \
+	scheduler.cpp \
+	sim-hardware.cpp \
+	spatialcomputer.cpp
 
 libsim_la_CPPFLAGS =
 libsim_la_LDFLAGS = 
 libsim_la_LIBADD = \
-	libprotosimplugin.la
+	libprotosimplugin.la \
+	libdefaultplugin.la
 
 # Note: scheduler.h is not user-interesting, but is used by spatialcomputer.h
 # TODO: proto_platform.h should go in sim subdir
@@ -49,6 +53,15 @@ buildregistry_LDADD = \
 buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic
 buildregistry_PROGRAMS = \
 	buildregistry
+
+defops_DATA = \
+	platform_ops.proto \
+	PerfectLocalizer.proto \
+	SimpleDynamics.proto \
+	simple-life-cycle.proto \
+	mote-io.proto
+defopsdir = $(protoplatdir)/sim/
+EXTRA_DIST = $(defops_DATA)
 
 # Basic plugins
 pkglib_LTLIBRARIES = libdistributions.la libsimplelifecycle.la libmica2mote.la libradiomodels.la

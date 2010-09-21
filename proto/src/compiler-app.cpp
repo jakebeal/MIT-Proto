@@ -11,6 +11,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <stdlib.h>
 #include "utils.h"
 #include "compiler.h"
+#include "plugin_manager.h"
+#include "DefaultsPlugin.h"
 
 #define __USE_NEOCOMPILER__ 0
 

@@ -9,6 +9,9 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "SimpleLifeCyclePlugin.h"
 #include "proto_vm.h"
 
+#define DIE_OP "die scalar boolean"
+#define CLONE_OP "clone scalar boolean"
+
 /*****************************************************************************
  *  SIMPLE LIFECYCLE                                                         *
  *****************************************************************************/
@@ -18,8 +21,8 @@ SimpleLifeCycle::SimpleLifeCycle(Args* args, SpatialComputer* p) : Layer(p) {
   clone_delay = args->extract_switch("-clone-delay")?(int)args->pop_number():1;
   args->undefault(&can_dump,"-Dclone","-NDclone");
   // register hardware functions
-  parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::die_op, "die scalar boolean"));
-  parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::clone_op, "clone scalar boolean"));
+  parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::die_op, DIE_OP));
+  parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::clone_op, CLONE_OP));
 }
 
 void SimpleLifeCycle::die_op(MACHINE* machine) {
@@ -103,11 +106,6 @@ void* SimpleLifeCyclePlugin::get_sim_plugin(string type,string name,Args* args,
     if(name == LAYER_NAME) { return new SimpleLifeCycle(args, cpu); }
   }
   return NULL;
-}
-
-void* SimpleLifeCyclePlugin::get_compiler_plugin(string type, string name, Args* args) {
-  // TODO: implement compiler plugins
-  uerror("Compiler plugins not yet implemented");
 }
 
 string SimpleLifeCyclePlugin::inventory() {

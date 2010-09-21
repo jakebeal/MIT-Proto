@@ -74,7 +74,6 @@ void SimulatedHardware::appendDefops(string& defops) {
     ss << "(defop " << (ix + PLATFORM_OPCODE_OFFSET) << " " <<  opHandler->defop << ")\n";
   }
   defops = ss.str();
-  std::cout << "defops = " << defops.c_str() << "\n";
 }
 
 void SimulatedHardware::patch(HardwarePatch* p, HardwareFunction fn) {

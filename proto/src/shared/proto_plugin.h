@@ -6,10 +6,10 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "utils.h"
-
 #ifndef __PROTO_PLUGIN__
 #define __PROTO_PLUGIN__
+
+#include "utils.h"
 
 // We generic calls and type string-matching to make extensibility easier
 #define LAYER_PLUGIN "Layer"
@@ -22,12 +22,12 @@ class ProtoPluginLibrary {
  public:
   // Used to get simulator Layers, Distributions, and TimeModels
   virtual void* get_sim_plugin(string type, string name, Args* args, 
-                               SpatialComputer* cpu, int n) = 0;
-  // Used to get compiler extensions, or just the opcode part of a sim plugin
-  virtual void* get_compiler_plugin(string type, string name, Args* args) = 0;
-  static string registry_entry(string type,string name,string dll) {
-    return type+" "+name+" = "+dll+"\n";
-  }
+                               SpatialComputer* cpu, int n) { return NULL; }
+  // Used to get compiler extensions
+  virtual void* get_compiler_plugin(string type, string name, Args* args) 
+    {return NULL; }
+  static string registry_entry(string type,string name,string dll)
+    { return type+" "+name+" = "+dll+"\n"; }
 };
 
 // Hook functions for external access to dynamically loaded library

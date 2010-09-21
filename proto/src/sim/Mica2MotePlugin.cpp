@@ -13,19 +13,27 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "visualizer.h"
 using namespace std;
 
+#define SPEAK_OP "speak scalar scalar"
+#define LIGHT_OP "light scalar"
+#define SOUND_OP "sound scalar"
+#define TEMP_OP "temp scalar"
+#define CONDUCTIVE_OP "conductive scalar"
+#define BUTTON_OP "button scalar scalar"
+#define SLIDER_OP "slider scalar scalar scalar scalar scalar scalar scalar"
+
 /*****************************************************************************
  *  TESTBED MOTE IO                                                          *
  *****************************************************************************/
 MoteIO::MoteIO(Args* args, SpatialComputer* parent) : Layer(parent) {
   args->undefault(&can_dump,"-Dmoteio","-NDmoteio");
   // register patches
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::speak_op, "speak scalar scalar"));
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::light_op, "light scalar"));
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::sound_op, "sound scalar"));
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::temp_op, "temp scalar"));
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::conductive_op, "conductive scalar"));
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::button_op, "button scalar scalar"));
-  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::slider_op, "slider scalar scalar scalar scalar scalar scalar scalar"));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::speak_op, SPEAK_OP));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::light_op, LIGHT_OP));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::sound_op, SOUND_OP));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::temp_op, TEMP_OP));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::conductive_op, CONDUCTIVE_OP));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::button_op, BUTTON_OP));
+  parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::slider_op, SLIDER_OP));
 }
 
 void MoteIO::speak_op(MACHINE* machine) {
@@ -131,11 +139,7 @@ void* Mica2MotePlugin::get_sim_plugin(string type, string name, Args* args,
   if(type==LAYER_PLUGIN) {
     if(name==MICA2MOTE_NAME) { return new MoteIO(args,cpu); }
   }
-}
-
-void* Mica2MotePlugin::get_compiler_plugin(string type,string name,Args* args) {
-  // TODO: implement compiler plugins
-  uerror("Compiler plugins not yet implemented");
+  return NULL;
 }
 
 string Mica2MotePlugin::inventory() {

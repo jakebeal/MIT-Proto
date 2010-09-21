@@ -20,7 +20,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "lisp.h"
 #include "reader.h"
 #include "compiler.h"
-//#include "proto_plugin.h"
+#include "plugin_manager.h"
 
 using namespace std; // allow c-strings, etc; note: shadows 'pair'
 
@@ -1231,6 +1231,7 @@ AST_CALL::AST_CALL(AST *fun, list<AST*> *argv) : args(argv) {
 /****** OPERATION DEFINITION ******/
 list<VAR*> *ops;
 list<VAR*> *user_ops;
+string op_names[256];
 
 extern VAR* lookup_name (const char *name, list<VAR*> *bindings);
 
@@ -1239,6 +1240,7 @@ AST_OP *add_op_full
      FUN_TYPE *fun_type, TYPE_INFER type_infer) {
   AST_OP *op = (AST_OP*)new AST_OP(name, opname, code, arity, is_nary, (TYPE*)fun_type, type_infer);
   VAR *var = lookup_name(name, ops);
+  op_names[code] = name; // fill in op_names record of ops
   if (var == NULL)
     ops->push_front(new VAR(name, new ONE_OP_TYPE(op)));
   else {
@@ -1892,7 +1894,7 @@ Obj *build_getters (char *name, int off, List *fields) {
 
 Obj *rewrite_letstar (List *bindings, List *body) {
   if (bindings == lisp_nil)
-    return body->getHead();
+    return PAIR(new Symbol("all"),body);
   else {
     return PAIR(new Symbol("let"),
                 PAIR(PAIR(bindings->getHead(), lisp_nil),
@@ -2822,8 +2824,6 @@ void dump_code (int n, uint8_t *bytes) {
 #include <fstream>
 #include "sexpr.h"
 
-string op_names[256];
-
 void downcase(string& str) 
 { for(int i=0;i<str.size();i++) { str[i]=tolower(str[i]); } }
 
@@ -2831,6 +2831,12 @@ void downcase(string& str)
 int op_num(string s) {
   for(int i=0;i<256;i++) { if(s==op_names[i]) return i; } 
   uerror("%s is not a valid operation name.",s.c_str());
+  return -1;
+}
+
+int next_free_op() {
+  for(int i=0;i<256;i++) {if(op_names[i]=="") return i; }
+  uerror("No free opcodes available.");
   return -1;
 }
 
@@ -2856,7 +2862,8 @@ void parse_external_op(SExpr* ex) {
   if(l->len() < 3) uerror("defop has too few arguments");
   int op;
   if (l->children[1]->isSymbol()) {
-    op = op_num(((SE_Symbol*) l->children[1])->name);
+    string name = ((SE_Symbol*) l->children[1])->name;
+    if(name=="?") op = next_free_op(); else op = op_num(name);
   } else if (l->children[1]->isScalar()) {
     op = (int) ((SE_Scalar*) l->children[1])->value;
   } else {
@@ -2892,6 +2899,7 @@ void read_opfile(string filename) {
 }
 
 void Compiler::setDefops(string defops) {
+  std::cout << "defops = " << defops.c_str() << "\n";
   SExpr* ex = read_sexpr("defops", defops);
   if(ex==NULL) uerror("Could not read defops %s",defops.c_str());
   if(!ex->isList()) uerror("%s is not an opfile",defops.c_str());
@@ -2926,10 +2934,6 @@ Compiler::Compiler(Args* args) {
   is_dump_code = args->extract_switch("--instructions");
   is_dump_ast = args->extract_switch("--print-ast");
   init_compiler();
-  if(args->extract_switch("--platform")) {
-    args->pop_next();
-    post("Warning: paleocompiler ignoring  --platform argument");
-  }
   last_script=(char*)"";
 }
 
@@ -2959,6 +2963,15 @@ void Compiler::init_standalone(Args* args) {
     sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
     
     dump_target=fopen(buf,"w");
+  }
+
+  // Get any platform-specific additional opcodes
+  string platform = args->extract_switch("--platform")?args->pop_next():"sim";
+  string pdir = ProtoPluginManager::PLATFORM_DIR+"/"+platform+"/";
+  read_opfile(pdir+ProtoPluginManager::PLATFORM_OPFILE);
+  while(args->extract_switch("-L",false)) { // get layers
+    string name = args->pop_next(); ensure_extension(name,".proto");
+    read_opfile(pdir+name);
   }
 }
 

@@ -19,11 +19,6 @@ void* RadioModelsPlugin::get_sim_plugin(string type,string name,Args* args,
   return NULL;
 }
 
-void* RadioModelsPlugin::get_compiler_plugin(string type, string name, Args* args) {
-  // TODO: implement compiler plugins
-  uerror("Compiler plugins not yet implemented");
-}
-
 string RadioModelsPlugin::inventory() {
   return "# Cloning and apoptosis\n" +
     registry_entry(LAYER_PLUGIN,WORM_HOLES_NAME,DLL_NAME) +

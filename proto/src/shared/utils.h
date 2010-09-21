@@ -93,6 +93,8 @@ const char* flo2str(float num, int precision=2);
 const char* int2str(int num);
 // prints a block of text with n spaces in front of each line
 void print_indented(int n, string s, bool trim_trailing_newlines=0);
+// ensures that a string ends with extension
+string ensure_extension(string& base, string extension);
 
 /*****************************************************************************
  *  NOTIFICATION FUNCTIONS                                                   *

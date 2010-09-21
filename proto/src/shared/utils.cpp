@@ -193,6 +193,18 @@ void print_indented(int n, string s, bool trim_trailing_newlines) {
   }
 }
 
+bool ends_with(string base, string tail) {
+  int b_n = base.size(), t_n = tail.size();
+  if(b_n < t_n) return false;
+  for(int i=0;i<t_n;i++)
+    if(tail[i]!=base[i+b_n-t_n]) return false;
+  return true;
+}
+
+string ensure_extension(string& base, string extension) {
+  if(!ends_with(base,extension)) base += extension;
+  return base;
+}
 
 /*****************************************************************************
  *  POPULATION CLASS                                                         *

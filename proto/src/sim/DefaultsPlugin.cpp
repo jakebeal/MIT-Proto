@@ -45,7 +45,3 @@ void* DefaultsPlugin::get_sim_plugin(string type, string name, Args* args,
   }
   return NULL;
 }
-
-void* DefaultsPlugin::get_compiler_plugin(string type, string name, Args* args){
-  uerror("Compiler plugins not being handled yet"); // TODO: handle compiler plugins
-}

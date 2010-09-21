@@ -16,6 +16,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // Registry location:
 string ProtoPluginManager::PLUGIN_DIR = string(PLUGINDIR);
 string ProtoPluginManager::REGISTRY_FILE_NAME = "registry.txt";
+string ProtoPluginManager::PLATFORM_DIR = string(PROTOPLATDIR);
+string ProtoPluginManager::PLATFORM_OPFILE = "platform_ops.proto";
 
 ProtoPluginManager plugins; // global manager, initializes on first use
 
@@ -64,8 +66,7 @@ bool ProtoPluginManager::read_registry() {
   return true;
 }
 
-void* ProtoPluginManager::get_sim_plugin(string type, string name, Args* args,
-                                         SpatialComputer* cpu,int n){
+ProtoPluginLibrary* ProtoPluginManager::get_plugin_lib(string type,string name){
   ensure_initialized();
 
   bool known = registry[type].count(name);
@@ -88,12 +89,18 @@ void* ProtoPluginManager::get_sim_plugin(string type, string name, Args* args,
     lib = (*((get_library_func)fp))(); // run the entry-point function
     open_libs[libfile] = lib;
   }
+  return lib;
+}
 
+void* ProtoPluginManager::get_sim_plugin(string type, string name, Args* args,
+                                         SpatialComputer* cpu,int n){
+  ProtoPluginLibrary* lib = get_plugin_lib(type,name);
+  if(lib==NULL) return NULL;
   return lib->get_sim_plugin(type,name,args,cpu,n);
 }
 
-void* ProtoPluginManager::get_compiler_plugin(string type,string name,Args* args){
-  ensure_initialized();
-
-  uerror("Compiler plugins not yet implemented"); // TODO: implement compiler plugins
+void* ProtoPluginManager::get_compiler_plugin(string type,string name,Args* args, int* max_op){
+  ProtoPluginLibrary* lib = get_plugin_lib(type,name);
+  if(lib==NULL) return NULL;
+  return lib->get_compiler_plugin(type,name,args);
 }
