@@ -1,6 +1,0 @@
-# executable for compiling registry.txt
-registry_source_files = Split('createRegistry.cpp')
-registry_includes = Split('/usr/local/include/proto')
-registry_lib_dirs = Split('/usr/local/lib/proto')
-registry_libs = Split('shared dl')
-Program(source = registry_source_files, CPPPATH = registry_includes, LIBPATH = registry_lib_dirs, LIBS = registry_libs)

@@ -1,0 +1,24 @@
+(Last Revision: $Date: 2010-01-03 10:40:50 -0500 (Sun, 03 Jan 2010) $)
+
+This project contains a simple example of how to build a plugin for
+MIT Proto.  This is intended to serve as a template, aiding you in
+developing your own plugins, so it is released in the public domain.
+For full documentation on plugins and how to build them, see your
+Proto developer manual.
+
+This example project uses GNU autotools, so if you have already
+installed MIT Proto, you should be able to build it by running:
+  `./autogen.sh; ./configure; make; make install'
+
+Key files in this directory:
+  Makefile.am		Declaration of the project
+  ExamplePlugin.h	Declaration of the plugin and its name
+  			The name must match Makefile.am
+  ExamplePlugin.cpp	Code implementing the plugin
+  autogen.sh		Processes Makefile.am, configuring project for building
+  configure.ac		Project description used by autogen.sh
+
+Note that building the project will create a large number of
+automatically generated or copied files.  Most of these should not be
+included in any distribution of your plugin; see the GNU autotools
+documentation for more details.

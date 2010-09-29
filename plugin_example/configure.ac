@@ -6,12 +6,12 @@ AC_PREREQ(2.60)
 # increment the version number here on each release, so that the
 # version number in the source-code repo is one *more* than the
 # latest release.
-AC_INIT([proto], [1], [proto-bugs@csail.mit.edu])
+AC_INIT([proto], [3], [proto-bugs@csail.mit.edu])
 
-AC_CONFIG_SRCDIR([src/plugins/plugins.cpp])
+AC_CONFIG_SRCDIR([.])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
-AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE
 
@@ -24,11 +24,7 @@ AC_LANG(C++)
 ## Checks for programs.
 
 AC_PROG_MAKE_SET
-AC_PROG_LEX
-AX_WITH_PYTHON([echo "no python found"; exit 1; : ]) # only needed for tests
 
-AC_PATH_PROG([SCONSBATPATH],[scons.bat], [no])
-AM_CONDITIONAL(SCONSBATNO,test "$SCONSBATPATH" = "no")
 ## options for the user
 
 PROTO_WITH_GLUT
@@ -68,7 +64,5 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([floor gettimeofday memset pow select sqrt strcasecmp strrchr])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile
-                 src/plugins/Makefile
                 ])
 AC_OUTPUT

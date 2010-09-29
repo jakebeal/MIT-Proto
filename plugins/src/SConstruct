@@ -1,5 +1,0 @@
-SConscript('distributions/SConscript')
-SConscript('mica2mote/SConscript')
-SConscript('radio_models/SConscript')
-SConscript('simple_life_cycle/SConscript')
-SConscript('registry/SConscript')
