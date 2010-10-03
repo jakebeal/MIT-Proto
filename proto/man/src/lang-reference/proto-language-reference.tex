@@ -2,11 +2,10 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{../svn-multi}
-\svnid{$Id: proto-language-reference.tex 10 2008-08-28 14:05:10Z jakebeal $}
 
 \title{Proto Language Reference}
-\author{Jonathan Bachrach, Jacob Beal}
-\date{Date: \today, SVN Version: \svnrev{}}
+\author{By the authors of MIT Proto}
+\date{Last Updated: \today}
 
 \newcommand\todo[1]{\immediate\write16{TODO: #1}}
 \newcommand\broken{{\em Not working!}}
@@ -32,10 +31,10 @@ This is a reference to all of the currently working functions in the
 Proto language.  For a reference of commonly used simulator and
 language commands, see the {\bf Proto Quick Start}.  For a tutorial on
 the Proto language, see the document {\bf Thinking In Proto}.  For
-installation instructions, see the {\bf README}.
-For a user manual for the simulator, see the {\bf Proto Simulator User
-  Manual}.  For information on how to extend the functionality of the
-simulator, see the {\bf Proto Simulator Developer Reference}.
+installation instructions, see the {\bf README}.  For a user manual
+for the simulator, see the {\bf Proto Simulator User Manual}.  For
+information on how to extend the functionality of the simulator, see
+the {\bf MIT Proto Developers Guide}.
 
 This reference is intended as a ``dictionary'' to allow Proto
 programmers to look up whether the function they are looking for
@@ -694,6 +693,12 @@ actively being invoked.  Thus, for example,
 will cause devices move to the right only when \var{(sense 1)} is
 true, and to turn on their red LED only when \var{(sense 1)} is false.
 
+Note that most sensors and actuators are not part of the core Proto
+language, but are platform-specific.  For the simulator, that means
+they are introduced by particular layers.  For a list of all of the
+sensor and actuator primitives bundled with the simulator, see the 
+{\bf Proto Simulator User Manual}.
+
 \paragraph{Movement}
 
 This collection of functions are actuators for moving devices
@@ -709,46 +714,8 @@ and sensors for introspecting on their motion.
 \function{(bearing)}{S}{Returns the current 2D bearing of the
   device. \nosecgen{}}
 
-\paragraph{Debug I/O}
-
-A simple package for debugging: LEDs and probes for output,
-and user-toggled sensors for input.
-
-\function{(red ,n|\type{S})}{S}{Set red LED to intensity \var{n}.  Intensity
-  ranges from 0 to 1, but overloading of display can show values outside
-  this range.  The return echoes \var{n}.}
-\function{(green ,n|\type{S})}{S}{Like \var{red}, except it acts on
-  the green LED.}
-\function{(blue ,n|\type{S})}{S}{Like \var{red}, except it acts on
-  the blue LED.}
-\function{(leds ,n|\type{S})}{S}{Set blue LED to \var{(> n 0.25)}, green
-  LED to \var{(> n 0.50)}, and red LED \var{(> n 0.75)}.  The return
-  echoes \var{n}.}
-\function{(rgb ,v|\type{V})}{V}{Set red, green, and blue LEDs to first,
-  second, and third elements of \var{v} respectively.  Extra elements
-  are ignored.  The return echoes \var{v}.}
-
-\function{(probe ,value|\type{L} ,i|\type{S})}{L}{Posts \var{value} to
-  the \var{i}th probe (valid indices are 0 to 2).}
-
-\function{(sense ,i|\type{S})}{S}{Returns the \var{i}th user sensor
-  value.}
-\function{(is-orange)}{B}{Alias for \var{(sense 1)}; in the simulator,
-  this is a boolean displayed as an orange disc when true.}
-\function{(is-purple)}{B}{Alias for \var{(sense 2)}; in the simulator,
-  this is a boolean displayed as an purple disc when true.}
-
-\paragraph{Life Cycle}
-
-\function{(clone ,now|\type{B})}{B}{When \var{now} is true, the device
-  attempts to reproduce.  The return echoes \var{now}.}
-
-\function{(die ,now|\type{B})}{B}{When \var{now} is true, the device
-  attempts to suicide.  The return echoes \var{now}.}
-
 \paragraph{Geometry}
 
-\function{(coord)}{V_3}{Returns the device's estimated coordinates.}
 \function{(area)}{S}{Returns each device's estimate of the amount of
   area it represents.}
 \function{(hood-radius)}{S}{Returns the maximum expected range at which
@@ -761,57 +728,6 @@ and user-toggled sensors for input.
   that range will be truncated.  \nosecgen{}}
 
 \function{(mid)}{S}{Returns the device's ID.}
-\function{(radius)}{S}{Return the estimated radius of the device's body.}
-\function{(radius-set ,r|\type{S})}{S}{Set the radius of the device's
-  body to \var{r}.  The return echoes \var{r}.}
-
-\function{(button ,i|\type{S})}{B}{Returns the current reading from 
-  the \var{i}th button.  \bugs{}}
-
-\function{(grad-channel ,i|\type{S})}{V}{Ensure that chemical
-  communication channel \var{i} is active and return a summary.
-  \nosecgen{}}
-\function{(new-channel ,alpha|\type{S} ,i|\type{S})}{S}{Set the
-  diffusion constant of the \var{i}th chemical communication channel
-  to be \var{alpha}.  The return echoes \var{alpha}.  Note that the
-  name and action of this function are not coherent.  \nosecgen{}}
-\function{(concentration  ,i|\type{S})}{S}{Read the chemical 
-  concentration in the \var{i}th chemical communication channel.
-  \nosecgen{}}
-\function{(drip ,rate|\type{S} ,i|\type{S})}{S}{Increase the chemical
-  in the \var{i}th chemical communication channel at \var{rate}.  The
-  return echoes \var{r}.  \nosecgen{}}
-
-\function{(light)}{S}{Returns the current reading from a light sensor.
-  \nosecgen{}}
-\function{(sound)}{S}{Returns the current sound level recorded by a
-  microphone. \nosecgen{}}
-\function{(speak ,value|\type{S})}{S}{Feed \var{value} to a speaker.
-  \nosecgen{}}
-\function{(temp)}{S}{Returns the current reading from a temperature
-  sensor.  \nosecgen{}}
-\function{(conductive)}{B}{Returns the current reading from a short
-  sensor.  \nosecgen{}}
-
-\function{(slider ,dkey|\type{S} ,ikey|\type{S} ,init|\type{S}
-  ,increment|\type{S} ,min|\type{S} ,max|\type{S})}{S}{Returns the
-  current reading from a slider control.  \nosecgen{}}
-
-\function{(mouse)}{V_2}{Returns the current location of the
-  mouse. \nosecgen{}}
-\function{(ranger)}{V_8}{Returns the readout of an 8-way sonar rangefinder.
-  \nosecgen{}}
-\function{(cam ,i|\type{S})}{S}{Returns a camera reading. \nosecgen{}}
-\function{(bump)}{B}{Returns true if the device's body is in contact
-  with something. \nosecgen{}}
-
-\function{(local-fold ,active|\type{B} ,i|\type{S})}{B}{Interface to
-  a folding actuator for surfaces like epithelial sheets.  The boolean
-  \var{active} indicates whether the \var{i}th fold should currently
-  be folding.  The return echoes \var{active}.  \nosecgen{}}
-\function{(fold-complete ,i|\type{S})}{B}{Interface to a folding 
-  actuator for surfaces like epithelial sheets.  This returns true
-  when the \var{i}th fold is no longer moving.  \nosecgen{}}
 
 \section{Library Functions}
 

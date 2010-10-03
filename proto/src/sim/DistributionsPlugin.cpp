@@ -174,6 +174,3 @@ extern "C" {
   const char* get_proto_plugin_inventory()
   { return (new string(DistributionsPlugin::inventory()))->c_str(); }
 }
-
-
-

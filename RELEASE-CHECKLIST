@@ -1,0 +1,5 @@
+Before making a public release, please go down this checklist:
+- Check that all regression tests are passing
+- Make sure all configure.ac files have the right release number in AC_INIT
+- Make sure all recent authors are credited in proto/AUTHORS and 
+  proto/man/src/creditx.tex

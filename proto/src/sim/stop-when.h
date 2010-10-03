@@ -10,6 +10,7 @@ in the file LICENSE in the MIT Proto distribution's top directory.  */
 #ifndef  __STOPWHEN__
 #define  __STOPWHEN__
 
+#include "proto_plugin.h"
 #include "spatialcomputer.h"
 #include <set>
 
@@ -22,11 +23,18 @@ class StopWhen : public Layer, public HardwarePatch {
 
   void add_device(Device *d);
 
-  void set_probe (DATA* d, uint8_t p);
+  void stop_op(MACHINE* machine);
 
  private:
   int n_devices;
   std::set<Device*> probed;
+};
+
+class StopWhenPlugin : public ProtoPluginLibrary {
+public:
+  void* get_sim_plugin(string type, string name, Args* args,
+                       SpatialComputer* cpu, int n);
+  static string inventory();
 };
 
 #endif

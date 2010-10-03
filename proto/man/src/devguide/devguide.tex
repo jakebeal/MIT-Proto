@@ -2,11 +2,10 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{../svn-multi}
-\svnid{$Id: devguide.tex 10 2008-08-28 14:05:10Z jakebeal $}
 
 \title{MIT Proto Developers Guide}
-\author{Jacob Beal}
-\date{Date: \today, SVN Version: \svnrev{}}
+\author{By the authors of MIT Proto}
+\date{Last Updated: \today}
 
 \newcommand\todo[1]{\immediate\write16{TODO: #1}}
 
@@ -23,9 +22,13 @@
 
 \maketitle
 
-This is a guide to developing for the MIT Proto project.  It outlines the
-various components of the project, how they fit together, and how to
-develop for them safely.
+This is a guide to developing for the MIT Proto project.  It outlines
+the various components of the project, how they fit together, and how
+to develop for them safely.  For user documentation, begin with the
+{\bf Proto Quick Start}.  For installation instructions, see the {\bf
+  README}.
+
+WARNING: This file is still highly incomplete.
 
 \tableofcontents
 
@@ -115,13 +118,11 @@ is being built):
     /lib/core/} are both placed into \\{\tt PREFIX/share/proto/lib}.
   This directory is part of the default search path for executions of
   the compiler.
-\item Platform definition files for platform PLATFORM are expected 
+\item Opcode definition files for platform PLATFORM are expected 
   to be found in \\{\tt PREFIX/share/proto/platforms/PLATFORM}
 \item The header files needed for building extensions for MIT Proto
-  should be installed in \\{\tt PREFIX/include/proto/}, but currently
-  are not. \fixme
-\item Under the future plug-in system, the simulator should search for
-  plug-ins in \\{\tt PREFIX/share/proto/platforms/sim/}
+  are installed in \\{\tt PREFIX/include/proto/}.
+\item The simulator searches for plug-ins in \\{\tt PREFIX/lib/proto/}
 \end{itemize}
 
 \section{Compiler}
@@ -134,31 +135,22 @@ time, because it is both highly complex and obsolete.
 \paragraph{Compiling for a Platform}
 The compiler loads platform-specific operations during its
 initialization.  When given a \var{--platform {\it PLATFORM}}
-argument, it reads the platform definition file {\tt platform\_ops.h}
-from the platform directory for {\it PLATFORM} (see above).
-This file is expected to contain C comments and a single enum of
-the form: 
-\code{
-typedef enum \{\\
-  {\it opcode-name} = CORE\_CMD\_OPS,\\
-  {\it opcode-name},\\
-  ...\\
-  MAX\_CMD\_OPS\\
-\} PLATFORM\_OPCODES;}
-This file gives the compiler names and numbers for the opcodes to be
-defined.
+argument, it reads the opcode definition file {\tt
+  platform\_ops.proto} from the platform directory for {\it PLATFORM}
+(see above).  If given no \var{--platform} argument, it assumes the
+platform is \var{sim}, for the Proto simulator.
 
-The compiler then reads the platform definition file {\tt
-  platform\_ops.proto} from the same directory.  This is a Proto file
-and is expected to contain a set of \var{defop} expressions of the
-form: \code{(defop {\it opcode-name} {\it function-name} {\it type}
-  ...)}  where {\it opcode-name} should match some entry in the {\tt
-  platform\_ops.h} file (though they can be in a different order), and
-{\it function-name} is the Proto function that will invoke the opcode.
-The first {\it type} expression specifies the return type, and any
-others that follow specify argument types for the operator.  The {\it
-  type} expressions are currently allowed only to be one of
-\var{scalar}, \var{boolean}, and \var{(vector 3)}.
+This is a Proto file and is expected to contain a set of \var{defop}
+expressions of the form: \code{(defop ? {\it function-name} {\it type}
+  ...)}  where {\it function-name} is the Proto function that will
+invoke the opcode.  The first {\it type} expression specifies the
+return type, and any others that follow specify argument types for the
+operator.  The {\it type} expressions are currently allowed only to be
+one of \var{scalar}, \var{boolean}, and \var{(vector 3)}.
+
+In addition, for each \var{-L {\it OPFILE}} argument, the compiler
+loads the opcode definition file {\it OPFILE} (appending a {\tt
+  .proto} extension if needed) from the same directory.
 
 \paragraph{Compilation and Files}
 
@@ -367,74 +359,10 @@ distributions for laying out device positions, models for the
 evolution of time on individual devices, and physics ``layers'' for
 simulating interaction with an external environment.  
 
-Extensions were originally added via the file
-\var{src/sim/customizations.cpp}.  This is being phased out because it
-forces extensions into the core MIT Proto distribution, defeating
-their purpose.  There is now a simple plug-in system built in and a
-design for a better plug-in system.  This document describes all
-three.
-
-\subsection{Extensions via {\tt customizations.cpp}}
-
-During the initialization of the spatial computer model in the
-simulator, three ``choose'' functions are called to select layers,
-distributions, and time models.  The \var{choose\_layers} function is
-called first, and it calls \var{choose\_distribution} and
-\var{choose\_time\_model} internally.
-
-These functions should examine the command line arguments and set the
-appropriate spatial computer model state variables.  The
-\var{choose\_layers} may add any number of layers using the function
-\code{int SpatialComputer::addLayer(Layer* layer);}  The exception is
-the \var{BodyDynamics} layer managing the motion of devices in the
-spatial computer: there must be precisely one \var{BodyDynamics}, and
-it is placed in the model state variable {\tt physics}.  
-
-Likewise, the effect of the \var{choose\_distribution} and
-\var{choose\_time\_model} functions is to set the model state
-variables \var{distribution} and \var{time\_model}, respectively.
-
-Adding new functionality generally just entails adding one or more new
-test clauses: the code for \var{choose\_distribution} is a good model
-to work from.
-
-\subsection{Current Plug-in System}
-
-The current simple plug-in system provides sharply limited
-functionality.  Plug-ins are created as dynamic libraries with the
-name \var{proto-{\it name}.dylib} or \var{proto-{\it name}.so}, and
-stored in a location where the operating system's dynamic library
-loader can find them, e.g. {\tt /usr/local/lib/}.
-
-The set of plugins to load is specified with a command-line argument
-\code{-plugins {\it name},{\it name},...}
-where each name maps to a library \var{proto-{\it name}.dylib} or
-\var{proto-{\it name}.so}.
-
-Each library supplies one layer, which the \var{choose\_layers}
-function obtains by calling the function \code{Layer* get\_layer(Args
-  *args, SpatialComputer *cpu, int n);} on the library, where
-\var{args} is the current command line arguments, \var{cpu} is the
-model under construction, and \var{n} is the number of devices to be
-created.  If the layer is a \var{BodyDynamics}, it should identify
-itself as such by implementing a member function \code{layer\_type
-  get\_type()} that returns the enum value \var{LAYER\_PHYSICS}.  As
-always, there must be precisely one \var{BodyDynamics}, no more and no
-less.
-
-Plugins for time models and distributions are not currently supported
-(though there is partial code toward that effect).  The plug-in system
-also attempts to provide special-case handling for layers that
-simulate radio communication; this does not work correctly and should
-never have existed.
-
-
-\subsection{Future Plug-in System}
-
-The plug-in system to be implemented will replace the current system
-entirely.  In the simulator's platform directory, there will be a
-``registry'' file mapping plugin names to dynamic library file stems.
-This file will be in a standard key/value format:
+Extensions are dynamically loaded from libraries in the plugin
+directory.  Also living in that directory is a file, {\bf
+  registry.txt}, that contains the current known inventory of plugins.
+This file is a case-sensitive list of mappings in a simple key/value format:
 \begin{itemize}
 \item Each line has format {\tt TYPE NAME = FILESTEM}.  Whitespace (or its
   absence) will be ignored.
@@ -442,7 +370,7 @@ This file will be in a standard key/value format:
 \end{itemize}
 This file is used to determine what dynamic library should be loaded
 to retrieve a desired plugin.  The \var{TYPE} is one of \var{Layer},
-\var{TimeModel}, or \var{Distribution} (case matters), and the
+\var{TimeModel}, or \var{Distribution}, and the
 \var{NAME} and \var{FILESTEM} are arbitrary alphanumeric tokens.  When
 the spatial computer is being constructed, a component is looked up
 first by type, then by name (components of different type can have the
@@ -453,54 +381,49 @@ dynamically.
 
 A library must contain two symbols, which will be invoked as C functions:
 \begin{itemize}
-\item \code{char* get\_proto\_plugin\_properties()}
-\item \code{ProtoPluginLibrary* get\_proto\_plugins()}
+\item \code{char* get\_proto\_plugin\_inventory()}
+\item \code{ProtoPluginLibrary* get\_proto\_plugin\_library()}
 \end{itemize}
 
-The \var{get\_proto\_plugin\_properties} function returns a C string
-that can be used to build the registry file.
+The \var{get\_proto\_plugin\_inventory} function returns a C string
+containing its portion of the registry file.
 
-The \var{get\_proto\_plugins} function returns an object subclassed
+The \var{get\_proto\_plugin\_library} function returns an accessor
+object for the dynamically loaded library.  This must be subclassed
 from the type \var{ProtoPluginLibrary}, which is defined:
 \begin{quote}
 \begin{verbatim}
 class ProtoPluginLibrary {
-public:
-  virtual Layer* get_layer(char* name, Args* args, 
-                           SpatialComputer* cpu, int n)
-  { return NULL; }
-  virtual TimeModel* get_time_model(char* name, Args* args, 
-                                    SpatialComputer* cpu, int n)
-  { return NULL; }
-  virtual Distribution* get_distribution(char* name, Args* args, 
-                                         SpatialComputer* cpu, int n)
-  { return NULL; }
+ public:
+  // Used to get simulator Layers, Distributions, and TimeModels
+  virtual void* get_sim_plugin(string type, string name, Args* args, 
+                               SpatialComputer* cpu, int n) { return NULL; }
+  // Used to get compiler extensions
+  virtual void* get_compiler_plugin(string type, string name, Args* args) 
+    {return NULL; }
 };
 \end{verbatim}
 \end{quote}
 
-Each of the three functions in this interface is used to poll whether
-a desired layer, time model, or distribution can be obtained from this
-plugin.  The function should return the requested object if it can
-supply it, and \var{NULL} if not.  For each function, \var{name} is a
-C string naming the desired object, \var{args} is the current command
-line arguments, \var{cpu} is the model under construction, and \var{n}
-is the number of devices to be created.  The function may consume
-command-line arguments, but must not modify the model directly.
+Each of the functions in this interface is used to poll whether a
+desired extension object can be obtained from this plugin.  The
+function should return the requested object if it can supply it, and
+\var{NULL} if not.  The argument \var{type} is its category (e.g
+``Layer''), \var{name} is an identifier the desired object, \var{args}
+is the current command line arguments, \var{cpu} is the model under
+construction, and \var{n} is the number of devices to be created.  The
+function may consume command-line arguments, but must not modify the
+model directly.
 
-The spatial computer model also will expose functions that can be used
-by ``meta-plugins'' to combine together the functions of other
-objects:
-\begin{quote}
-\begin{verbatim}
-virtual Layer* SpatialComputer::find_layer(char* name, Args* args, int n);
-virtual Layer* SpatialComputer::find_time_model(char* name, Args* args, int n);
-virtual Layer* SpatialComputer::find_distribution(char* name, Args* args, int n);
-\end{verbatim}
-\end{quote}
+The plugin manager also exposes its own plugin retrieval function, so
+that ``meta-plugins'' can combine together the functions of other
+objects.  This consists of \var{get\_sim\_plugin} and
+\var{get\_compiler\_plugin} functions formatted identically to those
+of the \var{ProtoPluginLibrary}.
+
 For example, a multi-radio communication model could use the
-\var{find\_layer} function to fetch a layer to model each radio on the
-device.
+\var{get\_sim\_plugin} function to fetch a layer to model each radio
+on the device.
 
 Layers, time models, and distributions are invoked by the command line
 arguments \code{-L {\it layer}} \code{-TM {\it time-model}} \code{-DD
@@ -508,29 +431,68 @@ arguments \code{-L {\it layer}} \code{-TM {\it time-model}} \code{-DD
 
 During the construction of the spatial computer model, these command
 line arguments are used to find what object is desired.  The
-constructor then first polls each plug-in in turn, followed by the
-built-in \var{choose} functions, taking the first object returned or
-throwing an error when none can supply the desired object.
+simulator's plugin manager reads the registry to determine what
+library the object should be found in, links in the library if it is
+not already, then uses the \var{get\_sim\_plugin} to retrieve the
+object.
 
-In case of problematic conflicts between plugins, the command-line
-argument \code{-NP {\it name}} can be used to not load a particular
-plugin and \code{-OP {\it name},{\it name},...} can be used to load
-only the specified set of plugins, in the order specified.
+There is currently no facility to handle plugins built with
+conflicting names (though objects of different type are each in their
+own namespace).
 
 \paragraph{Note:}
-GNU compilers have severe limitation with respect to linking libraries. 
-In particular, the compiler requires that there must 'not' be any circular dependency 
-between libraries or there must be a hierarchical dependency between any two libraries.
-Hence utmost care must be taken to 'not' introduce any circular dependencies between libraries
-and beware of the order in which libraries are specified in makefiles.
+GNU compilers have severe limitation with respect to linking
+libraries.  In particular, the compiler requires that there must 'not'
+be any circular dependency between libraries or there must be a
+hierarchical dependency between any two libraries.  Hence utmost care
+must be taken to 'not' introduce any circular dependencies between
+libraries and beware of the order in which libraries are specified in
+makefiles.
 
-\paragraph{Further Extension: Per-Layer Opcodes}
+\subsection{Layer Opcode Extensions}
 
-In addition to the plugins described above, the simulator ought to be
-able to load particular sets of platform-specific opcodes along with
-each layer, and make those available to the compiler as well.  This
-is not yet implemented, and the interface is not yet well specified.
-\fixme{}
+Simulator layers can also extend the simulator functionality by
+adding new opcodes to the kernel and new functions to the language.
+This is accomplished by means of the function:
+\begin{quote}
+\begin{verbatim}
+SimulatedHardware::registerOpcode(OpHandlerBase* opHandler);
+\end{verbatim}
+\end{quote}
+where the argument passed is an instance of the \var{OpHandler} template
+class:
+\begin{quote}
+\begin{verbatim}
+template <class Tclass> class OpHandler : public OpHandlerBase {
+ private:
+  void (Tclass::*fnp)(MACHINE* machine);
+  Tclass* pThis;
+ public:
+  OpHandler(Tclass* _pThis, void (Tclass::*_fnp)(MACHINE* machine), const char* _defop) {
+    fnp = _fnp;
+    pThis = _pThis;
+    defop = _defop;
+  }
+  virtual void operator()(MACHINE* machine) {
+    (*pThis.*fnp)(machine);
+  }
+};
+\end{verbatim}
+\end{quote}
+
+Basically, an \var{OpHandler} is created specialized for a particular
+layer, and maps a declaration of the new Proto functions name and type
+to a C++ function invoked on that layer instance.
+
+For example, the \var{SimpleDynamics} layer adds a new opcode for measuring
+the radius of a device by invoking
+\begin{quote}
+\begin{verbatim}
+parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_get_op, "radius scalar"));
+\end{verbatim}
+\end{quote}
+where \var{parent} is the enclosing \var{SpatialComputer} and
+\var{radius\_get\_op} is its implementation of the opcode.
 
 
 \section{Regression Testing}

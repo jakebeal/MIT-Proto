@@ -2,11 +2,10 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{../svn-multi}
-\svnid{$Id: proto-quick-start.tex 10 2008-08-28 14:05:10Z jakebeal $}
 
 \title{Proto Quick Start}
-\author{Jacob Beal}
-\date{Date: \today, SVN Version: \svnrev{}}
+\author{By the authors of MIT Proto}
+\date{Last Updated: \today}
 
 \newcommand\todo[1]{\immediate\write16{TODO: #1}}
 
@@ -49,13 +48,12 @@
 
 This is a quick-start guide for Proto, giving a quick tour of commonly
 used features of the language and simulator.  For installation
-instructions, see the {\bf README}.  For a tutorial
-on the Proto language, see the document {\bf Thinking In Proto}.  For
-a reference to the Proto language, see the {\bf Proto Language
-  Reference}.  For a usee manual for the simulator, see the {\bf Proto
-  Simulator User Manual}.  For information on how to extend the
-functionality of the simulator, see the {\bf Proto Simulator Developer
-  Reference}.
+instructions, see the {\bf README}.  For a tutorial on the Proto
+language, see the document {\bf Thinking In Proto}.  For a reference
+to the Proto language, see the {\bf Proto Language Reference}.  For a
+usee manual for the simulator, see the {\bf Proto Simulator User
+  Manual}.  For information on how to extend the functionality of the
+simulator, see the {\bf MIT Proto Developers Guide}.
 
 \input{../credits.tex}
 
@@ -268,12 +266,6 @@ true, and to turn on their red LED only when \var{(sense 1)} is false.
 
 \function{(sense ,i)}{Returns the \var{i}th user sensor value.}
 
-\function{(clone ,now)}{When \var{now} is true, the device attempts to
-  reproduce.  The return echoes \var{now}.}
-
-\function{(die ,now)}{When \var{now} is true, the device attempts to
-  suicide.  The return echoes \var{now}.}
-
 \function{(coord)}{Returns the device's estimated coordinates.}
 \function{(hood-radius)}{Returns the maximum expected range at which
   devices can communicate.}
@@ -350,22 +342,23 @@ rules.
 
 \simarg{-n N}{Number of devices.}
 \simarg{-3d}{Use a 3D distribution; default is 2D.}
-\simarg{-grid}{Distributes devices in a grid, rathen than uniformly
+\simarg{-DD grid}{Distributes devices in a grid, rathen than uniformly
   randomly.}
 
 \paragraph{Unit Disc Radio Communication}
+The default communication model connects all devices less than
+some fixed distance apart.
+
 \simarg{-r N}{Transmission range for radio, default 15.}
 \simarg{-ns N}{Set transmission range to get an expected neighborhood
   size of \var{N}.  Overrides \var{-r}.}
 \simargkey{-c}{c}{Display network connections (toggled by key).}
 
 \paragraph{Dynamics}
-There are two dynamics packages: ``simple dynamics,'' which does
-not handle collisions and allows instantaneous shifts in velocty, 
-and ``ODE dynamics,'' which is based on the Open Dynamics Engine,
-a Newtonian physics simulator.  Simple dynamics is the default.
+The default physics package, ``simple dynamics,'' is a simple
+vector-stepping system that does not handle collisions and allows
+instantaneous shifts in velocity.
 
-\simarg{-ODE}{Use ODE dynamics for physics.}
 \simarg{-rad N}{Radius of a device body, defaults from the initial
   distribution bounds: $\sqrt{0.087*(width*height/n)}$}
 \simargkey{-w}{w}{Use walls to keep devices inside the initial distribution
@@ -379,7 +372,5 @@ a Newtonian physics simulator.  Simple dynamics is the default.
 \simkey{t}{Toggle user sensor 1 on selected devices.}
 \simkey{y}{Toggle user sensor 2 on selected devices.}
 \simkey{u}{Toggle user sensor 3 on selected devices.}
-\simkey{B}{Clone selected devices.}
-\simkey{K}{Kill selected devices.}
 
 \end{document}

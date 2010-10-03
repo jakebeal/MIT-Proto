@@ -306,6 +306,13 @@ NUM_VAL PerfectLocalizer::read_speed(VOID) {
   return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
+
+/*****************************************************************************
+ *  LEFTOVER LAYER                                                           *
+ *****************************************************************************/
+// Default used to patch the otherwise unpatched but required functions
+// Currently unused.
+
 LeftoverLayer::LeftoverLayer(SpatialComputer* parent) : Layer(parent) {
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::ranger_op, "ranger (vector 3)"));
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::mouse_op, "mouse (vector 3)"));

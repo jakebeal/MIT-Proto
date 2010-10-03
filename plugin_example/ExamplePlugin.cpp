@@ -7,6 +7,40 @@
 
 #define FOO_OP "foo boolean scalar"
 
+/*************** FooDistribution ***************/
+// create a spiral
+FooDistribution::FooDistribution(int n, Rect* volume, Args* args) : Distribution(n,volume) {
+  rad = args->extract_switch("-foo-rad")?args->pop_number():0.1;
+  d = MIN(width,height)/n/2; i=0;
+}
+BOOL FooDistribution::next_location(METERS *loc) {
+  loc[0] = cos(rad*i)*d*i; loc[1] = sin(rad*i)*d*i; loc[2] = 0;
+  i++; // increment for next point
+  return true; // yes, make the device
+}
+
+
+/*************** FooTimer ***************/
+// run timer faster farther from the center
+
+void FooTimer::next_transmit(SECONDS* d_true, SECONDS* d_internal) {
+  const flo* pos = device->body->position();
+  float dist = sqrt((pos[0]*pos[0])+(pos[1]*pos[1])+(pos[2]*pos[2]));
+  *d_true = *d_internal = 1/(1+dist/k)/2;
+}
+void FooTimer::next_compute(SECONDS* d_true, SECONDS* d_internal) {
+  const flo* pos = device->body->position();
+  float dist = sqrt((pos[0]*pos[0])+(pos[1]*pos[1])+(pos[2]*pos[2]));
+  *d_true = *d_internal = 1/(1+dist/k);
+}
+
+FooTime::FooTime(Args* args) {
+  k = args->extract_switch("-foo-k")?args->pop_number():10;
+  if(k<=0) uerror("Cannot specify non-positive time steps.");
+}
+
+
+/*************** FooLayer ***************/
 // Cyclic timer
 FooLayer::FooLayer(Args* args, SpatialComputer* p) : Layer(p) {
   post("Example plugin online!\n");
@@ -65,7 +99,11 @@ BOOL FooDevice::handle_key(KeyEvent* key) {
 /*************** Plugin Library ***************/
 void* ExamplePlugin::get_sim_plugin(string type,string name,Args* args, 
                                             SpatialComputer* cpu, int n) {
-  if(type == LAYER_PLUGIN) {
+  if(type == DISTRIBUTION_PLUGIN) {
+    if(name == DIST_NAME) { return new FooDistribution(n,cpu->volume,args); }
+  } else if(type == TIMEMODEL_PLUGIN) {
+    if(name == TIME_NAME) { return new FooTime(args); }
+  } else if(type == LAYER_PLUGIN) {
     if(name == LAYER_NAME) { return new FooLayer(args, cpu); }
   }
   return NULL;
@@ -73,6 +111,8 @@ void* ExamplePlugin::get_sim_plugin(string type,string name,Args* args,
 
 string ExamplePlugin::inventory() {
   return "# Example plugin\n" +
+    registry_entry(DISTRIBUTION_PLUGIN,DIST_NAME,DLL_NAME) +
+    registry_entry(TIMEMODEL_PLUGIN,TIME_NAME,DLL_NAME) +
     registry_entry(LAYER_PLUGIN,LAYER_NAME,DLL_NAME);
 }
 

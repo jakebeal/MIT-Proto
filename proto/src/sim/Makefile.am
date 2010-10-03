@@ -64,7 +64,7 @@ defopsdir = $(protoplatdir)/sim/
 EXTRA_DIST = $(defops_DATA)
 
 # Basic plugins
-pkglib_LTLIBRARIES = libdistributions.la libsimplelifecycle.la libmica2mote.la libradiomodels.la
+pkglib_LTLIBRARIES = libdistributions.la libsimplelifecycle.la libmica2mote.la libradiomodels.la libstopwhen.la
 pluginflags = -dynamiclib -avoid-version
 pluginlibs = libprotosimplugin.la
 # On non-Mac systems, might need to have -dynamiclib removed, -module added, or other such changes
@@ -94,6 +94,12 @@ libradiomodels_la_SOURCES = \
 	RadioModelsPlugin.cpp
 libradiomodels_la_LIBADD = $(pluginlibs)
 libradiomodels_la_LDFLAGS = $(pluginflags)
+
+# shared library for program-controlled stopping
+libstopwhen_la_SOURCES = \
+	stop-when.cpp
+libstopwhen_la_LIBADD = $(pluginlibs)
+libstopwhen_la_LDFLAGS = $(pluginflags)
 
 # run the registry builder once everything's installed
 install-data-hook:

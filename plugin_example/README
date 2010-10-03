@@ -10,6 +10,13 @@ This example project uses GNU autotools, so if you have already
 installed MIT Proto, you should be able to build it by running:
   `./autogen.sh; ./configure; make; make install'
 
+Test the plugin by running:
+  proto -DD foo-dist -l -TM foo-time -L foo-layer "(green (+ (foo (sense 1)) (rep t 0 (+ 0.1 t))))"
+This should result in a spiral (foo-dist) of green dots shooting up,
+with farther dots rising faster (foo-time).  If you turn on (sense 1),
+the dots will jump up and down (foo-layer)
+
+
 Key files in this directory:
   Makefile.am		Declaration of the project
   ExamplePlugin.h	Declaration of the plugin and its name

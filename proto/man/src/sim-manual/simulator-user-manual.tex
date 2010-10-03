@@ -2,14 +2,15 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{../svn-multi}
-\svnid{$Id: simulator-user-manual.tex 87 2009-06-24 16:18:41Z jakebeal $}
 
 \title{Proto Simulator User Manual}
-\author{Jacob Beal}
-\date{Date: \today, SVN Version: \svnrev{}}
+\author{By the authors of MIT Proto}
+\date{Last Updated: \today}
 
 \newcommand\todo[1]{\immediate\write16{TODO: #1}}
 \newcommand\broken{{\em Not working!}}
+\newcommand\nosecgen{{\em Not working in 2nd generation simulator!}}
+\newcommand\bugs{{\em There are known bugs.}}
 \newcommand\experimental{{\em Experimental: behavior may be flawed and 
     may be changed without warning.}}
 
@@ -41,6 +42,12 @@
 % color
 \newcommand\color[5]{{\bf (Color: {\tt #1} #2, #3, #4, #5)}} % name R G B A
 
+% language extensions
+\newcommand\function[3]
+{\begin{quote}{\tt #1}$\rightarrow$ \type{#2} \\ #3 \end{quote}}
+\newcommand\type[1]{$#1$}
+
+
 \begin{document}
 
 \maketitle
@@ -51,8 +58,8 @@ a reference of commonly used simulator and language commands, see the
 {\bf Proto Quick Start}.  For a tutorial on the Proto language, see
 the document {\bf Thinking In Proto}.  For a reference to the Proto
 language, see the {\bf Proto Language Reference}.  For information on
-how to extend the functionality of the simulator, see the {\bf Proto
-Simulator Developer Reference}.
+how to extend the functionality of the simulator, see the {\bf MIT Proto
+Developers Guide}.
 
 This manual is organized by functional modules within the simulator.
 For each module, there is a brief description of the purpose and
@@ -202,11 +209,6 @@ body diameter,
 \paragraph{Code}
 \simkey{l}{Recompile and reload the current script, injecting at
   the selected devices.}
-\simarg{--platform PLAT}{Use the platform \var{PLAT}.  This causes
-  proto to look for the files
-  \code{\var{\$datarootdir}/proto/platforms/\var{PLAT}/platform\_ops.h}
-  and \var{platform\_ops.proto} to define the platform-specific ops
-  that the compiler will use.}
 \simarg{--path PATH}{Add the directories in \var{PATH} to the front of the list
   of directories searched when looking for files (e.g. Proto programs).  By
   default, the path contains \var{.} (the current directory) and
@@ -231,6 +233,36 @@ body diameter,
   differently colored tip to indicate direction
   \color{VECTOR\_TIP}{1}{0}{1}{0.8}.}
   
+
+\section{Plugins}
+
+The simulator is designed to be extensible with dynamically loadable
+plugins.  This document assumes you are just using plugins installed
+by user-friendly build packages.  For more details on how the plugin
+system works and where files live, see the {\bf MIT Proto Developers
+  Guide}.
+
+The simulator can load three types of plugins, {\em distributions},
+which determine how devices are scattered through the initial volume
+of space (Section~\ref{s:distribution}), {\em time models}, which
+determine when devices execute (Section~\ref{s:timemodel}), and {\em
+  layers}, which modify the simulated environment in which the devices
+execute and add new sensors and actuators.
+
+\simarg{--plugins}{Display the inventory of available plugins that the
+  simulator is able to find, then quit.}
+\simarg{-DD DIST}{Use the distribution named \var{DIST}.}
+\simarg{-TM MODEL}{Use the time model named \var{MODEL}.}
+\simarg{-L LAYER}{Incorporate the layer named \var{LAYER} into the
+  simulation.  This can be used multiple different times to load
+  different layers.}
+
+The simulator requires certain sensors and actuators to be
+implemented, and uses default layers it they are not implemented.  If
+no physics model is loaded, it uses the \var{SimpleDynamics} physics
+simulator layer; if no communication model is loaded, it uses the
+\var{UnitDiscRadio} layer; if no localization model is loaded, it uses
+the \var{PerfectLocalizer} layer.
 
 \section{Debugging}
 
@@ -311,6 +343,7 @@ the user.
 
 
 \section{Device Distribution}
+\label{s:distribution}
 
 Simulations are created with \var{n} devices distributed through a
 bounded 2D or 3D volume according to one of several distribution
@@ -323,31 +356,37 @@ rules.
   ($\var{Z}=40$ for 3D).  Specifying a \var{Z} argument implies a 3D
   distribution.}
 
-By default, devices are distributed uniformly randomly through the
-expected volume.
+Devices are distributed through the expected volume unless otherwise
+specified by \var{-dist-dim}:
 
 \simarg{-dist-dim X- X+ Y- Y+ [Z- Z+]}{Set bounds of initial device
   distribution (differing from expected volume).  When the expected
   volume is 3D, the \var{Z} arguments are required; when it is 2D they
   are prohibited.}
 
-\simarg{-fixedpt X Y [Z]}{Set the position of the first device (Z
-  defaults to 0); all others are distributed uniformly randomly.  If
-  used more times, times the argument sets the position of more
-  devices (e.g. the second use sets the position of the second
-  device).}
-\simarg{-grid}{Distribute devices in a grid that evenly fills the
+By default, the distribution \var{UniformRandom} is used to place
+devices randomly through space.  Several other distributions are
+bundled with the Proto distribution:
+
+\simarg{-DD fixedpt X Y [Z]}{Set the position of the first device (Z
+  defaults to 0); all others are distributed uniformly randomly.  To
+  set the position of more devices, follow with invocations of
+  \var{-fixedpt X Y [Z]} used more times, times the argument sets the
+  position of more devices (e.g. the second use sets the position of
+  the second device).}
+
+\simarg{-DD grid}{Distribute devices in a grid that evenly fills the
   initial volume.  If the grid does not divide evenly, the rightmost
   row/plane will be incomplete.}
-\simarg{-grideps EPSILON}{Distribute devices in a grid as for
-  \var{-grid}, but shift each device randomly in the range
+\simarg{-DD grideps EPSILON}{Distribute devices in a grid as for
+  \var{-DD grid}, but shift each device randomly in the range
   $[-\epsilon/2,\epsilon/2]$ for each coordinate.}
-\simarg{-xgrid}{Distribute X on a grid and Y randomly.  If 3D, Z is
+\simarg{-DD xgrid}{Distribute X on a grid and Y randomly.  If 3D, Z is
   distributed on a grid as well.}
-\simarg{-cylinder}{Distribute devices uniformly randomly (using polar
+\simarg{-DD cylinder}{Distribute devices uniformly randomly (using polar
   coordinates) on the surface of a cylinder aligned with the X-axis,
   with diameter equal to the Y dimension of the initial volume.}
-\simarg{-torus [RATIO]}{Distribute devices unformly randomly (using
+\simarg{-DD torus [RATIO]}{Distribute devices unformly randomly (using
   polar coordinates) within a torus (or ring-shaped band, if
   two-dimensional).  The torus is aligned with the Z-axis, with outer
   diameter equal to the minimum of the X and Y dimensions of the
@@ -355,10 +394,14 @@ expected volume.
   outer diameter (default 0.75).}
 
 \section{Device Time}
+\label{s:timemodel}
 
 Each device tracks its estimated time independently, executing the
 Proto program at regular intervals.  The relationship between device
 time and simulator time may vary, however.
+
+The default time model, named \var{FixedIntervalTime}, takes the
+following arguments:
 
 \simarg{-sync}{Synchronized execution of devices: no variation in rate
   or phase.}
@@ -374,7 +417,85 @@ time and simulator time may vary, however.
   $[\var{R}-\var{RV},\var{R}+\var{RV}]$, defaulting $\var{RV}=0$.}
 
 
-\section{Unit Disc Radio Communication}
+\section{Debugging I/O}
+
+The simulator always loads this layer, which provides simple sensors
+and actuators useful for demos and debugging.  The sensors are three
+boolean ``user sensors'' read by the Proto function \var{(sense $n$)},
+where $n$ is 1, 2, or 3.  When \true{}, each sensor displays a disc
+four times the device size, colored
+\color{USER\_SENSOR\_1}{1.0}{0.5}{0}{0.8},
+\color{USER\_SENSOR\_2}{0.5}{0}{1}{0.8}, or
+\color{USER\_SENSOR\_3}{1.0}{0}{0.5}{0.8} respectively.
+
+The actuators are red, green, and blue LEDs, set by Proto functions
+\var{(red $value$)}, \var{(green $value$)}, and \var{(blue $value$)},
+respectively.  The LEDs may be shown independently as discs the size
+of the device body, with colors \color{RED\_LED}{1}{0}{0}{0.8},
+\color{GREEN\_LED}{0}{1}{0}{0.8}, \color{BLUE\_LED}{0}{0}{1}{0.8}.
+Independent LEDs normally show their value both in intensity of color
+and $Z$ displacement of the LED disc above the device.  LEDs may also
+be displayed mixed together into one double-sized disc with base color
+\color{RGB\_LED}{1}{1}{1}{0.8}, where the base color is scaled by LED
+values.
+
+There are also three probes, which can expose intermediate values from
+evaluation.  They display the values as a tuple above each device in
+the positive $Y$ direction \color{DEVICE\_PROBES}{0}{1}{0}{0.8}.
+
+\simPMarg{-Ddebug}{-NDdebug}{Include debug layer data in dumps?
+  Fields are: \var{USER1 USER2 USER3 RED\_LED GREEN\_LED BLUE\_LED}.}
+\simarg{-Ddebug-mask MASK}{Set which fields are included in dumps,
+  default all ($\var{MASK}=-1$).  Fields start at \var{0x2}, not
+  \var{0x1} (e.g. \var{RED\_LED} is controlled by \var{0x10}) due to a
+  removed field.}
+\simargkey{-probes N}{p}{Display the first \var{N} of the three probes.  
+  The \var{p} key cycles through how many are shown.}
+\simargkey{-l}{L}{Display LEDs (toggled by key).}
+\simargkey{-led-ghost}{1}{LED value controls transparency too, with 0
+  completely transparent and 1 completely opaque.  Toggled by key.}
+\simargkey{-led-flat}{2}{Do not use displacement in $Z$ to show LED value.
+  Toggled by key.}
+\simargkey{-led-stacking N}{3}{Set LED stacking to one of three modes.
+  Mode 0 stacks LEDs directly, in order red, green, blue bottom to top. 
+  Mode 1 sets heights independently, plus an offset of 1 meter for green 
+  and 2 meters for blue.  Mode 2 sets heights independently.  The \var{3} key
+  cycles through the modes.}
+\simargkey{-led-blend}{4}{Show the LEDs as an RGB blend rather than 
+  independently.  Toggled by key.}
+\simkey{t}{Toggle user sensor 1 on selected devices.}
+\simkey{y}{Toggle user sensor 2 on selected devices.}
+\simkey{u}{Toggle user sensor 3 on selected devices.}
+
+\paragraph{Primitives}
+\function{(red ,n|\type{S})}{S}{Set red LED to intensity \var{n}.  Intensity
+  ranges from 0 to 1, but overloading of display can show values outside
+  this range.  The return echoes \var{n}.}
+\function{(green ,n|\type{S})}{S}{Like \var{red}, except it acts on
+  the green LED.}
+\function{(blue ,n|\type{S})}{S}{Like \var{red}, except it acts on
+  the blue LED.}
+\function{(leds ,n|\type{S})}{S}{Set blue LED to \var{(> n 0.25)}, green
+  LED to \var{(> n 0.50)}, and red LED \var{(> n 0.75)}.  The return
+  echoes \var{n}.}
+\function{(rgb ,v|\type{V})}{V}{Set red, green, and blue LEDs to first,
+  second, and third elements of \var{v} respectively.  Extra elements
+  are ignored.  The return echoes \var{v}.}
+
+\function{(probe ,value|\type{L} ,i|\type{S})}{L}{Posts \var{value} to
+  the \var{i}th probe (valid indices are 0 to 2).}
+
+\function{(sense ,i|\type{S})}{S}{Returns the \var{i}th user sensor
+  value.}
+\function{(is-orange)}{B}{Alias for \var{(sense 1)}; in the simulator,
+  this is a boolean displayed as an orange disc when true.}
+\function{(is-purple)}{B}{Alias for \var{(sense 2)}; in the simulator,
+  this is a boolean displayed as an purple disc when true.}
+
+
+\section{Bundled Plugins}
+
+\subsection{Unit Disc Radio Communication}
 
 Currently, the only communication model supported by the simulator
 is unit disc radio communication.  In this model, any pair of devices
@@ -433,7 +554,7 @@ change, the backoff level goes back to $b=0$ immediately.
   \color{RADIO\_BACKOFF}{1}{0}{0}{0.8}}
 
 
-\section{Simple Dynamics}
+\subsection{Simple Dynamics}
 
 The ``simple dynamics'' physics package evolves bodies based on their
 velocity, does not handle collisions, and allows instantaneous shifts
@@ -466,8 +587,15 @@ movement is enabled, points when it is not.
 \simargkey{-m}{m}{Enable movement (toggled by key).}
 \simargkey{-hide-body}{b}{Do not draw bodies (toggled by key).}
 
+\paragraph{Primitives}
 
-\section{ODE Dynamics}
+\function{(radius)}{S}{Return the estimated radius of the device's body.}
+\function{(radius-set ,r|\type{S})}{S}{Set the radius of the device's
+  body to \var{r}.  The return echoes \var{r}.}
+
+\subsection{ODE Dynamics}
+
+\broken{}
 
 The ``ODE dynamics'' physics package uses the Open Dynamics
 Engine\cite{ode}, a free open-source Newtonian physics simulator.  ODE
@@ -495,7 +623,7 @@ the X-Y edges of the initial distribution bounds, and extend in Z ten
 times the Y dimension of the pen.  The corners have a 45-degree wall
 20 meters thick that smooths the corners of the pen.
 
-\simarg{-ODE}{Use ODE dynamics for physics.}
+\simarg{-L ODE}{Use ODE dynamics for physics.}
 \simPMarg{-Ddynamics}{-NDdynamics}{Include dynamics data in dumps?
   Fields are: \var{X Y Z V\_X V\_Y V\_Z Q\_0 Q\_1 Q\_2 Q\_3 W\_X W\_Y W\_Z},
   where \var{Q\_$i$} is the quaternion specifying orientation and 
@@ -522,62 +650,13 @@ times the Y dimension of the pen.  The corners have a 45-degree wall
   full saturation and value, alpha=0.7.}
 
 
-\section{Debugging I/O}
+\subsection{Simple Life Cycle}
 
-This module gives simple sensors and actuators useful for debugging in
-the simulator.  The sensors are three boolean ``user sensors'' read by
-the Proto function \var{(sense $n$)}, where $n$ is 1, 2, or 3.  When
-\true{}, each sensor displays a disc four times the device size,
-colored \color{USER\_SENSOR\_1}{1.0}{0.5}{0}{0.8},
-\color{USER\_SENSOR\_2}{0.5}{0}{1}{0.8}, or
-\color{USER\_SENSOR\_3}{1.0}{0}{0.5}{0.8} respectively.
-
-The actuators are red, green, and blue LEDs, set by Proto functions
-\var{(red $value$)}, \var{(green $value$)}, and \var{(blue $value$)},
-respectively.  The LEDs may be shown independently as discs the size
-of the device body, with colors \color{RED\_LED}{1}{0}{0}{0.8},
-\color{GREEN\_LED}{0}{1}{0}{0.8}, \color{BLUE\_LED}{0}{0}{1}{0.8}.
-Independent LEDs normally show their value both in intensity of color
-and $Z$ displacement of the LED disc above the device.  LEDs may also
-be displayed mixed together into one double-sized disc with base color
-\color{RGB\_LED}{1}{1}{1}{0.8}, where the base color is scaled by LED
-values.
-
-There are also three probes, which can expose intermediate values from
-evaluation.  They display the values as a tuple above each device in
-the positive $Y$ direction \color{DEVICE\_PROBES}{0}{1}{0}{0.8}.
-
-\simPMarg{-Ddebug}{-NDdebug}{Include debug module data in dumps?
-  Fields are: \var{USER1 USER2 USER3 RED\_LED GREEN\_LED BLUE\_LED}.}
-\simarg{-Ddebug-mask MASK}{Set which fields are included in dumps,
-  default all ($\var{MASK}=-1$).  Fields start at \var{0x2}, not
-  \var{0x1} (e.g. \var{RED\_LED} is controlled by \var{0x10}) due to a
-  removed field.}
-\simargkey{-probes N}{p}{Display the first \var{N} of the three probes.  
-  The \var{p} key cycles through how many are shown.}
-\simargkey{-l}{L}{Display LEDs (toggled by key).}
-\simargkey{-led-ghost}{1}{LED value controls transparency too, with 0
-  completely transparent and 1 completely opaque.  Toggled by key.}
-\simargkey{-led-flat}{2}{Do not use displacement in $Z$ to show LED value.
-  Toggled by key.}
-\simargkey{-led-stacking N}{3}{Set LED stacking to one of three modes.
-  Mode 0 stacks LEDs directly, in order red, green, blue bottom to top. 
-  Mode 1 sets heights independently, plus an offset of 1 meter for green 
-  and 2 meters for blue.  Mode 2 sets heights independently.  The \var{3} key
-  cycles through the modes.}
-\simargkey{-led-blend}{4}{Show the LEDs as an RGB blend rather than 
-  independently.  Toggled by key.}
-\simkey{t}{Toggle user sensor 1 on selected devices.}
-\simkey{y}{Toggle user sensor 2 on selected devices.}
-\simkey{u}{Toggle user sensor 3 on selected devices.}
-
-
-\section{Simple Life Cycle}
-
-This module allows devices to duplicate themselves or suicide.
+This layer allows devices to duplicate themselves or suicide.
 Duplication rate is limited by a cloning timer: devices can only
 duplicate when the timer expires.
 
+\simarg{-L simple-life-cycle}{Use the simple-life-cycle layer.}
 \simPMarg{-Dclone}{-NDclone}{Include life cycle data in dumps?
   Fields are: \var{CLONETIME} (the time remaining before a clone can be made).}
 \simarg{-clone-delay N}{Minimum number of seconds between duplications,
@@ -585,33 +664,73 @@ duplicate when the timer expires.
 \simkey{B}{Clone selected devices.}
 \simkey{K}{Kill selected devices.}
 
+\paragraph{Primitives}
 
-\section{Mote I/O}
+\function{(clone ,now|\type{B})}{B}{When \var{now} is true, the device
+  attempts to reproduce.  The return echoes \var{now}.}
 
-This module represents the collection of sensor and actuator hardware
+\function{(die ,now|\type{B})}{B}{When \var{now} is true, the device
+  attempts to suicide.  The return echoes \var{now}.}
+
+
+\subsection{Stop-When}
+
+This layer is designed for experiments where the end time is
+determined dynamically by the computation.  When enough devices have
+signalled true on their \var{stop} actuator, the simulator prints a
+message and exits.
+
+\simarg{-L stop-when}{Use the stop-when layer.}
+\simarg{-stop-pct N}{Stop when \var{N} percent of nodes have signalled
+  their \var{stop} actuator.  Default 1.0.}
+
+
+
+\subsection{Mote I/O}
+
+This layer represents the collection of sensor and actuator hardware
 that we have used on Mica2 Motes at various times.  There is one actuator
 (a speaker), four sensors (a light sensor, microphone, temperature sensor,
 and short sensor), and two controls (a button and a slider).  Of these,
 the 2nd generation simulator only implements the button, which is
 drawn as a four-times radius disc \color{BUTTON\_COLOR}{0}{1}{0.5}{0.8}.
 
-\simarg{-mote-io}{Use the Mode I/O module.}
+\simarg{-L mote-io}{Use the Mode I/O layer.}
 \simPMarg{-Dmoteio}{-NDmoteio}{Include Mote I/O data in dumps?
   Fields are: \var{SOUND TEMP BUTTON}.}
 \simkey{N}{Toggle button on selected devices.}
 
+\paragraph{Primitives}
 
-\section{Other Modules}
+\function{(button ,i|\type{S})}{B}{Returns the current reading from 
+  the \var{i}th button.  \bugs{}}
 
-There are a number of other modules in the 2nd generation simulator
-which either have no controls or are not yet properly implemented.
+\function{(light)}{S}{Returns the current reading from a light sensor.
+  \nosecgen{}}
+\function{(sound)}{S}{Returns the current sound level recorded by a
+  microphone. \nosecgen{}}
+\function{(speak ,value|\type{S})}{S}{Feed \var{value} to a speaker.
+  \nosecgen{}}
+\function{(temp)}{S}{Returns the current reading from a temperature
+  sensor.  \nosecgen{}}
+\function{(conductive)}{B}{Returns the current reading from a short
+  sensor.  \nosecgen{}}
 
-\paragraph{Perfect Localizer} 
+\function{(slider ,dkey|\type{S} ,ikey|\type{S} ,init|\type{S}
+  ,increment|\type{S} ,min|\type{S} ,max|\type{S})}{S}{Returns the
+  current reading from a slider control.  \nosecgen{}}
+
+
+\subsection{Perfect Localizer} 
 The only localizer implemented is a perfect localizer that supplies
 error-free device coordinates and velocity in global coordinates.  It
 has no controls.
 
-\paragraph{Mote-link}
+\paragraph{Primitives}
+
+\function{(coord)}{V_3}{Returns the device's estimated coordinates.}
+
+\subsection{Mote-link}
 
 The mote-link allows the simulator to interface with a network of
 Mica2 Motes, creating a mixed network of real and simulated devices.
@@ -619,10 +738,42 @@ It is not yet implemented for the 2nd generation simulator.  When it
 is, it will be invoked with the argument \var{-motelink}, and real
 devices will be drawn with \color{MOTE\_BODY}{1}{0}{1}{0.8}.
 
-\paragraph{Platforms}
+\subsection{Unimplemented First-Generation Primitives}
+These are primitives from miscellaneous experiments early in Proto's
+history that have not yet been implemented in the second-generation
+simulator.
 
-There are no 2nd generation versions of kernels for the mote, swarm,
-or topobo platforms.
+\function{(grad-channel ,i|\type{S})}{V}{Ensure that chemical
+  communication channel \var{i} is active and return a summary.
+  \nosecgen{}}
+\function{(new-channel ,alpha|\type{S} ,i|\type{S})}{S}{Set the
+  diffusion constant of the \var{i}th chemical communication channel
+  to be \var{alpha}.  The return echoes \var{alpha}.  Note that the
+  name and action of this function are not coherent.  \nosecgen{}}
+\function{(concentration  ,i|\type{S})}{S}{Read the chemical 
+  concentration in the \var{i}th chemical communication channel.
+  \nosecgen{}}
+\function{(drip ,rate|\type{S} ,i|\type{S})}{S}{Increase the chemical
+  in the \var{i}th chemical communication channel at \var{rate}.  The
+  return echoes \var{r}.  \nosecgen{}}
+
+\function{(mouse)}{V_2}{Returns the current location of the
+  mouse. \nosecgen{}}
+\function{(ranger)}{V_8}{Returns the readout of an 8-way sonar rangefinder.
+  \nosecgen{}}
+\function{(cam ,i|\type{S})}{S}{Returns a camera reading. \nosecgen{}}
+\function{(bump)}{B}{Returns true if the device's body is in contact
+  with something. \nosecgen{}}
+
+\function{(local-fold ,active|\type{B} ,i|\type{S})}{B}{Interface to
+  a folding actuator for surfaces like epithelial sheets.  The boolean
+  \var{active} indicates whether the \var{i}th fold should currently
+  be folding.  The return echoes \var{active}.  \nosecgen{}}
+\function{(fold-complete ,i|\type{S})}{B}{Interface to a folding 
+  actuator for surfaces like epithelial sheets.  This returns true
+  when the \var{i}th fold is no longer moving.  \nosecgen{}}
+
+
 
 \begin{thebibliography}{}
 \bibitem{ode}

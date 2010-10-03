@@ -15,6 +15,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math
 #include "plugin_manager.h"
+#include "DefaultsPlugin.h"
 #if __USE_NEOCOMPILER__
 #include "neocompiler.h"
 #else
@@ -403,6 +404,7 @@ void shutdown_app() {
 void process_app_args(Args *args) {
   // Should we just display the plugin inventory and exit?
   if(args->extract_switch("--plugins")) {
+    DefaultsPlugin::register_defaults();
     map<string, map<string,string> > *pm = plugins.get_plugin_inventory();
     cout << "Displaying available plugins (by type):\n";
     map<string, map<string,string> >::iterator i = pm->begin();

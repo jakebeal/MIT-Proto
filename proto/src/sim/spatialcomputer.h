@@ -51,7 +51,7 @@ class DeviceTimer {
 class TimeModel {
  public:
   virtual DeviceTimer* next_timer(SECONDS* start_lag)=0;
-  virtual SECONDS cycle_time()=0;
+  virtual SECONDS cycle_time()=0; // approximate length of cycle
 };
 
 

@@ -7,11 +7,19 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory.  */
 
+// WARNING: currently broken... but at least we can load the plugin.
 #include "config.h"
 #include "multiradio.h"
+#include "plugin_manager.h"
 #include <algorithm>
 
-MultiRadio::MultiRadio(Args *args, SpatialComputer *p, int n) : RadioSim(args, p) {
+MultiRadio::MultiRadio(Args *args,SpatialComputer *p,int n) : RadioSim(args, p){
+  while(args->extract_switch("-radio",false)) {
+    string r = args->pop_next();
+    RadioSim* rs = (RadioSim*)plugins.get_sim_plugin(LAYER_PLUGIN,r,args,p,n);
+    if(rs!=NULL) add_radio(rs);
+    else uerror("Unable to find radio: %s\n",r.c_str());
+  }
   update_patches();
 }
 
