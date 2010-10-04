@@ -76,7 +76,6 @@ AC_CONFIG_FILES([Makefile
                  src/motelink/Makefile
                  src/shared/Makefile
                  src/sim/Makefile
-                 src/sim/plugins/Makefile
                  src/tests/Makefile
                 ])
 AC_OUTPUT
