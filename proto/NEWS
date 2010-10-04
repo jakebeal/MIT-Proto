@@ -1,1 +1,18 @@
-See README for the latest news
+Release 3:
+- Proto now has a plugin system, allowing both the compiler and
+  simulator to be extended with separately built dynamic libraries.
+  Among other things, this means it is now much easier to maintain
+  multiple possible applications of Proto.
+- Various small bug fixes
+
+Release 2:
+- Autotools build now less fragile.
+- Various small bug fixes
+
+Release 1: 
+- Cross-platform build now uses GNU autotools; Proto installs like an 
+  ordinary application.
+- Various small bug fixes
+
+Release 0:
+- Initial release of Proto.
