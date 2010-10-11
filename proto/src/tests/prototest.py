@@ -425,6 +425,8 @@ class ConfigParser():
             #This is the only way to know if the file couldn't be opened.
             print "Could not open the config file (IO Exception)"
 
+        proto_args = ""; p2b_args = ""
+        
         if verbosity > 0:
             print "Parsing %s" % self.test_file,
         #Parse line by line
@@ -446,20 +448,36 @@ class ConfigParser():
                 #Have proto use this dump file name:
                 protoargs = split[1:]
                 try:
-                    protoargs.insert(protoargs.index("-D") + 1,
+                    protoargs.insert(protoargs.index("--test-mode -D") + 1,
                                      r"-dump-stem " + dump_file_name)
                 except ValueError:
                     #User hasn't provided a dump file related switch.
-                    protoargs.append(r"-D -dump-stem " + dump_file_name)
+                    protoargs.append(r"--test-mode -D -dump-stem " + dump_file_name)
                 #If using -v0, automatically make all tests headless [exclude p2b]
-                if not "-headless" in protoargs and not "--test-compiler" in protoargs and verbosity == 0:
+                if not "-headless" in protoargs and "$(PROTO)" in protoargs and verbosity == 0:
                     protoargs.append("-headless")
+                if "$(PROTO)" in protoargs:
+                    protoargs.append(proto_args);
+                if "$(P2B)" in protoargs:
+                    protoargs.append(p2b_args);
                 #Finally, create a test
                 protoargs = ' '.join(protoargs)
                 self.tests.append(Test(protoargs, dump_file_name))
             elif cmd.startswith("//"):
                 if verbosity >= 3:
                     print "PARSER: encountered a comment: ", line
+            elif cmd == "$(PROTO_ARGS)": # arguments for p2b tests
+                if verbosity >= 3:
+                    print "PARSER: encountered PROTO_ARGS command: ", line
+                if split[1] != "=":
+                    sys.exit("ERROR: variables must be declared VAR = VALUE")
+                proto_args = ' '.join(split[2:]);
+            elif cmd == "$(P2B_ARGS)": # arguments for p2b tests
+                if verbosity >= 3:
+                    print "PARSER: encountered P2B_ARGS command: ", line
+                if split[1] != "=":
+                    sys.exit("ERROR: variables must be declared VAR = VALUE")
+                p2b_args = ' '.join(split[2:]);
             elif cmd in self.numeric_fns:
                 if verbosity >= 3:
                     print "PARSER: encountered a numeric assertion: ", line
@@ -519,8 +537,8 @@ def main():
         sys.exit("ERROR: You must provide at least one test file")
     else:
         global verbosity; global dump_dir; global recursive_dir_scan;
-        global proto_path
-        global p2b_path
+        global proto_path;
+        global p2b_path;
         global demos_path
         (verbosity, dump_dir, recursive_dir_scan) = \
             (option.verbosity, option.dump_dir, option.recursive)

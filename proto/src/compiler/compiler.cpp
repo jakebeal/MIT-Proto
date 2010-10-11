@@ -2930,7 +2930,6 @@ Compiler::Compiler(Args* args) {
     proto_path->add_to_path(args->pop_next());
   
   is_show_code = args->extract_switch("-k");
-  oldc_test_mode = args->extract_switch("--test-compiler");
   is_dump_code = args->extract_switch("--instructions");
   is_dump_ast = args->extract_switch("--print-ast");
   init_compiler();
@@ -2946,6 +2945,7 @@ Compiler::~Compiler() {
 // consumed by the simulator).  Likewise, if -dump-stem is present,
 // then dumping goes to a file instead of stdout
 void Compiler::init_standalone(Args* args) {
+  oldc_test_mode = args->extract_switch("--test-mode");
   is_dump_code |= args->extract_switch("-D");
   bool dump_to_stdout = true;
   char *dump_dir = (char*)"dumps", *dump_stem = (char*)"dump";

@@ -123,8 +123,8 @@ class Args {
     last_switch=(char*)"(no switch yet)";
   }
   BOOL find_switch(const char *sw); // tests if sw is in the list, leaves ptr there
-  BOOL extract_switch(const char *sw); // like find_switch, but deletes it if it is
-  BOOL extract_switch(const char *sw, BOOL warn); // allows safety to be disabled
+  BOOL extract_switch(const char *sw); // like find_switch, but deletes if found
+  BOOL extract_switch(const char *sw, BOOL warn); // can suppress warnings
   char* pop_next(); // removes the argument at the pointer and returns it
   char* peek_next(); // returns the argument at the pointer w/o removing
   double pop_number(); // like pop_next, but converts to number
@@ -159,6 +159,29 @@ class Population {
   void init_pop(int cap); // 
   void resize_pop(int newcap); // resize the population
 };
+
+/*****************************************************************************
+ *  STL HELPERS                                                              *
+ *****************************************************************************/
+
+template<class T> T insert_at(vector<T>* v,int at,T elt) {
+  v->push_back(NULL); // add space to end
+  for(int i=v->size();i>at;i--) { (*v)[i] = (*v)[i-1]; }
+  (*v)[at] = elt; return elt;
+}
+
+template<class T> T delete_at(vector<T>* v,int at) {
+  T elt = (*v)[at];
+  for(int i=at;i<v->size()-1;i++) { (*v)[i] = (*v)[i+1]; }
+  v->pop_back(); return elt;
+}
+
+template<class T> int index_of(vector<T>* v, T elt, int start=0) {
+  for(int i=start;i<v->size();i++) {
+    if(((*v)[i]) == elt) return i;
+  }
+  return -1;
+}
 
 /*****************************************************************************
  *  GLUT-BASED EVENT MODEL                                                   *

@@ -10,11 +10,13 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
+#if __USE_NEOCOMPILER__
+#include "neocompiler.h"
+#else
 #include "compiler.h"
+#endif
 #include "plugin_manager.h"
 #include "DefaultsPlugin.h"
-
-#define __USE_NEOCOMPILER__ 0
 
 void run_test_suite(); // testing kludge
 
@@ -36,7 +38,7 @@ int main (int argc, char *argv[]) {
   int len;
   if(args->argc==1) {
 #if __USE_NEOCOMPILER__
-    post("WARNING: NOTHING TO COMPILE");
+    uerror("Not provided anything to compiler");
 #else
     uint8_t* s = compiler->compile("(app)",&len);
 #endif

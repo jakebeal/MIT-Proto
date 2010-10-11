@@ -1,2 +1,2 @@
-test: $(PROTO) -n 3 "6" -headless -D -dump-after 2 -NDall -Dvalue -stop-after 2.5
+test: $(PROTO) -n 3 "6" -headless -dump-after 2 -NDall -Dvalue -stop-after 2.5
 = 1 3 6
