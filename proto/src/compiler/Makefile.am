@@ -10,14 +10,21 @@ libcompiler_la_SOURCES = \
 	compiler-utils.cpp \
 	lexer.cpp \
 	enumlexer.cpp \
-	compiler.cpp
+	compiler.cpp \
+	interpreter.cpp \
+	analyzer.cpp \
+	emitter.cpp \
+	neocompiler.cpp \
+	nicenames.cpp
 
 noinst_HEADERS = \
 	sexpr.h \
 	compiler-utils.h \
 	lisp.h \
 	reader.h \
-	compiler.h
+	compiler.h \
+	neocompiler.h \
+	nicenames.h
 
 enumlexer.cpp: $(srcdir)/one_enum.flex
 	$(LEX) -Pzz -oenumlexer.cpp $(srcdir)/one_enum.flex

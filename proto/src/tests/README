@@ -1,0 +1,23 @@
+Ordinarily, every test in this directory should always pass.
+During the paleocompiler/neocompiler transition, however, the
+some tests only pass with one version.
+
+Paleocompiler passes all except the tests in:
+  emitter.test
+  emit-complex.test
+  neocompiler.test
+
+Neocompiler's current state:
+  Running plugins.test  .  FAILED 4 out of 4 tests
+  Running smoke.test  .  passed all 1 tests
+  Running compiler.test  ..  FAILED 9 out of 9 tests
+  Running misc.test  .  FAILED 3 out of 3 tests
+  Running emitter.test  ......  passed all 29 tests
+  Running vectcomp.test  ...  passed all 13 tests
+  Running tuple.test  ...  FAILED 7 out of 14 tests
+  Running math.test  ......  FAILED 17 out of 28 tests
+  Running complex.test  .  FAILED 3 out of 3 tests
+  Running mathlib.test  ...............  FAILED 20 out of 74 tests
+  Running emit-complex.test  ..  FAILED 9 out of 9 tests
+  Running assoc.test  .  FAILED 1 out of 1 tests
+  Running neocompiler.test  ................  FAILED 1 out of 76 tests

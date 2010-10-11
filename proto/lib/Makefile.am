@@ -4,8 +4,11 @@ SUBDIRS = \
 	.
 
 protolib_DATA = \
+	bootstrap.proto \
 	broadcast.proto \
 	brownian.proto \
+	core.ops \
+	core.proto \
 	dilate.proto \
 	disperse.proto \
 	distance-to.proto \

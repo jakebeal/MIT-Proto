@@ -7,15 +7,28 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
-#include "compiler-utils.h"
 #include <stack>
 #include <list>
 #include <stdlib.h>
+#include "compiler-utils.h"
+#include "utils.h"
 
 #include "sexpr.h" // testing include
+
+bool SExpr::isKeyword() { return (isSymbol() && ((SE_Symbol*)this)->name[0]==':'); }
+
 list<string>* read_enum(string in);
 
+bool SExpr::NO_LINE_BREAKS=true;
+
 ostream *cpout=&cout, *cperr=&cerr, *cplog=&clog; // Compiler output streams
+
+stack<int> pp_stack;
+int pp_depth() { return (pp_stack.empty()) ? 0 : pp_stack.top(); }
+void pp_push(int n) { pp_stack.push(n+pp_depth()); }
+void pp_pop() { pp_stack.pop(); }
+string pp_indent()
+{ return string(pp_depth(),' '); }
 
 void ierror(string msg) {
   *cperr << "COMPILER INTERNAL ERROR:" << msg << endl;
@@ -29,13 +42,50 @@ void ierror(CompilationElement *where, string msg) {
   exit(1);
 }
 
-stack<int> pp_stack;
-int pp_depth() { return (pp_stack.empty()) ? 0 : pp_stack.top(); }
-void pp_push(int n) { pp_stack.push(n+pp_depth()); }
-void pp_pop() { pp_stack.pop(); }
-string pp_indent()
-{ return string(pp_depth(),' '); }
+string b2s(bool b) { return b ? "true" : "false"; }
+// f2s and i2s are wrappers that change a char* into a string
+string f2s(float num, int precision) { return flo2str(num,precision); }
+string i2s(int num) { return int2str(num); }
+string V2S(vector<CompilationElement*> *v) {
+  string out = "<";
+  for(int i=0;i<v->size();i++) { if(i) out+=","; out+=(*v)[i]->to_str(); }
+  return out + ">";
+}
 
+// graceful error reporting
+string compile_phase = "initialization";
+bool compiler_error = false;
+bool compiler_test_mode = false;
+void compile_error(CompilationElement *where,string msg) {
+  if(!compiler_error)
+    { compiler_error=true; *cperr << "Error during "+compile_phase+":\n"; }
+  if(where->attributes["CONTEXT"]) where->attributes["CONTEXT"]->print(cperr);
+  else *cperr << "[SOURCE UNKNOWN]";
+  *cperr << " Error: " << msg << endl;
+}
+void compile_error(string msg) {
+  if(!compiler_error)
+    { compiler_error=true; *cperr << "Error during "+compile_phase+":\n"; }
+  *cperr << " Error: " << msg << endl;
+}
+void compile_warn(CompilationElement *where,string msg) {
+  if(!where->attributes["CONTEXT"]) 
+    ierror("Context absent while trying to report warning '"+msg+"'");
+  where->attributes["CONTEXT"]->print(cperr);
+  *cperr << " Warning: " << msg << endl;
+}
+void compile_warn(string msg) { *cperr << " Warning: " << msg << endl; }
+
+void terminate_on_error() {
+  if(compiler_error) { 
+    *cperr << "Compilation failed." << endl; 
+    exit(!compiler_test_mode);
+  }
+}
+
+int OrderAttribute::max_id=0;
+
+// STANDALONE TESTER: to run this test, modify the compiler to call it
 void test_compiler_utils() {
   CompilationElement foo, bar, baz;
   foo.attributes["CONTEXT"] = new Context("sample",2);

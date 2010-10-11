@@ -6,15 +6,16 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory.
 
-   Used: alphanumeric, *+-./<=>?_
+   Used: alphanumeric, *+-./<=>?_&:
    Special: ;'(),`@
-   Reserved: !"#$%&:[\]^{|}~
+   Reserved & Used: ~
+   Reserved & Unused: !"#$%[\]^{|}
 */
 
 %option yylineno
 
-CONSTITUENT   [*+-./<=>?_]
-RESERVED     [!"#$%&:\[\\\]^{|}~]
+CONSTITUENT   [*+\-./<=>?_&:]
+RESERVED     [!"#$%\[\\\]^{|}~]
 SPECIAL      [;'(),`@]
 
 %{
@@ -42,7 +43,7 @@ struct SExprLexer {
   string ibuf;
   SExprLexer(string name, istream* in=0, ostream* out=0) {
     error   = false; this->name=name;
-    base = new SE_List();  base->add(new SE_Symbol("ALL"));
+    base = new SE_List();  base->add(new SE_Symbol("all"));
     enclosure.push(base); wraps.push(false);
     // setup input stream; output is discarded
     yyout = tmpfile();
@@ -52,7 +53,7 @@ struct SExprLexer {
     yy_scan_string(ibuf.c_str());
   }
 
-  virtual ~SExprLexer() {} // nothing to clean up: base becomes a problem of others
+  virtual ~SExprLexer() {} // nothing to clean: SExprs are a problem of others
   
   // returns NULL on error
   SExpr* tokenize() {
@@ -117,15 +118,20 @@ SExprLexer* cur;
 "("		cur->start_compound_sexpr();
 ")"		cur->end_compound_sexpr();
 
-`		cur->wrap_next_sexpr(new SE_Symbol("QUASIQUOTE"));
-'		cur->wrap_next_sexpr(new SE_Symbol("QUOTE"));
-,		cur->wrap_next_sexpr(new SE_Symbol("COMMA"));
-,@		cur->wrap_next_sexpr(new SE_Symbol("COMMA-SPLICE"));
+`		cur->wrap_next_sexpr(new SE_Symbol("quasiquote"));
+'		cur->wrap_next_sexpr(new SE_Symbol("quote"));
+,		cur->wrap_next_sexpr(new SE_Symbol("comma"));
+,@		cur->wrap_next_sexpr(new SE_Symbol("comma-splice"));
 
--?[[:digit:]]+(\.[[:digit:]]*)?(e[[:digit:]]+)? |
--?\.[[:digit:]]+(e[[:digit:]]+)?		cur->add_sexpr(new SE_Scalar(atof(yytext)));
+-?[[:digit:]]+(\.[[:digit:]]*)?(e-?[[:digit:]]+)? |
+-?\.[[:digit:]]+(e-?[[:digit:]]+)?		cur->add_sexpr(new SE_Scalar(atof(yytext)));
 
-[[:alnum:]*+-./<=>?_]+		 cur->add_sexpr(new SE_Symbol(yytext));
+[I|i]nf		cur->add_sexpr(new SE_Scalar(INFINITY));
+-[I|i]nf	cur->add_sexpr(new SE_Scalar(-INFINITY));
+NaN		cur->add_sexpr(new SE_Scalar(NAN));
+nan		cur->add_sexpr(new SE_Scalar(NAN));
+
+[[:alnum:]*+\-./<=>?_&:]+		 cur->add_sexpr(new SE_Symbol(yytext));
 
 {RESERVED}  cur->compile_error(cur->context(),"Illegal use of reserved character '"+string(yytext)+"'");
 [^[:alnum:][:space:]{RESERVED}{CONSTITUENT}{SPECIAL}]           cur->compile_error(cur->context(),"Unrecognized character: '"+string(yytext)+"'");
@@ -136,5 +142,7 @@ SExpr* read_sexpr(string name, string in)
 { return read_sexpr(name,new istringstream(in)); }
 SExpr* read_sexpr(string name, istream* in, ostream* out) { 
   SExprLexer lex(name,in,out); cur = &lex;
-  return lex.tokenize();
+  SExpr* sexp = lex.tokenize();
+  yylex_destroy(); // reset state
+  return sexp;
 }

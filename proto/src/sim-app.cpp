@@ -468,10 +468,10 @@ int main (int argc, char *argv[]) {
   compiler = new Compiler(args);  // first the compiler
   //compiler->set_platform("sim");
   computer = new SpatialComputer(args,!test_mode); // then the computer
-#endif
   string defops;
   computer->appendDefops(defops);
   compiler->setDefops(defops);
+#endif
   BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(!headless) {
     vis = new Visualizer(args); // start visualizer
