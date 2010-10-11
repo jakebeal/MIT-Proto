@@ -108,7 +108,7 @@ shown in Figure~\ref{f:types}.
 \item {\bf Lambda} is a function.
 \item {\bf Tuple} is an ordered set of $k$ {\bf Local} values.
 \item {\bf Scalar} is a floating point number (including the special
-  values {\tt Inf}, {\tt -Inf}, and {\tt NaN}).
+  values {\tt inf}/{\tt Inf}, {\tt -inf}/{\tt -Inf}, and {\tt nan}/{\tt NaN}).
 \item {\bf Vector} is a {\bf Tuple} of {\bf Scalar} values.
 \item {\bf Number} is a {\bf Scalar} or {\bf Vector}.
 \item {\bf Boolean} is a {\bf Scalar} interpreted as a logical value.
@@ -151,7 +151,8 @@ passed around and manipulated under certain circumstances.
 
 \section{Namespaces and Bindings}
 
-Proto is a lexically scoped language.  Names are not case sensitive.
+Proto is a lexically scoped language.  Names are case sensitive (though
+this is not implemented until the neocompiler).
 Bindings contain values and are looked up by name.  Lexical bindings
 are visible only within the scope in which they are bound, and shadow
 bindings of the same name from enclosing scopes.
@@ -236,10 +237,10 @@ not currently implemented: \var{when}, \var{unless}.
 
 
 \section{Lambdas}
-\function{(LAMBDA (.arg ...) ,@body)}{\lambda}{Creates an anonymous
+\function{(FUN (.arg ...) ,@body)}{\lambda}{Creates an anonymous
   function with as many arguments as there are \var{arg} identifiers.
   The body is evaluated within an extended scope where the \var{arg}
-  identifiers are bound to arguments to the function.  The function \var{fun} is an alias for \var{lambda}}
+  identifiers are bound to arguments to the function.}
 
 \function{(apply ,f|\type{\lambda} ,args|\type{T})}{A}{Call function
   \var{f} with arguments bound to the elements of \var{args}.  The arity

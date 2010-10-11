@@ -27,11 +27,10 @@ AC_PROG_MAKE_SET
 AC_PROG_LEX
 AX_WITH_PYTHON([echo "no python found"; exit 1; : ]) # only needed for tests
 
-AC_PATH_PROG([SCONSBATPATH],[scons.bat], [no])
-AM_CONDITIONAL(SCONSBATNO,test "$SCONSBATPATH" = "no")
 ## options for the user
 
 PROTO_WITH_GLUT
+PROTO_WITH_NEOCOMPILER
 
 ## directories
 

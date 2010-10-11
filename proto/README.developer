@@ -1,6 +1,6 @@
 Responsible Proto development means that every time you change
-something in a release directory (/, lib/, src/) you should
-do the following things before checking in the code:
+something in a release directory you should do the following things
+before checking in the code:
 
 1. Update README files and manuals, as appropriate
    In manuals, things may be marked with "\bugs{}" "\broken{}"
@@ -14,15 +14,14 @@ do the following things before checking in the code:
      - Short comment go on the same line as code
    - Each file should contain a single, whole, thematically coherent
      module: this isn't Java so lots of little files aren't mandatory
+   - Use Unix-style newlines
 
 Doing these immediately will help prevent version skew and
 accumulation of small tasks into large & painful tasks.
 
-Small upgrades and bug-fixes can be sent as patches to
-proto-developers@csail.mit.edu for integration.
-
+Small upgrades and bug-fixes can be registered through the
+bug-tracker at http://proto.bbn.com/bugzilla/.
 To act as a full developer, you will need access to the subversion
 repository.  Email proto-leadership@csail.mit.edu with a case for
 access if you think you need it, and we'll set you up with access to
-the repository at https://svn.csail.mit.edu/proto/ and add you to
-proto-developers@csail.mit.edu
+the repository and bug tracker.
