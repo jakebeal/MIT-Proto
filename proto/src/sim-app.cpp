@@ -475,7 +475,7 @@ int main (int argc, char *argv[]) {
   BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(!headless) {
     vis = new Visualizer(args); // start visualizer
-    vis->set_bounds(computer->volume); // connect to computer
+    vis->set_bounds(computer->vis_volume); // connect to computer
   }
   // next the forwarder for the motes, if desired
   if(args->extract_switch("-motelink")) motelink = new MoteLink(args);
