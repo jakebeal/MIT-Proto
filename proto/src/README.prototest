@@ -34,7 +34,7 @@ Terminology:
 3. USING PROTOTEST
 The usage is:
 
-  python prototest.py input [other options]
+  prototest.py input [other options]
 
 Input can be one of:
   * Test File

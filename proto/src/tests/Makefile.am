@@ -9,8 +9,7 @@ test_files = \
 	tuple.test \
 	vectcomp.test
 
-EXTRA_DIST = prototest.py
-EXTRA_DIST += $(test_files)
+bin_SCRIPTS = prototest.py
 
 # installed tests
 
