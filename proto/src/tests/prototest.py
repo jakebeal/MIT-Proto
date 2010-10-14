@@ -529,7 +529,7 @@ def main():
                       help="Path to the p2b executable")
     parser.add_option("--demos", dest="demos",
                       help="Path to the demos")
-    parser.set_defaults(verbosity=1, dumpdir="", proto="../proto", p2b="../p2b", demos="../../demos")
+    parser.set_defaults(verbosity=1, dumpdir="", proto="proto", p2b="p2b", demos="../../demos")
 
     #Parse Command Line Arguments
     (option, args) = parser.parse_args()
