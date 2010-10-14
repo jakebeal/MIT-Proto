@@ -83,7 +83,7 @@ void terminate_on_error() {
   }
 }
 
-int OrderAttribute::max_id=0;
+uint32_t CompilationElement::max_id=0;
 
 // STANDALONE TESTER: to run this test, modify the compiler to call it
 void test_compiler_utils() {

@@ -21,7 +21,9 @@ class Propagator : public CompilationElement {
   int verbosity;
   int loop_abort; // # equivalent passes through worklist before assuming loop
   // propagation work variables
-  set<Field*> worklist_f;set<OperatorInstance*> worklist_o;set<AM*> worklist_a;
+  set<Field*, CompilationElement_cmp> worklist_f;
+  set<OperatorInstance*, CompilationElement_cmp> worklist_o;
+  set<AM*> worklist_a;
   bool any_changes;
   DFG* root;
   

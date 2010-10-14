@@ -7,7 +7,7 @@ test: $(PROTO) -n 100 -DD grid -dim 50 50 -r 6 -headless -dump-after 100 -NDall 
 = 1 3 45
 = 100 3 45
 
-test: $(PROTO) -path "$(DEMOS)" -n 500 -r 15 -sv -l -m -s 0.5 -w "(let ((g (gradient (once (in-circle (tup 25 25 0) 10))))) (mov (if (once (in-circle (tup -25 -25 0) 10)) (flock (vmul 0.1 (nav-grad g))) (vmul 0.1 (disperse)))))" -headless -dump-after 300 -NDall -Dvalue -stop-after 300.5
+test: $(PROTO) -path "$(DEMOS)" -n 500 -r 15 -sv -l -m -s 0.5 -w "(let ((g (gradient (once (in-circle (tup 25 25 0) 10))))) (mov (if (once (in-circle (tup -25 -25 0) 10)) (flock (vmul 0.1 (nav-grad (once (in-circle (tup 25 25 0) 10)) (once (< (rnd 0 1) 0.1))))) (vmul 0.1 (disperse)))))" -headless -dump-after 300 -NDall -Dvalue -stop-after 300.5
 // no actual test: just seeing if it runs that long
 = 1 0 0
 

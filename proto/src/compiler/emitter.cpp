@@ -10,7 +10,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // execute it.
 
 #include "config.h"
-#include "neocompiler.h"
+#include "compiler.h"
 #include "proto_opcodes.h"
 
 map<int,string> opnames;

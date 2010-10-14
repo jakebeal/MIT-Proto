@@ -131,23 +131,15 @@ struct IntAttribute : Attribute {
   { inherit |= ((MarkerAttribute*)_addition)->inherit; }
 };
 
-struct OrderAttribute : Attribute {
-  static int max_id;
-  int order;
-  OrderAttribute() { order = max_id++; }
-  OrderAttribute(int order) { this->order = order; }
-  
-  void print(ostream *out=cpout) { *out << order; }
-  Attribute* inherited() { return new OrderAttribute(order); }
-  void merge(Attribute *a) { order = MIN(order,((OrderAttribute*)a)->order); }
-};
-
-
 // By default, attributes that are passed around are *not* duplicated
 struct CompilationElement {
+  static uint32_t max_id;
+  uint32_t elmt_id;
   map<string,Attribute*> attributes; // should end up with null in default
   typedef map<string,Attribute*>::iterator att_iter;
   
+  CompilationElement() { elmt_id = max_id++; }
+  virtual ~CompilationElement() {}
   virtual void inherit_attributes(CompilationElement* src) {
     for(att_iter i=src->attributes.begin(); i!=src->attributes.end(); i++) {
       Attribute *a = src->attributes[i->first]->inherited();
@@ -171,16 +163,12 @@ struct CompilationElement {
     }
     pp_pop();
   }
+};
 
-  // for ordering in sets
-  bool operator< (CompilationElement* e) {
-    if(attributes.count("order") && e->attributes.count("order")) {
-      return ((OrderAttribute*)attributes["order"])->order
-        < ((OrderAttribute*)e->attributes["order"])->order;
-    } else if(attributes.count("order")) { return true;
-    } else if(e->attributes.count("order")) { return false;
-    } else { return false; // when neither is ordered, all are equal
-    }
+struct CompilationElement_cmp {
+  bool operator()(const CompilationElement* ce1, 
+                  const CompilationElement* ce2) const {
+    return ce1->elmt_id < ce2->elmt_id;
   }
 };
 

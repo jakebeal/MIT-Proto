@@ -11,7 +11,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
 #include "nicenames.h"
-#include "neocompiler.h"
+#include "compiler.h"
 
 /*****************************************************************************
  *  PROPAGATOR                                                               *
@@ -954,7 +954,7 @@ class Literalizer : public Propagator {
 
 class DeadCodeEliminator : public Propagator {
  public:
-  set<Field*> kill_f; set<AM*> kill_a;
+  set<Field*, CompilationElement_cmp> kill_f; set<AM*> kill_a;
   DeadCodeEliminator(ProtoAnalyzer* parent, Args* args)
     : Propagator(true,false,true) {
     verbosity = args->extract_switch("--dead-code-eliminator-verbosity") ? 

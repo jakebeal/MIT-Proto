@@ -34,7 +34,8 @@ proto_LDADD = \
 	sim/libprotosimplugin.la \
 	sim/libdefaultplugin.la \
 	shared/libshared.la \
-	kernel/libkernel.la
+	kernel/libkernel.la \
+	compiler/libcompiler.la
 
 proto_LDFLAGS = \
 	-export-dynamic

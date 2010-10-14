@@ -15,6 +15,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #define LAYER_PLUGIN "Layer"
 #define DISTRIBUTION_PLUGIN "Distribution"
 #define TIMEMODEL_PLUGIN "TimeModel"
+#define EMITTER_PLUGIN "Emitter"
 
 class SpatialComputer; // compiler plugins may not know the content of SCs.
 

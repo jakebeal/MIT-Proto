@@ -337,8 +337,6 @@ struct OperatorInstance : public CompilationElement {
   DFG* container; // the DFG this is in (set by inherit_and_add)
   OperatorInstance(Operator *op, AM* space) {
     this->op=op; output = new Field(space,op->signature->output,this);
-    output->attributes["order"] = new OrderAttribute();
-    attributes["order"] = new OrderAttribute();
   }
   ProtoType* nth_input(int i); // get the range of the nth input (sets become vectors/tuples)
   Field* add_input(Field* f) // adds the field to the end
@@ -353,8 +351,8 @@ struct OperatorInstance : public CompilationElement {
 
 // A DATAFLOW GRAPH is a complete program
 struct DFG : public CompilationElement {
-  set<OperatorInstance*> nodes;
-  set<Field*> edges;
+  set<OperatorInstance*, CompilationElement_cmp> nodes;
+  set<Field*, CompilationElement_cmp> edges;
   set<AM*> spaces;
   map<Operator*,set<OperatorInstance*> > funcalls;
   Field* output;

@@ -10,7 +10,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
 #include "nicenames.h"
-#include "neocompiler.h"
+#include "compiler.h"
 
 /*****************************************************************************
  *  DUMMY ELEMENTS                                                           *
@@ -639,7 +639,8 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
           if(new_expr->attributes.count("DUMMY")) // Mark of a failure
             return op_err(s,"Macro expansion failed on "+s->to_str());
         } else { // it's a MacroSymbol
-          new_expr = ((Macro*)ce)->pattern;
+          new_expr = sl->copy();
+          ((SE_List*)new_expr)->children[0]=((Macro*)ce)->pattern;
         }
         return sexp_to_op(new_expr,env);
       }
@@ -1030,7 +1031,7 @@ void DFG::print(ostream* out) {
     { *out << pp_indent(); (*fit)->print(out); 
       if((*fit)==output) *out<< " OUTPUT"; *out << endl; }
   pp_pop(); *out << pp_indent() << "Operator Instances:\n"; pp_push(2);
-  set<OperatorInstance*>::iterator oit;
+  set<OperatorInstance*, CompilationElement_cmp>::iterator oit;
   for(oit=nodes.begin(); oit!=nodes.end(); oit++) 
     { *out << pp_indent(); (*oit)->print(out); 
       if((*oit)->output==output) *out<< " OUTPUT"; *out << endl; }

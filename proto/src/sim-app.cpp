@@ -15,10 +15,10 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "plugin_manager.h"
 #include "DefaultsPlugin.h"
 #if __USE_NEOCOMPILER__
-#include "neocompiler.h"
+#include "compiler.h"
 #else
 #include "compiler-utils.h" // ordinarily included by neocompiler
-#include "compiler.h"  // should also end up pulling in these two #defines
+#include "paleocompiler.h"  // should also end up pulling in these two #defines
 #endif
 #include "visualizer.h"
 #include "motelink.h"
