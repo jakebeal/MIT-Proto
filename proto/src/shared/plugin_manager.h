@@ -16,13 +16,13 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 class ProtoPluginManager {
  public:
   ProtoPluginManager();
-
+  
   // Getters return null if they fail, and as a side effect print failure msgs
   // Used to get simulator Layers, Distributions, and TimeModels
   void* get_sim_plugin(string type, string name, Args* args, 
                        SpatialComputer* cpu, int n);
   // Used to get compiler extensions, or just the opcode part of a sim plugin
-  void* get_compiler_plugin(string type, string name, Args* args, int* max_op);
+  void* get_compiler_plugin(string type, string name, Args* args, Compiler* c);
   // Accessor for get_plugin_inventory: NO NOT USE THIS TO MODIFY IT!
   map<string, map<string,string> >* get_plugin_inventory() 
     { ensure_initialized(); return &registry; }

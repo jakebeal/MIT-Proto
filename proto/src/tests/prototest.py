@@ -165,7 +165,7 @@ class Test():
         global dump_dir
 
         if not dump_dir:
-            current_dir = os.path.abspath(sys.path[0])
+            current_dir = os.getcwd()
             dump_dir = os.path.join(current_dir,'dumps')
         #Filter to find candidates for the dump file
         matches = [x for x in os.listdir(dump_dir) \

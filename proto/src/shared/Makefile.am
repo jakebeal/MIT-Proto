@@ -1,7 +1,8 @@
 noinst_LTLIBRARIES = libshared.la
 
 INCLUDES = \
-	-I$(top_srcdir)/src
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/compiler
 
 libshared_la_LDFLAGS = -lltdl -export-dynamic
 

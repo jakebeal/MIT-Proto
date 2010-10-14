@@ -15,6 +15,17 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <iostream>
 
+void Path::add_default_path(string srcdir) {
+  dirs.push_back(srcdir + ".");
+  if (srcdir != "") {
+    // use srcdir-relative paths
+    dirs.push_back(srcdir + "/lib/");
+    dirs.push_back(srcdir + "/lib/core/");
+  }
+  // always use the install location
+  dirs.push_back(PROTOLIBDIR);
+}
+
 ifstream* Path::find_in_path(string filename) {
   ifstream* s = new ifstream();
   for(list<string>::iterator i=dirs.begin(); i!=dirs.end(); i++) {

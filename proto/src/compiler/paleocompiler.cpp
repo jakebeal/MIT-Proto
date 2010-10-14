@@ -2898,7 +2898,7 @@ void read_opfile(string filename) {
   delete opfile;
 }
 
-void Compiler::setDefops(string defops) {
+void PaleoCompiler::setDefops(string defops) {
   std::cout << "defops = " << defops.c_str() << "\n";
   SExpr* ex = read_sexpr("defops", defops);
   if(ex==NULL) uerror("Could not read defops %s",defops.c_str());
@@ -2916,7 +2916,9 @@ void Compiler::setDefops(string defops) {
 /***** COMPILER WRAPPER CLASS *****/
 extern list<string>* read_enum(istream* in, ostream* out=NULL);
 
-Compiler::Compiler(Args* args) {
+PaleoCompiler::PaleoCompiler(Args* args) : Compiler(args) {
+  SE_Symbol::case_insensitive = true;
+  
   proto_path = new Path();
   if (args->extract_switch("--srcdir"))
     srcdir = args->pop_next();
@@ -2936,7 +2938,7 @@ Compiler::Compiler(Args* args) {
   last_script=(char*)"";
 }
 
-Compiler::~Compiler() {
+PaleoCompiler::~PaleoCompiler() {
   delete proto_path;
   srcdir = "";
 }
@@ -2944,7 +2946,7 @@ Compiler::~Compiler() {
 // When being run standalone, -D controls dumping (it's normally 
 // consumed by the simulator).  Likewise, if -dump-stem is present,
 // then dumping goes to a file instead of stdout
-void Compiler::init_standalone(Args* args) {
+void PaleoCompiler::init_standalone(Args* args) {
   oldc_test_mode = args->extract_switch("--test-mode");
   is_dump_code |= args->extract_switch("-D");
   bool dump_to_stdout = true;
@@ -2975,20 +2977,20 @@ void Compiler::init_standalone(Args* args) {
   }
 }
 
-uint8_t* Compiler::compile(const char *str, int* len) {
+uint8_t* PaleoCompiler::compile(const char *str, int* len) {
   last_script=str;
   uint8_t* bytes = compile_script(str,len,is_dump_ast);
   if(is_dump_code) dump_instructions(1,*len,bytes);
   return bytes;
 }
 
-void Compiler::visualize() {
+void PaleoCompiler::visualize() {
   if(is_show_code) {
     // "compiler should be able to show the code here, but doesn't yet"
   }
 }
 
-BOOL Compiler::handle_key(KeyEvent* key) {
+BOOL PaleoCompiler::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
     case 'k': is_show_code = !is_show_code; return TRUE;

@@ -30,7 +30,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // that's possible, flag if there's an error, and then quit
 
 // len is filled in w. output length... eventually
-uint8_t* NeoCompiler::compile(char *str, int* len) {
+uint8_t* NeoCompiler::compile(const char *str, int* len) {
   last_script=str;
   compile_phase = "parsing"; // PHASE: text-> sexpr
   SExpr* sexpr = read_sexpr("command-line",str);
@@ -62,7 +62,7 @@ uint8_t* NeoCompiler::compile(char *str, int* len) {
 /*****************************************************************************
  *  COMPILER OBJECT API                                                      *
  *****************************************************************************/
-NeoCompiler::NeoCompiler(Args* args) {
+NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
   is_dump_all = args->extract_switch("-CDall");
   is_dump_code = args->extract_switch("--instructions") | is_dump_all;
   is_early_terminate = (args->extract_switch("--no-emission") ? 1 : 0);
@@ -84,8 +84,7 @@ NeoCompiler::NeoCompiler(Args* args) {
   analyzer = new ProtoAnalyzer(this,args);
   localizer = new GlobalToLocal(this,args);
 
-  // Default target architecture is ProtoKernel
-  emitter = new ProtoKernelEmitter(this,args);
+  emitter = NULL;
 }
 
 NeoCompiler::~NeoCompiler() {
@@ -117,12 +116,12 @@ void NeoCompiler::init_standalone(Args* args) {
   }
   if(compiler_test_mode) cperr=cpout;
 
-  // Swap emitter if desired
+  // default is to emit for ProtoKernel
   if(args->extract_switch("-EM")) {
-    delete emitter; // throw out ProtoKernelEmitter
-    int dummy; // Emitter will determine own base max_op
     emitter = (CodeEmitter*)
-      plugins.get_compiler_plugin(EMITTER_PLUGIN,args->pop_next(),args,&dummy);
+      plugins.get_compiler_plugin(EMITTER_PLUGIN,args->pop_next(),args,this);
+  } else {
+    emitter = new ProtoKernelEmitter(this,args);
   }
   
   // in internal-tests mode: run each internal test, then exit
@@ -135,3 +134,6 @@ void NeoCompiler::init_standalone(Args* args) {
 void NeoCompiler::set_platform(string path) {
   cerr << "WARNING: NeoCompiler platform handling not yet implemented\n";
 }
+
+// Neocompiler is case sensitive, paleocompiler is not
+bool SE_Symbol::case_insensitive = false;

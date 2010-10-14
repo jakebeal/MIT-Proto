@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
   NeoCompiler* neocompiler = new NeoCompiler(args);
   neocompiler->init_standalone(args);
 #else
-  Compiler* compiler = new Compiler(args);
+  PaleoCompiler* compiler = new PaleoCompiler(args);
   compiler->init_standalone(args);
 #endif
 

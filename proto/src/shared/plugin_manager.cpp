@@ -99,8 +99,8 @@ void* ProtoPluginManager::get_sim_plugin(string type, string name, Args* args,
   return lib->get_sim_plugin(type,name,args,cpu,n);
 }
 
-void* ProtoPluginManager::get_compiler_plugin(string type,string name,Args* args, int* max_op){
+void* ProtoPluginManager::get_compiler_plugin(string type,string name,Args* args,Compiler* c){
   ProtoPluginLibrary* lib = get_plugin_lib(type,name);
   if(lib==NULL) return NULL;
-  return lib->get_compiler_plugin(type,name,args);
+  return lib->get_compiler_plugin(type,name,args,c);
 }

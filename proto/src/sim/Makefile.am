@@ -4,6 +4,7 @@ lib_LTLIBRARIES = libprotosimplugin.la
 INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/shared \
+	-I$(top_srcdir)/src/compiler \
 	-I$(top_srcdir)/src/kernel
 
 libprotosimplugin_la_SOURCES = \
@@ -49,7 +50,7 @@ buildregistrydir=$(plugindir)
 buildregistry_SOURCES = \
 	createRegistry.cpp
 buildregistry_LDADD = \
-	../shared/libshared.la libsim.la
+	../shared/libshared.la ../compiler/libcompiler.la libsim.la
 buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic
 buildregistry_PROGRAMS = \
 	buildregistry

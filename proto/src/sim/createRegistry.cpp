@@ -94,3 +94,4 @@ Device* device = NULL;
 SimulatedHardware* hardware = NULL;
 MACHINE* machine = NULL;
 void* palette = NULL;
+ProtoBoolean pb; // touch a neocompiler element to ensure it gets linked in

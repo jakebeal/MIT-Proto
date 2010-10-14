@@ -11,6 +11,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <inttypes.h>
 #include <string>
+#include "compiler.h"
 
 using namespace std;
 
@@ -21,20 +22,20 @@ extern void dump_instructions(int is_c, int n, uint8_t *bytes);
 #include "utils.h"
 #include "proto_opcodes.h"
 
-class Compiler : public EventConsumer {
+class PaleoCompiler : public Compiler {
  public:
   BOOL is_show_code;
   BOOL is_dump_code;
   BOOL is_dump_ast;
   const char* last_script;
   
-  Compiler(Args* args);
-  ~Compiler();
+  PaleoCompiler(Args* args);
+  ~PaleoCompiler();
   void init_standalone(Args* args); // setup output files as standalone app
   uint8_t* compile(const char *str, int* len); // len is filled in w. output length
   void visualize();
   BOOL handle_key(KeyEvent* key);
-  void set_platform(string path);
+  void set_platform(string path) { uerror("Set platform not used any more in paleocompiler."); }
   void setDefops(string defops);
 };
 

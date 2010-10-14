@@ -19,7 +19,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "analyzer.h"
 #include "reader.h" // for paths
 
-struct ProtoInterpreter; struct NeoCompiler;
+struct ProtoInterpreter; class NeoCompiler;
 
 /*****************************************************************************
  *  INTERPRETER                                                              *
@@ -152,8 +152,20 @@ class ProtoKernelEmitter : public CodeEmitter {
  *  TOP-LEVEL COMPILER                                                       *
  *****************************************************************************/
 
-// Interface class
-class NeoCompiler : public EventConsumer {
+// Interface class (shared w. PaleoCompiler)
+class Compiler : public EventConsumer {
+ public:
+  Compiler(Args* args) {}
+  ~Compiler() {}
+  // setup output files as standalone app
+  virtual void init_standalone(Args* args) = 0;
+  // compile expression str; len is filled in w. output length
+  virtual uint8_t* compile(const char *str, int* len) = 0;
+  virtual void set_platform(string path) = 0;
+};
+
+// NeoCompiler implementation
+class NeoCompiler : public Compiler {
  public:
   Path proto_path;
   bool is_dump_code, is_dump_all; int is_early_terminate;
@@ -161,14 +173,14 @@ class NeoCompiler : public EventConsumer {
   ProtoAnalyzer* analyzer;
   GlobalToLocal* localizer;
   CodeEmitter* emitter;
-  char* last_script; // the last piece of text fed to start the compiler
+  const char* last_script; // the last piece of text fed to start the compiler
 
  public:
   NeoCompiler(Args* args);
   ~NeoCompiler();
   void init_standalone(Args* args);
 
-  uint8_t* compile(char *str, int* len); // len is filled in w. output length
+  uint8_t* compile(const char *str, int* len);
   void set_platform(string path);
 };
 

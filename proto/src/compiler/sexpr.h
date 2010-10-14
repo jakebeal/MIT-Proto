@@ -50,12 +50,13 @@ struct SE_Scalar: SExpr {
 
 struct SE_Symbol : SExpr {
   string name;
+  static bool case_insensitive; // Neocompiler is case sensitive, Paleo is not
   SE_Symbol(string name) { 
     this->name = name;
-#if !__USE_NEOCOMPILER__ // Neocompiler is case sensitive
-    for(int i=0; i<this->name.size(); i++) // upcase the symbol
-      this->name[i]=tolower(this->name[i]);
-#endif
+    if(case_insensitive) {
+      for(int i=0; i<this->name.size(); i++) // downcase the symbol
+        this->name[i]=tolower(this->name[i]);
+    }
   }
   SE_Symbol(SE_Symbol* src) { this->name=src->name; inherit_attributes(src);}
   SExpr* copy() { return new SE_Symbol(this); }

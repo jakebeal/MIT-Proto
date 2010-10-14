@@ -28,7 +28,7 @@ void shutdown_app(void);
 #if __USE_NEOCOMPILER__
 NeoCompiler* compiler = NULL;
 #else
-Compiler* compiler = NULL;
+PaleoCompiler* compiler = NULL;
 #endif
 SpatialComputer* computer = NULL;
 MoteLink* motelink = NULL;
@@ -462,11 +462,10 @@ int main (int argc, char *argv[]) {
   process_app_args(args);
 #if __USE_NEOCOMPILER__
   compiler = new NeoCompiler(args);  // first the compiler
-  compiler->set_platform("sim");
+  compiler->emitter = new ProtoKernelEmitter(compiler,args);
   computer = new SpatialComputer(args,!test_mode); // then the computer
 #else
-  compiler = new Compiler(args);  // first the compiler
-  //compiler->set_platform("sim");
+  compiler = new PaleoCompiler(args);  // first the compiler
   computer = new SpatialComputer(args,!test_mode); // then the computer
   string defops;
   computer->appendDefops(defops);

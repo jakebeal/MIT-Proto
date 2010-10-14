@@ -10,6 +10,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #define __PROTO_PLUGIN__
 
 #include "utils.h"
+#include "compiler.h"
 
 // We generic calls and type string-matching to make extensibility easier
 #define LAYER_PLUGIN "Layer"
@@ -25,7 +26,8 @@ class ProtoPluginLibrary {
   virtual void* get_sim_plugin(string type, string name, Args* args, 
                                SpatialComputer* cpu, int n) { return NULL; }
   // Used to get compiler extensions
-  virtual void* get_compiler_plugin(string type, string name, Args* args) 
+  virtual void* get_compiler_plugin(string type, string name, Args* args,
+                                    Compiler* c) 
     {return NULL; }
   static string registry_entry(string type,string name,string dll)
     { return type+" "+name+" = "+dll+"\n"; }

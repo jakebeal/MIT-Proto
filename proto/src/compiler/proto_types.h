@@ -1,3 +1,5 @@
+// THIS IS PARTIALLY IMPLEMENTED AND LIKELY OBSOLETE
+
 // This set of classes represents the *abstract* proto type system.
 // This is different than the instantiated type system.
 

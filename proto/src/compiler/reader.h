@@ -45,17 +45,7 @@ extern Obj *read_from_str (const char *str);
 struct Path {
   list<string> dirs;
   
-  void add_default_path(string srcdir) {
-    dirs.push_back(srcdir + ".");
-    if (srcdir != "") {
-      // use srcdir-relative paths
-      dirs.push_back(srcdir + "/lib/");
-      dirs.push_back(srcdir + "/lib/core/");
-    } else {
-      // use the install location
-      dirs.push_back(PROTOLIBDIR);
-    }
-  }
+  void add_default_path(string srcdir);
   void add_to_path(string addition) { dirs.push_back(addition); }
   ifstream* find_in_path(char *filename){string s = filename; find_in_path(s);}
   ifstream* find_in_path(string filename);
