@@ -47,5 +47,5 @@ p2b_LDADD = \
 	compiler/libcompiler.la \
 	shared/libshared.la
 
-p2bLDFLAGS = \
+p2b_LDFLAGS = \
 	-export-dynamic
