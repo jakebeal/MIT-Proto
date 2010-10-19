@@ -44,5 +44,8 @@ p2b_SOURCES = \
 	compiler-app.cpp
 
 p2b_LDADD = \
-	shared/libshared.la \
-	compiler/libcompiler.la
+	compiler/libcompiler.la \
+	shared/libshared.la
+
+p2bLDFLAGS = \
+	-export-dynamic
