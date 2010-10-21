@@ -9,8 +9,10 @@ in the file LICENSE in the MIT Proto distribution's top directory.  */
 
 #include "config.h"
 #include "radio.h"
+#include "visualizer.h"
 
 RadioSim::RadioSim(Args* args, SpatialComputer* p) : Layer(p) {
+  ensure_colors_registered("RadioSim");
   tx_error = (args->extract_switch("-txerr"))?args->pop_number():0.0;
   rx_error = (args->extract_switch("-rxerr"))?args->pop_number():0.0;
 
@@ -19,6 +21,21 @@ RadioSim::RadioSim(Args* args, SpatialComputer* p) : Layer(p) {
   connect_display_mode = 
     (args->extract_switch("-sharp-connections")) ? 2 :
     (args->extract_switch("-sharp-neighborhood")) ? 1 : 0;
+}
+
+// register colors to use
+Color *RadioSim::NET_CONNECTION_FUZZY, *RadioSim::NET_CONNECTION_SHARP, 
+  *RadioSim::NET_CONNECTION_LOGICAL, *RadioSim::RADIO_BACKOFF;
+void RadioSim::register_colors() {
+#ifdef WANT_GLUT
+  NET_CONNECTION_FUZZY = 
+    palette->register_color("NET_CONNECTION_FUZZY", 0, 1, 0, 0.25);
+  NET_CONNECTION_SHARP = 
+    palette->register_color("NET_CONNECTION_SHARP", 0, 1, 0, 1);
+  NET_CONNECTION_LOGICAL = 
+    palette->register_color("NET_CONNECTION_LOGICAL", 0.5, 0.5, 1, 0.8);
+  RADIO_BACKOFF = palette->register_color("RADIO_BACKOFF", 1, 0, 0, 0.8);
+#endif
 }
 
 RadioSim::~RadioSim() {

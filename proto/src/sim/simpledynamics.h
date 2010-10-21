@@ -90,6 +90,9 @@ class SimpleDynamics : public BodyDynamics, HardwarePatch {
 
   // returns a list of function  that it patches/ provides impementation for
   static vector<HardwareFunction> getImplementedHardwareFunctions();
+
+  static Color* SIMPLE_BODY;
+  virtual void register_colors();
  private:
   void radius_set_op(MACHINE* machine);
   void radius_get_op(MACHINE* machine);

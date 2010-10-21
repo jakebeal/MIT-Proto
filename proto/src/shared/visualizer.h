@@ -30,7 +30,6 @@ class Visualizer : public EventConsumer {
   flo aspect_ratio;
   Rect bounds; // area expected to be filled by computer
   int left,top; // screen location of window
-  Palette* my_palette;
  public:
   int width,height; // pixel size of window
   
@@ -54,6 +53,9 @@ class Visualizer : public EventConsumer {
   void start_select_3D(Rect* rgn, int max_names);
   void end_select_3D(int max_names, Population* result);
   void click_3d(int winx, int winy, double *pt);
+  
+  virtual void register_colors();
+  static Color* BACKGROUND;
 };
 
 #endif // __VISUALIZER__

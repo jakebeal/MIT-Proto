@@ -96,6 +96,16 @@ class ODEDynamics : public BodyDynamics, HardwarePatch {
   void make_walls();
   void reset_escapes(); // used when the walls are inescapable
   void ODEDynamics::bump_op(MACHINE* machine);
+
+
+  // ODE colors
+  /*
+  ODE_SELECTED = register_color("ODE_SELECTED", 0, 0.7, 1, 1);
+  ODE_DISABLED = register_color("ODE_DISABLED", 0.8, 0, 0, 0.7);
+  ODE_BOT = register_color("ODE_BOT", 1, 0, 0, 0.7);
+  ODE_EDGES = register_color("ODE_EDGES", 0, 0, 1, 1);
+  ODE_WALL = register_color("ODE_WALL", 1, 0, 0, 0.1);
+  */
 };
 
 #endif //__ODEDYNAMICS__

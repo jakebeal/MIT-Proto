@@ -148,7 +148,7 @@ void WormHoleRadioDevice::visualize() {
     glPushMatrix();
     container->text_scale(); // prepare to draw text
     char buf[20];
-    palette->use_color(RADIO_BACKOFF);
+    palette->use_color(RadioSim::RADIO_BACKOFF);
     sprintf(buf, "%d", container->vm->timeout);
     draw_text(1, 1, buf);
     glPopMatrix();
@@ -159,10 +159,10 @@ void WormHoleRadioDevice::visualize() {
     BOOL local_sharp=(parent->connect_display_mode==1 && 
                       container->is_selected);
     if(parent->connect_display_mode==2 || local_sharp) {
-      palette->use_color(NET_CONNECTION_SHARP);
+      palette->use_color(RadioSim::NET_CONNECTION_SHARP);
       glLineWidth(1);
     } else {
-        palette->use_color(NET_CONNECTION_FUZZY);
+      palette->use_color(RadioSim::NET_CONNECTION_FUZZY);
       glLineWidth(4);
     }
     // do the actual draw

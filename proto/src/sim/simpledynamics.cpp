@@ -111,7 +111,7 @@ void SimpleBody::visualize() {
 #ifdef WANT_GLUT
   flo x, y;
   if(!parent->is_show_bot) return; // don't display unless should be shown
-  palette->use_color(SIMPLE_BODY);
+  palette->use_color(SimpleDynamics::SIMPLE_BODY);
   glPushMatrix();
   glScalef(radius, radius, radius);
   if (parent->is_mobile) {
@@ -212,6 +212,7 @@ Point* wall_points[N_WALLS]
 #define MAX_V 100 // default ceiling on velocity
 SimpleDynamics::SimpleDynamics(Args* args, SpatialComputer* parent, int n) 
   : BodyDynamics(parent) {
+  ensure_colors_registered("SimpleDynamics");
   flo width=parent->volume->r - parent->volume->l;
   flo height=parent->volume->t - parent->volume->b;
   // read options
@@ -243,6 +244,13 @@ SimpleDynamics::SimpleDynamics(Args* args, SpatialComputer* parent, int n)
   parent->hardware.patch(this,MOV_FN);
   parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_set_op, "radius-set scalar scalar"));
   parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_get_op, "radius scalar"));
+}
+
+Color* SimpleDynamics::SIMPLE_BODY;
+void SimpleDynamics::register_colors() {
+#ifdef WANT_GLUT
+  SIMPLE_BODY = palette->register_color("SIMPLE_BODY", 1.0, 0.25, 0.0, 0.8);
+#endif
 }
 
 void SimpleDynamics::radius_set_op(MACHINE* machine) {

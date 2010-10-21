@@ -27,6 +27,10 @@ class RadioSim : public Layer, public HardwarePatch {
   
   virtual BOOL handle_key(KeyEvent* key);
 
+  static Color *NET_CONNECTION_FUZZY, *NET_CONNECTION_SHARP, 
+    *NET_CONNECTION_LOGICAL, *RADIO_BACKOFF;
+  virtual void register_colors();
+  
 protected:
   BOOL try_tx();
   BOOL try_rx();

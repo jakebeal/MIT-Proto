@@ -16,6 +16,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
  *****************************************************************************/
 DebugLayer::DebugLayer(Args* args, SpatialComputer* p) : Layer(p) {
   // pull display options
+  ensure_colors_registered("DebugLayer");
   n_probes = args->extract_switch("-probes") ? (int)args->pop_number():0;
   is_show_leds = args->extract_switch("-l");
   is_led_rgb = args->extract_switch("-led-blend");
@@ -34,6 +35,22 @@ DebugLayer::DebugLayer(Args* args, SpatialComputer* p) : Layer(p) {
   parent->hardware.registerOpcode(new OpHandler<DebugLayer>(this, &DebugLayer::rgb_op,   "rgb (vector 3) (vector 3)"));
   parent->hardware.registerOpcode(new OpHandler<DebugLayer>(this, &DebugLayer::hsv_op,   "hsv (vector 3) (vector 3)"));
   parent->hardware.registerOpcode(new OpHandler<DebugLayer>(this, &DebugLayer::sense_op, "sense scalar scalar"));
+}
+
+Color *DebugLayer::USER_SENSOR_1, *DebugLayer::USER_SENSOR_2, 
+  *DebugLayer::USER_SENSOR_3, *DebugLayer::RGB_LED, *DebugLayer::RED_LED,
+  *DebugLayer::GREEN_LED, *DebugLayer::BLUE_LED, *DebugLayer::DEVICE_PROBES;
+void DebugLayer::register_colors() {
+#ifdef WANT_GLUT
+  USER_SENSOR_1 = palette->register_color("USER_SENSOR_1", 1.0, 0.5, 0, 0.8);
+  USER_SENSOR_2 = palette->register_color("USER_SENSOR_2", 0.5, 0, 1.0, 0.8);
+  USER_SENSOR_3 = palette->register_color("USER_SENSOR_3", 1.0, 0, 0.5, 0.8);
+  RGB_LED = palette->register_color("RGB_LED", 1, 1, 1, 0.8);
+  RED_LED = palette->register_color("RED_LED", 1, 0, 0, 0.8);
+  GREEN_LED = palette->register_color("GREEN_LED", 0, 1, 0, 0.8);
+  BLUE_LED = palette->register_color("BLUE_LED", 0, 0, 1, 0.8);
+  DEVICE_PROBES = palette->register_color("DEVICE_PROBES", 0, 1, 0, 0.8);
+#endif
 }
 
 void DebugLayer::leds_op(MACHINE* machine) {
@@ -211,7 +228,8 @@ void DebugDevice::preupdate() {
 void DebugDevice::visualize() {
 #ifdef WANT_GLUT
   MACHINE* vm = container->vm;
-  static ColorName user[3] = {USER_SENSOR_1, USER_SENSOR_2, USER_SENSOR_3};
+  static Color* user[3] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
+                           DebugLayer::USER_SENSOR_3};
   flo rad = container->body->display_radius();
   // draw user sensors
   for(int i=0;i<3;i++) {
@@ -222,13 +240,14 @@ void DebugDevice::visualize() {
   }
   // draw LEDs
   if (parent->is_show_leds) {
-    static ColorName led_color[3] = {RED_LED, GREEN_LED, BLUE_LED};
+    static Color* led_color[3] = 
+      {DebugLayer::RED_LED, DebugLayer::GREEN_LED, DebugLayer::BLUE_LED};
     flo led[3] = { vm->actuators[R_LED], vm->actuators[G_LED],
 		   vm->actuators[B_LED] };
     glPushMatrix();
     if (parent->is_led_rgb) {
       if (led[0] || led[1] || led[2]) {
-	palette->scale_color(RGB_LED, led[0],led[1],led[2],1);
+	palette->scale_color(DebugLayer::RGB_LED, led[0],led[1],led[2],1);
         draw_disk(rad*2); // double size because the legacy code sez so
       }
     } else {
@@ -257,7 +276,7 @@ void DebugDevice::visualize() {
     glTranslatef(0, 0.5625, 0);
     for (int i = 0; i < parent->n_probes; i++) {
       post_data_to(buf, &probes[i]);
-      palette->use_color(DEVICE_PROBES);
+      palette->use_color(DebugLayer::DEVICE_PROBES);
       draw_text(1, 1, buf);
       glTranslatef(1.125, 0, 0);
     }

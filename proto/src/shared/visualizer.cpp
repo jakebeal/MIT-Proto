@@ -11,7 +11,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "Trackball.h"
 #include "drawing_primitives.h"
 
-Palette* palette; // current palette
+Palette* palette = Palette::default_palette; // current palette
 // NOTE: these interfaces need fixing!
 extern float xscale, yscale; // kludge connection to drawing_primitives.cpp
 extern float view_width, view_height; // kludge connection to Trackball.cpp
@@ -40,8 +40,8 @@ Visualizer::Visualizer(Args* args)
   is_full_screen = args->extract_switch("-f");
   if(is_full_screen) { glutFullScreen(); }
   
-  // set up the palette
-  palette = my_palette = new Palette();
+  // use the default palette, register our colors, and patch files
+  ensure_colors_registered("Visualizer");
   while(args->extract_switch("-palette",FALSE)) { // may use many palette files
     palette->overlay_from_file(args->pop_next()); // patch the palette
   }
@@ -72,6 +72,14 @@ Visualizer::Visualizer(Args* args)
   xscale = width  / (bounds.r-bounds.l);
   yscale = height / (bounds.t-bounds.b);
   view_width=width; view_height=height;
+}
+
+
+Color* Visualizer::BACKGROUND;
+void Visualizer::register_colors() {
+#ifdef WANT_GLUT
+  BACKGROUND = palette->lookup_color("BACKGROUND"); // from simulator
+#endif
 }
 
 Visualizer::~Visualizer() {
@@ -179,7 +187,6 @@ void Visualizer::visualize() {
 
 // start drawing a frame
 void Visualizer::prepare_frame() {
-  palette = my_palette; // set current palette
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluOrtho2D(-width/2,width/2,-height/2,height/2);

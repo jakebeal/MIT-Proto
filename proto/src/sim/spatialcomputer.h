@@ -160,6 +160,7 @@ struct CloneReq {
   }
 };
 
+class Color;
 class SpatialComputer : public EventConsumer {
  public:
   // display variables
@@ -213,12 +214,16 @@ class SpatialComputer : public EventConsumer {
   BOOL is_3d() { return volume->dimensions()>2; }
   void appendDefops(std::string& s);
 
+  virtual void register_colors();
+  static Color *BACKGROUND, *PHOTO_FLASH, *DEVICE_SELECTED, *DEVICE_DEBUG,
+    *DEVICE_ID, *DEVICE_VALUE, *VECTOR_BODY, *VECTOR_TIP;
+
  private:
   void initialize_plugins(Args* args, int n);
   void get_volume(Args* args, int n); // shared dist constructor
   int addLayer(Layer* layer); // add a layer to dynamics & set callback vars
   int addLayer(char* layer,Args* args,int n);// get layer from plugin, then add
-  };
+};
 
 // global variable set to the spatial computer during visualize(),
 // to avoid passing it around continually

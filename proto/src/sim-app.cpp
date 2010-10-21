@@ -267,6 +267,17 @@ void dispatch_key_event() {
 void resize (int new_w, int new_h) { vis->resize(new_w,new_h); }
 #endif // WANT_GLUT
 
+
+Color *TIME_DISPLAY, *FPS_DISPLAY, *LAG_WARNING, *DRAG_SELECTION;
+void register_app_colors() {
+#ifdef WANT_GLUT
+  TIME_DISPLAY = palette->register_color("TIME_DISPLAY",1,0,1);
+  FPS_DISPLAY = palette->register_color("FPS_DISPLAY",1,0,1);
+  LAG_WARNING = palette->register_color("LAG_WARNING",1,0,0);
+  DRAG_SELECTION = palette->register_color("DRAG_SELECTION", 1, 1, 0, 0.5);
+#endif
+}
+
 // give each top-level object a chance to display itself
 // Only the computer lives in 3D space: the others all live in 2D window coords
 void render () {
@@ -475,6 +486,7 @@ int main (int argc, char *argv[]) {
   if(!headless) {
     vis = new Visualizer(args); // start visualizer
     vis->set_bounds(computer->vis_volume); // connect to computer
+    register_app_colors();
   }
   // next the forwarder for the motes, if desired
   if(args->extract_switch("-motelink")) motelink = new MoteLink(args);

@@ -21,6 +21,9 @@ class MoteIO : public Layer, public HardwarePatch {
   void add_device(Device* d);
   BOOL handle_key(KeyEvent* event);
   void dump_header(FILE* out); // list log-file fields
+
+  static Color* BUTTON_COLOR;
+  virtual void register_colors();
  private:
   void speak_op(MACHINE* machine);
   void light_op(MACHINE* machine);

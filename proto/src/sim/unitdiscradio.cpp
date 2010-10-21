@@ -14,6 +14,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
  *  UNIT DISC RADIO                                                          *
  *****************************************************************************/
 UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(args, p) {
+  ensure_colors_registered("UnitDiscRadio");
   if(args->extract_switch("-ns")) { // set range from neighborhood size
     flo ns = args->pop_number(); // note: counts *self* as a neighbor
     if(args->extract_switch("-r")) {
@@ -56,6 +57,16 @@ UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(a
   // make and populate the cell table
   cells = (Population**)calloc(num_cells,sizeof(Population*));
   for(int i=0;i<num_cells;i++) cells[i] = new Population();
+}
+
+// register colors to use
+Color *UnitDiscRadio::RADIO_RANGE_RING, *UnitDiscRadio::RADIO_CELL_INFO;
+void UnitDiscRadio::register_colors() {
+#ifdef WANT_GLUT
+  RADIO_RANGE_RING = 
+    palette->register_color("RADIO_RANGE_RING", 0.25, 0.25, 0.25, 0.8);
+  RADIO_CELL_INFO = palette->register_color("RADIO_CELL_INFO", 0, 1, 1, 0.8);
+#endif
 }
 
 vector<HardwareFunction> UnitDiscRadio::getImplementedHardwareFunctions()
@@ -350,7 +361,7 @@ void UnitDiscDevice::visualize() {
     char buf[20];
     glTranslatef(0, -1, 0);
     sprintf(buf, "%2d", parent->device_cell(container));
-    palette->use_color(RADIO_CELL_INFO);
+    palette->use_color(UnitDiscRadio::RADIO_CELL_INFO);
     draw_text(2, 2, buf);
     glPopMatrix();
   }
@@ -358,14 +369,14 @@ void UnitDiscDevice::visualize() {
     glPushMatrix();
     container->text_scale(); // prepare to draw text
     char buf[20];
-    palette->use_color(RADIO_BACKOFF);
+    palette->use_color(UnitDiscRadio::RADIO_BACKOFF);
     sprintf(buf, "%d", container->vm->timeout);
     draw_text(1, 1, buf);
     glPopMatrix();
   }
   
   if(parent->is_show_radio) { // draw radio range
-    palette->use_color(RADIO_RANGE_RING);
+    palette->use_color(UnitDiscRadio::RADIO_RANGE_RING);
     draw_circle(parent->range);
   }
   if(parent->is_show_connectivity) { // draw network connections
@@ -373,13 +384,13 @@ void UnitDiscDevice::visualize() {
     BOOL local_sharp=(parent->connect_display_mode==1 && 
                       container->is_selected);
     if(parent->connect_display_mode==2 || local_sharp) {
-      palette->use_color(NET_CONNECTION_SHARP);
+      palette->use_color(UnitDiscRadio::NET_CONNECTION_SHARP);
       glLineWidth(1);
     } else {
       if(parent->cell_lvls>1) {
-        palette->scale_color(NET_CONNECTION_FUZZY,1,1,1,0.1);
+        palette->scale_color(UnitDiscRadio::NET_CONNECTION_FUZZY,1,1,1,0.1);
       } else {
-        palette->use_color(NET_CONNECTION_FUZZY);
+        palette->use_color(UnitDiscRadio::NET_CONNECTION_FUZZY);
       }
       glLineWidth(4);
     }
@@ -398,7 +409,7 @@ void UnitDiscDevice::visualize() {
   // hood connectivity
   if(parent->is_show_logical_nbrs) {
     glLineWidth(2);
-    palette->use_color(NET_CONNECTION_LOGICAL);
+    palette->use_color(UnitDiscRadio::NET_CONNECTION_LOGICAL);
     glBegin(GL_LINES);
     MACHINE* m = container->vm;
     for(int i=0; i<m->n_hood; i++) {

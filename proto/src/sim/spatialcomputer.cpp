@@ -182,11 +182,11 @@ void Device::visualize() {
     { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) d->visualize(); }
   
   if(is_selected) {
-    palette->use_color(DEVICE_SELECTED);
+    palette->use_color(SpatialComputer::DEVICE_SELECTED);
     draw_circle(4*body->display_radius());
   }
   if(debug()) {
-    palette->use_color(DEVICE_DEBUG);
+    palette->use_color(SpatialComputer::DEVICE_DEBUG);
     glPushMatrix();
     glTranslatef(0,0,-0.1);
     draw_disk(2*body->display_radius());
@@ -206,12 +206,12 @@ void Device::visualize() {
         flo x = NUM_GET(&v->elts[0]);
         flo y = NUM_GET(&v->elts[1]);
         flo z = v->n >= 3 ? NUM_GET(&v->elts[2]) : 0;
-	palette->use_color(VECTOR_BODY);
+	palette->use_color(SpatialComputer::VECTOR_BODY);
         glBegin(GL_LINE_STRIP);
         glVertex3f(0, 0, 0);
         glVertex3f(0.8*x, 0.8*y, 0.8*z);
         glEnd();
-	palette->use_color(VECTOR_TIP);
+	palette->use_color(SpatialComputer::VECTOR_TIP);
         glBegin(GL_LINE_STRIP);
         glVertex3f(0.8*x, 0.8*y, 0.8*z);
         glVertex3f(x, y, z);
@@ -226,7 +226,7 @@ void Device::visualize() {
   text_scale(); // prepare to draw text
   char buf[1024];
   if (vis_context->is_show_id) {
-    palette->use_color(DEVICE_ID);
+    palette->use_color(SpatialComputer::DEVICE_ID);
     sprintf(buf, "%2d", uid);
     draw_text(1, 1, buf);
   }
@@ -236,14 +236,14 @@ void Device::visualize() {
     glPushMatrix();
     //glTranslatef(0, 0, 0);
     post_data_to(buf, dst);
-    palette->use_color(DEVICE_VALUE);
+    palette->use_color(SpatialComputer::DEVICE_VALUE);
     draw_text(1, 1, buf);
     glPopMatrix();
   }
   
   if(vis_context->is_show_version) {
     glPushMatrix();
-    palette->use_color(DEVICE_ID);
+    palette->use_color(SpatialComputer::DEVICE_ID);
     sprintf(buf, "%2d:%s", vm->scripts[vm->cur_script].version,
 	    (vm->scripts[vm->cur_script].is_complete)?"OK":"wait");
     draw_text(4, 4, buf);
@@ -322,7 +322,25 @@ int SpatialComputer::addLayer(Layer* layer) {
   return (layer->id = dynamics.add(layer));
 }
 
+Color *SpatialComputer::BACKGROUND, *SpatialComputer::PHOTO_FLASH,
+  *SpatialComputer::DEVICE_SELECTED, *SpatialComputer::DEVICE_DEBUG,
+  *SpatialComputer::DEVICE_ID, *SpatialComputer::DEVICE_VALUE, 
+  *SpatialComputer::VECTOR_BODY, *SpatialComputer::VECTOR_TIP;
+void SpatialComputer::register_colors() {
+#ifdef WANT_GLUT
+  BACKGROUND = palette->register_color("BACKGROUND",0,0,0,0.5); // black
+  PHOTO_FLASH = palette->register_color("PHOTO_FLASH", 1, 1, 1, 1);
+  DEVICE_SELECTED = palette->register_color("DEVICE_SELECTED", 0.5,0.5,0.5,0.8);
+  DEVICE_ID = palette->register_color("DEVICE_ID", 1, 0, 0, 0.8);
+  DEVICE_VALUE = palette->register_color("DEVICE_VALUE", 0.5, 0.5, 1, 0.8);
+  VECTOR_BODY = palette->register_color("VECTOR_BODY", 0, 0, 1, 0.8);
+  VECTOR_TIP = palette->register_color("VECTOR_TIP", 1, 0, 1, 0.8);
+  DEVICE_DEBUG = palette->register_color("DEVICE_DEBUG", 1, 0.8, 0.8, 0.5);
+#endif
+}
+
 SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
+  ensure_colors_registered("SpatialComputer");
   sim_time=0;
   int n=(args->extract_switch("-n"))?(int)args->pop_number():100; // # devices
   // load dumping variables

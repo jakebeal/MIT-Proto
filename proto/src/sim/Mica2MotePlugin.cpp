@@ -25,6 +25,7 @@ using namespace std;
  *  TESTBED MOTE IO                                                          *
  *****************************************************************************/
 MoteIO::MoteIO(Args* args, SpatialComputer* parent) : Layer(parent) {
+  ensure_colors_registered("MoteIO");
   args->undefault(&can_dump,"-Dmoteio","-NDmoteio");
   // register patches
   parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::speak_op, SPEAK_OP));
@@ -34,6 +35,13 @@ MoteIO::MoteIO(Args* args, SpatialComputer* parent) : Layer(parent) {
   parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::conductive_op, CONDUCTIVE_OP));
   parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::button_op, BUTTON_OP));
   parent->hardware.registerOpcode(new OpHandler<MoteIO>(this, &MoteIO::slider_op, SLIDER_OP));
+}
+
+Color* MoteIO::BUTTON_COLOR;
+void MoteIO::register_colors() {
+#ifdef WANT_GLUT
+  BUTTON_COLOR = palette->register_color("BUTTON_COLOR", 0, 1.0, 0.5, 0.8);
+#endif
 }
 
 void MoteIO::speak_op(MACHINE* machine) {
@@ -125,7 +133,7 @@ void DeviceMoteIO::visualize(Device* d) {
   flo rad = d->body->display_radius();
   // draw the button being on
   if (button) {
-    palette->use_color(BUTTON_COLOR);
+    palette->use_color(MoteIO::BUTTON_COLOR);
     draw_disk(rad*SENSOR_RADIUS_FACTOR);
   }
 #endif // WANT_GLUT

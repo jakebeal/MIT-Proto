@@ -252,6 +252,15 @@ void Population::resize_pop(int new_cap) {
 }
 
 /*****************************************************************************
+ *  EVENTCONSUMER                                                            *
+ *****************************************************************************/
+set<string> EventConsumer::colors_registered;
+void EventConsumer::ensure_colors_registered(string classname) {
+  if(!colors_registered.count(classname)) 
+    { register_colors(); colors_registered.insert(classname); }
+}
+
+/*****************************************************************************
  *  GETTING TIME                                                             *
  *****************************************************************************/
 #ifdef __WIN32__

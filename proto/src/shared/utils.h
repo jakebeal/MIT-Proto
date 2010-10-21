@@ -16,6 +16,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <dlfcn.h>
 #include <string>
 #include <vector>
+#include <set>
 using namespace std;
 /*****************************************************************************
  *  NUMBERS AND DIMENSIONS                                                   *
@@ -221,12 +222,18 @@ struct KeyEvent {
 };
 
 class EventConsumer {
-public:
+ public:
   virtual BOOL handle_key(KeyEvent* key) {return FALSE;} // return if consumed
   virtual BOOL handle_mouse(MouseEvent* mouse) {return FALSE;} // same return
   virtual void visualize() {} // draw, assuming a prepared OpenGL context
   // evolve moves state forward in time to 'limit' (an absolute)
   virtual BOOL evolve(SECONDS limit) {} // return whether state changed
+  
+  // visualizer utility: color management for static variables
+  void ensure_colors_registered(string classname);
+  virtual void register_colors() {}
+ private:
+  static set<string> colors_registered;
 };
 
 // obtains the time in seconds (in a system-dependent manner)

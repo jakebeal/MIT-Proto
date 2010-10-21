@@ -31,6 +31,7 @@ class ProxyBody : public Body {
 class MoteLink : public EventConsumer {
  public:
   MoteLink(Args* args) {}
+/*  MOTE_BODY = register_color("MOTE_BODY",1,0,1,0.8); */
 };
 
 #endif // __MOTELINK__
