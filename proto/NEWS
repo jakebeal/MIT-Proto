@@ -1,3 +1,17 @@
+Release 4:
+- The (partially complete) new compiler is available and merged into
+  Proto.  You can build proto to use it by configuring with the option
+  "--with-neocompiler"
+- Plugin visualizations can use user-configurable palettes, just like
+  the main simulator
+- Emitter plugins are supported for the neocompiler
+- prototest is now part of the installation, can be executed from
+  arbitrary directories, and uses the installed apps by default
+- any-hood+, all-hood+ are working in old compiler; gradient fixed to
+  use any-hood+, removing "hop-to-infinity" bug for isolated devices
+- Corrected makefile problems for linux systems
+- Small manual updates
+
 Release 3:
 - Proto now has a plugin system, allowing both the compiler and
   simulator to be extended with separately built dynamic libraries.

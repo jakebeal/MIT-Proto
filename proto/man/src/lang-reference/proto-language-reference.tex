@@ -638,13 +638,19 @@ to the values of the input fields.
 
 \function{(all-hood ,expr|\type{F_B})}{B}{Returns false if the
   range of \var{expr} includes false; otherwise returns true.}
+\function{(all-hood+ ,expr|\type{F_B})}{B}{Returns false if the range
+  of \var{expr} includes false, excluding the device itself; otherwise
+  returns true. \violation{}}
 \function{(any-hood ,expr|\type{F_B})}{B}{Returns true if the
   range of \var{expr} includes true; otherwise returns false.}
+\function{(any-hood+ ,expr|\type{F_B})}{B}{Returns true if the range
+  of \var{expr} includes true, excluding the device itself; otherwise
+  returns false. \violation{}}
 
 \function{(sum-hood ,expr|\type{F_N})}{N}{Returns the sum of
   \var{expr} over all devices in the neighborhood.  \violation{}}
 \function{(int-hood ,expr|\type{F_N})}{N}{Returns the integral
-  of \var{expr} over the neighborhood.  \broken{}}
+  of \var{expr} over the neighborhood.}
 
 The \var{fold-hood} family of functions are used to implement the
 other summary functions.  Although they are made accessible to
