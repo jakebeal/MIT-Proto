@@ -2133,6 +2133,14 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
     Obj *form = read_qq("(max-hood (if (is-self) (neg (inf)) $expr))", 
                         qq_env("$expr", lst_elt(args, 0), NULL));
     return parse(form, env);
+  } else if (strcasecmp(name, "any-hood+") == 0) {
+    Obj *form = read_qq("(any-hood (if (is-self) 0 $expr))", 
+                        qq_env("$expr", lst_elt(args, 0), NULL));
+    return parse(form, env);
+  } else if (strcasecmp(name, "all-hood+") == 0) {
+    Obj *form = read_qq("(all-hood (if (is-self) 1 $expr))", 
+                        qq_env("$expr", lst_elt(args, 0), NULL));
+    return parse(form, env);
   } else if (strcasecmp(name, "max-hood") == 0) {
     Obj *folder = hood_folder("max-hood", args, read_qq("max", lisp_nil), read_qq(">", lisp_nil));
     Obj *form   = read_qq("(fold-hood-plus* $folder $expr)", 
