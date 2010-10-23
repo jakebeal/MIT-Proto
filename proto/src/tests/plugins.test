@@ -14,11 +14,11 @@ test: $(PROTO) -m -DD grid "(mov (tup (green 1) 2 3))" -l -L DebugLayer -stop-af
 = 37 8 3.0
 
 // Test gridrandom and lifecycle
-test: $(PROTO) -DD grid "(if (mod (mid) 3) (sum-hood 1) (die 1))" -L simple-life-cycle -n 400 -r 10 -stop-after 5.5 -dump-after 5 -Dvalue -headless -NDall
+test: $(PROTO) -DD grid "(if (mod (mid) 3) (sum-hood 1) (die 1))" -L simple-life-cycle -n 300 -r 10 -stop-after 5.5 -dump-after 5 -Dvalue -headless -NDall
 = 1 0 1
 = 1 3 4
 = 42 0 62
-= 42 3 7
+= 42 3 6
 
 // Test mica2mote (mostly just making sure the opcodes load)
 test: $(PROTO) -n 1 -L mote-io -dump-after 5 -Dvalue -headless -NDall "(+ (light) (sound) (temp) (conductive))" -stop-after 5.5

@@ -9,6 +9,8 @@ Release 4:
   arbitrary directories, and uses the installed apps by default
 - any-hood+, all-hood+ are working in old compiler; gradient fixed to
   use any-hood+, removing "hop-to-infinity" bug for isolated devices
+- Added hexagonal grid distribution, -DD hexgrid
+- Corrected axis distortion of grid distributions
 - Corrected makefile problems for linux systems
 - Small manual updates
 

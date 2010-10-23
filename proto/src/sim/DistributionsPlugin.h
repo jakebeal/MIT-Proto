@@ -47,6 +47,14 @@ public:
   BOOL next_location(METERS *loc);
 };
 
+class HexGrid : public Distribution {
+public:
+  int rows,columns,layers;
+  int i; flo unit;
+  HexGrid(int n, Rect* volume) ;
+  virtual BOOL next_location(METERS *loc) ;
+};
+
 class Cylinder : public Distribution {
 public:
   METERS r;

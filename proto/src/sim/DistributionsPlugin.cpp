@@ -16,6 +16,7 @@ using namespace std;
 #define D_GRID "grid"
 #define D_GRIDEPS "grideps"
 #define D_XGRID "xgrid"
+#define D_HEXGRID "hexgrid"
 #define D_FIXEDPT "fixedpt"
 #define D_CYLINDER "cylinder"
 #define D_TORUS "torus"
@@ -51,11 +52,11 @@ BOOL FixedPoint::next_location(METERS *loc) {
 Grid::Grid(int n, Rect* volume) : Distribution(n,volume) {
   i=0;
   if(volume->dimensions()==3) {
-    layers = (int)ceil(pow(n*depth*depth/(width*height), 1.0/3.0));
-    rows = (int)ceil(layers*width/depth);
+    layers = (int)ceil(pow(n*(depth*depth)/(width*height), 1.0/3.0));
+    rows = (int)ceil(layers*height/depth);
     columns = (int)ceil(n/rows/layers);
   } else {
-    rows = (int)ceil(sqrt(n)*sqrt(width/height));
+    rows = (int)ceil(sqrt(n)*sqrt(height/width));
     columns = (int)ceil(n/rows);
     layers = 1;
   }
@@ -75,10 +76,10 @@ XGrid::XGrid(int n, Rect* volume) : Distribution(n,volume) {
   i=0;
   if(volume->dimensions()==3) {
     layers = (int)ceil(pow(n*depth*depth/(width*height), 1.0/3.0));
-    rows = (int)ceil(layers*width/depth);
+    rows = (int)ceil(layers*height/depth);
     columns = (int)ceil(n/rows/layers);
   } else {
-    rows = (int)ceil(sqrt(n)*sqrt(width/height));
+    rows = (int)ceil(sqrt(n)*sqrt(height/width));
     columns = (int)ceil(n/rows);
     layers = 1;
   }
@@ -102,6 +103,34 @@ BOOL GridRandom::next_location(METERS *loc) {
   loc[0] += epsilon*((rand()%1000/1000.0) - 0.5);
   loc[1] += epsilon*((rand()%1000/1000.0) - 0.5);
   if(volume->dimensions()==3) loc[2] += epsilon*((rand()%1000/1000.0) - 0.5);
+  return TRUE;
+}
+
+
+HexGrid::HexGrid(int n, Rect* volume) : Distribution(n,volume) {
+  i=0;
+  if(volume->dimensions()==3) {
+    layers = (int)ceil(pow(n*depth*depth/(width*height)*sin(M_PI/3)*sin(M_PI/3), 1.0/3.0));
+    rows = (int)ceil(layers*height/depth);
+    columns = (int)ceil(n/rows/layers);
+    debug("WARNING: HexGrid is distorted in the 3rd dimension\n");
+  } else {
+    rows = (int)ceil(sqrt(n)*sqrt(height/width)*sin(M_PI/3));
+    columns = (int)ceil(n/rows);
+    layers = 1;
+  }
+  unit = ((flo)height)/rows;
+}
+BOOL HexGrid::next_location(METERS *loc) {
+  int l = (i%layers), r = (i/layers)%rows, c = (i/(layers*rows));
+  bool odd = c%2; // hexgrid is offset by 1/2 in odd columns
+  bool lodd = l%2; // hexgrid is offset by 1/2 in odd columns
+  flo offset = (odd ? 0.5 : 0.0); 
+  flo zoffset = (lodd ? 0.5 : 0.0);
+  loc[0] = volume->l + (c+zoffset)*unit*sin(M_PI/3);
+  loc[1] = volume->b + (r+offset+zoffset)*unit;
+  loc[2] = (volume->dimensions()==3)?(((Rect3*)volume)->f+l*depth/layers):0;
+  i++;
   return TRUE;
 }
 
@@ -145,8 +174,10 @@ void* DistributionsPlugin::get_sim_plugin(string type, string name, Args* args,
       return new Grid(n,cpu->volume);
     if(name==D_GRIDEPS) // randomized grid
       return new GridRandom(args,n,cpu->volume);
-    if(name==D_XGRID) // grid w. random y      
+    if(name==D_XGRID) // grid w. random y
       return new XGrid(n,cpu->volume);
+    if(name==D_HEXGRID) // plain grid    
+      return new HexGrid(n,cpu->volume);
     if(name==D_FIXEDPT) // specify location of first k devices
       return new FixedPoint(args,n,cpu->volume);
     if(name==D_CYLINDER)
@@ -162,6 +193,7 @@ string DistributionsPlugin::inventory() {
   s += registry_entry(DISTRIBUTION_PLUGIN,D_GRID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_GRIDEPS,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_XGRID,DLL_NAME);
+  s += registry_entry(DISTRIBUTION_PLUGIN,D_HEXGRID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_FIXEDPT,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_CYLINDER,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_TORUS,DLL_NAME);
