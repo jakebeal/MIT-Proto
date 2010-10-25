@@ -17,6 +17,9 @@ libcompiler_la_SOURCES = \
 	compiler.cpp \
 	nicenames.cpp
 
+libcompiler_la_LIBADD = \
+        ../shared/libshared.la
+
 pkginclude_HEADERS = \
 	analyzer.h \
 	compiler-utils.h \
