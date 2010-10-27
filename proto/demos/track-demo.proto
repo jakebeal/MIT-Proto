@@ -13,8 +13,8 @@
      (and (< d (inf)) (dilate trail width))))
  (def track (target dst coord)
    (if (channel target dst 10)
-     (all (blue 1)
-      (mux dst (- (gradcast target coord) coord) (tup 0 0 0)))
+     (all (red 1)
+      (mux dst (- (gradcast target (local-average coord)) coord) (tup 0 0 0)))
      (tup 0 0 0)))
 
  (def track-demo ()

@@ -12,6 +12,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #ifndef __COMPILER_UTILS__
 #define __COMPILER_UTILS__
 
+#include <stdint.h>
 #include <map>
 #include <iostream>
 #include <utility>

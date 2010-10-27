@@ -799,6 +799,36 @@ act like blockages, making the distance measurements computed by
 there at all---and because of the \var{if}, that's exactly what
 it looks like to the part of the program running \var{distance-to}!
 
+Sometimes we want to be able to split up our space like this, and
+sometimes it is a problem.  For example, let's say we want to make
+our devices play the ``hot and cold'' guessing game.  When we make a 
+
+(def hotcold ()
+  (let ((secret (once (< (rnd 0 1) 0.01))))
+    (if (sense 1)
+      (all (green secret)
+           (red (< (distance-to secret) 25))
+           (blue (> (distance-to secret) 50)))
+      0)))
+
+\code{proto -l -c -n 300 "(hotcold)"}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/blocked-distance.png}
+  \caption{}
+  \vspace{-0.5cm}
+  \label{f:blockdist}
+\end{wrapfigure}
+
+
+(rep x
+
+
+\code{proto -l "(if (< (distance (sense 1))
+
+What if we want to share information between two parts of the 
+
 you should think about \var{nbr} not just as a device getting
 information from its neighbors, but also as {\em sharing} information
 with its neighbors.
