@@ -13,7 +13,7 @@
      (and (< d (inf)) (dilate trail width))))
  (def track (target dst coord)
    (if (channel target dst 10)
-     (all (red 1)
+     (all (blue 1)
       (mux dst (- (gradcast target (local-average coord)) coord) (tup 0 0 0)))
      (tup 0 0 0)))
 
@@ -31,7 +31,7 @@
 
 ;; click on one device and hit 't' to select the target to be tracked,
 ;; then click on another device and hit 'y' to select the base station
-;; where its location is sent.  You should see red dots on the nodes
+;; where its location is sent.  You should see blue dots on the nodes
 ;; in the channel forwarding information from the target to the base
 ;; station, and a vector pointing from the base station to a spot
 ;; close to the target.  Notice that the tracking behavior scales

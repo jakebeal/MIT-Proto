@@ -50,7 +50,11 @@ buildregistrydir=$(plugindir)
 buildregistry_SOURCES = \
 	createRegistry.cpp
 buildregistry_LDADD = \
-	../shared/libshared.la ../compiler/libcompiler.la libsim.la
+	../shared/libshared.la \
+	../compiler/libcompiler.la \
+	libsim.la
+	../shared/libshared.la \
+	../compiler/libcompiler.la
 buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic
 buildregistry_PROGRAMS = \
 	buildregistry
