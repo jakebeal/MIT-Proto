@@ -223,7 +223,7 @@ connected. Hint: If you can not find the correct way to move points,
 try some of the mouse commands on page 4 of the simulator manual.
 Make sure caps lock is off when manipulating the simulator.
 
-\begin{wrapfigure}{r}{0.4\textwidth}
+\begin{wrapfigure}{R}{0.4\textwidth}
   \vspace{-0.8cm}
   \includegraphics[width=0.38\textwidth]{figures/five-points.png}
   \caption{Five connected devices.}
@@ -617,8 +617,8 @@ the \var{close} function:
 
 \code{proto -l "(closest (sense 1))"}
 
-\begin{wrapfigure}{r}{0.4\textwidth}
-  \vspace{-0.8cm}
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
   \includegraphics[width=0.38\textwidth]{figures/closest.png}
   \caption{Running the \var{closest} program}
   \vspace{-0.5cm}
@@ -654,7 +654,7 @@ from the \var{src}.
   complicated, you are probably over-thinking things.  Hint: Nested
   \var{if}s may prove helpful.}
 
-When you're finished, look here for the answer. My code, which may
+When you're finished, look here for the answer.  Our code, which may
 differ from yours some, looks like this:
 
 \begin{quote}
@@ -685,9 +685,9 @@ text should again be saved in a file in your folder in Proto, as
 \var{{\em itsname}.proto}.  The name of the file before \var{.proto}
 should be the same (capitals and everything) as the name of the
 function.  So in this case, the file is called \var{bullseye.proto}
-and is in my MyPrograms folder.
+and is in our MyPrograms folder.
 
-\begin{wrapfigure}{r}{0.4\textwidth}
+\begin{wrapfigure}{R}{0.4\textwidth}
   \vspace{-0.8cm}
   \includegraphics[width=0.38\textwidth]{figures/bullseye.png}
   \caption{Running a \var{bullseye} program}
@@ -732,6 +732,7 @@ to create many geometric patterns in Proto.
   for the LED to be displayed.}
 
 \section{Restricting Space}
+\label{s:mux}
 
 When we write a Proto program, we aren't just stuck to using the same
 space that we started with.  We can change 
@@ -783,10 +784,11 @@ to predict what will happen when you run this program:
 
 \code{proto -l -c "(if (sense 1) 0 (red (< (distance-to (sense 2)) 100)))"}
 
-\begin{wrapfigure}{r}{0.4\textwidth}
+\begin{wrapfigure}{R}{0.4\textwidth}
   \vspace{-0.8cm}
   \includegraphics[width=0.38\textwidth]{figures/blocked-distance.png}
-  \caption{}
+  \caption{A \var{distance-to} calculation running restricted to one
+    branch of an \var{if}}
   \vspace{-0.5cm}
   \label{f:blockdist}
 \end{wrapfigure}
@@ -800,51 +802,131 @@ there at all---and because of the \var{if}, that's exactly what
 it looks like to the part of the program running \var{distance-to}!
 
 Sometimes we want to be able to split up our space like this, and
-sometimes it is a problem.  For example, let's say we want to make
-our devices play the ``hot and cold'' guessing game.  When we make a 
+sometimes it is a problem.  For example, let's say we want to make our
+devices play the ``hot and cold'' guessing game.  A few of the devices
+will secretly decide that they are the targets of the guessing game.
+We will make a guess by turning on \qvar{sense 1} at a device.  The
+device will turn on a green LED if we guessed right, a red LED if
+we're close to a target, and a blue LED if we're far away from all the
+targets.
 
+Here's some Proto code to implement the ``hot and cold'' game:
+
+\begin{quote}
+\begin{verbatim}
 (def hotcold ()
-  (let ((secret (once (< (rnd 0 1) 0.01))))
+  (let ((target (once (< (rnd 0 1) 0.03))))
     (if (sense 1)
-      (all (green secret)
-           (red (< (distance-to secret) 25))
-           (blue (> (distance-to secret) 50)))
+      (all (green target)
+           (red (< (distance-to target) 25))
+           (blue (> (distance-to target) 50)))
       0)))
+\end{verbatim}
+\end{quote}
 
-\code{proto -l -c -n 300 "(hotcold)"}
+All of the functions in this code should be familiar except for
+\var{all} and \var{once}.  The \var{all} function takes any number of
+expressions and runs them all, then returns the value of the last one.
+In this case, we're using it to check whether each of the three LEDs
+should be turned on.  The \var{once} function computes its expression
+just once, then remembers the value---we'll learn more about it in the
+next section.  Here, we're using it to have each device flip a coin
+and decide if it's once of the targets.  We do it with \var{once},
+because we don't want the devices to keep flipping coins and changing
+their minds.
 
-\begin{wrapfigure}{r}{0.4\textwidth}
-  \vspace{-0.8cm}
-  \includegraphics[width=0.38\textwidth]{figures/blocked-distance.png}
-  \caption{}
-  \vspace{-0.5cm}
-  \label{f:blockdist}
-\end{wrapfigure}
+Put the program in \var{hotcold.proto} and try running it with:
 
+\code{proto -l -c "(hotcold)"}
 
-(rep x
+\begin{figure}[ht]
+\centering
+\subfigure[Wrong]{\includegraphics[width=0.4\textwidth]{figures/ifhotcold.png}}
+\subfigure[Correct]{\includegraphics[width=0.4\textwidth]{figures/muxhotcold.png}}
+\caption{A ``hot and cold'' game running incorrectly (a) and correctly (b).}
+\label{f:ifvmux}
+\end{figure}
 
+Do you notice something wrong with how the program is running?  It's
+really hard to find the targets!  When you make a guess, it almost
+always shows up blue.  In fact, you can't get any to show up red until
+after you find a target, and then all of a sudden a whole bunch of
+blue LEDs turn red!  And even once you've found a target, the devices
+nearby won't necessarily end up with the right colors.  What's
+happening here?
 
-\code{proto -l "(if (< (distance (sense 1))
-
-What if we want to share information between two parts of the 
-
-you should think about \var{nbr} not just as a device getting
+You guessed it!  The problem is the \var{if} that we are using.  When
+the program branches on \qvar{sense 1}, that is changing the space
+where the LED calculations are running.  Rather than running
+everywhere, they run only on the devices where we have already made
+guesses.  Why is this so bad?  Think about what happens if you guess a
+device that's right next to one of the targets.  When we run the
+\var{distance-to} function on that device, it uses \var{nbr} and
+\var{nbr-range} in order to figure out how far it is from the nearest
+target.  You should think about \var{nbr} not just as a device getting
 information from its neighbors, but also as {\em sharing} information
-with its neighbors.
+with its neighbors.  So if a device isn't in the same branch of an
+\var{if}, it won't share its information.  Even though there is a
+target right next door, unless we've already guessed the target, the
+target won't be sharing information in the \var{distance-to}, and the
+device we just guessed at won't be able to tell that it's close.
 
-NEED ONE MORE EXAMPLE, THAT USES MUX
+For this reason, there is another type of branch in Proto.  This
+function is called \var{mux}, and it works just like \var{if} except
+that both branches run everywhere.  This is a very useful tool for us,
+because it lets the two branches share information back and forth if
+they want to.  Now, the test expression is used to pick which branch
+gives the final value of the functions, rather than picking where each
+branch runs.  We need both \var{if} and \var{mux} branches: sometimes
+we will want to stop information from flowing and will use \var{if}
+and other times we will want to share information and will use
+\var{mux}.
 
-An \var{if}
+\problem{Let's try this out: try rewriting the ``hot and cold'' game
+  using \var{mux} instead of \var{if}.}
 
-\label{s:mux}
-We use \var{mux} because \var{mux} evaluates both
-parts of an expression, rather than \var{if}, which only evaluates
-one.  Look in the Proto Language Reference for information on mux and
-if.
-\TODO{}
+When you're finished, look here for the answer.  Our code, which may differ
+from yours, looks like this:
 
-Note the IF interaction with REP down below
+\begin{quote}
+\begin{verbatim}
+(def hotcold ()
+  (let ((target (once (< (rnd 0 1) 0.03))))
+    (green (mux (sense 1) target 0))
+    (red (mux (sense 1) (< (distance-to target) 25) 0))
+    (blue (mux (sense 1) (> (distance-to target) 50) 0))))
+\end{verbatim}
+\end{quote}
+
+Try running this version, using the same terminal command as before,
+and see that it's now working correctly.  When you tried fixing the
+\var{hotcold} program, you might have had a hard time getting the LEDs
+to not turn on until you hit \qvar{sense 1}.  If that happened to you,
+it's because \var{mux} is running both branches, not just the one that
+gets picked in the end.  So if you run \qvar{(mux (sense 1) (red 1)
+  (green 1))} you'll always have both the red LED and the green LED
+on!
+
+You now understand one of the trickiest bits about thinking in Proto.
+When we write our programs, we're not just computing over space, we're
+changing the space where we're computing.  If you think carefully
+about {\em where} your program is running, you will always be able to
+understand what is going on and how to get your programs right.
+
+\problem{Exercise 1: Fix the \var{hotcold} program without using \var{mux}.}
+
+\problem{Exercise 2: Create an ``intersection of bullseyes'' pattern.
+  Use two sources, and around each source create a bullseye pattern
+  with a radius of 45 meters.  Only turn on LEDs in the overlap
+  between two bullseyes overlap, and only turn on the LED for the
+  father distance.  When the sources are on top of one another, this
+  should produce a perfect bullseye, and when they're barely close
+  enough to intersect it should produce a thin perpendicular patch of
+  the outermost color.}
+
+\problem{Exercise 3: Calculate how far every device in space is from
+  \qvar{sense 1}, if we restrict travel to only those locations within
+  20 meters of \qvar{sense 2} and more than 50 meters from \qvar{sense 3}}
 
 \section{Using Time}
 
@@ -928,7 +1010,15 @@ When the program executes, turn \qvar{sense 1} on for one of the
 devices.  A timer begins to run on that device (though our microwaves
 are counting seconds up instead of down, the way that ordinary
 microwaves do).  Turn it off and the timer shuts off and returns to
-zero.  Now let's assume that you have just taken the soup out of the
+zero.  Turn it back on again and it starts counting up from zero.
+This is because the \var{rep} function is inside the branch of an
+\var{if}.  When we turn off \qvar{sense 1} for a device, the \var{rep}
+expression stops being run and so \var{t} stops existing on that
+device.  When we turn it back on, there's no old value of \var{t} for
+it to evolve from, and so it has to start all over again with the
+initial value.
+
+Now let's assume that you have just taken the soup out of the
 microwave out for a moment, to see if it is hot enough.  It's not, so
 you put it back in, and want the timer to start up right where you
 left off.  With this program, that would not work, and you would have
@@ -936,7 +1026,7 @@ to start it again from zero.  To fix this, let's change the ``evolve''
 part of the \var{rep} function (see page 5 of the Proto Language
 Reference), so that that this function does not restart every time,
 and so that \var{t} stays at its new value when the timer is not
-running, rather than going back to zero. Here is my code:
+running, rather than going back to zero. Here is our code:
 
 \begin{quote}
 \begin{verbatim}
@@ -984,7 +1074,7 @@ information from one device to another and your \var{rep} or
 \var{ledfed} feedback operation remembers the information so that the
 device can pass it on for the next hop.
 
-Here is my code:
+Here is our code:
 \begin{quote}
 \begin{verbatim}
 (def emergency (src) 
@@ -1025,6 +1115,8 @@ makes sense because information spreads indiscriminately in all
 directions.  It's even more appropriate because once a piece of
 information like a a high \var{max-d} value is out there, there is not
 way to retract it and lower \var{max-d} again.
+
+\end{document}
 
 Now, thinking about it in literal code, we know \var{d} is set as the
 distance from every device to the source.  The letfed function
@@ -1219,7 +1311,7 @@ Tell the destination to stay put.
 Ask the ship to travel towards the integral (int-hood) of the device vectors that are closer to the destination than it is. Use the (norm 0.5 vec) function for the speed and direction return to the ship.
 All other points should stay put.
 
-	Remember: muxs allow for all parts of a program to evaluate, while the if only runs the true statement in the places where it is true, or the false statement where it is false. Be careful that where you need it to take both branches into account, you use mux. Try to differentiate between these when writing your program. Refer to the Proto Language Reference if you need help. Consider and refer back to the “MoveIn” program, to best remember how to intertwine space and motion. When you finish, look here for my code:
+	Remember: muxs allow for all parts of a program to evaluate, while the if only runs the true statement in the places where it is true, or the false statement where it is false. Be careful that where you need it to take both branches into account, you use mux. Try to differentiate between these when writing your program. Refer to the Proto Language Reference if you need help. Consider and refer back to the “MoveIn” program, to best remember how to intertwine space and motion. When you finish, look here for our code:
 
 (def voyage (ship destination) 
        (let ((d (distance-to destination))) 
