@@ -3,17 +3,16 @@
 
    <property file="${os.name}.properties" />
    <property name="proto-dir" location="../proto"/>
-   <property name="universal-tests" location="../proto/src/tests/"/>
-   <!-- <property name="universal-tests" location="../proto/src/tests/universal/"/> -->
-   <property name="paleo-only-tests" location="../proto/src/tests/paleo-only/"/>
-   <property name="neo-only-tests" location="../proto/src/tests/neo-only/"/>
+   <property name="test-script-dir" location="${proto-dir}/src/tests/"/>
+   <property name="universal-tests" location="${proto-dir}/src/tests/universal/"/>
+   <property name="paleo-only-tests" location="${proto-dir}/src/tests/paleo-only/"/>
+   <property name="neo-only-tests" location="${proto-dir}/src/tests/neo-only/"/>
 
-   <!-- override for Paleo compiler -->
-   <property name="isNeo" value="true"/>
+   <!-- override for Paleo compiler -DisNeoCompiler=false" -->
+   <property name="isNeoCompiler" value="true"/>
 
    <!-- the install directory can be overriden on the command line using -Dinstall-dir=<location> -->
-   <!-- <property name="install-dir" location="/opt/hudson/jobs/Proto/workspace/bin/"/> -->
-   <property name="install-dir" location="/home/aadler/bin/"/>
+   <property name="install-dir" location="/opt/hudson/jobs/Proto/workspace/bin/"/>
  
    <target name="main" depends="build,test">
      <echo>Starting Ant main target...</echo>
@@ -24,6 +23,9 @@
      <echo>Running on host ${computer.hostname}</echo>
      <condition property="isDante">
        <equals arg1="${computer.hostname}" arg2="dante"/>
+     </condition>
+     <condition property="isNeo">
+       <equals arg1="${isNeoCompiler}" arg2="true"/>
      </condition>
    </target>  
 
@@ -127,7 +129,7 @@
      <antcall target="test-proto-universal" />
      <antcall target="test-proto-universal-dante" />
      <exec dir="${universal-tests}" executable="${pythonpath}" >
-       <arg value="${universal-tests}/protoTestOutputFormatter.py" />
+       <arg value="${test-script-dir}/protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
      <antcall target="cleanDump-universal" />
@@ -139,6 +141,7 @@
       <arg value="${install-dir}/bin/prototest.py" />
       <arg value="--proto=${install-dir}/bin/proto" />
       <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
     </exec>
   </target>
@@ -149,6 +152,7 @@
       <arg value="${install-dir}/bin/prototest.py" />
       <arg value="--proto=${install-dir}/bin/proto" />
       <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
       <env key="LD_LIBRARY_PATH" value="/usr/local/lib/"/>
     </exec>
@@ -164,7 +168,7 @@
      <antcall target="test-paleo-only" />
      <antcall target="test-paleo-only-dante" />
      <exec dir="${paleo-only-tests}" executable="${pythonpath}" >
-       <arg value="${paleo-only-tests}/protoTestOutputFormatter.py" />
+       <arg value="${test-script-dir}/protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
      <antcall target="cleanDump-paleo" />
@@ -176,6 +180,7 @@
       <arg value="${install-dir}/bin/prototest.py" />
       <arg value="--proto=${install-dir}/bin/proto" />
       <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
     </exec>
   </target>
@@ -186,6 +191,7 @@
       <arg value="${install-dir}/bin/prototest.py" />
       <arg value="--proto=${install-dir}/bin/proto" />
       <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
       <env key="LD_LIBRARY_PATH" value="/usr/local/lib/"/>
     </exec>
@@ -201,7 +207,7 @@
      <antcall target="test-neo-only" />
      <antcall target="test-neo-only-dante" />
      <exec dir="${neo-only-tests}" executable="${pythonpath}" >
-       <arg value="${neo-only-tests}/protoTestOutputFormatter.py" />
+       <arg value="${test-script-dir}/protoTestOutputFormatter.py" />
        <arg value="*.RESULTS" />
      </exec>
      <antcall target="cleanDump-neo" />
@@ -213,16 +219,18 @@
       <arg value="${install-dir}/bin/prototest.py" />
       <arg value="--proto=${install-dir}/bin/proto" />
       <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
     </exec>
   </target>
     
-  <target name="test-new-only-dante" if="isDante">
+  <target name="test-neo-only-dante" if="isDante">
     <echo>Testing Proto with neo only tests for dante...</echo>
     <exec dir="${neo-only-tests}" executable="${pythonpath}" >
       <arg value="${install-dir}/bin/prototest.py" />
       <arg value="--proto=${install-dir}/bin/proto" />
       <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
       <env key="LD_LIBRARY_PATH" value="/usr/local/lib/"/>
     </exec>
