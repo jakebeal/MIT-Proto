@@ -5,7 +5,7 @@ convert them to Ant JUnit XML format. This will enable build tool Hudson
 to provide a visual display of the test results.
 '''
 
-import sys, glob
+import sys, glob, os
 import xml.etree.cElementTree as ET
 
 
@@ -113,6 +113,15 @@ class ResultFileObject:
             directory = "xml/"  # this is for linux and OS X
         else:
             directory = "xml/"  # this is for Windows
+        try:
+            os.makedirs(directory)
+        except OSError:
+            if os.path.isdir(directory):
+                # We are nearly safe
+                pass
+            else:
+                # There was an error on creation, so make sure we know about it
+                raise
         fileName = directory + self.testSuite.name + ".xml"
         #self.elementTree.write(sys.stdout,"UTF-8")
         self.elementTree.write(fileName,"UTF-8")
