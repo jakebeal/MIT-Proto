@@ -52,7 +52,7 @@ buildregistry_SOURCES = \
 buildregistry_LDADD = \
 	../shared/libshared.la \
 	../compiler/libcompiler.la \
-	libsim.la
+	libsim.la \
 	../shared/libshared.la \
 	../compiler/libcompiler.la
 buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic
