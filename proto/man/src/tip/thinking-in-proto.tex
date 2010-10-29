@@ -750,16 +750,6 @@ the green LED turns on and the red LED does not.  Thought about in
 terms of individual devices like this, what is happening is fairly
 intuitive.
 
-\begin{figure}[ht]
-\centering
-\subfigure[]{\includegraphics[height=2in]{figures/restrict.png}}
-\subfigure[]{\includegraphics[height=2in]{figures/restriction.pdf}}
-\caption{When \var{if} is used to choose which LED to turn on (a), it
-  splits the space into two parts and runs each branch only in its own
-  part.}
-\label{f:restriction}
-\end{figure}
-
 We can also think about this program in terms how it is acting over
 the whole space at once.  In this view, the \var{if} is actually
 changing {\em where} the program runs.  Ordinarily, when we write a
@@ -770,6 +760,16 @@ that turns on the red LED.  In the other part, it runs the program
 that turns on the green LED.  This way of thinking about running a
 Proto program may be less intuitive, but thinking about it this way
 will help to understand more complicated programs.
+
+\begin{figure}[ht]
+\centering
+\subfigure[]{\includegraphics[height=2in]{figures/restrict.png}}
+\subfigure[]{\includegraphics[height=2in]{figures/restriction.pdf}}
+\caption{When \var{if} is used to choose which LED to turn on (a), it
+  splits the space into two parts and runs each branch only in its own
+  part.}
+\label{f:restriction}
+\end{figure}
 
 Let's use our new understanding to think about how \var{if} should
 interact with computations over space.  When we use functions like
@@ -1116,10 +1116,8 @@ directions.  It's even more appropriate because once a piece of
 information like a a high \var{max-d} value is out there, there is not
 way to retract it and lower \var{max-d} again.
 
-\end{document}
-
 Now, thinking about it in literal code, we know \var{d} is set as the
-distance from every device to the source.  The letfed function
+distance from every device to the source.  The \var{letfed} function
 establishes a variable (\var{max-d}), and initializes it to zero, and
 continuously evolves \var{max-d} every step with the next section of
 code.  The \var{max} function takes the higher of the two values that
@@ -1127,148 +1125,280 @@ follow it.  The first expression returns \var{d} unless \var{d} is
 still infinite (the device's own estimate, once it has one), and the
 second expression returns the maximum value of the neighbor's values
 of \var{max-d}.  After this \var{letfed} function has evaluated
-several times in each device, each device will have found the \var{max-d} to
-be the farthest distance to source.  We then have the farthest point
-identify itself by asking, is the value of \var{max-d} equal to my \var{d}?
+several times in each device, each device will have found the
+\var{max-d} to be the farthest distance to source.  
+
+This type of pattern, where we wrap a neighborhood computation in a
+\var{letfed} or \var{rep}, is very common in Proto programs.  This is
+always how we build programs over long distances.  The neighborhood
+computation moves information around locally, and the \var{letfed} or
+\var{rep} remembers the information so that it can be passed on to
+other neighbors.  For example we can build a simplified version of
+\var{distance-to} list this:
+
+\code{proto -v -c "(rep d (inf) (mux (sense 1) 0 (min-hood+ (+ (nbr-range) (nbr d)))))"}
+
+This program is really just applying the triangle inequality, which
+you probably remember from geometry class: the shortest distance
+between two points is no longer than the distance through another
+point nearby.  So here the \var{sense 1} devices are our source, that
+always have distance zero.  They store this in their distance
+estimate, which gets named \var{d} and share their \var{d} value with
+neighbors---notice that we have to use \var{mux}.  Their neighbors
+measure how far they are away, add zero, and take the smallest for
+their own \var{d}.  It goes on outward like that through the network,
+with each device estimating its distance by looking for the shortest
+distance through a neighbor.  We thus build programs that ``chain''
+information from neighbor to neighbor, spreading throughout the whole
+space.  This is a very powerful idea, because if we build the neighbor
+calculation in terms of continuous units like meters and seconds, then
+it doesn't matter how big the neighborhoods are, just whether it's
+possible to get from one area to another.
+
+In the \var{emergency} program, we have the farthest point identify
+itself by asking, is the value of \var{max-d} equal to my \var{d}?
 However, saying this directly will not work.  Why?  Imagine the field
 again. The farthest device has finally established its distance to the
-source through communication with three points that form its path to
-the source. It adds its distance to the first point, plus the first
-points distance to the second point, and so on along this path. Let us 
-imagine it comes up with a value of 160 as its distance to the source. All the
-points in the network now take this value as max-d. But wait! Now the
-farthest point realizes that indeed, this path through these three
-devices to the source is not as straight and therefore not as short as
-the shortest possible path. The shortest possible distance through the
-new path is 150, so d is changed to 155. But all the devices around
-this point tell it that max-d is 160, so it thinks it is not the
-farthest device. So we use (< (abs(- max-d d)) 10)to allow the devices
-a margin of error. However, this is a rather inaccurate method. There
-is a much more accurate way to do this:
+source through communication with the devices that form its path to
+the source.  It adds its distance to the first device on the path,
+plus that device's distance estimate.  That device's distance estimate
+is its distance to the second device on the path, plus the second
+device's distance estimate, and so on along this path.  Let us imagine
+the farthest device comes up with a value of 160 as its distance to
+the source.  All the devices in the network now take this value as
+\var{max-d}.  But wait!  The devices aren't all running synchronized
+and some late-arriving information shows up.  Now the farthest device
+realizes that indeed, this path through these devices to the source is
+not as straight and therefore not as short as the shortest possible
+path.  The shortest possible distance through the new path is 155, so
+\var{d} is changed to 155.  But all the neighboring devices are still
+telling it that \var{max-d} is 160, and it can't tell where that
+information came from so it thinks it is not the farthest device.  In
+the version of \var{emergency} above, we use \var{(< (abs(- max-d d))
+  10)} as a kludge to allow the devices a margin of error.  However,
+this is a rather sloppy and unreliable method.  There is a much more
+accurate way to do this:
 
 \begin{quote}
 \begin{verbatim}
 (def emergency (src) 
   (let* ((d (distance-to src)) (dis (if (< d (inf)) (once d) 0))) 
-  (letfed ((max-d 0 
-	      (max (mux (< d (inf)) d 0) (max-hood (nbr max-d))))) 
-  (if (and (< d (inf)) (= max-d dis)) 
-      (let ((timer (rep t 0 (+ t (dt))))) 			 
-		(if (>= timer 20) 
-		    (red 1) 
-	         (blue 1))) 
-      (blue 0)))))
+    (letfed ((max-d 
+             0 
+             (max (mux (< dis (inf)) dis 0) (max-hood (nbr max-d)))))
+      (if (and (< d (inf)) (= max-d dis))
+        (let ((timer (rep t 0 (+ t (dt)))))
+          (if (>= timer 20) 
+              (red 1) 
+              (blue 1)))
+        0)))) ; Don’t need to do anything: LEDs shut off if not triggered
 \end{verbatim}
 \end{quote}
 
-Here, we establish this other variable, dis, as the first value of d
-which is less than infinity, because this is the max-d that will be
-established among the points. This way we are comparing the
-circulating values of max-d to the original distances communicated to
-neighbors, rather than the alterable values of d. This is still a
-trick, because it is not taking the most accurate values of d, but it
-is a more accurate way nonetheless. Challenge yourself to solve this
-problem in a different way.
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/emergency.png}
+  \caption{The \var{emergency} program searching for the farthest device.}
+  \vspace{-0.5cm}
+  \label{f:emergency}
+\end{wrapfigure}
 
-After the farthest device identifies itself, it sets a timer and
-defines such in the let function. The timer is now ticking away
-invisibly in our point. The devices checks in every step whether this
-timer's value exceeds twenty. When it does, it lights its red
-LED. Until then, a blue LED is lit. Execute this with this code in
-terminal:
+Here, we establish another variable, \var{dis}, as the first value of
+\var{d} that is less than infinity.  Now we instead use \var{dis} to
+establish \var{max-d} among the devices.  This way we are comparing
+the circulating values of \var{max-d} to the original distance
+estimated by a device, rather than the alterable values of \var{d}.
+This is still a trick, because it is not taking the most accurate
+values of \var{d}, but it will at least always choose some device as
+the likely farthest.
+
+\problem{Can you come up with a way to always correctly find the
+  farthest device using the most accurate values of \var{d}?}
+
+After the farthest device identifies itself, it sets a timer and names
+it in the innter \var{let} function.  The timer is now ticking away
+invisibly in the farthest device.  Each step, the devices check
+whether this timer's value exceeds twenty seconds.  When it does, it
+lights its red LED.  Until then, a blue LED is lit. Execute this with
+this code in your terminal:
 
 \code{proto -l -n 1000 "(emergency (sense 1))"}
 
-We use these arguments to display LEDs, and to set the number of
-devices to 1000.  Then turn on sense 1 on any point. You will soon see
-the blue dots fan out through the points, until there are just a few
-dots lit around the edges and in the corners. Eventually they wink out
-leaving a singular blue dot. Wait (roughly) twenty seconds more, and
-the LED of that device turns red.
+Remember, we use these command line arguments to display LEDs and to
+set the number of devices to 1000.  Then turn on \qvar{sense 1} on any
+device.  You will soon see blue dots fan out through the points, until
+there are just a few dots lit around the edges and in the corners.
+Eventually they wink out leaving a single blue dot.  Wait (roughly)
+twenty seconds more, and the LED of that device turns red.
 
 This program works fine for the use it is set for, but if you were the
 police chief, it is unlikely you would be told you had exactly twenty
-seconds to reach an emergency. You would make that determination based
-on what situation you were told was the emergency. So let's change
-this function just slightly. Instead of setting the time in the
-function to an automatic twenty seconds, we will let a value for time
-be input into the function from terminal. Up to this point in the
-tutorial, we have only used a single argument in our functions (src),
-but we are allowed an infinite number of function arguments.
+seconds to reach an emergency.  You would make that determination
+based on what situation you were told was the emergency.  So let's
+change this function just slightly.  Instead of setting the time in
+the function to an automatic twenty seconds, we will let a value for
+time be input into the function from the terminal.  Up to this point
+in the tutorial, we have only used a single argument in our functions
+(\var{src}), but we are allowed to use as many function arguments as we need.
 
-Let's add the argument TimeTilUrgent, and change our number of
-seconds, 20, to the variable TimeTilUrgent. Our function looks like
-this, with the altered text in bold:
+Let's add the argument \var{TimeTilUrgent}, and change our number of
+seconds, 20, to the variable \var{TimeTilUrgent}.  Our function now
+looks like this:
 
 \begin{quote}
 \begin{verbatim}
-(def emergency (src TimeTilUrgent) 
+(def emergency (src TimeTilUrgent)
   (let* ((d (distance-to src)) (dis (if (< d (inf)) (once d) 0))) 
-  (letfed ((max-d 0 
-	      (max (mux (< d (inf)) d 0) (max-hood (nbr max-d))))) 
-  (if (and (< d (inf)) (= max-d dis)) 
-      (let ((timer (rep t 0 (+ t (dt))))) 			 
-		(if (>= timer TimeTilUrgent) 
-		    (red 1) 
-	         (blue 1))) 
-      (blue 0)))))
+    (letfed ((max-d 
+             0 
+             (max (mux (< dis (inf)) dis 0) (max-hood (nbr max-d)))))
+      (if (and (< d (inf)) (= max-d dis))
+        (let ((timer (rep t 0 (+ t (dt)))))
+          (if (>= timer TimeTilUrgent)
+              (red 1) 
+              (blue 1)))
+        0)))) ; Don’t need to do anything: LEDs shut off if not triggered
 \end{verbatim}
 \end{quote}
 
-When we call the function from terminal:
+When we call the function from our terminal:
 
 \code{proto -l -n 1000 "(emergency (sense 1) 20)"}
 
-The TimeTilUrgent argument is set again to twenty by this call, but it
-can now be set as any numeric value. We can use fractions of time as
-well. If we changed dt to a fraction of itself (i.e. (* 0.3 (dt))), we
-can advance our timer by 0.3, a fraction of a step. In this way, we
-can change the way our timer runs.
+The \var{TimeTilUrgent} argument is set again to twenty seconds by
+this call, but it can now be set as any numeric value.  We can also
+change our timer to measure the progress of something other than
+seconds.  For example, it might measure how much fuel is left in an
+emergency power generator running at a medical clinic, and we need to
+get there before the fuel runs out and leaves the clinic without
+power.  If the generator burns 1 gallon of fuel every 5 minutes, then
+we can change \var{TimeTilUrgent} into \var{GallonsTilUrgent} and
+change \var{dt} to the appropriate fraction of itself: \var{(/ (dt) (*
+  5 60))}.  Thus, each second the timer advances by 1/300th of a
+gallon, measuring expenditure of 1 gallon every five minutes.  In this
+way, we can change the way our timer runs to match the problem that we
+are solving.
 
 As the programs used in this section demonstrate, time is a valuable
-aspect of Proto. Play around with the functions you have learned so
-far to do a few test programs. Set a task for the program to perform,
+aspect of Proto.  Play around with the functions you have learned so
+far to do a few test programs.  Set a task for the program to perform,
 and attempt to reach that goal using your new hold on the Proto
-Language. Remember to use the ever-helpful Proto Language Reference.
+Language.  Remember to use the ever-helpful Proto Language Reference.
 	
 \problem{Exercise 1: Modify your microwave timer program to count
-  down, like a normal microwave.  Add one minute to the timer every
-  time the user turns \qvar{sense 1} on (i.e. if the user toggles
-  \qvar{sense 1} three times, the microwave should run for three
-  minutes), and pause the timer whenever \qvar{sense 2} is on.}
+  down, like a normal microwave.  Then change the inputs, so that you
+  add one minute to the timer every time the user turns \qvar{sense 1}
+  on (i.e. if the user toggles \qvar{sense 1} three times, the
+  microwave should run for three minutes), and pause the timer
+  whenever \qvar{sense 2} is on.}
 
 \problem{Exercise 2: Create a program in which a timer begins in a
-  sense 1 device. Red LEDs go on that are within the distance of the
-  value of that timer. (eg. When the timer reaches 10, devices within
-  10 from the source turn on red LEDs).}
+  \qvar{sense 1} device.  Red LEDs go on that are within the distance
+  of the value of that timer (e.g., when the timer reaches 10 seconds,
+  devices within 10 meters from the source turn on red LEDs).}
 
 \problem{Exercise 3: Create a field of 10 points. Have them all turn
-  on timers. If the timer is at a multiple of three, have it turn its
-  LED red. If the timer is a multiple of three with a remainder of
-  one, turn the LED green. Else turn the LED blue. Be sure that the
-  timer is running in full steps, not in fractions.}
+  on timers.  If the timer, rounded to the nearest second, is at a
+  multiple of three, have it turn its LED red.  If the timer is a
+  multiple of three with a remainder of one, turn the LED green.  Else
+  turn the LED blue.  Make sure that your program works when the time
+  step is fractions, as well as whole seconds.}
 
 
 \section{Using Movement}
+
+Because Proto uses a network of numerous devices to perform diverse
+tasks, controlling group movement is essential to building for mobile
+devices in Proto.  Movement functions may tell devices to move
+towards or away from other devices, to follow a leader, to cluster in
+groups, and more.  These functions allow users to apply time and
+distance functions in new ways with new results. Movement functions
+are invaluable to the Proto programmer who wants to use movement in
+spatial computing.  Why don't we start by dissecting this example,
+which we can call straight out of terminal:
+
+\code{proto -m "(mov (if (sense 1) (tup 3) (disperse)))"}
+
+This program is one of the simplest one can do using Proto
+movement. The new parts:
+\begin{itemize}
+\item \var{tup}: ``tup'' is short for tuple, one of the data types we
+  have not used before.  The \var{tup} function takes the values it is
+  given and puts them into a short list.  When all of the values are
+  numbers, this is a vector, which can specify a speed and
+  direction in space.  Generally, the first value this vector is given
+  is its length along the x-axis; if it is given a second, that is its
+  length along the y-axis.  It can also be given a third for the
+  z-axis if we use the 3D mode of the simulator, which will be covered
+  later.  Any values we don't put in the vector are assumed to be
+  zero.
+\item \var{mov}: this function, as shown in the Proto language
+  reference, takes a vector and uses it to determine the velocity of a
+  device---the speed and direction that the device is traveling.
+\item \var{disperse}: this is a separate function that computes a
+  vector to each device, so that if the devices follow thei vectors,
+  they will move away from other devices within their radio-range.
+  This function will vary with different radio-ranges, because the
+  devices will only disperse from the devices they are communicating
+  with.  Look at page 13 of the Proto Language Reference for more
+  information on the \var{disperse} function.
+\end{itemize}
+
+Execute this function.  The Proto simulator displays 100 devices.
+After a moment, they begin moving about, and you soon have to zoom out
+(mouse scroll backwards) in order to see all of them on your screen.
+Eventually, they become semi-evenly spaced, wavering just a bit to one
+side or the other as they push each other out of communication range.
+Now, interrupt this peace by mass-selecting (click and drag over an
+area) a group of devices on the left side of the device map.  Then
+turn \qvar{sense 1} on for all of these devices.  Keep these devices
+selected, without clicking elsewhere.  They all begin to move right
+(in the positive direction of the x-axis).  Note that they other
+points do not recognize them and move away from them, because we have
+used an \var{if} and the \var{disperse} function only effects devices
+without \qvar{sense 1}.  \problem{Try coming back later and using \var{mux}
+instead to see what happens.}
+
+When these devices are completely in the midst of the other points,
+turn \qvar{sense 1} off (if you did not click somewhere else, these
+points should still be selected).  The devices around them suddenly
+disperse away from them again.
+
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/motion.png}
+  \caption{Moving devices dispersing.}
+  \vspace{-0.5cm}
+  \label{f:motion}
+\end{wrapfigure}
+
+Close this program, and then re-execute it.  Turn \qvar{sense 1} on a
+few points, and then press ``m'' on your keyboard.  All the devices
+are still there, but they have stopped moving.  The ``m'' key toggles
+movement on and off from inside the terminal, and as you saw in our
+terminal statement, the \qvar{-m} argument there enables movement
+initially.  Press ``m'' again to turn movement back on, and then press
+``w.''
+
+All the devices that have no doubt strayed outside of their original
+placement area now return to fit in the original screen size.  This
+argument is very useful because it creates invisible ``walls'' to push
+the devices back in to their original distribution area.  You can make
+sure the walls are there from the start by adding a \qvar{-w} to the
+command line.
+
+Execute this program again (remember, you can simply press the up key
+in your terminal to use previous statements).  When the simulator
+opens, press the ``v'' key.  The ``v'' key toggles on and off the
+display of tuple vectors.  You should now see little blue and pink
+tabs on the devices, pointing in the direction of the vectors returned
+to the devices.  The larger the magnitude of the vectors the longer
+their tuple displays are.  To establish this from the terminal, use
+the argument \qvar{-sv}.
+
+Let's try a program that uses both space and motion. Take a look at
+this piece of code:
 \end{document}
-
-	Because Proto uses a network of numerous devices to perform diverse tasks, group movement is essential to building for movable networks in Proto. Movement functions may tell devices to move towards or away from other devices, to follow a leader, to cluster in groups, and more. These functions allow users to apply time and distance functions in new ways with new results. Movement functions are invaluable to the Proto programmer who wants to use movement in spatial computing.
-	Why don't we start by dissecting this example, which we can call straight out of terminal:
-
-prompt$ proto -m "(mov (if (sense 1) (tup 3) (disperse)))"
-
-	This program is one of the simplest one can do using Proto movement. The new parts:
-
-tup: tup is a part of tuple, one of the data types we have not used. It takes the values it is given and puts them into a vector that determines the speed and direction of the value. The first value this vector is given is its direction along the x axis; if it is given a second, along the y axis, and it can be given a third if we use the 3D mode of the simulator for a z-axis, which will be covered later.
-mov: this function, as shown in the Proto language reference, takes a velocity, which must be in a tuple data type.
-disperse: This is a separate function which returns a vector to each device, and tells the devices to move away from other devices within their radio-range. This function will vary with different radio-ranges, because the devices will only disperse from the devices they are communicating with. Look at page 15 of the Proto Library Reference for more information on the disperse function.
-
-	Execute this function. The Proto simulator displays 100 points. After just a second, they begin moving about, and you soon have to zoom out (mouse scroll backwards) in order to encompass all of them on your screen. Eventually, they become semi-evenly spaced, wavering just a bit to one side or the other. Now, interrupt this peace by mass-selecting (click and drag over an area) a group of devices on the left side of the device map. Then turn sense 1 on on all of these points. Keep these points selected, without clicking elsewhere. They all begin to move right (in the positive direction of the x-axis). Note that they other points do not recognize them and move away from them, because the disperse function only effects regular devices.
-	When these devices are completely in the midst of the other points, turn sense 1 off (If you did not click somewhere  else, these points should still be selected). The devices around them suddenly disperse away from them again.
-	Close this program, and then re-execute it. Turn sense 1 on a few points, and then press m on your key board. All the devices are still there, but they have stopped moving. The m key toggles movement on and off from inside the terminal, and as you saw in our terminal statement, the -m argument there enables movement initially. Press “m” again to turn movement back on, and then press “w”. 
-All the devices that have no doubt strayed outside of their original placement area, now return to fit in the original screen size. This argument is very useful because it creates walls to pen the devices in to their original distribution area. You can establish this argument before you execute the program by adding a -w to the command line.
-	Execute this program again (remember, you can simply press the up key in your terminal to use  previous statements). When the simulator opens, press the “v” key. The “v” key toggles on and off the display of tuple vectors. You should now see little blue and pink tabs on the devices, pointing in the direction of the vectors returned to the devices. The larger the magnitude of the vectors the longer their tuple displays are. To establish this from the initial statement in terminal, use the argument -sv. 
-	Let's try a program that uses both space and motion. Take a look at this piece of code:
 
 (def MoveIn (src) 
   (let ((d (distance-to src))) 
@@ -1341,7 +1471,7 @@ kmcguire@intern1:~/proto/MyPrograms$ proto -m -n 1000 -s 1  "(mov (voyage (sense
 	Exercise 2: Adapt the emergency program so that the police device moves to the site of the emergency.
 	Exercise 3: Create a program in which regular points move left, sense 1 points move right, sense 2 points move up, and sense 3 points move down.
 
-9.Advanced Proto
+\section{Advanced Proto}
 	
 	Now that we have covered the three main aspects, Proto can be taken to higher levels than so far explained in the tutorial. Open the demos folder inside the Proto directory.  Open “flock.proto”. This looks like a big program, but all the text down at the bottom, where the lines begin with “; ;” are simply comments letting the reader know about this program. It is a good idea to use these comments in your own programs to remind yourself and others what the objective of the program is. Also, the programmer has left his terminal call code (the second comment down), so that he can easily run this code, without having to remember the exact way to call it.
 	What are flock.proto's objectives? It wants all the devices to disperse from the middle of the screen, arbitrarily grouping into flocks and following neighbors. Any (sense 1) devices should travel towards the middle of the screen, pulling the points in their groups along with them. It becomes a battle between sense 1 and non-(sense 1) devices  to, based on who holds majority in the flock, move towards the middle of the screen or ignore the middle (hence usually moving away).
@@ -1461,3 +1591,5 @@ prompt$ proto -m -s 1 -l -c "(olympian 0.2 500 (sense 1) (sense 2) (sense 3))"
 	Exercise 5: Imagine a real-life situation (some ideas: bowling, animals foraging for food, someone parting a crowd as he walks). Apply Proto.
 
 	If you have made it to this point, and you are pretty confident in the programs you have read and built, you have grasped the advanced concepts of Proto. Congratulations! I encourage you to take Proto further with some exploits of your own, and remember to use the Proto Language Reference for any of the functions I have not explained in this tutorial. Proto is an extremely useful and revolutionary new language which easily may lead to many new technologies in the quickly expanding world of spatial computing.
+
+\end{document}
