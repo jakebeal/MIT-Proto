@@ -1,6 +1,6 @@
 ;; a version of tracking designed to demo nicely, with all the code in one file
 (all
- (def gradcast (src f)
+ (def broadcast (src f)
    (letfed ((d (inf) (gradient src))
 	    (v f (mux src f (2nd (fold-hood
 			 	  (fun (r x) (if (< (1st x) (1st r)) x r))
@@ -14,7 +14,7 @@
  (def track (target dst coord)
    (if (channel target dst 10)
      (all (blue 1)
-      (mux dst (- (gradcast target (local-average coord)) coord) (tup 0 0 0)))
+      (mux dst (- (broadcast target coord) coord) (tup 0 0 0)))
      (tup 0 0 0)))
 
  (def track-demo ()

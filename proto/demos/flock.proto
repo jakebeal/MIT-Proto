@@ -5,9 +5,9 @@
 	  (normalize
 	   (int-hood
 	    (if (< (nbr-range) 5)
-	      (vmul -1 (normalize (nbr-vec)))
+	      (* -1 (normalize (nbr-vec)))
 	      (if (> (nbr-range) 10)
-		(vmul 0.2 (normalize (nbr-vec)))
+		(* 0.2 (normalize (nbr-vec)))
 		(normalize (nbr v))))))))
      (normalize 
       (+ dir (mux (> (vdot d d) 0) d v))))))

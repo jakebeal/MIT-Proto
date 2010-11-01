@@ -258,6 +258,8 @@ of the listed arguments we have not yet used will be used later when
 writing more advanced functions and expressions.  Try some of these
 exercises to enhance your understanding:
 
+\paragraph{Exercises}
+
 \problem{Exercise 1: Execute a program, adding arguments to the
   terminal statement so that the little red points will not be
   displayed and instead only their values will be displayed.}
@@ -461,6 +463,8 @@ basics of Proto. In the next chapters we will move on to how we can
 manipulate three different aspects of Proto: space, time, and
 movement, in order to succeed in more advanced functions.
 
+\paragraph{Exercises}
+
 \problem{Exercise 1: Tell the devices to turn on different LEDs based
   on what senses are turned on.}
 
@@ -473,6 +477,7 @@ movement, in order to succeed in more advanced functions.
 
 
 \section{Using Space}
+\label{s:space}
 
 Space is easy to manipulate in Proto, because Proto was designed for
 devices to work together by sending signals across space to other
@@ -685,7 +690,7 @@ text should again be saved in a file in your folder in Proto, as
 \var{{\em itsname}.proto}.  The name of the file before \var{.proto}
 should be the same (capitals and everything) as the name of the
 function.  So in this case, the file is called \var{bullseye.proto}
-and is in our MyPrograms folder.
+and is in your ``MyPrograms'' folder.
 
 \begin{wrapfigure}{R}{0.4\textwidth}
   \vspace{-0.8cm}
@@ -717,6 +722,8 @@ One can use these functions using distance, \var{nbr}s and
 \var{hoods}, incorporated with movement and time functions to create
 all sorts of useful Proto programs involving space.  You now know enough
 to create many geometric patterns in Proto.
+
+\paragraph{Exercises}
 
 \problem{Exercise 1: Create a program in which any device that is on
   the shortest path from a \qvar{sense 1} device to a \qvar{sense 2}
@@ -829,11 +836,11 @@ All of the functions in this code should be familiar except for
 expressions and runs them all, then returns the value of the last one.
 In this case, we're using it to check whether each of the three LEDs
 should be turned on.  The \var{once} function computes its expression
-just once, then remembers the value---we'll learn more about it in the
-next section.  Here, we're using it to have each device flip a coin
-and decide if it's once of the targets.  We do it with \var{once},
-because we don't want the devices to keep flipping coins and changing
-their minds.
+just once, then remembers the value---we'll learn more about how it
+can work in the next section.  Here, we're using it to have each
+device flip a coin and decide if it's once of the targets.  We do it
+with \var{once}, because we don't want the devices to keep flipping
+coins and changing their minds.
 
 Put the program in \var{hotcold.proto} and try running it with:
 
@@ -913,6 +920,8 @@ changing the space where we're computing.  If you think carefully
 about {\em where} your program is running, you will always be able to
 understand what is going on and how to get your programs right.
 
+\paragraph{Exercises}
+
 \problem{Exercise 1: Fix the \var{hotcold} program without using \var{mux}.}
 
 \problem{Exercise 2: Create an ``intersection of bullseyes'' pattern.
@@ -929,6 +938,7 @@ understand what is going on and how to get your programs right.
   20 meters of \qvar{sense 2} and more than 50 meters from \qvar{sense 3}}
 
 \section{Using Time}
+\label{s:time}
 
 In Proto, as with any programming language, time is an important part
 of its programs.  We have already seen how to display the Proto
@@ -1284,7 +1294,9 @@ aspect of Proto.  Play around with the functions you have learned so
 far to do a few test programs.  Set a task for the program to perform,
 and attempt to reach that goal using your new hold on the Proto
 Language.  Remember to use the ever-helpful Proto Language Reference.
-	
+
+\paragraph{Exercises}
+
 \problem{Exercise 1: Modify your microwave timer program to count
   down, like a normal microwave.  Then change the inputs, so that you
   add one minute to the timer every time the user turns \qvar{sense 1}
@@ -1304,8 +1316,13 @@ Language.  Remember to use the ever-helpful Proto Language Reference.
   turn the LED blue.  Make sure that your program works when the time
   step is fractions, as well as whole seconds.}
 
+\problem{Exercise 4: Write the \var{once} function, which takes in
+  an expression and remembers the first value that expression has,
+  no matter what it changes to later.}
+
 
 \section{Using Movement}
+\label{s:move}
 
 Because Proto uses a network of numerous devices to perform diverse
 tasks, controlling group movement is essential to building for mobile
@@ -1398,198 +1415,824 @@ the argument \qvar{-sv}.
 
 Let's try a program that uses both space and motion. Take a look at
 this piece of code:
-\end{document}
 
-(def MoveIn (src) 
-  (let ((d (distance-to src))) 
-    (if src (tup 0 0) 
-	 (let*((min-d (min-hood+ (nbr d))) 
-		 (vec (int-hood (if (and (< min-d (inf)) (= min-d (nbr d))) 
-			               (nbr-vec) (tup 0 0))))) 
-	   		(if (> (vlen vec) 0) (norm 0.5 vec) 
-			     (tup 0 0))))))
+\begin{quote}
+\begin{verbatim}
+(def MoveIn (src)
+  (let ((d (distance-to src)))
+    (mux src
+         (tup 0 0)
+         (let* ((min-d (min-hood+ (nbr d)))
+                (vec (int-hood (if (and (< min-d (inf)) (= min-d (nbr d)))
+                                   (nbr-vec)
+                                   (tup 0 0)))))
+           (if (> (vlen vec) 0)
+               (norm 0.5 vec) 
+               (tup 0 0))))))
+\end{verbatim}
+\end{quote}
 
-	This code is telling all regular points to move in towards the source point. Well literally, it tells all the neighbors to move towards their nearest neighbor. Because the source remains stationary, the group is eventually pulled to congregate on it. The new parts:
+This code is telling all non-source devices to move in towards the
+nearest source device.  Well literally, it tells all the neighbors to
+move towards whichever of their neighbors is nearest to the source.
+Because the source remains stationary, the group is eventually pulled
+to congregate on it.  The new parts:
+\begin{itemize}
+\item \var{let*}: this acts the same way as a normal \var{let}, except
+  that adding the \var{*} allows each value to be assigned
+  sequentially, so that, values assigned can use variables assigned
+  before them in the \var{let*} statement.  In this case, \var{vec}
+  uses \var{min-d} in its definition.
+\item \var{nbr-vec}: this function returns the field of vectors (x, y,
+  z coordinates) to all neighbors within communication distance.
+\item \var{int-hood}: takes the integral of the field it is given.
+\item \var{norm}: this function tells the device to ignore the
+  magnitude of the vector in its second argument (in this case, the
+  vectors integrated together in \var{vec}), and just keep the
+  direction given, while resetting this magnitude to the first value
+  in the \var{norm} function.
+\item \var{vlen}: gives the length of a vector.
+\end{itemize}
 
-let*- This performs in the same way as a normal let, but adding the * allows each value to be assigned sequentially, so that, as in this case, values assigned can use variables assigned before them in the let* statement (vec uses min-d in its definition).
-nbr-vec- This function returns the field of vectors (x, y, z coordinates) to all neighbors within radio-range.
-int-hood- Takes the integral of the field it is given, returning a vector.
-norm – This function tells the device to ignore the magnitude, in this case, the speed of the vectors added together (in vec), and just keep the direction given, while resetting this magnitude of speed to the first value in the norm function.
-vlen- gives the length of the vector.
+This \var{MoveIn} program is really less complicated than it looks.
+First, like in many of our other programs, it finds each device's
+distance to the source and names it \var{d}.  Then it asks if any of
+the devices are sources.  When one meets this condition, it is told to
+remain stationary (but with a \var{mux} so it can still tell others
+about its low \var{d} value), while the rest of the points perform the
+remaining expressions in the function.  The points then find the
+minimum value of \var{d} amongst their neighbors.  In this case,
+unlike with \var{closest} back in Section~\ref{s:space}, we're not
+looking for the lowest \var{d} anywhere, just amongst our neighbors.
 
-	This MoveIn program is really less complicated than it looks. First, like in many of our other programs, it sets each device's distance to the source as d. Then it asks if any of the devices are sources. When one meets this condition, it is told to remain stationary, while the rest of the points perform the remaining expressions in the function. The points again set the min-d as their minimum distance to any other device. In this case it is not specified as only the minimum distance from the source to its nearest point, but from every device to their closest device.
-	Then, let* defines the variable vec. This definition takes the integral, or the final vector after all the vectors that are shown in the part following it are added up. This function asks each device, is your min-d greater than inf (this is the same trick from before, asking if there is indeed a closest point) and the second part asks each device which of its neighbors is the closest point to itself (Which vector in the field returned by nbr d equals min-d). If devices nearby meet these qualifications, nbr-vec takes the vectors to these neighbors and these alone (the closest device(s)). Taking the integral (int-hood) of the nbr-vec then assigns vec as the vector from each device's to its nearest other device.
-	After all that, the actual code doesn't really seem like much at all. The if asks “Is the length of your vector greater than 0?”; in other words “have you not reached your destination yet?” If this is true, and the point still has a way to go, the device takes the vector it was given, and uses the norm function to take away any magnitudes it was given in measuring the vector, and simply assign the set speed (0.5) in the direction given in the vector. If the if does not return true, the point is told to stop (tup 0 0). Finally, this function returns a tuple back to each device, the direction and speed at which it is to move. 
-	Here is the terminal call:
+Then, \var{let*} defines the variable \var{vec}, which will tell each
+device which direction it should move towards.  This definition takes
+the integral, approximated by adding up the vectors from each neighbor
+and weighting each by the amount of nearby space that is nearer to
+that device than any other.  Inside the integral, the \var{if} asks
+each neighbor, is your \var{min-d} less than infinity (this is the
+same trick from before, asking if there is indeed a closest point) and
+the second part asks each neighbor whether that neighbor has the
+lowest \var{d} value (which vector(s) in the field returned by
+\var{(nbr d)} equals \var{min-d}).  If devices nearby meet these
+qualifications, \var{nbr-vec} takes the vectors to these neighbors,
+setting others to zero so that they will not affect the value of the
+integral.  Taking the integral (\var{int-hood}) of the selected
+\var{nbr-vec} value(s) then assigns \var{vec} as the vector from each
+device to the devices with the lowest \var{d} value, which must lie on
+the shortest path toward a source device.
 
-prompt$ proto -m -r 30 "(mov (MoveIn (sense 1)))" -s 0.1
+After all that, the actual code doesn't really seem like much at all.
+The \var{if} asks ``Is the length of your vector greater than 0?;'' in
+other words ``have you got a destination that you haven't yet
+reached?''  If this is true, and the point still has some way to go,
+the device takes the vector it was given, and uses the \var{norm}
+function to take away any magnitudes it was given in measuring the
+vector, and simply assign the set speed (\var{0.5 meters/second}) in
+the direction given in the vector.  If the \var{if} does not return
+true, the device is told to stop with \var{(tup 0 0)}.  Ultimately,
+this function returns a tuple back to each device, the direction and
+speed at which it is to move.
 
-	Obviously, because it was only given a tuple by this full function; our terminal code must tell the devices to move at that tuple using the mov function. We set our source as any point with sense 1 on, and then execute the function. What about these arguments? Well, these arguments tell the simulator to -m (enable movement) and -r 30 (increase radio-range to ensure most points are incorporated).  The -s 0.1 tells the simulator that instead of the default .01 steps per simulated second, we want to run 0.1. This speeds up the program, instead of speeding up the actual device movement. Having these devices move to quickly may cause the group to tear apart.
-	Now execute this program. Fifty red circles appear, randomly distributed through the simulator field. Notice they will not move until the if statement becomes true with a source point. Pick any point, and turn sense 1 on. Instantly all the points begin moving towards each other, running into each other, and moving towards the source point. Before 200 simulated seconds are up, the devices have been reduced to a wavering red mass inside the orange circle of our sense 1 point. 
-	Let's think about Proto's movement in a new way. A ship wishes to reach it's destination. Create a program so a selected sense 1 point (ship) moves towards a selected stationary sense 2 point (destination).  That sounds fairly simple, right? Just have the ship find out how far and which way to go, and set it loose. But this actually provokes a much more challenging way of thinking. Imagine a field of devices, all of them displaying their distance to the source. Illustrate this with a call in terminal:
+Here is the terminal call:
 
-prompt$ proto -r 10 -s 1 "(distance-to(sense 1))" -v -n 1000
+\code{proto -m -r 30 "(mov (MoveIn (sense 1)))" -s 0.1}
 
-	The simulator displays a field full of devices with blue “inf” values above their heads. This code directs all devices to give their distance to sense 1 as their displayed values. No sense 1 point has been created as of yet, so all their distances are infinite. Before you turn on sense 1, select a large amount of the devices in the middle of the right side. Now move all these points upward (move with shift-right-click-drag) so that the whole display looks like a giant “C”. Now turn sense 1 on on one of the points at the end of the upper wing of the “C”. All the devices begin to change their values, to reflect their new distances to the source. Notice, however, that the devices' distance values at the end of the lower wing of the “c” are much larger than those in the bottom-left corner. Because all these points determine their distances based on the distance values of their neighbors, these points get their distances  by communicating with their neighbors around the gap, rather than over it. Their distance values are greater because communication is limited by their shape. Similar to this, no ocean is perfectly square, so the ship must follow the shape of the ocean. Proto allows this easily, because its values and functions adjust themselves based on the shape of this “ocean”.
-	Now try to visualize this: Imagine that all the distance values become heights above the points on the “C”. The “C” would become a road-like spiral going downhill, sloping the whole map towards the source. Looking at it from the side:
-		Why not use this to our advantage? In creating this program, look at it as if  the ship needs to 'roll' downhill towards the sense 1 point, from greater to lesser distance values. How do we manage this? 
-		All we need is to have the ship ask the devices within its neighborhood if their distance values are lesser than its own. It can add the vectors to all devices in which this is true, and make this its direction. This makes it a far more compact program, and we do not have to worry about radio-range because the ship only has to take into account those devices in its direct neighborhood. This also make this problem more realistic, because the simulator does not suggest the possibility of a perfectly square ocean.
-	Try building this program on your own. Here are some guidelines:
+Obviously, because it was only given a tuple by this full function;
+our terminal code must tell the devices to move at that velocity using
+the \var{mov} function.  This is a common way to do movement in Proto:
+calculate the motions for all the devices as vectors, then only at the
+very end on the command line send those to \var{mov}.  This makes it
+easy to combine movement programs together, since a program can pick
+and choose and blend vectors, but commands to \var{mov} don't
+blend---only the last one is taken.
 
-Have each point establish their own distance to the destination as a value.
-Tell the destination to stay put.
-Ask the ship to travel towards the integral (int-hood) of the device vectors that are closer to the destination than it is. Use the (norm 0.5 vec) function for the speed and direction return to the ship.
-All other points should stay put.
+We set our source as any point with \qvar{sense 1} on, and then
+execute the function.  What about these arguments?  Well, these
+arguments tell the simulator to \qvar{-m} (enable movement) and
+\qvar{-r 30} (increase communication range to ensure most points are
+incorporated).  The \qvar{-s 0.1} tells the simulator that instead of
+the default 0.01 simulated seconds per step, we want to run stes of
+0.1 simulated seconds.  This speeds up the program (since it redraws
+the image ten times less frequently), instead of speeding up the
+actual device movement.  Having these devices move too quickly may
+cause the group to tear apart. 
 
-	Remember: muxs allow for all parts of a program to evaluate, while the if only runs the true statement in the places where it is true, or the false statement where it is false. Be careful that where you need it to take both branches into account, you use mux. Try to differentiate between these when writing your program. Refer to the Proto Language Reference if you need help. Consider and refer back to the “MoveIn” program, to best remember how to intertwine space and motion. When you finish, look here for our code:
+\problem{Can you figure out how you would speed them up to find out?
+  How fast can you make them go before the program stops working
+  correctly?}
 
-(def voyage (ship destination) 
-       (let ((d (distance-to destination))) 
-		(mux destination 
-			(tup 0 0) 
-			(mux ship 
-				(let* ((vec (int-hood 
-							(if (and (< (nbr d) (inf)) 										    (> d (nbr d))) 
-                                      (nbr-vec) 
-                                      (tup 0 0))))) 
- 					 (if (> (vlen vec) 0) 
-     					(norm 0.2 vec) 
-     					(tup 0 0))) 
-				(tup 0 0)))))
+Now execute this program.  One hundred red circles appear, randomly
+distributed through the simulator space.  Notice they will not move
+until the \var{if} statement becomes true with a source device.  Pick
+any device, and turn \qvar{sense 1} on.  Instantly all the devices
+begin moving towards each other, running into each other and moving
+towards the source device.  Before 200 simulated seconds are up, the
+devices have been reduced to a wavering red mass inside the orange
+circle of your \qvar{sense 1} device.
 
-	This program establishes d in every point as their individual distances to the source. Then it asks each point whether it is the destination. The destination is instructed not to move (tup 0 0). We use mux here to make sure that the program does not just stop when it has gone through the true statement in this. We want it to go through the large false statement as well. Then it asks the ship (mux again for the same reason) to create a vector (vec). This “vec” is the integral of the field of vectors to neighbors that meet these conditions. Their distances to the source are less than infinity (to ensure that a destination has been established), and the ships distance to the source is greater than theirs. This way, the ship now has the vector of the general direction of all the points in its neighborhood whose values of d are less (closer to the source). Proto continuously asks if this vector length (vlen vec) is greater than zero (this ship still has some distance to travel), and if it is, the ship should continue forward at 0.5 speed, and in the direction of the vector it has established. 
-	Call this code in terminal: 
+Let's think about Proto's movement in a new way.  A ship wishes to
+sail to its destination.  All we need to do is create a program so a
+selected \qvar{sense 1} point (the ship) moves towards a selected
+stationary \qvar{sense 2} point (the destination).  That sounds fairly
+simple, right?  Just have the ship find out how far and which way to
+go, and set it loose.  But this actually leads us to a much more
+challenging way of thinking, in which we will separate the movement
+from the decision about how to move.  Imagine a field of devices, all
+of them displaying their distance to the source.  Illustrate this with
+a call in your terminal:
 
-kmcguire@intern1:~/proto/MyPrograms$ proto -m -n 1000 -s 1  "(mov (voyage (sense 1) (sense 2)))"
+\code{proto -r 10 -s 1 "(distance-to (sense 1))" -v -n 1000}
 
-	This code uses a field with 1000 devices, simulating a large ocean. Again, we speed up virtual seconds, this time even faster, so that the steps run much quicker, but the ship does not have to increase its speed. The -m, as expected, allows movement.
-	Execute this code. A large field appears full of red circles representing devices. Turn sense 1 on one point, and sense 2 on another. Wait a few seconds while the information is flowing; when device communication informs the sense 1 point that there is a destination, it begins moving through the ocean of devices in a semi-straight line towards the destination. Within a minute, it reaches and hovers above the destination device. 
- 	Close the program, and re-execute it from terminal. This time, before turning any senses on,  try to create the same gap we created earlier in this section. If we put the two sensed points each on the ends of separate wings of the “C” shape, you will notice that the ship device goes all the way around the “C” (through the ocean) to reach its destination, rather than going across the gap. With Proto, the programmer is quite able to adapt a program to the limitations it might have in real life, such as a ship limited by the shape of its ocean. Warp the shape of the ocean even more and retry the program, and watch it navigate any channel as a real ship would.
-	If you are this far, you now have a fairly good grasp on the movement aspect of Proto, as well as the space and time branches covered earlier. You can probably see how diverse uses for Proto can be, as it can be applied in numerous real-life situations. Remember if you were stumped by this program, or even if you feel like you simply want a better grasp on any of these functions, they are all defined in the Proto Language Reference. Movement, space, and time combine to give Proto the ability to perform advanced spatial computing tasks, as demonstrated in the next section “Advanced Proto”.
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/c-sea.png}
+  \caption{A C-shaped ``sea'' of devices}
+  \vspace{-0.5cm}
+  \label{f:csea}
+\end{wrapfigure}
 
-	Exercise 1: Adapt the closest program from the “Using Space” section, so that the closest point moves to the source.
-	Exercise 2: Adapt the emergency program so that the police device moves to the site of the emergency.
-	Exercise 3: Create a program in which regular points move left, sense 1 points move right, sense 2 points move up, and sense 3 points move down.
+The simulator displays a field full of devices with blue \qvar{inf}
+values on top of them.  This code directs all devices to give their
+distance to \qvar{sense 1} as their displayed values.  No \qvar{sense
+  1} point has been created as of yet, so all their distances are
+infinite.  Before you turn on \qvar{sense 1}, select a large amount of
+the devices in the middle of the right side. Now move all these points
+upward (move with shift-right-click-drag) so that the whole display
+looks like a giant ``C'' (a C-shaped sea for sailing).  Now turn
+\qvar{sense 1} on at one of the devices at the end of the upper wing
+of the ``C.''  All the devices begin to change their values, to
+reflect their new distances to the source.  Notice, however, that the
+devices' distance values at the end of the lower wing of the ``c'' are
+much larger than those in the bottom-left corner.  Because all these
+points determine their distances based on the distance values of their
+neighbors, these points get their distances by communicating with
+their neighbors {\em around} the gap in the ``C,'' rather than over it.
+Their distance values are greater because communication is limited by
+their shape.  Similar to this, no ocean is perfectly square, so the
+ship must follow the shape of the ocean.  Proto allows this easily,
+because its values and functions adjust themselves based on the shape
+of this ``ocean.''
+
+Now try to visualize this.  Imagine that all the distance values
+become heights above the points on the ``C.''  The ``C'' would become
+a road-like spiral going downhill, sloping the whole map towards the
+source.
+
+In fact, why don't we visualize this in the Proto simulator?  Change
+the command line as follows:
+
+\code{proto -r 10 -s 1 "(red (* 0.3 (distance-to (sense 1))))" -l -v -n 1000}
+
+This is the same as before, but turns on LEDs with \qvar{-l} and feeds
+the distance values to the red LED after scaling them down so they'll
+fit on the screen better.  Make your ``C'' sea as before and turn on
+\qvar{sense 1} on an upper right device.  If you rotate the display
+around (left-drag with the mouse), you should see something like in
+Figure~\ref{f:cdist}.  Remember, you can reset the viewing angle in
+the display by pressing ``z.''
+
+\begin{wrapfigure}{L}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/c-sea-dist.png}
+  \caption{Distance to the destination through the ``sea.''}
+%  \vspace{-0.5cm}
+  \label{f:cdist}
+\end{wrapfigure}
+
+Why not use the fact that distances are shaped by the space to our
+advantage?  In creating this ship voyaging program, look at it as if
+the ship needs to ``roll'' downhill towards the destination, from
+greater to lesser distance values.  How do we manage this?
+
+All we need is to have the ship ask the devices within its
+neighborhood if their distance values are less than its own.  It can
+integrate the vectors to all devices in which this is true, which
+averages their directions, but not their magnitudes, and make this its
+direction.  This makes it a far more compact program, and we do not
+have to worry about communication range because the ship only has to
+take into account those devices in its direct neighborhood.  This also
+makes it possible for our program to work in more realistic
+environments, where we don't have a perfectly square ocean.
+
+Try building this program on your own. Here are some guidelines:
+\begin{itemize}
+\item Have each device establish its own distance to the destination.
+  You will probably want to name this value with a \var{let}.
+\item Ask the ship to travel towards the integral (\var{int-hood}) of
+  the vectors to neighbors that are closer to the destination than it
+  is.  Use the \var{norm} function for the final speed and direction
+  of the ship.
+\item Tell the destination and all other points to stay put.
+\end{itemize}
+
+Remember: \var{mux}s allow for all parts of a program to evaluate and
+share information, while the \var{if} only computes the \var{true}
+expression in the places where the \var{test} expression is true, or
+the \var{false} expression where the \var{test} is false.  Be careful
+that where you need your devices to take devices in both branches into
+account, you use \var{mux}.  Try to differentiate between these when
+writing your program.  Refer to the Proto Language Reference if you
+need help.  Consider and refer back to the ``MoveIn'' program, to best
+remember how to intertwine space and motion.  When you finish, look
+here for our code:
+
+\begin{quote}
+\begin{verbatim}
+(def voyage (ship destination)
+  (let ((d (distance-to destination)))
+    (mux destination
+         (tup 0 0)
+         (mux ship
+              (let ((vec (int-hood
+                           (if (and (< (nbr d) (inf))
+                                    (> d (nbr d)))
+                               (nbr-vec)
+                               (tup 0 0)))))
+                (if (> (vlen vec) 0)
+                    (norm 0.2 vec)
+                    (tup 0 0)))
+              (tup 0 0)))))
+\end{verbatim}
+\end{quote}
+
+This program establishes \var{d} in every devices as its individual
+distance to the source.  Then it asks each device whether it is the
+destination.  The destination is instructed not to move with with
+\var{(tup 0 0)}.  We use \var{mux} here to make sure that the
+destination will participate in the calculation of which way the ship
+should go.  Then the program asks whichever devices is the ship
+(\var{mux} again for a similar reason) to create a vector (\var{vec}).
+This \qvar{vec} is the integral of the field of vectors to neighbors
+that meet these conditions: their distances to the source are less
+than infinity (to ensure that a destination has been established), and
+the ship's distance to the source is greater than theirs.  This way,
+the ship now has the vector of the general direction of all the
+devices in its neighborhood whose values of \var{d} are less (closer
+to the source).  Proto continuously asks if this vector length
+(\var{vlen}) is greater than zero (this ship still has some distance
+to travel), and if it is, the ship should continue forward at 0.5
+meters per second speed, and in the direction of the vector it has
+established.
+
+Call this code in your terminal:
+
+\code{proto -m -n 1000 -s 1 "(mov (voyage (sense 1) (sense 2)))"}
+
+This code uses a field with 1000 devices, simulating a large
+ocean.  Again, we speed up virtual seconds, this time even faster, so
+that the steps run much quicker, but the ship does not have to
+increase its speed.  The \qvar{-m}, as expected, allows movement.
+
+Execute this code.  A large field appears full of red circles
+representing devices.  Turn \qvar{sense 1} on one point, and
+\qvar{sense 2} on another.  Wait a few seconds while the information
+is flowing; when neighbor-to-neighbor communication flowing through
+the field of devices informs the \qvar{sense 1} point that there is a
+destination, it begins moving through the ocean of devices in a
+semi-straight line towards the destination.  Within a minute or so, it
+reaches and hovers above the destination device.
+
+Close the program, and re-execute it from terminal.  This time, before
+turning any \qvar{sense} on, try to create the same gap we created
+earlier in this section.  If we put the two \qvar{sense} points each
+on the ends of separate wings of the ``C'' shape, you will notice that
+the ship device goes all the way around the ``C'' (through the ocean)
+to reach its destination, rather than going across the gap.  With
+Proto, the programmer is quite able to adapt a program to the
+limitations it might have in real life, such as a ship limited by the
+shape of its ocean.  Warp the shape of the ocean even more and retry
+the program, and watch it navigate any channel as a real ship would.
+
+If you are this far, you now have a fairly good grasp on the movement
+aspect of Proto, as well as the space and time branches covered
+earlier.  You can probably see how diverse uses for Proto can be, as
+it can be applied in numerous real-life situations.  Remember if you
+were stumped by this program, or even if you feel like you simply want
+a better grasp on any of these functions, they are all defined in the
+Proto Language Reference.  Movement, space, and time combine to give
+Proto the ability to perform advanced spatial computing tasks.  We
+will explore these abilities more in the next section.
+
+\paragraph{Exercises}
+
+\problem{Exercise 1: Adapt the \var{closest} program from
+  Section~\ref{s:space}, so that the closest point moves to the
+  source.}
+
+\problem{Exercise 2: Adapt the \var{emergency} program so that the
+  police device moves to the site of the emergency.}
+
+\problem{Exercise 3: Create a program in which regular points move
+  left, \qvar{sense 1} points move right, \qvar{sense 2} points move
+  up, and \qvar{sense 3} points move down.}
+
 
 \section{Advanced Proto}
-	
-	Now that we have covered the three main aspects, Proto can be taken to higher levels than so far explained in the tutorial. Open the demos folder inside the Proto directory.  Open “flock.proto”. This looks like a big program, but all the text down at the bottom, where the lines begin with “; ;” are simply comments letting the reader know about this program. It is a good idea to use these comments in your own programs to remind yourself and others what the objective of the program is. Also, the programmer has left his terminal call code (the second comment down), so that he can easily run this code, without having to remember the exact way to call it.
-	What are flock.proto's objectives? It wants all the devices to disperse from the middle of the screen, arbitrarily grouping into flocks and following neighbors. Any (sense 1) devices should travel towards the middle of the screen, pulling the points in their groups along with them. It becomes a battle between sense 1 and non-(sense 1) devices  to, based on who holds majority in the flock, move towards the middle of the screen or ignore the middle (hence usually moving away).
-	flock.proto uses a few new parts:
 
-normalize: This performs in a similar way to the norm function, which we learned earlier, but instead of taking both a value and a vector, and setting the speed to that of the given value, the normalize function just takes the vector and sets the speed to one. Both functions allow the direction of the given vector to remain unchanged.
-vmul: This is here to remind readers that vector(s) are multiplied in the following statement. Using the regular “*” multiplication operator here would not change the outcome of the expression.
-vdot: This operator takes the dot product of the two vectors given after it.  The dot product is an algebraic operation that takes two coordinate vectors and returns a single number obtained by multiplying corresponding entries and adding up those products. For example, two vectors of values [1 0 4l and [3 7 1] have a dot product of 7 (1 * 3 + 0 * 7 + 4 * 1).
-rep- This is not new, but as we have not used it since the beginning of “Using time”, you are reminded to look it up on page 7 of the Proto Language Reference to remind yourself of the basic form of a rep function statement.
+Now that we have covered the three main aspects, Proto can be taken to
+higher levels than so far explained in the tutorial.  We will look at
+two complex programs, for flocking and target tracking, then do a 
+``graduation test'' problem.
 
-	Although these are the only totally new parts, you will find that many of the things here are used in very different ways than previous methods. Let's run through exactly how this function executes. Looking at the code:
+\paragraph{Flocking}
+Open the demos folder inside the Proto directory.  Open
+\qvar{flock.proto}.  This looks like a big program, but all the text
+down at the bottom, where the lines begin with \qvar{;;} are simply
+comments letting the reader know about this program.  It is a good
+idea to use these comments in your own programs to remind yourself and
+others what the objective of the program is.  Also, the programmer has
+left a terminal call code (the second comment down), so that one can
+easily run this code without having to remember the preferred way to
+call it.
+
+What are \var{flock.proto}'s objectives?  It wants all the devices to
+arbitrarily group together into flocks of devices following their
+neighbors.  Any \qvar{sense 1} devices should travel towards the
+middle of the screen, pulling the devices in their groups along with
+them.  It becomes a battle between \qvar{sense 1} and non-\qvar{sense
+  1} devices to move towards the middle of the screen or ignore the
+middle (hence usually moving away).  When there are more than a few
+\qvar{sense 1} devices, they will usually win, but sometimes the flock
+will tear apart into more than one group.
+
+\var{flock.proto} uses a few new functions:
+\begin{itemize}
+\item \var{normalize}: this acts in a similar way to the \var{norm}
+  function, which we learned earlier, but instead of taking both a
+  value and a vector, and setting the length to that of the given
+  value, the \var{normalize} function just takes the vector and sets
+  the length to one.  Both functions allow the direction of the
+  given vector to remain unchanged.
+\item \var{vdot}: this operator takes the dot product of the two
+  vectors given after it.  The dot product is an algebraic operation
+  that takes two coordinate vectors and returns a single number
+  obtained by multiplying corresponding entries and adding up those
+  products.  For example, two vectors of values [1 0 4] and [3 7 2]
+  have a dot product of $(1 * 3 + 0 * 7 + 4 * 2) = 11$.
+\item \var{rep}: This is not new, but as we have not used it since the
+  beginning of Section~\ref{s:time}.  You are reminded to look it up
+  on page 5 of the Proto Language Reference to remind yourself of the
+  basic form of a \var{rep} expression.
+\end{itemize}
+
+Although these are the only totally new parts, you will find that many
+of the things here are used in very different ways than previous
+methods.  Let's run through exactly how this function executes.  Looking
+at the code:
 	
-(def flock (dir) 
-  (rep v 
-   (tup 0 0 0) 
-   (let ((d 
-	  (normalize 
-	   (int-hood 
-	    (if (< (nbr-range) 5) 
-	      (vmul -1 (normalize (nbr-vec))) 
-	      (if (> (nbr-range) 10) 
-		(vmul 0.2 (normalize (nbr-vec))) 
-		(normalize (nbr v)))))))) 
-     (normalize 
+\begin{quote}
+\begin{verbatim}
+(def flock (dir)
+  (rep v
+   (tup 0 0 0)
+   (let ((d
+          (normalize
+           (int-hood
+            (if (< (nbr-range) 5)
+                (* -1 (normalize (nbr-vec)))
+                (if (> (nbr-range) 10)
+                    (* 0.2 (normalize (nbr-vec)))
+                    (normalize (nbr v))))))))
+     (normalize
       (+ dir (mux (> (vdot d d) 0) d v))))))
+\end{verbatim}
+\end{quote}
 
-	Before we can really run through this code, we must also know what the single argument “dir” holds as its value. As shown in the terminal call code, dir's value is called as this: (* -0.5 (sense 1) (normalize (coord))). The “coord” part of this, as defined on page 13 of the Language Reference, is simply a pair of the given device's estimated coordinates. 
-	Imagine a coordinate field. The middle of the screen is (0, 0). Sense 1 could be in any of the four quadrants, at any set of coordinates. The (sense 1) (normalize coord) part of this statement establishes those coordinates as a direction to travel. If sense 1 is at (x, y) on the coordinate plane, what do we need to do to get it to the origin? We need to have it travel (-x, -y). By multiplying the coordinates of sense 1 by -0.5, we tell the sense 1 device to travel in the opposite direction of its own coordinates, thereby traveling back to the origin at our newly set speed of 0.5.
-	This is a primary part of our program. We have already established which way sense 1 needs to go. We feed this into flock.proto as an argument, and then continue with the program. The program uses the rep function to evolve the variable v. v is a vector initialized to 0 (stopped), and then evolved by the remainder of the function. We create a variable d which establishes the direction in which each device will travel. The definition asks each point to travel in one of three ways based on the answers to two questions: “Am I less than five away from a neighbor?” or “Am I greater than ten from a neighbor?”. The device moves at a magnitude of one away (negative direction) from those it becomes too close to (those who satisfy question one), and at magnitude of one towards those who satisfy neither question (and therefore are between five and ten from the other points). Those points which are greater than 10 away have a lesser pull, of only 0.2 magnitude (satisfy question 2). In this way, devices form groups with their neighbors, while still maintaining a certain distance away.
-	Then in the actual function part of this, devices are given the final direction of dir (only matters for sense 1 devices) plus their values of d, unless the dot product of d was zero (no neighbors within radio-range), in which case, move at v, which holds the previous value of d.
-	In the end:
-Regular points: move towards close neighbors, and away from far ones. Remain spaced by five unit radius from neighbors who are too close. Move with direction of group unless pull from sense 1 points exceeds pull of group.
-Sense 1 points: move towards the middle at “dir”, unless the pull of the d value (the pull from other points), is greater.
+Before we can really run through this code, we must also know what the
+single argument \qvar{dir} holds as its value.  As shown in the
+terminal call code, \var{flock} is called with its \var{dir} as this:
+\var{(* -0.5 (sense 1) (normalize (coord)))}.  If you look up the
+\qvar{coord} part of this, it is not defined in the Proto Language
+Reference!  That's because it gives each device a vector of its global
+coordinates.  We don't want to assume that is always possible, so
+\var{coord} is in one of the optional parts of the simulator
+model---see page 14 of the Proto Simulator User Manual.
 
-	Try executing this program with the call code given in the file. Remember, when you execute this, we are no longer in the “MyPrograms” directory. You will have to switch to the “Demos” part of the Proto directory to access this program and call it from terminal. Immediately you see a field of purple devices contorting and moving into clusters. Now press m to halt movement. The purple was caused by all the blue/red tuples that are displayed. Select a large piece of one of the clusters and turn sense 1 on. Notice that some of the nearby blue devices seem to blink and adjust their tuple display slightly.
-	Now turn movement back on. At first it may seem that the groups are simply continuing to contort, but you will see, if you selected a large group, the sense 1 points tug away from the group, probably taking a good fraction of the regular points with them, to 'flock' in the middle of the screen. The other groups simply continue on their way. Try to fool with this program. Execute it a few more times, seeing how sense 1 points behave when they are only a small part of the group. See how a regular point behaves when it is out of the radio-range of all other points. This program is designed with the principles of Iain Couzin's Nature paper on flock leadership.
-	Open the proto/demos folder again. Find track-demo.proto and open it up. It may look intimidating, but don't be fooled. You know that all the “; ;” lines are comments, and if you look carefully, there are actually four functions in here, not simply one. This is because the main function we will look at (track-demo.proto) calls all the other functions in this file at some point, directly in itself, or indirectly through a function. We do not even have to worry about the first function defined, “gradcast”, because this function was simply created as an alias for broadcast, and we already know what the broadcast function does. So scroll down until you see the line beginning with “(def channel”; we will start there.
-	The function channel's sole purpose is to establish a channel of points between the source and the destination point. It returns all the points that make up this channel as true, and the rest as false. Realize that because track-demo does not take any arguments, all the functions that it calls (including channel) must get their arguments from inside it. Because channel is actually called in track which is called by track-demo, We must follow first the arguments given to track in track-demo, and then what arguments these create in channel. If we define all the arguments used in all functions:
+Imagine a coordinate field.  The middle of the screen is coordinates
+$(0, 0)$. A \var{sense 1} device could be in any of the four
+quadrants, at any set of coordinates.  The \qvar{(normalize coord)}
+part of this statement establishes those coordinates as a direction to
+travel.  If a device is at $(x, y)$ on the coordinate plane, what do
+we need to do to get it to the origin?  We need to have it travel
+$(-x, -y)$.  By multiplying the coordinates of the device by
+\var{-0.5}, we tell the device to travel in the opposite direction of
+its own coordinates, thereby traveling back to the origin at our newly
+set speed of 0.5 meters/second.  Finally, multiplying by \var{(sense
+  1)} means that only \qvar{sense 1} devices will move this way: their
+value from \qvar{(sense 1)} is 1, while others get 0, which will turn
+the whole vector to $(0, 0)$ so they aren't trying to go anywhere in
+particular.
 
-target = sense 1 device
-dst = sense 2 device
-coord = coordinates of sense 1 and sense 2 (separate vectors)
-src = sense 1 device
-width = 10
+This is a primary part of our program.  We have already established
+which way \qvar{sense 1} devices want to go.  We feed this into
+\var{flock} as an argument, and then continue with the program.  The
+\var{flock} program uses the \var{rep} function to evolve the variable
+\var{v}. This \var{v} is a vector initialized to 0 (stopped), and then
+evolved by the remainder of the function.  We create a variable
+\var{d} which establishes the direction in which each device wants to
+travel.  The definition adds up influences from each of its neighbors,
+which fall into three categories.  Neighbors less than 5 meters away
+are ``too close'' and the device moves at a magnitude of one away
+(negative direction) from those.  Neighbors that are more than 10
+meters away are ``too far'' and the device moves at a magnitude of 0.2
+toward them.  Neighbors at an in-between distance (between 5 and 10
+meters distant) the device tries to align with, adding in their
+\var{v} value.  In this way, devices form groups with their neighbors,
+while still keeping a certain distance away.
 
-	Okay, so channel establishes d as the distance between the source and the destination.  Then it establishes trail as a boolean (true or false) variable where each point asks: Is my distance to the source plus my distance to the destination, less than their distance between each other plus one? If this is true, they are on the shortest path between the source and the destination.
-	Finally, channel returns true for all devices in which d is less than infinity (ensuring that a destination and a source have been established), and which fit the dilated trail width. This dilate function simply takes the trail of given points and expands it to include any points that are within the given width from the trail. The width given to this function is ten, so any points ten meters or less from the trail become part of the channel.
-	Now switch to the track function. This takes all its arguments from the list above as well. It uses one new aspect. The all function simply allows for the function to run through all parts given here in parallel. The function still returns the value of the last part that it runs. First, it asks for all the points returned as true from the channel function. Then these devices turn their LEDs blue. The other points simply return (tup 0 0 0).
-	Lastly, the track-demo function. This uses the all function again, and also two other functions:
+In the actual function part inside the \var{let}, devices are given a
+final direction of \var{dir} (which only matters for sense 1 devices)
+plus their values of \var{d}, unless the dot product of \var{d} was
+zero (another way of calculating vector length), which generally means
+there are no neighbors nearby, so just use the same \var{v} as before.
 
-rnd- This is simply a function that chooses a random number between the two numbers that follow it. In this case, it picks a random number between 0 and 1.
-once- this tells the function to read the number in the expression after it only once then remember it, and not to keep summoning a new value.
+In the end:
+\begin{itemize}
+\item Regular points: move away from close neighbors, and towards far
+  ones.  Try to move with the direction of the group.
+\item Sense 1 points: move towards the middle at strength ``dir,''
+  unless the pull of the \var{d} value (the pull from other points),
+  is greater.
+\end{itemize}
 
-	This function first establishes the true or false boolean variable “mobile”, which has a 50/50 chance of returning true or false. Then the next statement tells the points to move if they are a sense 1 point or a sense 2 point, or if mobile is true (true approximately half of the time). Then they move at 0.01 magnitude in the dither function, which is nearly non-existent movement in a random direction. Then, also perform the track function. Note that the track function simply returns a tuple to the destination, which it displays but does not move with.
-	Execute this program with the last terminal code listed in the track-demo.proto file. Again, remember that you will need to be in the proto/demos folder in terminal to execute this. Turn on sense 1 on one point, and sense 2 on another. Soon you will see blue dots fan out from the destination and then fade. Then you will see the blue fan out from the target, and when they reach the destination, suddenly a tuple display forms linking the two. Half the points will float around (dither), including these two, but they will remain connected by this tuple display.
-	Okay, now you are probably pretty handy at Proto. So let's try one last programming test. This one uses time, space and movement together. Here is the situation:
-	There is an Olympic runner, who is up for the race of his lifetime. The lowest time of the day is on the board. If he can beat it, he wins the gold medal. Build a function that takes several arguments (speed, time, runner, start, and finish) to help you simulate how fast he will need to go. Execute this program with the runner as sense 1, the start line as sense 2, and the finish line as sense 3. When ready to execute, input the best time currently on the boards (you may choose this). When executing the program, you will want sense 1 to approach the starting line, and then stop. When the finish line is turned on, have both the timer start, and the runner begin running. If the runner reaches the finish line before the timer is up, turn a green LED on the runner. If he does not reach it in time, stop him, and turn on a red LED instead. Adjust the runner's speed and the distance between the start and finish until you have  the runner win a narrow victory. 
-	Hint: the letfed and broadcast functions will prove helpful in this program. Look them up in the Proto Language Reference for help. Also, look at your previous ship program. Using this may simplify the movement part of your program significantly. When you think you have it, look here for my code:
+Try executing this program with the call code given in the file.
+Remember, when you execute this, we are no longer in your
+``MyPrograms'' directory.  You will have to switch to the ``Demos''
+directory of the Proto distribution to access this program and call it
+from terminal.  Immediately you see a field of purple devices
+contorting and moving into clusters.  Now press ``m'' to halt
+movement.  The purple was caused by all the blue/red vectors that are
+displayed.  Select a large piece of one of the clusters and turn
+\qvar{sense 1} on.  Notice that some of the nearby blue devices seem
+to blink and adjust their vector display slightly.
 
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/flock.png}
+  \caption{Flocking devices}
+%  \vspace{-0.5cm}
+  \label{f:flock}
+\end{wrapfigure}
+
+Now turn movement back on.  At first it may seem that the groups are
+simply continuing to contort, but you will see, if you selected a
+large group, the \qvar{sense 1} points tug away from the group,
+probably taking a good fraction of the regular points with them, to
+``flock'' in the middle of the screen.  The other groups simply
+continue on their way.  Try to fool with this program.  Execute it a
+few more times, seeing how \qvar{sense 1} points behave when they are
+only a small part of the group.  See how a regular point behaves when
+it is out of the communication range of all other points.  This
+program is designed with the principles of Iain Couzin's 2005 paper on
+flock leadership, called ``Effective leadership and decision-making in
+animal groups on the move,'' in the journal ``Nature.''
+
+\paragraph{Target Tracking}
+Open the \qvar{proto/demos} folder again. Find \var{track-demo.proto}
+and open it up.  It may look intimidating, but don't be fooled.  You
+know that all the \qvar{;;} lines are comments, and if you look
+carefully, there are actually four functions in here, not simply one.
+This is because the main function we will look at, \var{track-demo},
+calls all the other functions in this file at some point, directly in
+itself, or indirectly through another function.  We do not even have
+to worry about the first function defined, \qvar{broadcast}, because
+we already know what the \var{broadcast} function does.  So scroll
+down until you see the line beginning with \qvar{(def channel}; we
+will start there.
+
+The function \var{channel}'s purpose is to establish a fat line of
+device between the source and the destination devices.  It returns
+true for all the points that make up this channel, and false for all
+the rest.  Realize that because \var{track-demo} does not take any
+arguments, all the functions that it calls (including \var{channel})
+must get their arguments from inside it.  Because \var{channel} is
+actually called in \var{track}, which is itself called by
+\var{track-demo}, we must follow first the arguments given to
+\var{track} in \var{track-demo}, and then what arguments these create
+in \var{channel}.  If we define all the arguments used in all
+functions:
+\begin{itemize}
+\item \var{target} in \var{track} is any \qvar{sense 1} device
+\item \var{dst} in \var{track} is any \qvar{sense 2} device
+\item \var{coord} in \var{track} is the coordinates of devices
+\item \var{src} in \var{channel} is any \var{sense 1} device
+\item \var{dst} in \var{channel} is any \qvar{sense 2} device
+\item \var{width} in \var{channel} is 10
+\end{itemize}
+
+Okay, so \var{channel} establishes \var{d} as the distance between the
+source and the destination.  Then it establishes \var{trail} as a
+boolean (true or false) variable where each device asks: Is my
+distance to the source plus my distance to the destination, less than
+or equal to their distance between each other plus one meter?  If this
+is true, they are on the shortest path between the source and the
+destination.  If our distance numbers were perfectly accurate, we
+wouldn't have the ``plus one,'' but they aren't, and the extra bit
+makes sure we get a trail.
+
+Finally, \var{channel} returns true for all devices in which \var{d}
+is less than infinity (ensuring that a destination and a source have
+been established), and which fit the dilated \var{width} of the
+trail. This \var{dilate} function simply takes the given devices---in
+this case our shortest-path \var{trail}---and expands it to include
+any devices that are within the given \var{width}. The \var{width}
+given to this call of \var{dilate} is ten, so any devices ten meters
+or less from the \var{trail} become part of the channel.
+
+Now switch to the \var{track} function.  This takes all its arguments
+from the list above as well.  Remember that the \var{all} function
+simply runs through all the expressions it is given in parallel.  The
+function still returns the value of the last expression that it is
+given.  First, \var{track} restricts to run on only the points
+returned as true from the \var{channel} function.  Then these devices
+turn their LEDs blue, and the \var{dst} device computes the distance
+between its own coordinates and the coordinates of the \var{target},
+which are \var{broadcast} to it through the channel (remember that the
+\var{broadcast} is running only inside the channel because we are
+using \var{if}).  The other points simply return (tup 0 0 0).
+
+Lastly, the \var{track-demo} function.  This uses the \var{all}
+function again, and also two other functions:
+\begin{itemize}
+\item \var{rnd}: this is simply a function that chooses a random
+  number between the two numbers that follow it.  In this case, it
+  picks a random number between 0 and 1.
+\item \var{once}: recall from Section~\ref{s:mux} that this computes
+  the expression after it only once and then remembers it.
+\end{itemize}
+
+This function first establishes the true or false boolean variable
+\qvar{mobile}, which has a 50/50 chance of being true, and stays that
+way because of the \qvar{once}.  Then the next statement tells the
+devices to move if they are a \qvar{sense 1} devices or a \qvar{sense
+  2} device, or if \var{mobile} is true (approximately half of the
+devices).  Then they move at 0.01 magnitude of the vectors returned by
+the \qvar{dither} function, which results in slow movement in a random
+direction.  Finally, also perform the track function.  Note that the
+track function simply returns a tuple to the target at the
+destination, which is displayed but does not moved with.
+
+Execute this program with the last terminal code listed in the
+\var{track-demo.proto} file.  Again, remember that you will need to be
+in the \var{proto/demos} directory in you terminal to execute this.
+Turn on \qvar{sense 1} on one point, and \qvar{sense 2} on another.
+You will see blue dots fan out from the target and destination, then
+link up and suddenly a vector display forms linking the two.  Half the
+points will float around (dither), including these two, but they will
+remain connected by this tuple display.
+
+
+\paragraph{Graduation Test}
+
+Okay, now you are probably pretty handy at Proto, so let's try one
+last programming test.  This one uses time, space and movement
+together.  Here is the situation:
+
+There is an Olympic runner, who is up for the race of her lifetime.
+The lowest time of the day is on the board.  If she can beat it, she
+wins the gold medal.  Build a function that takes several arguments
+(speed, time, runner, start, and finish) to help you simulate how fast
+she will need to go.  Execute this program with the runner as
+\qvar{sense 1}, the start line as \qvar{sense 2}, and the finish line
+as \qvar{sense 3}.  When ready to execute, input the best time
+currently on the boards (you may choose this).  When executing the
+program, you will want \qvar{sense 1} to approach the starting line,
+and then stop.  When the finish line is turned on, have both the timer
+start and the runner begin running.  If the runner reaches the finish
+line before the timer is up, turn on a green LED on the runner.  If
+she does not reach it in time, stop him, and turn on a red LED
+instead.  Adjust the runner's speed and the distance between the start
+and finish until you have the runner win a narrow victory.
+
+Hint: the \var{letfed} and \var{broadcast} functions will prove
+helpful in this program.  Look them up in the Proto Language Reference
+for help.  Also, look at your previous ``ship voyage'' program.  Using
+this may simplify the movement part of your program significantly.
+When you think you have it, look here for our code:
+
+\begin{quote}
+\begin{verbatim}
 (def olympian (speed time runner start finish) 
   (letfed ((t 0 (if finish (+ t (dt)) 0))) 
-	(if (= (broadcast finish t) 0) 
-	    (mov (goto speed runner start)) 
-	    (if (< (broadcast finish t) time) 
-		(let ((d (distance-to finish))) 
-		(if (and runner (< d 1)) 
-		    (mov (tup 0 0 0)) 
-		    (mov (goto speed runner finish)))) 
-		(tup 0 0 0))) 
+    (if (= (broadcast finish t) 0) 
+        (mov (goto speed runner start)) 
+        (if (< (broadcast finish t) time) 
+            (let ((d (distance-to finish))) 
+              (if (and runner (< d 1)) 
+                  (mov (tup 0 0 0)) 
+                  (mov (goto speed runner finish))))
+            (tup 0 0 0)))
+    ; first 'paragraph' deals with motion vectors
 
-; first 'paragraph' deals with tuples
+    (let ((d (distance-to finish))) 
+      (if (and runner (< d 1)) 
+          (green 1) 
+          (if (< (broadcast finish t) time) 
+              0
+              (if runner (red 1) 0))))
+    ; second 'paragraph' deals with LEDs
+    ))
+\end{verbatim}
+\end{quote}
 
-	(let ((d (distance-to finish))) 
-	(if (and runner (< d 1)) 
-	    (green 1) 
-	    (if (< (broadcast finish t) time) 
-	    	(red 0) 
-	    	(if runner (red 1) (red 0)))))
+Now, our code actually uses a sub-functions for this project, as you
+will see if you look closely and find the \var{goto} function that is
+hidden in there.  This is not a function we have simply not covered,
+but a function we wrote specifically for use in this program.  A large
+part of our \var{olympian} function was simply moving one point to
+another (runner to start and runner to finish), so we pulled this out
+as a separate new \var{goto} function, and then called it inside of
+the \var{olympian} function instead of putting all of its code there
+twice.  Here is our \var{goto} function.
 
-; second 'paragraph' deals with LEDs
+\begin{quote}
+\begin{verbatim}
+(def goto (speed mover destination)
+ (let ((d (distance-to destination)))
+   (mux destination
+        (tup 0 0 0)
+        (mux mover
+             (let* ((vec (int-hood 
+                           (if (and (< (nbr d) (inf)) 
+                                    (> d (nbr d)))
+                               (nbr-vec)
+                               (tup 0 0 0)))))
+               (if (> (vlen vec) 0) 
+                   (norm speed vec)
+                   (tup 0 0 0)))
+             (tup 0 0 0)))))
+\end{verbatim}
+\end{quote}
 
-))
+Looking over this, you may notice that it is almost entirely identical
+to the \var{voyage} function that we created in the
+Section~\ref{s:move} of this tutorial.  The only differences, in fact,
+are that we added a speed argument so that we may choose the speed of
+motion when we call the function, and changed the \qvar{ship} variable
+name to a more generic \qvar{mover}.  By using this \var{goto}
+function, as with the \var{voyage} program, the runner will follow an
+indirect path to the finish line.  The user of this program can now
+set an actual track down for the runner to follow to the finish line,
+rather than simply cutting through on a straight line to the finish
+line.
 
-	Now, I actually used two functions for this project, as you will see if you look closely and find the goto function that is hidden in there. This is not a function we have simply not covered, but a function I wrote specifically for use in this program. A large part of this function was simply moving one point to another (runner to start and runner to finish), so I wrote this as a new goto function, and then called it inside of this function instead. Here is my goto function.
+Knowing this \var{goto} function, let's look at the \var{olympian}
+program and figure out how it works.  It begins by starting a
+\var{letfed} timer, which evolves only inside the finish line device.
+Remember, the \var{letfed} timer works much like the \var{rep} timer,
+but instead of just returning the variable \var{t}, it makes it
+available for use by the rest of the program.  In this case, we
+establish this \var{t} to always be zero except in the finish line
+device.
 
-(def goto (speed source destination) 
- (let ((d (distance-to destination))) 
- (mux destination 
-      (tup 0 0 0) 
-      (mux source 
-	   (let* ((vec (int-hood (if (and (< (nbr d) (inf)) (> d (nbr d))) 
-				 (nbr-vec) 
-				 (tup 0 0 0))))) 
- 	         (if (> (vlen vec) 0) 
-     	       	     (norm speed vec) 
-     	       	     (tup 0 0 0))) 
-  	   (tup 0 0 0)))))
+Next we see what looks like two separate ``paragraphs'' of code, with
+spaces in between.  Both of these pieces of code are actually running
+at once.  These parts cannot easily be combined into one block of
+nested \var{if}s, because they return different data types.  The first
+part deals with movement and therefore tuple data types, and the
+second deals with LEDs, which return scalar (real number) values.
 
-	Looking over this, you may notice that it is almost entirely identical to the voyage function which we created in the movement section of this tutorial. The only differences, in fact, are that we added a speed aspect so that we may vary the speed outside of the function in our terminal call, and changed the “ship” variable name to “source”. By using this goto function, as with the voyage program, the runner will follow an indirect path to the finish line. The user of this program can now set an actual track down for the runner to follow to the finish line, rather than simply cutting through on a straight line to the finish  line.
-	Knowing this goto aspect, lets look at the Olympian program, and figure out how it works. It begins by starting a letfed timer, which evolves only inside the finish line device. Remember, the letfed timer works much like the rep timer, but feeds the variable t at the end of the evolve statement for use by the rest of the program. In this case, we establish this t to always be zero except in the finish line device.
-	Next we see what looks like two separate paragraphs of code, with spaces in between. Both of these pieces of code are actually running at once. These parts cannot be combined into one block of nested ifs, because they both return different data types. The first part deals with movement and therefore tuple data types, and the second deals with LEDs, which return scalar values.
-	This first part asks whether the value of t broadcast from the finish device is zero (There is not yet a finish line, so the race has not begun), and if it is zero, then have the runner “goto” start. Remember that the goto function returns a tuple, so we must tell the device to move at that tuple with the mov function. If this value of t broadcast from the finish is not zero (the race has begun), we want the runner to goto the finish line, but only if he has not yet reached the finish line, and if the timer has not yet exceeded the lowest time, which we input into the function as “time”. The if statement here checks if the timer has yet exceed time, and if it has the runner needs to stop. If it hasn't, the next if checks whether or not the runner is within one from the finish line (essentially there), and if the runner has, it is again told to stop. If you used a zero value there, it is highly unlikely that the runner will ever reach exactly zero, and it will more likely waver over the finish line infinitely. Otherwise, the runner continues to go towards the finish line until one or the other of these checks become true.
-	The second part is relatively simple. We simply ask again those same two questions: “Have I reached the finish line?” and “If not, has the timer exceeded the input value of time?”. If the first question is true, turn the LED green, else if the second question is true, turn LED red. In all other cases, keep the LED off. This call can be used in terminal:
+The first part asks whether the value of \var{t} being broadcast from
+the finish device is zero (there is not yet a finish line, so the race
+has not begun).  If it is zero, then have the runner \qvar{goto} the
+start.  Remember that the \var{goto} function returns a vector, so we
+must tell the device to move at that velocity with the \var{mov}
+function.  If this value of \var{t} broadcast from the finish is not
+zero (the race has begun), we want the runner to \var{goto} the finish
+line, but only if she has not yet reached the finish line, and if the
+timer has not yet exceeded the lowest time, which we input into the
+function as \qvar{time}.  The \var{if} statement here checks whether
+the timer has yet exceed time, and if it has the runner needs to stop.
+If it hasn't, the next \var{if} checks whether or not the runner is
+within one meter from the finish line (essentially there), and if the
+runner is, it is again told to stop.  If you used a zero value there,
+it is highly unlikely that the runner will ever reach exactly zero,
+and it will more likely waver over the finish line indefinitely.
+Otherwise, the runner continues to go towards the finish line until
+one or the other of these checks become true.
 
-prompt$ proto -m -s 1 -l -c "(olympian 0.2 500 (sense 1) (sense 2) (sense 3))"
+The second part is relatively simple. We simply ask again those same
+two questions: ``Have I reached the finish line?'' and ``If not, has
+the timer exceeded the input value of time?.''  If the first question
+is true, turn the LED green, otherwise if the second question is true,
+turn the LED red.  In all other cases, keep the LED off.  Try running
+\var{olympian} with this call in your terminal:
 
-	Before you execute this, look at some of the values we have put in as the variables. We have set our speed to 0.2, and also sped up the seconds with the -s 1 command. We have set the time of the fastest runner on the board so far as 500 virtual seconds, and enabled movement, LEDs and connections. The runner, start line, and finish line have been set to their respective senses.
-	Execute this call in terminal. You should see an interestingly structured web of green connections and little red circles. You may either simply take the large and messy route in front of you as the runner's 'track', or create one yourself by moving around the points. Make sure the track that you want to use is all connected. Pick any point connected to the track (which will not break any major connections by moving), and set it as the runner (sense 1). Then set a point as the start line (sense 2), and watch as the runner makes its way over to the start. When the runner has reached the start line, set a finish line to kick off the race. If they are connected, the runner will soon begin to make its way to the finish, at the set speed of 0.2. Depending on how far away your start and finish lines are, the runner will either stop and turn its LED red, or go all the way to the finish line and turn its LED green, winning the race.
-	Re-execute this program, and change the inputs for speed and time in terminal. Change the distance and the 'track' in the simulator. See how this effects the outcome of the race. Try the race with only ten devices and set up a small, clearly formed track for the runner to follow.
-	Now, let me give you a new idea. In this program, and the demo ones that we looked at, you may have wondered why the tup values had three 0's rather than just two. Proto, along with the many other things it can do, can take its simulation to the literal next dimension. These zeros become the x, y and z coordinates of a 3D coordinate plane. Try the last olympian program, adding a -3d argument to the terminal call code. Extend the range to 40, and get rid of the -c argument to stop the connection display. Execute this.
-	You should now see the regular field of 100 devices, but this time the little circles are spheres instead, and are all different sizes. This is because some of them are farther away than others. Left-click-drag to see the box-like map of devices. If you turn the senses on as you would normally in this program, the runner will actually run at different heights within the box to get to a finish line on a totally different plane. Challenge: Go back to the MoveIn program, and make it run in 3d mode.
+\code{proto -m -s 1 -l -c "(olympian 0.2 500 (sense 1) (sense 2) (sense 3))"}
 
-	Exercise 1: Go back to the examples and programs you struggled with. Try them again with your new understanding.
-	Exercise 2: Right now the flock.proto program tells the Proto simulator to change the flocks movement based on three even sections of the default radio-range of fifteen (within 5, above 10, and in between). Adjust this so it takes three even sections of any given radio-range.
-	Exercise 3: Adjust the olympian program so that the finish and start lines are established as actual lines (between two points), and so that multiple runners can run (Multiple runners can run currently, but after a finish line has been established they no longer take the start line into account).
-	Exercise 4: Create a 3D “pool” in which someone is diving for treasure. Have one point at the top of the ocean dive for a stationary device at the bottom, and then have him bring it back to the top with him. Set a timer to make sure he doesn't run out of air, and light an LED when he is close to running out.
-	Exercise 5: Imagine a real-life situation (some ideas: bowling, animals foraging for food, someone parting a crowd as he walks). Apply Proto.
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/olympian-lose.png}
+  \caption{The \var{olympian} loses a race.}
+%  \vspace{-0.5cm}
+  \label{f:olympianloes}
+\end{wrapfigure}
 
-	If you have made it to this point, and you are pretty confident in the programs you have read and built, you have grasped the advanced concepts of Proto. Congratulations! I encourage you to take Proto further with some exploits of your own, and remember to use the Proto Language Reference for any of the functions I have not explained in this tutorial. Proto is an extremely useful and revolutionary new language which easily may lead to many new technologies in the quickly expanding world of spatial computing.
+Before you execute this, look at some of the values we have put in as
+the variables. We have set our speed to 0.2 meters/second, and also
+sped up the simulation step size with the \qvar{-s 1} command.  We
+have set the time of the fastest runner on the board so far as 500
+simulated seconds, and enabled movement, LEDs and visible network
+connections.  The runner, start line, and finish line have been set to
+their respective senses.
+
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/olympian-win.png}
+  \caption{The \var{olympian} wins a race.}
+%  \vspace{-0.5cm}
+  \label{f:olympianwin}
+\end{wrapfigure}
+
+Execute this call in terminal. You should see an interestingly
+structured web of green connections and little red circles.  You may
+either simply take the large and messy route in front of you as the
+runner's ``track,'' or create one yourself by moving around the
+points.  Make sure the track that you want to use is all connected.
+Pick any point connected to the track (which will not break any major
+connections by moving), and set it as the runner (\qvar{sense 1}).
+Then set a point as the start line (\qvar{sense 2}), and watch as the
+runner makes its way over to the start.  When the runner has reached
+the start line, set a finish line to kick off the race.  If they are
+connected, the runner will soon begin to make its way to the finish,
+at the set speed of 0.2 meters/second.  Depending on how far away your
+start and finish lines are, the runner will either stop and turn its
+LED red, or go all the way to the finish line and turn its LED green,
+winning the race.
+
+Re-execute this program, and change the inputs for speed and time in
+your terminal.  Change the distance and the ``track'' in the
+simulator.  See how this effects the outcome of the race.  Try the
+race with only ten devices and set up a small, clearly formed track
+for the runner to follow.
+
+Now, let me give you a new idea. In this program, and the demo ones
+that we looked at, you may have wondered why the tup values had three
+0's rather than just two.  Proto, along with the many other things it
+can do, can take its simulation to the literal next dimension.  These
+zeros become the x, y and z coordinates of a 3D coordinate plane.  Try
+the same \var{olympian} program call, adding a \qvar{-3d} argument to
+the terminal call code.  Also, extend the range to 40, and get rid of
+the \qvar{-c} argument to stop the connection display.  Execute this.
+
+\begin{wrapfigure}{R}{0.4\textwidth}
+%  \vspace{-0.8cm}
+  \includegraphics[width=0.38\textwidth]{figures/olympian-3d.png}
+  \caption{The \var{olympian} runs a 3D race.}
+%  \vspace{-0.5cm}
+  \label{f:olympianthreed}
+\end{wrapfigure}
+
+You should now see the regular field of 100 devices, but this time the
+little circles are spheres instead, and are all different sizes.  This
+is because some of them are farther away than others.  Left-click-drag
+to rotate the field of view and see the box-like collection of devices
+from other angles.  If you turn the senses on as you would normally in
+this program, the runner will actually run at different heights within
+the box to get to a finish line on a totally different
+plane. 
+
+\problem{Challenge: Go back to the MoveIn program, and make it run in
+  3d mode.}
+
+\paragraph{Exercises}
+\problem{Exercise 1: Go back to the examples and programs you
+  struggled with. Try them again with your new understanding.}
+
+\problem{Exercise 2: Right now the \var{flock} program tells the Proto
+  simulator to change the flocks movement based on three even sections
+  of the default communication range of fifteen meters (within 5
+  meters, above 10 meters, and in between).  Adjust this so it takes
+  three even sections of any given communication range.}
+
+\problem{Exercise 3: Adjust the \var{olympian} program so that the
+  finish and start lines are established as actual lines (between two
+  points), and so that multiple runners can run, one after another.
+  (Multiple runners can run currently, but after a finish line has
+  been established they no longer take the start line into account).}
+
+\problem{Exercise 4: Change the \var{olympian} program so that it
+  detects when a runner has {\em crossed} the finish line rather than
+  when a runner has reached it.}
+
+\problem{Exercise 5: Create a 3D ``pool'' in which someone is diving
+  for treasure.  Have one device at the top of the ocean dive for a
+  stationary device at the bottom, and then have the diver bring the
+  ``treasure'' back to the top with it.  Set a timer to make sure the
+  diver doesn't run out of air, and light an LED when it is close to
+  running out.}
+
+\problem{Exercise 6: Imagine some other real-life situation (some
+  ideas: bowling, animals foraging for food, someone parting a crowd
+  as he walks).  Apply Proto to model it.}
+
+If you have made it to this point, and you are pretty confident in the
+programs you have read and built, you have grasped how to think in
+Proto.  Congratulations!  We encourage you to take Proto further with
+some exploits of your own, and remember to use the Proto Language
+Reference for any of the functions we have not explained in this
+tutorial.  Hopefully you now, like us, also think that Proto is an
+extremely useful and easy way to program spatial computers.
 
 \end{document}
