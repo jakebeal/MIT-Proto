@@ -53,9 +53,10 @@ buildregistry_LDADD = \
 	../shared/libshared.la \
 	../compiler/libcompiler.la \
 	libsim.la \
+	libprotosimplugin.la \
 	../shared/libshared.la \
 	../compiler/libcompiler.la
-buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic
+buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}
 buildregistry_PROGRAMS = \
 	buildregistry
 
