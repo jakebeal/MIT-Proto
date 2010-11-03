@@ -11,7 +11,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "Trackball.h"
 #include "drawing_primitives.h"
 
-Palette* palette = Palette::default_palette; // current palette
+Palette* palette; // current palette
 // NOTE: these interfaces need fixing!
 extern float xscale, yscale; // kludge connection to drawing_primitives.cpp
 extern float view_width, view_height; // kludge connection to Trackball.cpp
@@ -41,6 +41,7 @@ Visualizer::Visualizer(Args* args)
   if(is_full_screen) { glutFullScreen(); }
   
   // use the default palette, register our colors, and patch files
+  palette = Palette::default_palette;
   ensure_colors_registered("Visualizer");
   while(args->extract_switch("-palette",FALSE)) { // may use many palette files
     palette->overlay_from_file(args->pop_next()); // patch the palette
@@ -78,7 +79,7 @@ Visualizer::Visualizer(Args* args)
 Color* Visualizer::BACKGROUND;
 void Visualizer::register_colors() {
 #ifdef WANT_GLUT
-  BACKGROUND = palette->lookup_color("BACKGROUND"); // from simulator
+  BACKGROUND = palette->register_color("BACKGROUND",0,0,0,0.5); // black
 #endif
 }
 

@@ -328,7 +328,7 @@ Color *SpatialComputer::BACKGROUND, *SpatialComputer::PHOTO_FLASH,
   *SpatialComputer::VECTOR_BODY, *SpatialComputer::VECTOR_TIP;
 void SpatialComputer::register_colors() {
 #ifdef WANT_GLUT
-  BACKGROUND = palette->register_color("BACKGROUND",0,0,0,0.5); // black
+  BACKGROUND = palette->lookup_color("BACKGROUND"); // from visualizer
   PHOTO_FLASH = palette->register_color("PHOTO_FLASH", 1, 1, 1, 1);
   DEVICE_SELECTED = palette->register_color("DEVICE_SELECTED", 0.5,0.5,0.5,0.8);
   DEVICE_ID = palette->register_color("DEVICE_ID", 1, 0, 0, 0.8);

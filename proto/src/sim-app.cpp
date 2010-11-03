@@ -471,6 +471,10 @@ int main (int argc, char *argv[]) {
   srand(seed);
 
   process_app_args(args);
+  BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
+  if(!headless) {
+    vis = new Visualizer(args); // start visualizer
+  }
 #if __USE_NEOCOMPILER__
   compiler = new NeoCompiler(args);  // first the compiler
   compiler->emitter = new ProtoKernelEmitter(compiler,args);
@@ -482,9 +486,7 @@ int main (int argc, char *argv[]) {
   computer->appendDefops(defops);
   compiler->setDefops(defops);
 #endif
-  BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(!headless) {
-    vis = new Visualizer(args); // start visualizer
     vis->set_bounds(computer->vis_volume); // connect to computer
     register_app_colors();
   }
