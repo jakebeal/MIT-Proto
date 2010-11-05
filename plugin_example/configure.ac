@@ -6,7 +6,7 @@ AC_PREREQ(2.60)
 # increment the version number here on each release, so that the
 # version number in the source-code repo is one *more* than the
 # latest release.
-AC_INIT([proto], [4], [proto-bugs@csail.mit.edu])
+AC_INIT([proto], [5], [proto-bugs@csail.mit.edu])
 
 AC_CONFIG_SRCDIR([.])
 AC_CONFIG_AUX_DIR([config])

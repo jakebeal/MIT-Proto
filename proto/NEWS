@@ -1,3 +1,10 @@
+Release 5:
+- "Thinking In Proto" tutorial added to manuals
+- Ubuntu build problems fixed
+- tests reorganized into neocompiler & paleocompiler versions
+- demos updated, local-average.proto added
+- various small bugfixes
+
 Release 4:
 - The (partially complete) new compiler is available and merged into
   Proto.  You can build proto to use it by configuring with the option
