@@ -2,6 +2,29 @@
 
 $(P2B_ARGS) = --no-localization
 
+test: $(P2B) --test
+is 0 _ foo: Attributes [2]
+is 1 _   CONTEXT: sample:2-5, simple:7-8, wimple:3
+is 2 _   RANDOM: rnd:0
+is 3 _ bar: Attributes [0]
+is 4 _ baz: Attributes [1]
+is 5 _   CONTEXT: sample:2-5, simple:7-8, wimple:3
+is 6 _ (1 (2 3) 4 ((5) 6))
+is 7 _ (quasiquote (this (comma-splice (is (comma really))) (quote splicy)))
+is 8 _ (all here be symbols)
+is 9 _ cmdline:1: Wrapper macro comma is not applied to anything
+is 10 _ cmdline:1: Missing right parenthesis
+is 11 _ Parse failed!
+is 12 _ cmdline:1: Illegal use of reserved character '~'
+is 13 _ Parse failed!
+// unrecognized character shows up differently on different platforms
+is 15 _ Parse failed!
+is 16 _ (all this | is | bar | separated)
+is 17 _ Found 1
+is 18 _ Platform description file is not a parsable 'single enum' file: wrong location of '}' .
+is 19 _ Enum parse failed!
+
+
 test: $(P2B) --internal-tests
 is 0 _ Testing type relations:
 is 1 _ Generic types:

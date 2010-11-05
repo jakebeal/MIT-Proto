@@ -474,6 +474,10 @@ int main (int argc, char *argv[]) {
   BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(!headless) {
     vis = new Visualizer(args); // start visualizer
+  } else {
+#ifdef WANT_GLUT
+    palette = Palette::default_palette;
+#endif // WANT_GLUT
   }
 #if __USE_NEOCOMPILER__
   compiler = new NeoCompiler(args);  // first the compiler

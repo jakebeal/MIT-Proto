@@ -24,8 +24,6 @@ int main (int argc, char *argv[]) {
   post("PROTO v%d (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n", PROTO_VERSION, CORE_CMD_OPS);
   Args *args = new Args(argc,argv); // set up the arg parser
 
-  if(args->extract_switch("--test")) { run_test_suite(); exit(0); }
-
 #if __USE_NEOCOMPILER__
   NeoCompiler* neocompiler = new NeoCompiler(args);
   neocompiler->init_standalone(args);
@@ -33,6 +31,8 @@ int main (int argc, char *argv[]) {
   PaleoCompiler* compiler = new PaleoCompiler(args);
   compiler->init_standalone(args);
 #endif
+
+  if(args->extract_switch("--test")) { run_test_suite(); exit(0); }
 
   // load the script
   int len;

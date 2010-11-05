@@ -7,16 +7,16 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory.
 
    Used: alphanumeric, *+-./<=>?_&:
-   Special: ;'(),`@
+   Special: ;'(),`@|
    Reserved & Used: ~
-   Reserved & Unused: !"#$%[\]^{|}
+   Reserved & Unused: !"#$%[\]^{}
 */
 
 %option yylineno
 
 CONSTITUENT   [*+\-./<=>?_&:]
-RESERVED     [!"#$%\[\\\]^{|}~]
-SPECIAL      [;'(),`@]
+RESERVED     [!"#$%\[\\\]^{}~]
+SPECIAL      [;'(),`@|]
 
 %{
 #define YY_BREAK { if(cur->error) return 1; } break;
@@ -122,6 +122,7 @@ SExprLexer* cur;
 '		cur->wrap_next_sexpr(new SE_Symbol("quote"));
 ,		cur->wrap_next_sexpr(new SE_Symbol("comma"));
 ,@		cur->wrap_next_sexpr(new SE_Symbol("comma-splice"));
+"|"		cur->add_sexpr(new SE_Symbol("|"));
 
 -?[[:digit:]]+(\.[[:digit:]]*)?(e-?[[:digit:]]+)? |
 -?\.[[:digit:]]+(e-?[[:digit:]]+)?		cur->add_sexpr(new SE_Scalar(atof(yytext)));

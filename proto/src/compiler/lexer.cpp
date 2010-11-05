@@ -377,8 +377,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 18
-#define YY_END_OF_BUFFER 19
+#define YY_NUM_RULES 19
+#define YY_END_OF_BUFFER 20
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -388,12 +388,12 @@ struct yy_trans_info
 	};
 static yyconst flex_int16_t yy_accept[54] =
     {   0,
-        0,    0,   19,   17,    1,   16,   15,    6,    3,    4,
-        7,   15,   15,    9,   17,   15,   15,   15,    5,   15,
-       16,   16,    1,   15,    8,   15,    9,   15,    0,   10,
-        9,   15,    0,    2,   15,   15,   15,    0,   15,    0,
-       15,    9,   15,    9,   11,   13,   14,   11,   12,   12,
-       15,   10,    0
+        0,    0,   20,   18,    1,   17,   16,    6,    3,    4,
+        7,   16,   16,   10,   18,   16,   16,   16,    5,   16,
+       17,    9,    1,   16,    8,   16,   10,   16,    0,   11,
+       10,   16,    0,    2,   16,   16,   16,    0,   16,    0,
+       16,   10,   16,   10,   12,   14,   15,   12,   13,   13,
+       16,   11,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -486,9 +486,10 @@ static yyconst flex_int16_t yy_chk[96] =
     } ;
 
 /* Table of booleans, true if rule could match eol. */
-static yyconst flex_int32_t yy_rule_can_match_eol[19] =
+static yyconst flex_int32_t yy_rule_can_match_eol[20] =
     {   0,
-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     };
+1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        };
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -514,9 +515,9 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory.
 
    Used: alphanumeric, *+-./<=>?_&:
-   Special: ;'(),`@
+   Special: ;'(),`@|
    Reserved & Used: ~
-   Reserved & Unused: !"#$%[\]^{|}
+   Reserved & Unused: !"#$%[\]^{}
 */
 #line 22 "./proto_syntax.flex"
 #define YY_BREAK { if(cur->error) return 1; } break;
@@ -607,7 +608,7 @@ struct SExprLexer {
 
 SExprLexer* cur;
 
-#line 611 "lexer.cpp"
+#line 612 "lexer.cpp"
 
 #define INITIAL 0
 
@@ -763,7 +764,7 @@ YY_DECL
 #line 113 "./proto_syntax.flex"
 
 
-#line 767 "lexer.cpp"
+#line 768 "lexer.cpp"
 
 	if ( !(yy_init) )
 		{
@@ -901,26 +902,26 @@ YY_RULE_SETUP
 cur->wrap_next_sexpr(new SE_Symbol("comma-splice"));
 	YY_BREAK
 case 9:
-#line 127 "./proto_syntax.flex"
-case 10:
 YY_RULE_SETUP
-#line 127 "./proto_syntax.flex"
-cur->add_sexpr(new SE_Scalar(atof(yytext)));
+#line 125 "./proto_syntax.flex"
+cur->add_sexpr(new SE_Symbol("|"));
 	YY_BREAK
+case 10:
+#line 128 "./proto_syntax.flex"
 case 11:
 YY_RULE_SETUP
-#line 129 "./proto_syntax.flex"
-cur->add_sexpr(new SE_Scalar(INFINITY));
+#line 128 "./proto_syntax.flex"
+cur->add_sexpr(new SE_Scalar(atof(yytext)));
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 130 "./proto_syntax.flex"
-cur->add_sexpr(new SE_Scalar(-INFINITY));
+cur->add_sexpr(new SE_Scalar(INFINITY));
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 131 "./proto_syntax.flex"
-cur->add_sexpr(new SE_Scalar(NAN));
+cur->add_sexpr(new SE_Scalar(-INFINITY));
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -929,25 +930,30 @@ cur->add_sexpr(new SE_Scalar(NAN));
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 134 "./proto_syntax.flex"
-cur->add_sexpr(new SE_Symbol(yytext));
+#line 133 "./proto_syntax.flex"
+cur->add_sexpr(new SE_Scalar(NAN));
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 136 "./proto_syntax.flex"
-cur->compile_error(cur->context(),"Illegal use of reserved character '"+string(yytext)+"'");
+#line 135 "./proto_syntax.flex"
+cur->add_sexpr(new SE_Symbol(yytext));
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 137 "./proto_syntax.flex"
-cur->compile_error(cur->context(),"Unrecognized character: '"+string(yytext)+"'");
+cur->compile_error(cur->context(),"Illegal use of reserved character '"+string(yytext)+"'");
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 139 "./proto_syntax.flex"
+#line 138 "./proto_syntax.flex"
+cur->compile_error(cur->context(),"Unrecognized character: '"+string(yytext)+"'");
+	YY_BREAK
+case 19:
+YY_RULE_SETUP
+#line 140 "./proto_syntax.flex"
 ECHO;
 	YY_BREAK
-#line 951 "lexer.cpp"
+#line 957 "lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1945,7 +1951,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 139 "./proto_syntax.flex"
+#line 140 "./proto_syntax.flex"
 
 
 

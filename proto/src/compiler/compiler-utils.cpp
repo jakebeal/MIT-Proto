@@ -95,9 +95,9 @@ void test_compiler_utils() {
   foo.attributes["CONTEXT"]->merge(new Context("wimple",3));
   foo.attributes["CONTEXT"]->merge(new Context("simple",7));
   foo.attributes["RANDOM"] = new Context("rnd",0);
-  *cpout << "foo: "; foo.print();
-  *cpout << "bar: "; bar.print();
-  *cpout << "baz: "; baz.print();
+  *cpout << "foo: "; foo.print(); // should have 3 CONTEXT, 1 RANDOM
+  *cpout << "bar: "; bar.print(); // should have nothing
+  *cpout << "baz: "; baz.print(); // should have same as foo
 
   SExpr* out = read_sexpr("cmdline","(1 (2 3) 4 ((5) 6))");
   if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
@@ -107,9 +107,12 @@ void test_compiler_utils() {
   if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
   out = read_sexpr("cmdline","(busted wrap ,)");
   if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
-  out = read_sexpr("cmdline","|");
+  out = read_sexpr("cmdline","~");
   if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
   out = read_sexpr("cmdline","\a");
+  if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
+
+  out = read_sexpr("cmdline","this|is|bar|separated");
   if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
 
   list<string>* strs = read_enum("typedef enum { /* comment */ DIE_OP = CORE_CMD_OPS, MAX_CMD_OPS } PLATFORM_OPCODES;");
@@ -117,5 +120,7 @@ void test_compiler_utils() {
   strs = read_enum("typedef enum { /* comment */ DIE_OP = CORE_CMD_OPS, } PLATFORM_OPNDES;");
   if(strs) *cpout << "Found " << strs->size() << endl; else *cpout << "Enum parse failed!\n";
 
-  ierror(&foo,"Behold the fail!");
+  *cpout << flush;
+  exit(0);
+  //ierror(&foo,"Behold the fail!");
 }
