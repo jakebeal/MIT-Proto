@@ -1,4 +1,4 @@
-/* Miscellanrous modularity functions, which cannot be included in headers
+/* Miscellaneous modularity functions, which cannot be included in headers
 Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 

@@ -120,6 +120,7 @@ void NeoCompiler::init_standalone(Args* args) {
   if(args->extract_switch("-EM")) {
     emitter = (CodeEmitter*)
       plugins.get_compiler_plugin(EMITTER_PLUGIN,args->pop_next(),args,this);
+    if(emitter==NULL) { uerror("Emitter not available"); } // abort
   } else {
     emitter = new ProtoKernelEmitter(this,args);
   }

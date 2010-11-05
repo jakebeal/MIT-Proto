@@ -79,8 +79,12 @@ ProtoPluginLibrary* ProtoPluginManager::get_plugin_lib(string type,string name){
   } else { // ... or load it in if it's not yet loaded
     string fullname = PLUGIN_DIR+libfile;
     lt_dlhandle handle = lt_dlopenext(fullname.c_str());
-    if(handle==NULL)
-      { cout<<"Could not load plugin library "+fullname+"\n"; return NULL; }
+    if(handle==NULL) { 
+      cout<<"Could not load plugin librsdfary "+fullname+"\n"; 
+      // Enable (and add right extension) if we need better debug info
+      // dlopen(fullname.c_str(),RTLD_LAZY); cout<<dlerror()<<endl;
+      return NULL; 
+    }
     void *fp = lt_dlsym(handle, "get_proto_plugin_library");
     if(fp==NULL) {
       cout<<"Could not get get_proto_plugin_library from "+libfile; 
