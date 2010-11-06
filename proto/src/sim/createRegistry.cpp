@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
       if(fp==NULL) { cout << "not a Proto plugin (no inventory)\n";
       } else {
         cout << "reading inventory\n";
-        string tstring((*((get_props_func)fp))());
+        string tstring((*((get_inventory_func)fp))());
         print_indented(2,tstring,true); // show inventory in cmdline output
         allProperties += "# Inventory of plugin '"+(*i)+"'\n"+tstring+"\n";
       }

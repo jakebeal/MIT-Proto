@@ -264,6 +264,10 @@ simulator layer; if no communication model is loaded, it uses the
 \var{UnitDiscRadio} layer; if no localization model is loaded, it uses
 the \var{PerfectLocalizer} layer.
 
+\simarg{--DLL file}{Attempt to load \var{file} as a plugin DLL. Adds
+  system-appropriate extensions to the file name if needed.  This is
+  option allows a developer to test a pluging without installing it.}
+
 \section{Debugging}
 
 The debugger logs chosen types of activity to standard out.  To

@@ -40,7 +40,7 @@ extern "C" {
 }
 
 // and the types for these functions
-typedef const char* (*get_props_func)(void);
+typedef const char* (*get_inventory_func)(void);
 typedef ProtoPluginLibrary* (*get_library_func)(void);
 
 #endif // __PROTO_PLUGIN__
