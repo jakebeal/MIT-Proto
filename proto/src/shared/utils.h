@@ -120,7 +120,7 @@ class Args {
  public:
   Args(int argc, char** argv) { 
     argp=1; this->argc=argc; 
-    this->argv=argv; 
+    this->argv=argv; add_defaults();
     last_switch=(char*)"(no switch yet)";
   }
   BOOL find_switch(const char *sw); // tests if sw is in the list, leaves ptr there
@@ -132,6 +132,9 @@ class Args {
   void goto_first(); // returns the pointer to the start of the arguments
   void remove(int i); // shrinks the list, deleting the ith argument
   void undefault(BOOL *value,const char* pos,const char* neg); // modify a default switch
+ private:
+  void add_defaults(); // read args from .[appname] and ~/.[appname] files
+  void parse_argstream(istream &s);
 };
 
 /*****************************************************************************

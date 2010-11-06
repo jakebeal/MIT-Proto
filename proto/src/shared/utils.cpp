@@ -14,6 +14,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <ctype.h>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 flo urnd(flo min, flo max) { return min + ((max-min)*rand())/RAND_MAX; }
@@ -142,6 +143,47 @@ double Args::pop_number() {
 void Args::undefault(BOOL *target,const char* pos,const char* neg) {
   BOOL pp = extract_switch(pos), np = extract_switch(neg);
   if(pp) { *target = !np; } else if(np) { *target = FALSE; }
+}
+
+// read args from optional .[appname] and ~/.[appname] files
+void Args::add_defaults() {
+  string appname =
+#ifdef __WIN32__
+    &(strrchr(argv[0],'\\')[1]);
+#else
+    &(strrchr(argv[0],'/')[1]);
+#endif
+  ifstream fin; string name = "."+appname; 
+  fin.open(name.c_str()); if(fin.is_open()) {parse_argstream(fin); fin.close();}
+  char* homedir = getenv("HOME");
+  if(homedir) {
+    name = string(homedir)+"/."+appname;
+    fin.open(name.c_str()); if(fin.is_open()){parse_argstream(fin);fin.close();}
+  }
+}
+
+void Args::parse_argstream(istream &s) {
+  string newargstr = "";
+  while(!s.eof()) { 
+    string line; getline(s,line,'\n'); 
+    if(line[0]!='#') newargstr+=line; else newargstr+=" ";
+  }
+  if(newargstr.find('"')!=string::npos || newargstr.find('\'')!=string::npos)
+    debug("WARNING: default arg-file parsing ignores quotes\n");
+  // put into a mutable, long-term allocated c-str
+  char* newargs = (char*)malloc(newargstr.size());
+  newargstr.copy(newargs,newargstr.size());
+  // extract tokens
+  vector<char*> tokens; int n = 0;
+  char* tok = strtok(newargs," '\"");
+  if(tok) { tokens.push_back(tok); n++; }
+  while(tok!=NULL) 
+    { tok = strtok(NULL," '\""); if(tok) { tokens.push_back(tok); n++; }}
+  // merge with existing collection
+  char **newargv = (char**)calloc(argc+n,sizeof(char*));
+  for(int i=0;i<argc;i++) { newargv[i]=argv[i]; }
+  for(int i=0;i<n;i++) { newargv[i+argc]=tokens[i]; }
+  argc += n; argv=newargv; // note: ignoring old argv memory leaking: it's small
 }
 
 

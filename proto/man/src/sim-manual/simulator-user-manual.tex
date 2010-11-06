@@ -76,6 +76,17 @@ with a dash.
 
 \input{../credits.tex}
 
+\section{Default Argument Files}
+
+In addition to getting arguments from the command line the Proto
+simulator looks for files called \var{.proto} in the current directory
+and your \$HOME directory.  The arguments in these files, if they
+exist, are added to the end of the command line---first from the
+current directory, then from \$HOME.  Note that whitespace and quotes
+are ignored in these files, as is any line beginning with ``\var{\#}''.
+
+If you have created the simulator to have a non-standard name, it 
+will search for \var{.}$[that name]$ instead.
 
 \section{Palette Files}
 
@@ -94,7 +105,7 @@ is loaded before any explicitly named palettes from the command line.
 Palette files are formatted as follows:
 \begin{itemize}
 \item Whitespace is ignored
-\item '\#' as first non-whitespace character in a line indicates a comment
+\item ``\var{\#}'' as first non-whitespace character in a line indicates a comment
 \item One color per line, specified \var{NAME RED GREEN BLUE [ALPHA]},
       where \var{NAME} is the name of the color, and the others are
       values between zero and one.  If unspecified, \var{ALPHA} defaults
@@ -256,6 +267,9 @@ execute and add new sensors, actuators, and other primitives.
 \simarg{-L LAYER}{Incorporate the layer named \var{LAYER} into the
   simulation.  This can be used multiple different times to load
   different layers.}
+\simarg{--DLL file}{Attempt to load \var{file} as a plugin DLL. Adds
+  system-appropriate extensions to the file name if needed.  This is
+  option allows a developer to test a pluging without installing it.}
 
 The simulator requires certain sensors and actuators to be
 implemented, and uses default layers it they are not implemented.  If
@@ -263,10 +277,6 @@ no physics model is loaded, it uses the \var{SimpleDynamics} physics
 simulator layer; if no communication model is loaded, it uses the
 \var{UnitDiscRadio} layer; if no localization model is loaded, it uses
 the \var{PerfectLocalizer} layer.
-
-\simarg{--DLL file}{Attempt to load \var{file} as a plugin DLL. Adds
-  system-appropriate extensions to the file name if needed.  This is
-  option allows a developer to test a pluging without installing it.}
 
 \section{Debugging}
 
