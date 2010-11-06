@@ -5,8 +5,8 @@
 (macro if (test true-expr false-expr) 
   (let ((?x ,test))
     (mux ?x (restrict ?x ,true-expr) (restrict (not ?x) ,false-expr))))
-(def and (x y) (if x y 0))
-(def or (x y) (if x x y))
+(macro and (x y) (if ,x ,y 0))
+(macro or (x y) (let ((?tmp ,x)) (if ?tmp ?tmp ,y)))
 (def xor (x y) (mux x (not y) y))
 
 (def muxand (x y) (mux x y false))

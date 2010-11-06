@@ -20,6 +20,8 @@
 \newcommand\code[1]{\begin{quote}\var{#1}\end{quote}}
 \newcommand\function[3]
 {\begin{quote}{\tt #1}$\rightarrow$ \type{#2} \\ #3 \end{quote}}
+\newcommand\syntactic[3]
+{\function{#1}{#2}{{\em Syntactic operator.} #3}}
 \newcommand\type[1]{$#1$}
 \newcommand\var[1]{{\tt #1}}
 
@@ -73,9 +75,13 @@ expressed as:
 \function{pattern}{type}{description}
 where \type{type} is the return type.
 
-The names of functions are in all lower case; the names of special
-forms are in all upper case.
-
+For example, consider this definition of the \var{elt} function:
+\begin{quote}
+{\tt (elt ,tuple|\type{T} ,i|\type{S})}$\rightarrow$ \type{L}
+\end{quote}
+This takes two arguments.  The first is of type {\bf Tuple} is is named,
+unenterprisingly, ``tuple.'' The second is of type {\bf Scalar} and
+is named ``i.''  The function returns a {\bf Local} value.
 
 \section{Evaluation}
 
@@ -138,13 +144,13 @@ The equivalence classes of type are:
 Right now, lambdas are not first-class data types: they can only be
 passed around and manipulated under certain circumstances.
 
-\function{(NULL ,expr)}{A}{Returns a ``null'' form of the value that
+\syntactic{(null ,expr)}{A}{Returns a ``null'' form of the value that
   would be returned by \var{expr}.  \var{expr} is not evaluated.  For
   scalars, this is zero, for tuples, a tuple of the same structure
   with zeros in place of every scalar, for fields a field of null
   values, and for lambdas it is undefined.}
 
-\function{(QUOTE ,form)}{A}{A LISP quote operation.  Identity on scalars,
+\syntactic{(quote ,form)}{A}{A LISP quote operation.  Identity on scalars,
   turns symbols into indexes into a symbol table, and fails on tuples.
   \broken{}}
 
@@ -164,18 +170,18 @@ identifier again.  Definitions in subdirectories can be accessed with
 identifiers of the form {\tt $dir$/$name$}.
 
 % Note: not necessarily global scope: there can be purely local fn defs
-\function{(DEF .name (.arg ...) ,@body)}{A}{Define a function \var{name}
+\syntactic{(def .name (.arg ...) ,@body)}{A}{Define a function \var{name}
   in the current scope, with as many arguments as there are \var{arg}
   identifiers.  The body is evaluated within an extended scope where
   the \var{arg} identifiers are bound to arguments to the function.}
 
 \todo{Should defs in subdirectories default to include the subdirectory name?}
 
-\function{(LET ((.var ,value) ...) ,@body)}{A}{Extends scope,
+\syntactic{(let ((.var ,value) ...) ,@body)}{A}{Extends scope,
   binding all \var{var} identifiers to their associated \var{value} 
   in parallel.  The \var{body} is evaluated in the extended scope.}
 
-\function{(LET* ((.var ,value) ...) ,@body)}{A}{Extends scope, binding
+\syntactic{(let* ((.var ,value) ...) ,@body)}{A}{Extends scope, binding
   each \var{var} identifier to its associated \var{value} in sequence,
   so that later \var{value} expressions can use earlier \var{var}
   identifiers.  The \var{body} is evaluated in the extended scope.}
@@ -186,7 +192,7 @@ identifiers of the form {\tt $dir$/$name$}.
 \function{(all ,@forms)}{A}{All \var{forms} are evaluated in parallel
   and the value of the last form returned.}
 
-\function{(SEQ ,form|\type{T(L,B)} ++)}{T(L,B)}{A concatenation of
+\syntactic{(seq ,form|\type{T(L,B)} ++)}{T(L,B)}{A concatenation of
   streams: each form returns a tuple of two elements: the first is the
   value of the stream, and the second is a boolean indicating whether
   there are more values in the stream.  When the second element is
@@ -196,7 +202,7 @@ identifiers of the form {\tt $dir$/$name$}.
   boolean that is true during the first loop and false thereafter.
   \violation{}}
 
-\function{(LOOP ,form|\type{T(L,B)} ++)}{L}{Identical to \var{seq},
+\syntactic{(loop ,form|\type{T(L,B)} ++)}{L}{Identical to \var{seq},
   except that only the value is returned.}
 
 \function{(mux ,test|\type{B} ,true ,false)}{A}{Evaluates both
@@ -205,25 +211,25 @@ identifiers of the form {\tt $dir$/$name$}.
   the result of the \var{false} expression.  The \var{true} and
   \var{false} expressions must return the same type.}
 
-\function{(IF ,test|\type{B} ,true ,false)}{A}{Restricts execution to
+\syntactic{(if ,test|\type{B} ,true ,false)}{A}{Restricts execution to
   subspaces based on \var{test}.  Where \var{test} is true, the
   \var{true} expression is evaluated; where \var{test} is false, the
   \var{false} expression is evaluated.  The \var{true} and \var{false}
   expressions must return the same type. The function \var{where} is
   an alias for \var{if}}
 
-\function{(SELECT ,nth|\type{S} ,form ++)}{A}{A multi-way
+\syntactic{(select ,nth|\type{S} ,form ++)}{A}{A multi-way
   \var{if}, evaluating the $i$th form in the subspace where
   $\var{nth}=i$ (counting from zero).  Where $\var{nth}$ is not
   non-negative integer or is greater than the number of forms, a
   \var{null} value is returned instead.  All \var{form} expressions
   must return the same type.}
 
-\function{(COND (,test|\type{B} ,@body) ...)}{A}{Another multi-way
+\syntactic{(cond (,test|\type{B} ,@body) ...)}{A}{Another multi-way
   \var{if}, evaluating the $i$th body in the subspace where the
   $i$th test is true and all previous tests are false.  \broken{}}
 
-\function{(CASE ,val|\type{S} (,key|\type{S} ,form) ...)}{A}{Another
+\syntactic{(case ,val|\type{S} (,key|\type{S} ,form) ...)}{A}{Another
   multi-way \var{if}.  The \var{key} expressions must all be literal
   numbers, and a key's associated form is evaluated in the subspace
   where $\var{val}=\var{key}$.  All \var{form} expressions must return
@@ -237,7 +243,7 @@ not currently implemented: \var{when}, \var{unless}.
 
 
 \section{Lambdas}
-\function{(FUN (.arg ...) ,@body)}{\lambda}{Creates an anonymous
+\syntactic{(fun (.arg ...) ,@body)}{\lambda}{Creates an anonymous
   function with as many arguments as there are \var{arg} identifiers.
   The body is evaluated within an extended scope where the \var{arg}
   identifiers are bound to arguments to the function.}
@@ -277,7 +283,7 @@ at each device.
 % (letfed ((x 0 (+ x (dt))) (y x (+ x (dt)))) (= x y)) --> error
 % (min-hood (letfed ((x 0 (+ (nbr x) (dt)))) x)) --> error
 % (min-hood (letfed ((x 0 (+ x (dt)))) (nbr x))) --> error
-\function{(LETFED ((.var ,init|\type{L} ,evolve|\type{L}) ...)
+\syntactic{(letfed ((.var ,init|\type{L} ,evolve|\type{L}) ...)
   ,@body)}{L} {Creates a state variable for each \var{var}.  \var{var}
   is initially bound to the value of expression \var{init}, and at
   each time step the state is evolved forward using expression
@@ -291,7 +297,7 @@ at each device.
   \var{init}, but variables can use one another's old values in their
   \var{evolve} statements.  \violation{}.}
 
-\function{(REP .var ,init|\type{L} ,evolve|\type{L})}{L}{Create
+\syntactic{(rep .var ,init|\type{L} ,evolve|\type{L})}{L}{Create
   a single feedback variable and return its value.  Equivalent to
   \var{(letfed ((.var ,init ,evolve)) .var)}.  \violation{}}
 
@@ -327,7 +333,7 @@ at each device.
 % (once (tup (tup 3) 4 5))
 % (min-hood (once (nbr 3)))
 % (once (red 3)) -> red for 1 tick only
-\function{(ONCE ,expr)}{A}{Evaluates \var{expr} once, then always returns
+\syntactic{(once ,expr)}{A}{Evaluates \var{expr} once, then always returns
   that value without evaluating \var{expr} again.}
 
 \section{Logical}
@@ -336,10 +342,10 @@ There are two types of logical operators, reflecting the difference
 between \var{if} and \var{mux}.
 
 % (and 0 (red 4)) -> no red
-\function{(AND ,x|\type{B} ,y|\type{B})}{B}{The expression \var{y} is only 
+\syntactic{(and ,x|\type{B} ,y|\type{B})}{B}{The expression \var{y} is only 
   evaluated if \var{x} is true.  Equivalent to \var{(if ,x ,y \#f)}}
 % (or 3 (red 4)) -> no red
-\function{(OR ,x|\type{B} ,y|\type{B})}{B}{The expression \var{y} is only 
+\syntactic{(or ,x|\type{B} ,y|\type{B})}{B}{The expression \var{y} is only 
   evaluated if \var{x} is false.  Equivalent to \var{(if ,x ,x ,y)}}
 % (muxand 0 (red 4)) -> red
 \function{(muxand ,x|\type{B} ,y|\type{B})}{B}{Both expressions are always
@@ -577,7 +583,7 @@ If the item is not in the list, -1 is returned. If it occurs more than once, the
 Structures are just an assignment of names to tuples.
 
 % (all (defstruct foo bar baz qux) (foo-qux (new-foo 3 4))) -> 4
-\function{(DEFSTRUCT .name .parent .field ++)}{B}{Defines a
+\syntactic{(defstruct .name .parent .field ++)}{B}{Defines a
   constructor and reader functions for structures of type \var{name}.
   The constructor, \var{new-$name$}, takes the fields as arguments and
   returns a tuple containing the fields.  The readers, named
@@ -660,7 +666,7 @@ break the abstraction barrier.
 % (fold-hood (fun (r x) r) (tup (tup 1) 2) (tup (tup 1 2) 3)) -> [[1] 2]
 % (fold-hood (fun (r x) x) (tup (tup 1) 2) (tup (tup 1 2) 3)) -> [[1] 3]
 % (fold-hood (fun (r x) x) (tup 2) 3) -> error
-\function{(FOLD-HOOD ,fold|\type{\lambda} ,base|\type{L}
+\syntactic{(fold-hood ,fold|\type{\lambda} ,base|\type{L}
   ,value|\type{L})}{L}{Collects \var{value} from each of the neighbors,
   then folds these into a summary value, using \var{fold} to combine
   elements into \var{base} one at a time. \violation{}}
@@ -675,7 +681,7 @@ break the abstraction barrier.
 % (fold-hood-plus min (fun (t) (+ (1st (1st t)) (2nd t))) 
 %   (tup (tup (mid)) (neg (mid)))) -> all zeros
 % (fold-hood-plus (fun (a b) (red a)) (fun (f) f) 3) -> red w. neighbors
-\function{(FOLD-HOOD-PLUS ,fold|\type{\lambda} ,prep|\type{\lambda}
+\syntactic{(fold-hood-plus ,fold|\type{\lambda} ,prep|\type{\lambda}
   ,value|\type{L})}{L}{Collects \var{value} from each of the
   neighbors, then applies \var{prep} on each value, then combines the
   results together one at a time using \var{fold}.  If there are is
