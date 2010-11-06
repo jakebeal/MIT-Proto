@@ -28,7 +28,6 @@ pkginclude_HEADERS = \
 	lisp.h \
 	nicenames.h \
 	paleocompiler.h \
-	proto_types.h \
 	reader.h \
 	sexpr.h
 
