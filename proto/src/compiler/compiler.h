@@ -56,6 +56,8 @@ class ProtoInterpreter {
   ~ProtoInterpreter();
 
   void interpret(SExpr* sexpr);
+  static ProtoType* sexp_to_type(SExpr* s);
+  static Signature* sexp_to_sig(SExpr* s,Env* bindloc=NULL,CompoundOp* op=NULL,AM* space=NULL);
 
  private:
   void interpret(SExpr* sexpr, bool recursed); // internal only
@@ -63,8 +65,6 @@ class ProtoInterpreter {
   
   Operator* sexp_to_op(SExpr* s, Env *env);  
   Macro* sexp_to_macro(SE_List* s, Env *env);  
-  ProtoType* sexp_to_type(SExpr* s);
-  Signature* sexp_to_sig(SExpr* s,Env* bindloc=NULL,CompoundOp* op=NULL,AM* space=NULL);
   Signature* sexp_to_macro_sig(SExpr* s);
   Field* sexp_to_graph(SExpr* s, DFG* g, AM* space, Env *env);
   SExpr* expand_macro(MacroOperator* m, SE_List* call);
