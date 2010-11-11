@@ -612,7 +612,8 @@ to the values of the input fields.
 \paragraph{Field Functions}
 
 \function{(nbr ,expr|\type{L})}{F}{Returns a field mapping neighbors
-  to their values of \var{expr}.}
+  to their values of \var{expr}. {\it Note: it can only be called from
+  within a ``Summary Function.''}}
 
 \function{(nbr-range)}{F_S}{Returns a field of distances to neighbors.}
 \function{(nbr-angle)}{F_S}{Returns a field of bearings to neighbors.}
