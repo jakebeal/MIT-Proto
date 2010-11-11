@@ -5,8 +5,10 @@ all:lang quick
 
 lang:
 	pdflatex ${PROJ_NAME}.tex
+	pdflatex ${PROJ_NAME}.tex
 
 quick:
+	pdflatex ${PROJ_NAME_2}.tex
 	pdflatex ${PROJ_NAME_2}.tex
 
 clean:lang-clean quick-clean
