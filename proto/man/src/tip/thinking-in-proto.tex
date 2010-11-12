@@ -322,7 +322,7 @@ Save this code in the text editor, and then go back to terminal.  Make
 sure you change directories into your new folder.  The simulator will
 only search for functions that are in terminal's current
 folder\footnote{The simulator has an argument that can cause it to
-  search other places as well.  Look if up and see how.}  Then, we can
+  search other places as well.  Look it up and see how.}  Then, we can
 simply call the function by saying:
 
 \code{proto -v "(check (sense 1))"}
@@ -347,7 +347,7 @@ languages, these operators and the numeric operations come before the
 values in the statements.  For example, if we want to ask whether
 \var{x} is greater than \var{y} we must put the \qvar{>} symbol
 before the variables, like so: \code{(if (> x y))}  Similarly, if we
-wanted to ask whether \var{x – 1} is still greater than \var{y}:
+wanted to ask whether \var{x - 1} is still greater than \var{y}:
 \code{(if (> (- x 1) y))} With some functions (multiplication,
 addition, etc.), the number of arguments after the operators can vary.
 Make sure you remember this when you write statements.  Because of the
@@ -439,7 +439,7 @@ working check these things:
 
 \begin{itemize}
 \item Did you remember to save \var{check.proto} when you had
-  finished? If not, terminals still running the older version of your
+  finished? If not, you are still running the older version of your
   program. Make sure that the file name ends in ``.proto,'' or else it
   will not be recognized as a Proto file.
 \item Does your code look like this: \qvar{(def check (src) (if src
@@ -666,13 +666,9 @@ differ from yours some, looks like this:
 \begin{verbatim}
 (def bullseye (src)
   (let ((d (distance-to src)))
-    (if (< d 15)
-        (red 1)
-        (if (and (< d 30) (> d 15))
-          (green 1)
-          (if (and (< d 45) (> d 30))
-            (blue 1)
-            0)))))
+    (if (< d 15) (red 1)
+        (if (< d 30) (green 1)
+            (if (< d 45) (blue 1) 0)))))
 \end{verbatim}
 \end{quote}
 
@@ -725,18 +721,19 @@ to create many geometric patterns in Proto.
 
 \paragraph{Exercises}
 
-\problem{Exercise 1: Create a program in which any device that is on
-  the shortest path from a \qvar{sense 1} device to a \qvar{sense 2}
-  device turns its LED green.}
-
-\problem{Exercise 2: Adjust the previous program so that the points
-  within the path also turn their LEDs red if they are close to the
-  \qvar{sense 1} or sense \qvar{2 points} (within 5 meters).}
-
-\problem{Exercise 3: Adjust the \qvar{bullseye.proto} program to make
+\problem{Exercise 1: Adjust the \qvar{bullseye.proto} program to make
   the LED lights be at a height above the device based on the distance
   to the source. Remember, in \var{(red 1)}, the \var{1} sets a height
   for the LED to be displayed.}
+
+\problem{Exercise 2: Create a program in which any device that is on
+  the shortest path from a \qvar{sense 1} device to a \qvar{sense 2}
+  device turns its LED green.}
+
+\problem{Exercise 3: Adjust the previous program so that the points
+  within the path also turn their LEDs red if they are close to the
+  \qvar{sense 1} or sense \qvar{2 points} (within 5 meters).}
+
 
 \section{Restricting Space}
 \label{s:mux}
@@ -762,7 +759,7 @@ the whole space at once.  In this view, the \var{if} is actually
 changing {\em where} the program runs.  Ordinarily, when we write a
 piece of Proto code, it runs everywhere at once.  When we wrap a piece
 of code in an \var{if}, it splits the space into two parts.  In the
-part of space where \qvar{sense 1} is turn on, it runs the program
+part of space where \qvar{sense 1} is turned on, it runs the program
 that turns on the red LED.  In the other part, it runs the program
 that turns on the green LED.  This way of thinking about running a
 Proto program may be less intuitive, but thinking about it this way
