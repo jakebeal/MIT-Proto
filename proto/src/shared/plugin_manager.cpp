@@ -36,6 +36,7 @@ void ProtoPluginManager::ensure_initialized(Args* args) {
   }
 
   if(args!=NULL) {
+    args->save_ptr();
     // Check command line to see if any other DLLs are being included locally
     while(args->extract_switch("--DLL",false)) { 
       string dll_name = args->pop_next();
@@ -43,6 +44,7 @@ void ProtoPluginManager::ensure_initialized(Args* args) {
         { cerr << "Unable to include DLL " << dll_name << endl; }
     }
     initialized=2; // mark command line processing complete
+    args->restore_ptr();
   }
 }
 

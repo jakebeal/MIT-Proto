@@ -248,7 +248,9 @@ void DebugDevice::visualize() {
     if (parent->is_led_rgb) {
       if (led[0] || led[1] || led[2]) {
 	palette->scale_color(DebugLayer::RGB_LED, led[0],led[1],led[2],1);
+        if(parent->is_led_3d_motion) { glPushMatrix(); glTranslatef(0,0,1); }
         draw_disk(rad*2); // double size because the legacy code sez so
+        if(parent->is_led_3d_motion) { glPopMatrix(); }
       }
     } else {
       for(int i=0;i<3;i++) {

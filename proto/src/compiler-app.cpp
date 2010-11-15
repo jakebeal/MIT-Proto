@@ -23,7 +23,8 @@ void run_test_suite(); // testing kludge
 int main (int argc, char *argv[]) {
   post("PROTO v%d (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n", PROTO_VERSION, CORE_CMD_OPS);
   Args *args = new Args(argc,argv); // set up the arg parser
-
+  plugins.ensure_initialized(args);
+  
 #if __USE_NEOCOMPILER__
   NeoCompiler* neocompiler = new NeoCompiler(args);
   neocompiler->init_standalone(args);

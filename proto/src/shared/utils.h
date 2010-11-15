@@ -113,6 +113,7 @@ extern "C" void post_into(Strbuf *buf, const char* pstring, ...);
 class Args {
   int argp;  // Pointer to the current argument; 0 is the command, starts at 1
   char *last_switch; // last successfully found switch
+  vector<int> save_ptrs;
  public:
   int argc;  // number of arguments
   char **argv; // pointers to argument strings
@@ -132,6 +133,8 @@ class Args {
   void goto_first(); // returns the pointer to the start of the arguments
   void remove(int i); // shrinks the list, deleting the ith argument
   void undefault(BOOL *value,const char* pos,const char* neg); // modify a default switch
+  void save_ptr(); // saves the current pointer for later recall
+  void restore_ptr(); // sets pointer to the last saved, which is then unsaved
  private:
   void add_defaults(); // read args from .[appname] and ~/.[appname] files
   void parse_argstream(istream &s);
@@ -241,5 +244,13 @@ class EventConsumer {
 
 // obtains the time in seconds (in a system-dependent manner)
 double get_real_secs ();
+
+// system-dependent directory separator
+#ifdef __WIN32__
+#define DIRECTORY_SEP '/'
+#else
+#define DIRECTORY_SEP '\\'
+#endif
+
 
 #endif // __UTILS__

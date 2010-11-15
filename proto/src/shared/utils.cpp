@@ -77,7 +77,14 @@ void FREE(void *ptr_) {
 /*****************************************************************************
  *  COMMAND LINE ARGUMENT SUPPORT                                            *
  *****************************************************************************/
+// debugging aid
+void printargs(Args* a) {
+  for(int i=0;i<a->argc;i++) printf("Arg %d = '%s'\n",i,a->argv[i]);
+}
+
 void Args::remove(int i) {
+  for(int j=0;j<save_ptrs.size();j++)
+    if(save_ptrs[j]>i) save_ptrs[j]--;
   argc--; // shrink the size of the list
   for(;i<argc;i++) { argv[i]=argv[i+1]; } // shuffle args backward
 }
@@ -145,14 +152,13 @@ void Args::undefault(BOOL *target,const char* pos,const char* neg) {
   if(pp) { *target = !np; } else if(np) { *target = FALSE; }
 }
 
+void Args::save_ptr() { save_ptrs.push_back(argp); }
+void Args::restore_ptr() { argp = save_ptrs.back(); save_ptrs.pop_back(); }
+
 // read args from optional .[appname] and ~/.[appname] files
 void Args::add_defaults() {
-  string appname =
-#ifdef __WIN32__
-    &(strrchr(argv[0],'\\')[1]);
-#else
-    &(strrchr(argv[0],'/')[1]);
-#endif
+  char* dirstrip = strrchr(argv[0],DIRECTORY_SEP);
+  string appname = dirstrip ? &(dirstrip[1]) : argv[0];
   ifstream fin; string name = "."+appname; 
   fin.open(name.c_str()); if(fin.is_open()) {parse_argstream(fin); fin.close();}
   char* homedir = getenv("HOME");

@@ -35,13 +35,13 @@ class ProtoPluginManager {
 
   void register_lib(string type,string name,string key,ProtoPluginLibrary* lib)
   { registry[type][name] = key; open_libs[key] = lib; }
+  void ensure_initialized(Args* args);
 
  private:
   bool initialized;
   map<string, map<string,string> > registry; // type -> name -> library
   map<string, ProtoPluginLibrary*> open_libs; // open library name -> object
   ProtoPluginLibrary* get_plugin_lib(string type, string name,Args* args);
-  void ensure_initialized(Args* args);
   bool read_dll(string libfile);
   bool read_registry_file();
   bool parse_registry(istream &reg,string overridename="");
