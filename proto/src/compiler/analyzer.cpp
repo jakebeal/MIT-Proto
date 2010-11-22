@@ -103,7 +103,7 @@ bool Propagator::propagate(DFG* g) {
   // walk through worklists until empty
   preprop();
   int steps_remaining = 
-    loop_abort*(worklist_f.size()+worklist_o.size()+worklist_a.size());
+    1+loop_abort*(worklist_f.size()+worklist_o.size()+worklist_a.size());
   while(steps_remaining>0 && 
         (!worklist_f.empty() || !worklist_o.empty() || !worklist_a.empty())) {
     // each time through, try executing one from each worklist
@@ -1028,10 +1028,13 @@ class FunctionInlining : public Propagator {
   virtual void print(ostream* out=0) { *out << "FunctionInlining"; }
   
   void act(OperatorInstance* oi) {
-    if(!oi->op->isA("CompoundOp")) return;
-    if(threshold!=-1 &&
-       ((CompoundOp*)oi->op)->body->nodes.size() > threshold) return;
-    // online inline small compound operators
+    if(!oi->op->isA("CompoundOp")) return; // can only inline compound ops
+    if(oi->container->container == oi->op) return; // don't inline recursive
+    // if either the body or the container is small
+    int bodysize = ((CompoundOp*)oi->op)->body->nodes.size();
+    int containersize = oi->container->nodes.size();
+    if(threshold!=-1 && bodysize>threshold && containersize>threshold) return;
+
     if(verbosity>=2) *cpout<<" Inlining function "<<oi->to_str()<<endl;
     // TODO: make sure ths is safe to do for nested operators
     root->make_op_inline(oi);
@@ -1050,8 +1053,13 @@ class CertifyBackpointers : public Propagator {
     this->verbosity = verbosity;
   }
   virtual void print(ostream* out=0) { *out << "CertifyBackpointers"; }
-  void preprop() { bad=false; }
+  void preprop() { 
+    bad=false;
+    if(!root->edges.count(root->output))
+      { bad=true; compile_error("Bad DFG root"); }
+  }
   void postprop() {
+    //if(bad) root->print(&cout);
     if(bad) ierror("Backpointer certification failed.");
   }
   void act(Field* f) {
@@ -1073,8 +1081,10 @@ class CertifyBackpointers : public Propagator {
         { bad=true; compile_error(f,"Bad selector "+i2s(i)+" of "+f->to_str());}
     }
     // domain OK
-    if(!(f->container->spaces.count(f->domain) && f->domain->fields.count(f)))
-      { bad=true; compile_error(f,"Bad domain of "+f->to_str()); }
+    if(!f->container->spaces.count(f->domain))
+      { bad=true; compile_error(f,"No such domain for "+f->to_str()); }
+    if(!f->domain->fields.count(f))
+      { bad=true; compile_error(f,"Domain doesn't track field: "+f->to_str()); }
     // container OK
     if(!f->container->edges.count(f))
       { bad=true; compile_error(f,"Bad container of "+f->to_str()); }
@@ -1145,6 +1155,7 @@ ProtoAnalyzer::ProtoAnalyzer(NeoCompiler* parent, Args* args) {
   rules.push_back(new ConstantFolder(this,args));
   rules.push_back(new Literalizer(this,args));
   rules.push_back(new DeadCodeEliminator(this,args));
+  rules.push_back(new FunctionInlining(this,args));
 }
 
 void ProtoAnalyzer::analyze(DFG* g) {

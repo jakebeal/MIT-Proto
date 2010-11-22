@@ -359,6 +359,9 @@ struct DFG : public CompilationElement {
   set<AM*> spaces;
   map<Operator*,set<OperatorInstance*> > funcalls;
   Field* output;
+  CompoundOp* container; // set for CompoundOps
+  
+  DFG() { container = NULL; output = NULL; } // base state
   
   Field* inherit_and_add(CompilationElement* src, OperatorInstance* oi);
   void add_funcalls(CompoundOp* lambda, OperatorInstance* oi);

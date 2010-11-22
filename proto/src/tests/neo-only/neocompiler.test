@@ -393,7 +393,7 @@ is 14 _   Foxtrot: Echo --> <D:return> OUTPUT
 is 15 _ Operator Instances:
 is 16 _   [Fun: lambda-0] --> Foxtrot<D:return> OUTPUT
 
-test: $(P2B) -CDall "(def double (x) (+ x x)) (double (double 3))"
+test: $(P2B) -CDall "(def double (x) (+ x x)) (double (double 3))" --function-inlining-threshold 0
 is 0 _ Function: double called 2 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
@@ -414,7 +414,7 @@ is 16 _   Foxtrot<D:return> --> [Fun: double] --> Echo<D:return> OUTPUT
 is 17 _   Golf<Scalar 3> --> [Fun: double] --> Foxtrot<D:return>
 is 18 _   [Lit: <Scalar 3>] --> Golf<Scalar 3>
 
-test: $(P2B) -CDall "(def fooloop (y) (+ y (restrict (> y 0) (fooloop (+ y -1))))) (fooloop 3)"
+test: $(P2B) -CDall "(def fooloop (y) (+ y (restrict (> y 0) (fooloop (+ y -1))))) (fooloop 3)" --function-inlining-threshold 2
 is 0 _ Function: fooloop called 2 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
@@ -445,6 +445,7 @@ is 26 _   Mike: Kilo --> <Scalar 3>
 is 27 _ Operator Instances:
 is 28 _   Mike<Scalar 3> --> [Fun: fooloop] --> Lima<D:return> OUTPUT
 is 29 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
+is 30 _ Function: fooloop called 2 times
 
 test: $(P2B) -CDall "(let ((x 3) (x 4)) x)"
 is 0 _ Error during interpretation:
@@ -819,6 +820,26 @@ is 23 _ Fields:
 is 24 _   Lima: Kilo --> <D:return> OUTPUT
 is 25 _ Operator Instances:
 is 26 _   [Fun: timer] --> Lima<D:return> OUTPUT
+is 27 _ Amorphous Mediums:
+is 28 _   [Medium: Kilo = root]
+is 29 _   [Medium: Mike = Kilo | November]
+is 30 _   [Medium: Oscar = Kilo | Papa]
+is 31 _ Fields:
+is 32 _   November: Kilo --> <Boolean>
+is 33 _   Papa: Kilo --> <Boolean>
+is 34 _   Quebec: Kilo --> <Scalar> OUTPUT
+is 35 _   Romeo: Oscar --> <Scalar>
+is 36 _   Sierra: Mike --> <Scalar 0>
+is 37 _   Tango: Oscar --> <Scalar>
+is 38 _   Uniform: Oscar --> <Scalar>
+is 39 _ Operator Instances:
+is 40 _   [dchange] --> November<Boolean>
+is 41 _   November<Boolean> --> [not] --> Papa<Boolean>
+is 42 _   November<Boolean>, Sierra<Scalar 0>, Tango<Scalar> --> [mux] --> Quebec<Scalar> OUTPUT
+is 43 _   Quebec<Scalar> --> [delay] --> Romeo<Scalar>
+is 44 _   [Lit: <Scalar 0>] --> Sierra<Scalar 0>
+is 45 _   Romeo<Scalar>, Uniform<Scalar> --> [+] --> Tango<Scalar>
+is 46 _   [dt] --> Uniform<Scalar>
 
 test: $(P2B) -CDall "(len (tup 3 4))"
 is 0 _ Amorphous Mediums:
@@ -1155,7 +1176,7 @@ is 24 _   Foxtrot<Scalar>, Mike<Scalar 3> --> [-] --> Lima<Scalar> OUTPUT
 is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 
 // Testing propagation in & out of funcall
-test: $(P2B) -CDanalyzed "((lambda (x) (set-dt x)) 5)"
+test: $(P2B) -CDanalyzed "((lambda (x) (set-dt x)) 5)" --function-inlining-threshold 0
 is 0 _ Function: lambda-0 called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
@@ -1175,7 +1196,7 @@ is 15 _   Foxtrot<Scalar 5> --> [Fun: lambda-0] --> Echo<Scalar 5> OUTPUT
 is 16 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
 // should end up with 1 timer call
-test: $(P2B) -CDanalyzed "(all (timer) (timer))"
+test: $(P2B) -CDanalyzed "(all (timer) (timer))" --function-inlining-threshold 0
 is 0 _  Function: timer called 1 times
 is 21 _ Amorphous Mediums:
 is 22 _   [Medium: Kilo = root]
