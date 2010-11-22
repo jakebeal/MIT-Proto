@@ -339,6 +339,7 @@ ProtoType* ProtoField::gcs(ProtoType* t) {
 bool DerivedType::is_arg_ref(string s) {
   if(s.size()<4) return false;
   if(s=="args") return true;
+  if(s=="value") return true;
   if(s.substr(0,3)=="arg") {
     string num = s.substr(3,s.size()-3);
     if(str_is_number(num.c_str())) {

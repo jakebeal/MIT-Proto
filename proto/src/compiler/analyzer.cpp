@@ -324,6 +324,10 @@ ProtoType* OperatorInstance::nth_input(int n) {
   return type_error(this,"Can't find input"+i2s(n)+" in "+to_str());
 }
 
+ProtoType* OperatorInstance::output_type() {
+  return if_derivable(output->range, op->signature->output);
+}
+
 // assumes ref is already known to be an argref
 // kth argument is actually combo of opinstance & signature nature.
 // if signature includes a rest, then that arg returns a set
@@ -333,8 +337,12 @@ ProtoType* arg_ref(SE_Symbol* s, OperatorInstance* oi) {
       *sigt = TypeVector::sig_type_range(oi->op->signature,0,oi->inputs.size());
     return if_derivable(types,sigt);
   }
-  int n = atoi(s->name.substr(3,s->name.size()-3).c_str());
-  return oi->nth_input(n);
+  else if (s->name.substr(0,3)=="arg") {
+    int n = atoi(s->name.substr(3,s->name.size()-3).c_str());
+    return oi->nth_input(n);
+  }
+  // must be value
+  return oi->output_type();
 }
 
 // handles:

@@ -341,6 +341,7 @@ struct OperatorInstance : public CompilationElement {
     this->op=op; output = new Field(space,op->signature->output,this);
   }
   ProtoType* nth_input(int i); // get the range of the nth input (sets become vectors/tuples)
+  ProtoType* output_type(); // get the output type
   Field* add_input(Field* f) // adds the field to the end
   { f->use(this,inputs.size()); inputs.push_back(f); return f; }
   Field* remove_input(int i) // disconnects the field
