@@ -27,6 +27,7 @@ class PaleoCompiler : public Compiler {
   BOOL is_show_code;
   BOOL is_dump_code;
   BOOL is_dump_ast;
+  BOOL is_echo_defops;
   const char* last_script;
   
   PaleoCompiler(Args* args);

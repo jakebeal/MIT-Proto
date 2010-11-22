@@ -2907,7 +2907,8 @@ void read_opfile(string filename) {
 }
 
 void PaleoCompiler::setDefops(string defops) {
-  std::cout << "defops = " << defops.c_str() << "\n";
+  if(is_echo_defops)
+    std::cout << "defops = " << defops.c_str() << "\n";
   SExpr* ex = read_sexpr("defops", defops);
   if(ex==NULL) uerror("Could not read defops %s",defops.c_str());
   if(!ex->isList()) uerror("%s is not an opfile",defops.c_str());
@@ -2942,6 +2943,7 @@ PaleoCompiler::PaleoCompiler(Args* args) : Compiler(args) {
   is_show_code = args->extract_switch("-k");
   is_dump_code = args->extract_switch("--instructions");
   is_dump_ast = args->extract_switch("--print-ast");
+  is_echo_defops = args->extract_switch("--echo-defops");
   init_compiler();
   last_script=(char*)"";
 }
