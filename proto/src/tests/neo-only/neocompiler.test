@@ -1282,6 +1282,35 @@ is 16 _   [Field~~mid] --> Golf<Field <Scalar>>
 is 17 _   [Lit: <Field <Scalar 1>>] --> Hotel<Field <Scalar 1>>
 is 18 _ Stopping before localization
 
+
+test: $(P2B) -CDanalyzed "(def foo (x) (+ 1 x)) (def bar (x y) (* x y)) (bar (foo (foo (mid))) (bar (foo (mid)) (foo 3)))" --function-inlining-threshold -1
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar>
+is 4 _   Charlie: Alfa --> <Scalar>
+is 5 _   Delta: Alfa --> <Scalar> OUTPUT
+is 6 _   Echo: Alfa --> <Scalar>
+is 7 _   Foxtrot: Alfa --> <Scalar 1>
+is 8 _   Golf: Alfa --> <Scalar>
+is 9 _   Hotel: Alfa --> <Scalar 1>
+is 10 _   India: Alfa --> <Scalar>
+is 11 _   Juliet: Alfa --> <Scalar>
+is 12 _   Kilo: Alfa --> <Scalar 1>
+is 13 _   Lima: Alfa --> <Scalar 4>
+is 14 _ Operator Instances:
+is 15 _   [mid] --> Bravo<Scalar>
+is 16 _   [mid] --> Charlie<Scalar>
+is 17 _   Echo<Scalar>, India<Scalar> --> [*] --> Delta<Scalar> OUTPUT
+is 18 _   Foxtrot<Scalar 1>, Golf<Scalar> --> [+] --> Echo<Scalar>
+is 19 _   [Lit: <Scalar 1>] --> Foxtrot<Scalar 1>
+is 20 _   Hotel<Scalar 1>, Bravo<Scalar> --> [+] --> Golf<Scalar>
+is 21 _   [Lit: <Scalar 1>] --> Hotel<Scalar 1>
+is 22 _   Juliet<Scalar>, Lima<Scalar 4> --> [*] --> India<Scalar>
+is 23 _   Kilo<Scalar 1>, Charlie<Scalar> --> [+] --> Juliet<Scalar>
+is 24 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
+is 25 _   [Lit: <Scalar 4>] --> Lima<Scalar 4>
+
 // test: $(P2B) -CDanalyzed "(def foo (x) (+ x (mid))) (apply foo (- (mid) 1))"
 // test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) ((lambda (y) (* x y)) 3))"
 // test: $(P2B) -CDanalyzed "(apply / `(8 12) 2 3)"

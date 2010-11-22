@@ -121,6 +121,7 @@
   "Major mode for editing Proto spatial computing language files"
   (interactive)
   (kill-all-local-variables)
+  (setq comment-start "; ")
   (set-syntax-table proto-mode-syntax-table)
   (use-local-map proto-mode-map)
   (set (make-local-variable 'font-lock-defaults) '(proto-font-lock-keywords))
