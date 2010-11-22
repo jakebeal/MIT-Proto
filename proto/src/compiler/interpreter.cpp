@@ -1136,6 +1136,61 @@ int OperatorInstance::pointwise() {
 }
 
 
+DFG* DFG::instance() {
+  map<CompilationElement*,CompilationElement*> remap;
+  DFG* child = new DFG();
+  // duplicate all operators, recording their relations
+  set<OperatorInstance*>::iterator ni = nodes.begin();
+  for(; ni!=nodes.end(); ni++) {
+    // duplicate the operator
+    OperatorInstance *oi = (*ni);
+    OperatorInstance *newoi = new OperatorInstance(oi->op,oi->output->domain);
+    child->inherit_and_add(oi,newoi);
+    remap[oi] = newoi; remap[oi->output] = newoi->output;
+    // include funcalls
+    if(newoi->op->isA("CompoundOp")) add_funcalls((CompoundOp*)newoi->op,newoi);
+    // TODO: include literal lambda funcalls as well
+  }
+  // change the DFG output to a new field
+  child->output = (Field*)remap[output]; 
+  // now walk over all fields, connecting them up
+  for(ni = nodes.begin(); ni!=nodes.end(); ni++) {
+    OperatorInstance *oi = (*ni);
+    OperatorInstance *newoi = (OperatorInstance*)remap[oi];
+    for(int i=0;i<oi->inputs.size();i++) {
+      Field* newf = (Field*)remap[oi->inputs[i]];
+      newoi->inputs[i] = newf; newf->use(newoi,i);
+    }
+  }
+  // duplicate all AMs
+  for(set<AM*>::iterator ai = spaces.begin(); ai!=spaces.end(); ai++) {
+    AM *newam;
+    if((*ai)->parent) {
+      newam = new AM((*ai)->parent,(*ai)->selector);
+      newam->container = child;
+    } else { 
+      newam = new AM(child);
+    }
+    child->spaces.insert(newam); remap[*ai] = newam;
+  }
+  // swap all AM pointers
+  for(set<AM*>::iterator ai = spaces.begin(); ai!=spaces.end(); ai++) {
+    AM *newam = (AM*)remap[*ai]; 
+    if((*ai)->parent) {  // also implies selector is non-null
+      // change parent (and backpointer)
+      newam->parent = (*ai)->parent; newam->parent->children.insert(newam);
+      // change selector (and backpointer)
+      Field* newf = (Field*)remap[newam->selector];
+      newam->selector = newf; newf->selectors.push_back(newam);
+    }
+    set<Field*>::iterator fi = (*ai)->fields.begin();
+    for(; fi!=(*ai)->fields.end(); fi++) {
+      Field* newf = (Field*)remap[*fi];
+      newam->fields.insert(newf); newf->domain = newam;
+    }
+  }
+  return child;
+}
 
 // Macro-ize a common sequence of operations
 Field* DFG::inherit_and_add(CompilationElement* src, OperatorInstance* oi) {
@@ -1227,6 +1282,18 @@ void DFG::delete_space(AM* am) {
     (*i)->domain=NULL;
   // discard the element & release memory
   spaces.erase(am); delete am;
+}
+
+// can only inline 
+bool DFG::make_op_inline(OperatorInstance* oi) {
+  if(!oi->op->isA("CompoundOp")) return false;
+  DFG* inlinefrag = ((CompoundOp*)oi->op)->body->instance();
+  
+  // BEGIN CODING HERE
+  // Remap fragment AM to be oi AM
+  // Replace inputs, including implicit tupling for rest
+  // Replace outputs
+  return true;
 }
 
 // INTERNAL TESTING

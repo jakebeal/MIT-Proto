@@ -479,7 +479,7 @@ ProtoType* resolve_type(OperatorInstance* context, ProtoType* type) {
   // either is a derived type or contains a derived type:
   if(type->isA("DerivedType")) {
     DerivedType* t = dynamic_cast<DerivedType*>(type);
-    return t->resolve_type(context,t->ref);
+    return t->resolve_type(context);
   } else if(type->isA("ProtoTuple")) {
     ProtoTuple* t = dynamic_cast<ProtoTuple*>(type), *newt;
     if(type->isA("ProtoVector")) {
@@ -997,6 +997,36 @@ class DeadCodeEliminator : public Propagator {
     for(set<Field*>::iterator i=am->fields.begin();i!=am->fields.end();i++)
       if(!kill_f.count(*i)) {live=true;break;} // live domain -> live
     if(live) { kill_a.erase(am); note_change(am); }
+  }
+};
+
+
+/*****************************************************************************
+ *  INLINING                                                                 *
+ *****************************************************************************/
+
+#define DEFAULT_INLINING_THRESHOLD 10
+class FunctionInlining : public Propagator {
+ public:
+  int threshold; // # ops to make something an inlining target
+  set<OperatorInstance*> targets;
+  FunctionInlining(ProtoAnalyzer* parent, Args* args)
+    : Propagator(false,true,false) {
+    verbosity = args->extract_switch("--function-inlining-verbosity") ? 
+      args->pop_number() : parent->verbosity;
+    threshold = args->extract_switch("--function-inlining-threshold") ?
+      args->pop_number() : DEFAULT_INLINING_THRESHOLD;
+  }
+  virtual void print(ostream* out=0) { *out << "FunctionInlining"; }
+  
+  void act(OperatorInstance* oi) {
+    if(!oi->op->isA("CompoundOp")) return;
+    if(threshold!=-1 &&
+       ((CompoundOp*)oi->op)->body->nodes.size() > threshold) return;
+    // online inline small compound operators
+    if(verbosity>=2) *cpout<<" Inlining function "<<oi->to_str()<<endl;
+    // TODO: make sure ths is safe to do for nested operators
+    root->make_op_inline(oi);
   }
 };
 

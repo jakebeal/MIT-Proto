@@ -133,7 +133,8 @@ Other Linux notes:
    
 B. Windows
 * Proto expects the its GNU and X to be provided by Cygwin.
-* Cygwin doesn't install gcc, g++, make, or OpenGL by default.
+* Cygwin doesn't install gcc, g++, make, OpenGL, or GLUT by default.
+  You will need the developer package for GLUT.
 * USING ODE: The easiest way is to get use the "Autotools" method with
   Cygwin (as described in ODE's install notes). You will need to tell
   Cygwin to install "libtool" to install ode this way.

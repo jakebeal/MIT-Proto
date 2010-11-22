@@ -65,3 +65,7 @@ extern void test_compiler_utils();
 void run_test_suite() {
   test_compiler_utils();
 }
+
+// Touch the palette element to be sure that it gets linked in on
+// systems with a linker too smart for its own good
+void* palette = NULL;

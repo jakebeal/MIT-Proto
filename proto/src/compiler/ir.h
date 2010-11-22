@@ -178,10 +178,12 @@ struct DerivedType : public ProtoType {
   virtual bool isA(string c){return c=="DerivedType"||ProtoType::isA(c);}
   virtual string type_of() { return "DerivedType"; }
   // interpreter returns replacement, or NULL if still unresolvable
-  ProtoType* resolve_type(OperatorInstance* oi,SExpr* s);
+  ProtoType* resolve_type(OperatorInstance* oi) { return resolve_type(oi,ref); }
   virtual bool supertype_of(ProtoType* sub) { return false; }
   // LCS of derived-type punts right up to ProtoType
   virtual ProtoType* gcs(ProtoType* t);
+ private:
+  ProtoType* resolve_type(OperatorInstance* oi,SExpr* s);
 };
 
 /*****************************************************************************
@@ -302,7 +304,7 @@ struct AM : public CompilationElement {
   // connections of this AM elsewhere
   set<Field*> fields;
   set<AM*> children;
-  DFG* container; // the DFG this is in (set by inherit_and_add)
+  DFG* container; // the DFG this is in (set by constructor)
   AM(DFG* root) { parent=NULL; selector=NULL; container=root; } // root
   AM(AM* parent, Field* f);
   virtual void print(ostream* out=0);
@@ -331,9 +333,9 @@ struct Field : public CompilationElement {
 
 // OPERATOR INSTANCES are computations performed on particular fields
 struct OperatorInstance : public CompilationElement {
-  Operator* op;
+  Operator* op; // set by constructor
   vector<Field*> inputs;
-  Field* output;
+  Field* output; // generated automatically
   DFG* container; // the DFG this is in (set by inherit_and_add)
   OperatorInstance(Operator *op, AM* space) {
     this->op=op; output = new Field(space,op->signature->output,this);
@@ -345,7 +347,7 @@ struct OperatorInstance : public CompilationElement {
   { inputs[i]->unuse(this,i); return delete_at(&inputs,i); }
   virtual void print(ostream* out=0);
   
-  // pointwise tests for opeeratpr space/time extent: 1=no, 0=yes, -1=unresolved
+  // pointwise tests for operator space/time extent: 1=no, 0=yes, -1=unresolved
   int pointwise();
 };
 
@@ -361,6 +363,8 @@ struct DFG : public CompilationElement {
   void add_funcalls(CompoundOp* lambda, OperatorInstance* oi);
   void print(ostream* out=0);
   void print_with_funcalls(ostream* out=0);
+  
+  DFG* instance(); // create an child copy of this DFG (for function manip)
 
   // DFG manipulation
   static void relocate_input(OperatorInstance* src, int src_loc, 
@@ -371,6 +375,7 @@ struct DFG : public CompilationElement {
   static void relocate_source(OperatorInstance* consumer,int in,Field* newsrc);
   void delete_node(OperatorInstance* oi);
   void delete_space(AM* am);
+  bool make_op_inline(OperatorInstance* oi); // returns true if successful
 };
 
 /*****************************************************************************
