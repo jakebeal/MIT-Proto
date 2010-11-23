@@ -22,7 +22,8 @@ class Instruction : public CompilationElement {
 public:
   Instruction *next,*prev; // sequence links
   int location; // -1 = unknown
-  set<Instruction*> dependents; // instructions "neighboring" this one
+   // instructions "neighboring" this one
+  set<Instruction*, CompilationElement_cmp> dependents;
   
   OPCODE op;
   vector<uint8_t> parameters; // values consumed after op
@@ -150,7 +151,7 @@ public:
 class iLET : public Instruction { // LET_OP, LET_k_OP
 public:
   Instruction* pop;
-  set<Instruction*> usages;
+  set<Instruction*, CompilationElement_cmp> usages;
   iLET() : Instruction(LET_1_OP,1) { pop=NULL; }
   virtual bool isA(string c){return c=="iLET"||Instruction::isA(c);}
   bool resolved() { return pop!=NULL && Instruction::resolved(); }
@@ -204,7 +205,7 @@ class InstructionPropagator : public CompilationElement {
   int verbosity;
   int loop_abort; // # equivalent passes through worklist before assuming loop
   // propagation work variables
-  set<Instruction*> worklist_i;
+  set<Instruction*, CompilationElement_cmp> worklist_i;
   bool any_changes;
   Instruction* root;
   
@@ -219,7 +220,8 @@ class InstructionPropagator : public CompilationElement {
   void queue_nbrs(Instruction* i, int marks=0);
 };
 
-CompilationElement* isrc; set<CompilationElement*> iqueued;
+CompilationElement* isrc;
+set<CompilationElement*, CompilationElement_cmp> iqueued;
 void InstructionPropagator::note_change(Instruction* i) 
 { iqueued.clear(); any_changes=true; isrc=i; queue_nbrs(i); }
 void InstructionPropagator::queue_nbrs(Instruction* i, int marks) {
@@ -254,8 +256,8 @@ bool InstructionPropagator::propagate(Instruction* chain) {
 
 class StackEnvSizer : public InstructionPropagator {
 public:
-  map<Instruction*,int> stack_height;
-  map<Instruction*,int> env_height;
+  map<Instruction*,int, CompilationElement_cmp> stack_height;
+  map<Instruction*,int, CompilationElement_cmp> env_height;
   StackEnvSizer(ProtoKernelEmitter* parent,Args* args) 
   { verbosity = parent->verbosity; }
   void print(ostream* out=0) { *out<<"StackEnvSizer"; }
@@ -320,7 +322,7 @@ public:
       if(l->pop!=NULL) return; // don't do it when pops are resolved
       vector<iLET*> sources; sources.push_back(l);
       if(verbosity>=2) *cpout << "Considering a LET";
-      vector<set<Instruction*> > usages;
+      vector<set<Instruction*, CompilationElement_cmp> > usages;
       usages.push_back(l->usages); //1 per src
       Instruction* pointer = l->next;
       while(!usages.empty()) {
@@ -703,7 +705,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
 }
 
 Instruction* ProtoKernelEmitter::dfg2instructions(DFG* g) {
-  set<Field*> minima;
+  set<Field*, CompilationElement_cmp> minima;
   for(set<Field*>::iterator i=g->edges.begin();i!=g->edges.end();i++) 
     if(!(*i)->consumers.size()) minima.insert(*i);
   
@@ -731,8 +733,8 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
 
   if(verbosity>=1) *cpout << "Linearizing DFG to instructions...\n";
   start = end = new iDEF_VM(); // start of every script
-  map<Operator*,set<OperatorInstance*> >::iterator i=g->funcalls.begin();
-  for( ; i!=g->funcalls.end(); i++) // translate each function
+  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
+  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) // translate each function
     chain_i(&end,dfg2instructions(((CompoundOp*)((*i).first))->body));
   chain_i(&end,dfg2instructions(g)); // next the main
   chain_i(&end,new Instruction(EXIT_OP)); // add the end op

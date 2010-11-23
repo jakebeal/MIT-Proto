@@ -172,5 +172,14 @@ struct CompilationElement_cmp {
     return ce1->elmt_id < ce2->elmt_id;
   }
 };
+// used for some indices
+struct CompilationElementIntPair_cmp {
+  bool operator()(const pair<CompilationElement*,int> &ce1, 
+                  const pair<CompilationElement*,int> &ce2) const {
+    return ((ce1.first->elmt_id < ce2.first->elmt_id) ||
+            (ce1.first->elmt_id == ce2.first->elmt_id &&
+             ce1.second < ce2.second));
+  }
+};
 
 #endif // __COMPILER_UTILS__

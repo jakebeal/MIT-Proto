@@ -19,8 +19,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 void queue_all_fields(DFG* g, Propagator* p) {
   p->worklist_f = g->edges;
-  map<Operator*,set<OperatorInstance*> >::iterator i=g->funcalls.begin();
-  for( ;i!=g->funcalls.end();i++) {
+  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
+  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) {
     CompoundOp* op = (CompoundOp*)((*i).first);
     p->worklist_f.insert(op->body->edges.begin(),op->body->edges.end());
   }
@@ -28,8 +28,8 @@ void queue_all_fields(DFG* g, Propagator* p) {
 
 void queue_all_ops(DFG* g, Propagator* p) {
   p->worklist_o = g->nodes;
-  map<Operator*,set<OperatorInstance*> >::iterator i=g->funcalls.begin();
-  for( ;i!=g->funcalls.end();i++) {
+  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
+  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) {
     CompoundOp* op = (CompoundOp*)((*i).first);
     p->worklist_o.insert(op->body->nodes.begin(),op->body->nodes.end());
   }
@@ -37,8 +37,8 @@ void queue_all_ops(DFG* g, Propagator* p) {
 
 void queue_all_ams(DFG* g, Propagator* p) {
   p->worklist_a = g->spaces;
-  map<Operator*,set<OperatorInstance*> >::iterator i=g->funcalls.begin();
-  for( ;i!=g->funcalls.end();i++) {
+  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
+  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) {
     CompoundOp* op = (CompoundOp*)((*i).first);
     p->worklist_a.insert(op->body->spaces.begin(),op->body->spaces.end());
   }
@@ -46,7 +46,8 @@ void queue_all_ams(DFG* g, Propagator* p) {
 
 // neighbor marking:
 enum { F_MARK=1, O_MARK=2, A_MARK=4 };
-CompilationElement* src; set<CompilationElement*> queued;
+CompilationElement* src;
+set<CompilationElement*,CompilationElement_cmp> queued;
 void Propagator::queue_nbrs(Field* f, int marks) {
   if(marks&F_MARK || queued.count(f)) return;   queued.insert(f);
   if(f!=src) { if(act_fields) { worklist_f.insert(f); } marks |= F_MARK; }
@@ -650,7 +651,7 @@ class TypePropagator : public Propagator {
     } else if(oi->op->isA("Parameter")) { // constrain against all calls
       // find LCS of input types
       ProtoType* inputs = NULL;
-      set<OperatorInstance*> *srcs = 
+      set<OperatorInstance*, CompilationElement_cmp> *srcs = 
         &root->funcalls[((Parameter*)oi->op)->container];
       for(set<OperatorInstance*>::iterator i=srcs->begin();i!=srcs->end();i++) {
         ProtoType* ti = (*i)->nth_input(((Parameter*)oi->op)->index);
@@ -962,7 +963,8 @@ class Literalizer : public Propagator {
 
 class DeadCodeEliminator : public Propagator {
  public:
-  set<Field*, CompilationElement_cmp> kill_f; set<AM*> kill_a;
+  set<Field*, CompilationElement_cmp> kill_f;
+  set<AM*, CompilationElement_cmp> kill_a;
   DeadCodeEliminator(ProtoAnalyzer* parent, Args* args)
     : Propagator(true,false,true) {
     verbosity = args->extract_switch("--dead-code-eliminator-verbosity") ? 
@@ -1017,7 +1019,7 @@ class DeadCodeEliminator : public Propagator {
 class FunctionInlining : public Propagator {
  public:
   int threshold; // # ops to make something an inlining target
-  set<OperatorInstance*> targets;
+  set<OperatorInstance*, CompilationElement_cmp> targets;
   FunctionInlining(ProtoAnalyzer* parent, Args* args)
     : Propagator(false,true,false) {
     verbosity = args->extract_switch("--function-inlining-verbosity") ? 

@@ -23,7 +23,7 @@ class Propagator : public CompilationElement {
   // propagation work variables
   set<Field*, CompilationElement_cmp> worklist_f;
   set<OperatorInstance*, CompilationElement_cmp> worklist_o;
-  set<AM*> worklist_a;
+  set<AM*, CompilationElement_cmp> worklist_a;
   bool any_changes;
   DFG* root;
   

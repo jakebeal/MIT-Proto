@@ -259,7 +259,7 @@ struct Parameter : public Operator { // something input to a function
 // A pointwise operator, "pushed down" to operator over field data types
 struct FieldOp : public Primitive {
  private:
-  static map<Operator*,FieldOp*> fieldops;
+  static map<Operator*,FieldOp*,CompilationElement_cmp> fieldops;
   FieldOp(Operator* base);
  public:
   static FieldOp* get_field_op(OperatorInstance* oi); // null if can't convert
@@ -302,8 +302,8 @@ struct AM : public CompilationElement {
   AM *parent; // nil if root
   Field *selector; // must be coercable to boolean
   // connections of this AM elsewhere
-  set<Field*> fields;
-  set<AM*> children;
+  set<Field*, CompilationElement_cmp> fields;
+  set<AM*, CompilationElement_cmp> children;
   DFG* container; // the DFG this is in (set by constructor)
   AM(DFG* root) { parent=NULL; selector=NULL; container=root; } // root
   AM(AM* parent, Field* f);
@@ -317,7 +317,7 @@ struct Field : public CompilationElement {
   ProtoType *range;
   // connections of this field elsewhere
   OperatorInstance* producer;
-  set<pair<OperatorInstance*,int> > consumers;
+  set<pair<OperatorInstance*,int>, CompilationElementIntPair_cmp > consumers;
   vector<AM*> selectors;
   DFG* container; // the DFG this is in (set by inherit_and_add)
   
@@ -356,8 +356,9 @@ struct OperatorInstance : public CompilationElement {
 struct DFG : public CompilationElement {
   set<OperatorInstance*, CompilationElement_cmp> nodes;
   set<Field*, CompilationElement_cmp> edges;
-  set<AM*> spaces;
-  map<Operator*,set<OperatorInstance*> > funcalls;
+  set<AM*, CompilationElement_cmp> spaces;
+  map<Operator*,set<OperatorInstance*, CompilationElement_cmp>, 
+    CompilationElement_cmp> funcalls;
   Field* output;
   CompoundOp* container; // set for CompoundOps
   

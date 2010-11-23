@@ -136,7 +136,8 @@ class ProtoKernelEmitter : public CodeEmitter {
 
  private:
   vector<InstructionPropagator*> rules;
-  map<Field*,CompilationElement*> memory; // global & env storage
+   // global & env storage
+  map<Field*,CompilationElement*, CompilationElement_cmp> memory;
   map<string,pair<int,int> > sv_ops; // list of scalar/vector ops
   Instruction *start, *end;
 

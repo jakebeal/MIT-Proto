@@ -1040,7 +1040,7 @@ void DFG::print(ostream* out) {
 }
 
 void DFG::print_with_funcalls(ostream* out) {
-  map<Operator*,set<OperatorInstance*> >::iterator i=funcalls.begin();
+  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i=funcalls.begin();
   for( ; i!=funcalls.end(); i++) {
     CompoundOp* op = (CompoundOp*)((*i).first);
     *cpout<<"Function: "<<op->name<<" called "<<(*i).second.size()<<" times\n";
@@ -1084,7 +1084,8 @@ bool CompoundOp::compute_side_effects() {
   attributes.erase(":side-effect"); return false;
 }
 
-map<Operator*,FieldOp*> FieldOp::fieldops; // table of FieldOps used to date
+// table of FieldOps used to date
+map<Operator*,FieldOp*,CompilationElement_cmp> FieldOp::fieldops;
 FieldOp* FieldOp::get_field_op(OperatorInstance* oi) {
   if(!oi->op->isA("Primitive") || oi->pointwise()==0) return NULL;
   // reuse or create appropriate FieldOp
@@ -1140,7 +1141,7 @@ int OperatorInstance::pointwise() {
 
 
 DFG* DFG::instance() {
-  map<CompilationElement*,CompilationElement*> remap;
+  map<CompilationElement*,CompilationElement*,CompilationElement_cmp> remap;
   DFG* child = new DFG();
 
   // duplicate all AMs
@@ -1204,7 +1205,7 @@ Field* DFG::inherit_and_add(CompilationElement* src, OperatorInstance* oi) {
 void DFG::add_funcalls(CompoundOp* lambda, OperatorInstance* oi) {
   funcalls[lambda].insert(oi);
   if(lambda->body!=this) { // don't import on recursive calls
-    map<Operator*,set<OperatorInstance*> >::iterator i;
+    map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
     for(i=lambda->body->funcalls.begin();i!=lambda->body->funcalls.end();i++)
       funcalls[(*i).first].insert((*i).second.begin(),(*i).second.end());
   }
