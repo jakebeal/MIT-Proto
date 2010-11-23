@@ -144,6 +144,7 @@ double Args::pop_number() {
   }
   return atof(arg);
 }
+int Args::pop_int() { return (int)pop_number(); }
 
 // if pos is present, value set to TRUE; if neg is present, value set to FALSE
 // if neither, value is unchanged; if both, value is set to FALSE;

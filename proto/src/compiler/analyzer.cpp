@@ -398,7 +398,7 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
       if(n->constant) { // if 2nd is a literal, access the argument
         if(n->value<0 || n->value>=source->size())
           return type_error(oi,"'nth' reference out of bounds: "+n->to_str());
-        return (*source)[n->value];
+        return (*source)[(int)n->value];
       } else { // otherwise, take the LCS of the source
         ProtoType* compound = (*source)[0];
         for(int i=1;i<source->size();i++) 
@@ -514,7 +514,7 @@ class TypePropagator : public Propagator {
  public:
   TypePropagator(ProtoAnalyzer* parent, Args* args) : Propagator(true,true) {
     verbosity = args->extract_switch("--type-propagator-verbosity") ? 
-      args->pop_number() : parent->verbosity;
+      args->pop_int() : parent->verbosity;
   }
   virtual void print(ostream* out=0) { *out << "TypePropagator"; }
   
@@ -740,7 +740,7 @@ class ConstantFolder : public Propagator {
  public:
   ConstantFolder(ProtoAnalyzer* parent, Args* args) : Propagator(false,true) {
     verbosity = args->extract_switch("--constant-folder-verbosity") ? 
-      args->pop_number() : parent->verbosity;
+      args->pop_int() : parent->verbosity;
   }
   virtual void print(ostream* out=0) { *out << "ConstantFolder"; }
 
@@ -913,7 +913,7 @@ class Literalizer : public Propagator {
  public:
   Literalizer(ProtoAnalyzer* parent, Args* args) : Propagator(true,true) {
     verbosity = args->extract_switch("--literalizer-verbosity") ? 
-      args->pop_number() : parent->verbosity;
+      args->pop_int() : parent->verbosity;
   }
   virtual void print(ostream* out=0) { *out << "Literalizer"; }
   void act(Field* f) {
@@ -968,7 +968,7 @@ class DeadCodeEliminator : public Propagator {
   DeadCodeEliminator(ProtoAnalyzer* parent, Args* args)
     : Propagator(true,false,true) {
     verbosity = args->extract_switch("--dead-code-eliminator-verbosity") ? 
-      args->pop_number() : parent->verbosity;
+      args->pop_int() : parent->verbosity;
   }
   virtual void print(ostream* out=0) { *out << "DeadCodeEliminator"; }
   void preprop() { kill_f = worklist_f; kill_a = worklist_a; }
@@ -1023,9 +1023,9 @@ class FunctionInlining : public Propagator {
   FunctionInlining(ProtoAnalyzer* parent, Args* args)
     : Propagator(false,true,false) {
     verbosity = args->extract_switch("--function-inlining-verbosity") ? 
-      args->pop_number() : parent->verbosity;
+      args->pop_int() : parent->verbosity;
     threshold = args->extract_switch("--function-inlining-threshold") ?
-      args->pop_number() : DEFAULT_INLINING_THRESHOLD;
+      args->pop_int() : DEFAULT_INLINING_THRESHOLD;
   }
   virtual void print(ostream* out=0) { *out << "FunctionInlining"; }
   
@@ -1149,8 +1149,8 @@ public:
 
 ProtoAnalyzer::ProtoAnalyzer(NeoCompiler* parent, Args* args) {
   is_dump_analyzed = args->extract_switch("-CDanalyzed") | parent->is_dump_all;
-  verbosity = args->extract_switch("--analyzer-verbosity")?args->pop_number():0;
-  max_loops=args->extract_switch("--analyzer-max-loops")?args->pop_number():10;
+  verbosity = args->extract_switch("--analyzer-verbosity")?args->pop_int():0;
+  max_loops=args->extract_switch("--analyzer-max-loops")?args->pop_int():10;
   paranoid = args->extract_switch("--analyzer-paranoid");
   // set up rule collection
   rules.push_back(new TypePropagator(this,args));
@@ -1198,7 +1198,7 @@ class HoodToFolder : public Propagator {
 public:
   HoodToFolder(GlobalToLocal* parent, Args* args) : Propagator(false,true) {
     verbosity = args->extract_switch("--hood-to-folder-verbosity") ?
-      args->pop_number() : parent->verbosity;
+      args->pop_int() : parent->verbosity;
   }
   virtual void print(ostream* out=0) { *out << "HoodTofolder"; }
 
@@ -1259,8 +1259,8 @@ public:
 
 GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   is_dump_localized = args->extract_switch("-CDlocalized")|parent->is_dump_all;
-  verbosity=args->extract_switch("--localizer-verbosity")?args->pop_number():0;
-  max_loops=args->extract_switch("--localizer-max-loops")?args->pop_number():10;
+  verbosity=args->extract_switch("--localizer-verbosity")?args->pop_int():0;
+  max_loops=args->extract_switch("--localizer-max-loops")?args->pop_int():10;
   paranoid = args->extract_switch("--localizer-paranoid");
   // set up rule collection
   rules.push_back(new HoodToFolder(this,args));

@@ -537,9 +537,9 @@ Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l) {
       if (val >= 0 && val < MAX_LIT_OPS) {
         return new Instruction(LIT_0_OP+(uint8_t)val);
       } else if (val >= 0 && val < 128) { 
-        Instruction* i = new Instruction(LIT8_OP); i->padd(val); return i;
+        Instruction* i = new Instruction(LIT8_OP); i->padd((int)val); return i;
       } else if (val >= 0 && val < 65536) {
-        Instruction* i = new Instruction(LIT16_OP); i->padd16(val); return i;
+        Instruction* i = new Instruction(LIT16_OP);i->padd16((int)val);return i;
       }
     }
     // otherwise, is a floating literal
@@ -633,7 +633,7 @@ void ProtoKernelEmitter::load_ops(string name, NeoCompiler* parent) {
     }
     opnames[i] = ((SE_Symbol*)(*op)[0])->name;
     if((*op)[1]->isScalar()) 
-      op_stackdeltas[i] = ((SE_Scalar*)(*op)[1])->value;
+      op_stackdeltas[i] = (int)((SE_Scalar*)(*op)[1])->value;
     else if(((SE_Symbol*)(*op)[1])->name=="variable")
       op_stackdeltas[i] = 7734; // give variables a fixed bogus number
     else compile_error((*op)[1],"Unknown op stack-delta: "+(*op)[1]->to_str());
@@ -661,8 +661,8 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
   is_dump_hex = args->extract_switch("--hexdump");
   print_compact = (args->extract_switch("--emit-compact") ? 2 :
                    (args->extract_switch("--emit-semicompact") ? 1 : 0));
-  verbosity = args->extract_switch("--emitter-verbosity")?args->pop_number():0;
-  max_loops=args->extract_switch("--emitter-max-loops")?args->pop_number():10;
+  verbosity = args->extract_switch("--emitter-verbosity")?args->pop_int():0;
+  max_loops=args->extract_switch("--emitter-max-loops")?args->pop_int():10;
   paranoid = args->extract_switch("--emitter-paranoid");
   // load operation definitions
   string name = "core.ops"; load_ops(name,parent); terminate_on_error();

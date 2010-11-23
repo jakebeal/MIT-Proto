@@ -370,7 +370,7 @@ void LeftoverLayer::fold_complete_op(MACHINE* machine) {
 
 void LeftoverLayer::channel_op(MACHINE* machine) {
   int n = NXT_OP(machine);
-  set_channel(NUM_POP(), n);
+  set_channel((int)NUM_POP(), n);
   NUM_PUSH(n);
 }
 
@@ -378,7 +378,7 @@ void LeftoverLayer::drip_op(MACHINE* machine) {
   NUM_VAL a = NUM_PEEK(1);
   NUM_VAL c = NUM_PEEK(0);
   NPOP(2);
-  NUM_PUSH(drip_channel(a, (int) c));
+  NUM_PUSH(drip_channel((int)a, (int) c));
 }
 
 void LeftoverLayer::concentration_op(MACHINE* machine) {

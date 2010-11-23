@@ -130,6 +130,7 @@ class Args {
   char* pop_next(); // removes the argument at the pointer and returns it
   char* peek_next(); // returns the argument at the pointer w/o removing
   double pop_number(); // like pop_next, but converts to number
+  int pop_int(); // pop_number, converted to an int
   void goto_first(); // returns the pointer to the start of the arguments
   void remove(int i); // shrinks the list, deleting the ith argument
   void undefault(BOOL *value,const char* pos,const char* neg); // modify a default switch
