@@ -110,15 +110,18 @@ bool Propagator::propagate(DFG* g) {
     // each time through, try executing one from each worklist
     if(!worklist_f.empty()) {
       Field* f = *worklist_f.begin(); worklist_f.erase(f); 
-      act(f); steps_remaining--;
+      if(f->container->edges.count(f)) // ignore deleted elements
+        { act(f); steps_remaining--; }
     }
     if(!worklist_o.empty()) {
       OperatorInstance* oi = *worklist_o.begin(); worklist_o.erase(oi);
-      act(oi); steps_remaining--;
+      if(oi->container->nodes.count(oi)) // ignore deleted elements
+        { act(oi); steps_remaining--; }
     }
     if(!worklist_a.empty()) {
       AM* am = *worklist_a.begin(); worklist_a.erase(am); 
-      act(am); steps_remaining--;
+      if(am->container->spaces.count(am)) // ignore deleted elements
+        { act(am); steps_remaining--; }
     }
   }
   if(steps_remaining<=0) ierror("Aborting due to apparent infinite loop.");
@@ -1032,14 +1035,15 @@ class FunctionInlining : public Propagator {
   void act(OperatorInstance* oi) {
     if(!oi->op->isA("CompoundOp")) return; // can only inline compound ops
     if(oi->container->container == oi->op) return; // don't inline recursive
-    // if either the body or the container is small
+    // check that either the body or the container is small
     int bodysize = ((CompoundOp*)oi->op)->body->nodes.size();
     int containersize = oi->container->nodes.size();
     if(threshold!=-1 && bodysize>threshold && containersize>threshold) return;
 
+    // actually carry out the inlining
     if(verbosity>=2) *cpout<<" Inlining function "<<oi->to_str()<<endl;
-    // TODO: make sure ths is safe to do for nested operators
-    root->make_op_inline(oi);
+    note_change(oi);
+    oi->container->make_op_inline(oi);
   }
 };
 

@@ -237,6 +237,7 @@ struct Primitive : public Operator {
 struct CompoundOp : public Operator {
   DFG *body;
   static int lambda_count; // uids for unnamed lambdas
+  set<OperatorInstance*, CompilationElement_cmp> usages;
   // set body afterward, to allow recursiveness
   CompoundOp(string n);
   bool compute_side_effects(); // marks self & returns
@@ -339,6 +340,7 @@ struct OperatorInstance : public CompilationElement {
   DFG* container; // the DFG this is in (set by inherit_and_add)
   OperatorInstance(Operator *op, AM* space) {
     this->op=op; output = new Field(space,op->signature->output,this);
+    if(op->isA("CompoundOp")) ((CompoundOp*)op)->usages.insert(this);
   }
   ProtoType* nth_input(int i); // get the range of the nth input (sets become vectors/tuples)
   ProtoType* output_type(); // get the output type

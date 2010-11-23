@@ -1248,6 +1248,17 @@ void DFG::relocate_consumers(Field* src, Field* dst) {
   if(src->container->output==src) src->container->output = dst; // move output
 }
 
+void recursive_funcall_delete(OperatorInstance* oi, DFG* g) {
+  g->funcalls[oi->op].erase(oi);
+  if(g->funcalls[oi->op].empty()) g->funcalls.erase(oi->op);
+  if(g->container) {
+    set<OperatorInstance*>::iterator i = g->container->usages.begin();
+    for(; i!=g->container->usages.end(); i++) {
+      recursive_funcall_delete(oi,(*i)->container);
+    }
+  }
+}
+
 void DFG::delete_node(OperatorInstance* oi) {
   // release the inputs
   for(int i=0;i<oi->inputs.size();i++)
@@ -1261,9 +1272,8 @@ void DFG::delete_node(OperatorInstance* oi) {
   if(oi->output->domain) oi->output->domain->fields.erase(oi->output);
   // remove any compound-op references
   if(oi->op->isA("CompoundOp")) {
-    oi->container->funcalls[oi->op].erase(oi);
-    if(oi->container->funcalls[oi->op].empty())
-      oi->container->funcalls.erase(oi->op);
+    ((CompoundOp*)oi->op)->usages.erase(oi);
+    recursive_funcall_delete(oi,this);
   }
   // discard the elements
   nodes.erase(oi); edges.erase(oi->output);
