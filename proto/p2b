@@ -8,4 +8,4 @@ if ! test -x "${mydir}/src/p2b"; then
     exit 1
 fi
 
-exec "${mydir}/src/p2b" --srcdir "${mydir}" "${@}"
+exec "${mydir}/src/p2b" -path . --srcdir "${mydir}" "${@}"

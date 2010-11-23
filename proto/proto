@@ -10,4 +10,4 @@ fi
 
 export LD_LIBRARY_PATH="${mydir}/src/sim/plugins/:/usr/local/lib/:$LD_LIBRARY_PATH"
 
-exec "${mydir}/src/proto" --srcdir "${mydir}" "${@}"
+exec "${mydir}/src/proto" -path . --srcdir "${mydir}" "${@}"

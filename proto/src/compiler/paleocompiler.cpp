@@ -2936,7 +2936,7 @@ PaleoCompiler::PaleoCompiler(Args* args) : Compiler(args) {
     proto_path->add_to_path(args->pop_next());
   else
     proto_path->add_default_path(srcdir);
-
+  
   while(args->extract_switch("-path",false)) // can extract multiple times
     proto_path->add_to_path(args->pop_next());
   
