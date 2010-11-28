@@ -20,6 +20,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <sstream>
 #include <vector>
 #include "utils.h"
+#include "nicenames.h"
 
 using namespace std;
 
@@ -133,7 +134,7 @@ struct IntAttribute : Attribute {
 };
 
 // By default, attributes that are passed around are *not* duplicated
-struct CompilationElement {
+struct CompilationElement : public Nameable {
   static uint32_t max_id;
   uint32_t elmt_id;
   map<string,Attribute*> attributes; // should end up with null in default

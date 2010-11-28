@@ -3,6 +3,14 @@
 
 #include <string>
 
-extern std::string nicename(void* value);
+using namespace std;
+
+class Nameable {
+ private:
+  string assigned_name;
+ public:
+  Nameable();
+  string nicename();
+};
 
 #endif // __NICENAMES__

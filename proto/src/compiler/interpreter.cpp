@@ -984,12 +984,12 @@ void Parameter::print(ostream* out) {
 }
 
 void Field::print(ostream* out)
-{ *out<<nicename(this)<<": "<<nicename(domain)<<" --> "; range->print(out); }
+{*out<<this->nicename()<<": "<<domain->nicename()<<" --> "; range->print(out);}
 
 void AM::print(ostream* out) {
-  *out << "[Medium: " << nicename(this) << " = ";
-  if(parent) { *out << nicename(parent) << " | ";
-    if(selector) { *out << nicename(selector); }
+  *out << "[Medium: " << this->nicename() << " = ";
+  if(parent) { *out << parent->nicename() << " | ";
+    if(selector) { *out << selector->nicename(); }
   } else { *out << "root"; }
   *out << "]";
 }
@@ -1014,11 +1014,11 @@ void Signature::print(ostream* out) {
 void OperatorInstance::print(ostream* out) {
   for(int i=0;i<inputs.size();i++) {
     if(i) *out << ", ";
-    *out << nicename(inputs[i]); inputs[i]->range->print(out);
+    *out << inputs[i]->nicename(); inputs[i]->range->print(out);
   }
   if(inputs.size()) *out << " --> "; 
   op->print(out); 
-  *out << " --> " << nicename(output); output->range->print(out);
+  *out << " --> " << output->nicename(); output->range->print(out);
 }
 
 void DFG::print(ostream* out) {

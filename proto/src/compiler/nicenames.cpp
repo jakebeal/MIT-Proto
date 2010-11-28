@@ -293,8 +293,9 @@ string get_next_nicename() {
   }
 }
 
-map<void*,string> namecache;
-string nicename(void* value) {
-  if(namecache[value]=="") namecache[value]=get_next_nicename();
-  return namecache[value];
+Nameable::Nameable() { assigned_name=""; }
+
+string Nameable::nicename() {
+  if(assigned_name=="") { assigned_name = get_next_nicename(); }
+  return assigned_name;
 }

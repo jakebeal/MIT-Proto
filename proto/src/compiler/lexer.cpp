@@ -566,7 +566,7 @@ struct SExprLexer {
     } else if(base->len()==2) { return base->children[1]; // single SEXpr
     } else { return base; }
   }
-   
+  
   Context* context() { return new Context(name,yylineno); }
   
   // start a new sexpr, contained within the current context
