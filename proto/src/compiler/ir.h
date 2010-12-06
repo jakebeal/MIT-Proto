@@ -209,7 +209,6 @@ struct Operator : public CompilationElement {
   string name; // only set by some operators
   Operator() {}
   Operator(Signature *sig) { signature=sig; }
-  string to_str() { ostringstream s; print(&s); return s.str(); }
   virtual void print(ostream* out=0) 
   { *out << "[Op"; signature->print(out); *out << "]"; }
   virtual string type_of() { return "Operator"; }
@@ -223,7 +222,6 @@ struct Literal : public Operator {
     if(!v->isLiteral()) ierror("Tried to make Literal from "+v->to_str());
     signature = new Signature(v); value = v;
   }
-  string to_str() { ostringstream s; print(&s); return s.str(); }
   virtual void print(ostream* out=0)
   {*out << "[Lit: "; value->print(out); *out << "]";}
   virtual bool isA(string c) { return (c=="Literal")?true:Operator::isA(c); }
@@ -370,7 +368,6 @@ struct DFG : public CompilationElement {
   
   Field* inherit_and_add(CompilationElement* src, OperatorInstance* oi);
   void add_funcalls(CompoundOp* lambda, OperatorInstance* oi);
-  string to_str() { ostringstream s; print(&s); return s.str(); }
   void print(ostream* out=0);
   void print_with_funcalls(ostream* out=0);
   

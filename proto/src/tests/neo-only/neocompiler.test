@@ -1332,9 +1332,15 @@ is 15 _   Bravo<Scalar> --> [sqrt] --> Foxtrot<Scalar>
 is 16 _   Bravo<Scalar> --> [sqrt] --> Golf<Scalar>
 is 17 _   Bravo<Scalar> --> [sqrt] --> Hotel<Scalar>
 
+// make sure restrictions happen on cross-domain boundaries
+// test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) (if (rnd 0 1) x 3))"
+// is 0 _ Amorphous Mediums:
+
+// references in lambdas to other DFGs
+// test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) ((lambda (y) (* x y)) 3))"
+// is 0 _ Amorphous Mediums:
 
 // test: $(P2B) -CDanalyzed "(def foo (x) (+ x (mid))) (apply foo (- (mid) 1))"
-// test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) ((lambda (y) (* x y)) 3))"
 // test: $(P2B) -CDanalyzed "(apply / `(8 12) 2 3)"
 
 // check pointwise computation allowing raising of compound op to field

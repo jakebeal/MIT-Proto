@@ -83,7 +83,6 @@ struct SE_List : SExpr {
   SExpr* op() { return children[0]; }
   SExpr* operator[](int i) { return children[i]; }
   vector<SExpr*>::iterator args() { return ++children.begin(); }
-  string to_str() { ostringstream s; print(&s); return s.str(); }
   void print(ostream *out=cpout) { 
     *out << "("; pp_push(1);
     for(vector<SExpr*>::iterator i=children.begin(); i!=children.end(); i++) {
