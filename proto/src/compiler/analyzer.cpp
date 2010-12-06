@@ -811,7 +811,7 @@ class ConstantFolder : public Propagator {
     } else if(name=="*") {
       double mults = 1;
       ProtoTuple* vnum = NULL;
-      for(int i=1;i<oi->inputs.size();i++) {
+      for(int i=0;i<oi->inputs.size();i++) {
         if(nth_type(oi,i)->isA("ProtoScalar")) { mults *= nth_scalar(oi,i);
         } else if(vnum) { compile_error(oi,">1 vector in multiplication");
         } else { vnum = nth_tuple(oi,i); 

@@ -15,8 +15,8 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(- 2
 = 1 3 -2
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(neg -6)"
 = 1 3 6
-//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(* 9 3 4 2)"
-//= 1 3 216
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(* 9 3 4 2)"
+= 1 3 216
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(/ 5 2)"
 = 1 3 2.5
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(/ 4 0)"
@@ -25,6 +25,7 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(/ -
 = 1 3 -Inf
 //test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(* 0 (/ 1 0))"
 //is_nan 1 3 nan
+//(KYLE) I think this should actually be 0
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod 37 6)"
 = 1 3 1
 //test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(= (inf) (+ 1 (inf))"
@@ -38,10 +39,10 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(+ (
 = 1 3 5
 = 1 4 2
 = 1 5 3
-// test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(- (tup 1 2 3) (tup 1))"
-// = 1 3 0
-// = 1 4 2
-// = 1 5 3
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(- (tup 1 2 3) (tup 1))"
+= 1 3 0
+= 1 4 2
+= 1 5 3
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(- (tup 1 2 3) (tup 0 0))"
 = 1 3 1
 = 1 4 2
