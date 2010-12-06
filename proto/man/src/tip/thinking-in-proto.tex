@@ -1141,7 +1141,7 @@ always how we build programs over long distances.  The neighborhood
 computation moves information around locally, and the \var{letfed} or
 \var{rep} remembers the information so that it can be passed on to
 other neighbors.  For example we can build a simplified version of
-\var{distance-to} list this:
+\var{distance-to} like this:
 
 \code{proto -v -c "(rep d (inf) (mux (sense 1) 0 (min-hood+ (+ (nbr-range) (nbr d)))))"}
 
@@ -1223,7 +1223,7 @@ the likely farthest.
   farthest device using the most accurate values of \var{d}?}
 
 After the farthest device identifies itself, it sets a timer and names
-it in the innter \var{let} function.  The timer is now ticking away
+it in the inner \var{let} function.  The timer is now ticking away
 invisibly in the farthest device.  Each step, the devices check
 whether this timer's value exceeds twenty seconds.  When it does, it
 lights its red LED.  Until then, a blue LED is lit. Execute this with
@@ -1301,17 +1301,18 @@ Language.  Remember to use the ever-helpful Proto Language Reference.
   microwave should run for three minutes), and pause the timer
   whenever \qvar{sense 2} is on.}
 
-\problem{Exercise 2: Create a program in which a timer begins in a
-  \qvar{sense 1} device.  Red LEDs go on that are within the distance
-  of the value of that timer (e.g., when the timer reaches 10 seconds,
-  devices within 10 meters from the source turn on red LEDs).}
-
-\problem{Exercise 3: Create a field of 10 points. Have them all turn
+\problem{Exercise 2: Create a field of 10 points. Have them all turn
   on timers.  If the timer, rounded to the nearest second, is at a
   multiple of three, have it turn its LED red.  If the timer is a
   multiple of three with a remainder of one, turn the LED green.  Else
   turn the LED blue.  Make sure that your program works when the time
   step is fractions, as well as whole seconds.}
+
+\problem{Exercise 3: Create a program in which a timer begins in a
+  \qvar{sense 1} device.  Devices whose distances from the \qvar{sense 1}
+  device are less-than the value of the timer should turn on their red LEDs
+  (e.g., when the timer reaches 10 seconds, devices within 10 meters from
+  the source turn on red LEDs).}
 
 \problem{Exercise 4: Write the \var{once} function, which takes in
   an expression and remembers the first value that expression has,
@@ -1350,11 +1351,11 @@ movement. The new parts:
   reference, takes a vector and uses it to determine the velocity of a
   device---the speed and direction that the device is traveling.
 \item \var{disperse}: this is a separate function that computes a
-  vector to each device, so that if the devices follow thei vectors,
+  vector to each device, so that if the devices follow their vectors,
   they will move away from other devices within their radio-range.
   This function will vary with different radio-ranges, because the
   devices will only disperse from the devices they are communicating
-  with.  Look at page 13 of the Proto Language Reference for more
+  with.  Look at the Proto Language Reference for more
   information on the \var{disperse} function.
 \end{itemize}
 
@@ -1467,7 +1468,7 @@ device which direction it should move towards.  This definition takes
 the integral, approximated by adding up the vectors from each neighbor
 and weighting each by the amount of nearby space that is nearer to
 that device than any other.  Inside the integral, the \var{if} asks
-each neighbor, is your \var{min-d} less than infinity (this is the
+each neighbor, ``is your \var{min-d} less than infinity?'' (this is the
 same trick from before, asking if there is indeed a closest point) and
 the second part asks each neighbor whether that neighbor has the
 lowest \var{d} value (which vector(s) in the field returned by
@@ -1509,7 +1510,7 @@ execute the function.  What about these arguments?  Well, these
 arguments tell the simulator to \qvar{-m} (enable movement) and
 \qvar{-r 30} (increase communication range to ensure most points are
 incorporated).  The \qvar{-s 0.1} tells the simulator that instead of
-the default 0.01 simulated seconds per step, we want to run stes of
+the default 0.01 simulated seconds per step, we want to run steps of
 0.1 simulated seconds.  This speeds up the program (since it redraws
 the image ten times less frequently), instead of speeding up the
 actual device movement.  Having these devices move too quickly may
@@ -1521,7 +1522,7 @@ cause the group to tear apart.
 
 Now execute this program.  One hundred red circles appear, randomly
 distributed through the simulator space.  Notice they will not move
-until the \var{if} statement becomes true with a source device.  Pick
+until a source device is designated.  Pick
 any device, and turn \qvar{sense 1} on.  Instantly all the devices
 begin moving towards each other, running into each other and moving
 towards the source device.  Before 200 simulated seconds are up, the
@@ -1653,9 +1654,9 @@ here for our code:
 \end{verbatim}
 \end{quote}
 
-This program establishes \var{d} in every devices as its individual
+This program establishes \var{d} in every device as its individual
 distance to the source.  Then it asks each device whether it is the
-destination.  The destination is instructed not to move with with
+destination.  The destination is instructed not to move with 
 \var{(tup 0 0)}.  We use \var{mux} here to make sure that the
 destination will participate in the calculation of which way the ship
 should go.  Then the program asks whichever devices is the ship
@@ -1668,7 +1669,7 @@ the ship now has the vector of the general direction of all the
 devices in its neighborhood whose values of \var{d} are less (closer
 to the source).  Proto continuously asks if this vector length
 (\var{vlen}) is greater than zero (this ship still has some distance
-to travel), and if it is, the ship should continue forward at 0.5
+to travel), and if it is, the ship should continue forward at 0.2
 meters per second speed, and in the direction of the vector it has
 established.
 
@@ -1767,9 +1768,9 @@ will tear apart into more than one group.
   obtained by multiplying corresponding entries and adding up those
   products.  For example, two vectors of values [1 0 4] and [3 7 2]
   have a dot product of $(1 * 3 + 0 * 7 + 4 * 2) = 11$.
-\item \var{rep}: This is not new, but as we have not used it since the
+\item \var{rep}: This is not new, but we have not used it since the
   beginning of Section~\ref{s:time}.  You are reminded to look it up
-  on page 5 of the Proto Language Reference to remind yourself of the
+  in the Proto Language Reference to remind yourself of the
   basic form of a \var{rep} expression.
 \end{itemize}
 
@@ -1804,7 +1805,7 @@ terminal call code, \var{flock} is called with its \var{dir} as this:
 Reference!  That's because it gives each device a vector of its global
 coordinates.  We don't want to assume that is always possible, so
 \var{coord} is in one of the optional parts of the simulator
-model---see page 14 of the Proto Simulator User Manual.
+model---see the Proto Simulator User Manual.
 
 Imagine a coordinate field.  The middle of the screen is coordinates
 $(0, 0)$. A \var{sense 1} device could be in any of the four
@@ -1833,10 +1834,9 @@ which fall into three categories.  Neighbors less than 5 meters away
 are ``too close'' and the device moves at a magnitude of one away
 (negative direction) from those.  Neighbors that are more than 10
 meters away are ``too far'' and the device moves at a magnitude of 0.2
-toward them.  Neighbors at an in-between distance (between 5 and 10
-meters distant) the device tries to align with, adding in their
-\var{v} value.  In this way, devices form groups with their neighbors,
-while still keeping a certain distance away.
+toward them.  The device tries to align with neighbors at a distance
+between 5 and 10 meters.  In this way, devices form groups with their
+neighbors, while still keeping a certain distance away.
 
 In the actual function part inside the \var{let}, devices are given a
 final direction of \var{dir} (which only matters for sense 1 devices)
@@ -1968,7 +1968,7 @@ devices).  Then they move at 0.01 magnitude of the vectors returned by
 the \qvar{dither} function, which results in slow movement in a random
 direction.  Finally, also perform the track function.  Note that the
 track function simply returns a tuple to the target at the
-destination, which is displayed but does not moved with.
+destination, which is displayed but causes no motion.
 
 Execute this program with the last terminal code listed in the
 \var{track-demo.proto} file.  Again, remember that you will need to be
