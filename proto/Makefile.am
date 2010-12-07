@@ -5,8 +5,7 @@ SUBDIRS = \
 
 EXTRA_DIST = \
 	proto \
-	p2b \
-	config/BB_ENABLE_DOXYGEN.m4 
+	p2b 
 
 docs:
 	$(MAKE) -C doc
