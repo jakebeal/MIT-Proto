@@ -32,6 +32,10 @@ AX_WITH_PYTHON([echo "no python found"; exit 1; : ]) # only needed for tests
 PROTO_WITH_GLUT
 PROTO_WITH_NEOCOMPILER
 
+## check for doxygen
+
+BB_ENABLE_DOXYGEN
+
 ## directories
 
 PROTO_PROTOLIBDIR
@@ -76,5 +80,8 @@ AC_CONFIG_FILES([Makefile
                  src/shared/Makefile
                  src/sim/Makefile
                  src/tests/Makefile
+                 doc/Makefile
+                 doc/Doxyfile
+                 doc/html/Makefile
                 ])
 AC_OUTPUT
