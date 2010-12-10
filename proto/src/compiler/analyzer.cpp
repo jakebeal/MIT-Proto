@@ -900,8 +900,27 @@ class ConstantFolder : public Propagator {
     } else if(name=="tanh") {
       maybe_set_output(oi,new ProtoScalar(tanh(nth_scalar(oi,0))));
     } else if(name=="vdot") {
-      // (primitive vdot (vector vector) scalar)
-      compile_warn(oi,"ConstantFolder incomplete for "+oi->op->to_str());
+      // check two, equal length vectors
+      ProtoVector* v1 = NULL;
+      ProtoVector* v2 = NULL;
+      if(2==oi->inputs.size() 
+         && nth_type(oi,0)->isA("ProtoVector") 
+         && nth_type(oi,1)->isA("ProtoVector")) {
+        v1 = dynamic_cast<ProtoVector*>(nth_type(oi,0)); 
+        v2 = dynamic_cast<ProtoVector*>(nth_type(oi,1)); 
+        if(v1->types.size() != v2->types.size()) {
+          compile_error("Dot product requires 2, *equal size* vectors");
+        }
+      } else {
+        compile_error("Dot product requires exactly *2* vectors");
+      }
+      // sum of products
+      ProtoScalar* sum = new ProtoScalar(0);
+      for(int i=0; i<v1->types.size(); i++) {
+        sum->value += dynamic_cast<ProtoScalar*>(v1->types[i])->value *
+          dynamic_cast<ProtoScalar*>(v2->types[i])->value;
+      }
+      maybe_set_output(oi,sum);
     } else if(name=="min-hood" || name=="max-hood" || name=="any-hood"
               || name=="all-hood") {
       ProtoType* src = oi->inputs[0]->range;
