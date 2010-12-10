@@ -722,8 +722,11 @@ ProtoNumber* add_consts(ProtoType* a, ProtoType* b) {
     double s = (dynamic_cast<ProtoScalar*>(a->isA("ProtoScalar")?a:b))->value;
     ProtoTuple* v = dynamic_cast<ProtoTuple*>(a->isA("ProtoScalar")?b:a);
     ProtoVector* out = new ProtoVector(v->bounded);
-    for(int i=0;i<v->types.size();i++) out->add(v->types[i]);
-    (dynamic_cast<ProtoScalar*>(v->types[0]))->value += s;
+    for(int i=0;i<v->types.size();i++) { 
+       ProtoScalar* element = dynamic_cast<ProtoScalar*>(v->types[i]);
+       out->add(new ProtoScalar(element->value));
+    }
+    (dynamic_cast<ProtoScalar*>(out->types[0]))->value += s;
     return out;
   } else { // 2 vectors
     ProtoTuple* va = dynamic_cast<ProtoTuple*>(a);
