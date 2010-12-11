@@ -80,14 +80,14 @@ done	apply constant folding to FieldOps
 working	constant folding (via math functions)
 working	delete unused implicit parameters
 working	delete unused parameters, except when required by 1st class fns
-working	eliminate Env::OPNAME kludge
+done	eliminate Env::OPNAME kludge
 	inlining of subexpressions
-	one-op functions are inlined
-	no-content wrapper expressions are inlined (e.g. command-line = funcall)
+done	one-op functions are inlined
+done	no-content wrapper expressions are inlined (e.g. command-line = funcall)
 	common sub-expression elimination
 	tuple decompose & recompose -> nop
 	legality check (e.g. make sure fields contain only locals)
-	allow markup (e.g. biobrick description) of core primitives
+done	allow markup (e.g. biobrick description) of core primitives
 
 
 Type Inference:

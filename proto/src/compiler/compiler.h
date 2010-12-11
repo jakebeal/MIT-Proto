@@ -25,7 +25,7 @@ struct ProtoInterpreter; class NeoCompiler;
  *  INTERPRETER                                                              *
  *****************************************************************************/
 
-// Binding environments (used by interpreter only)
+// Binding environments: tracks name/object associations during interpretation
 struct Env {
   Env* parent; ProtoInterpreter* cp;
   map<string,CompilationElement*> bindings;
@@ -38,8 +38,11 @@ struct Env {
   CompilationElement* lookup(string name, bool recursed=false);
   CompilationElement* lookup(SE_Symbol* sym, string type);
   
-  // operators needed to be accessed unshadows by compiler
-  static Operator *RESTRICT, *DELAY, *DCHANGE, *NOT, *MUX, *TUP, *ELT, *LOCAL;
+  // operators needed to be accessed unshadowed by compiler
+  // These are gathered after initialization, but before user code is loaded
+  static map<string,Operator*> core_ops;
+  static void record_core_ops(Env* toplevel);
+  static Operator* core_op(string name);
 };
 
 class ProtoInterpreter {
@@ -47,10 +50,8 @@ class ProtoInterpreter {
   friend class Env;
   Env* toplevel;
   AM* allspace;
-  DFG* main;
+  DFG* dfg;
   NeoCompiler* parent;
-
-  bool is_dump_interpretation;
 
   ProtoInterpreter(NeoCompiler* parent, Args* args);
   ~ProtoInterpreter();
@@ -66,53 +67,44 @@ class ProtoInterpreter {
   Operator* sexp_to_op(SExpr* s, Env *env);  
   Macro* sexp_to_macro(SE_List* s, Env *env);  
   Signature* sexp_to_macro_sig(SExpr* s);
-  Field* sexp_to_graph(SExpr* s, DFG* g, AM* space, Env *env);
+  Field* sexp_to_graph(SExpr* s, AM* space, Env *env);
   SExpr* expand_macro(MacroOperator* m, SE_List* call);
   SExpr* macro_substitute(SExpr* src,Env* e,SE_List* wrapper=NULL);
-  Operator* symbolic_literal(string name);
+  ProtoType* symbolic_literal(string name);
 
   // compiler special-form handlers
-  Field* let_to_graph(SE_List* s, DFG* g, AM* space, Env *env,bool incremental);
-  Field* letfed_to_graph(SE_List* s, DFG* g, AM* space, Env *env);
-  Field* restrict_to_graph(SE_List* s, DFG* g, AM* space, Env *env);
+  Field* let_to_graph(SE_List* s, AM* space, Env *env,bool incremental);
+  Field* letfed_to_graph(SE_List* s, AM* space, Env *env);
+  Field* restrict_to_graph(SE_List* s, AM* space, Env *env);
 };
 
 /*****************************************************************************
- *  OPTIMIZER                                                                *
+ *  RULE-BASED GRAPH TRANSFORMATION                                          *
  *****************************************************************************/
 
-class ProtoAnalyzer {
+class DFGTransformer {
  public:
-  vector<Propagator*> rules;
-  NeoCompiler* parent;
-
-  bool is_dump_analyzed, paranoid;
+  vector<IRPropagator*> rules;
+  bool paranoid;
   int max_loops, verbosity;
 
+  DFGTransformer() {}
+  ~DFGTransformer() {}
+  
+  virtual void transform(DFG* g);
+};
+
+class ProtoAnalyzer : public DFGTransformer {
+ public:
   ProtoAnalyzer(NeoCompiler* parent, Args* args);
   ~ProtoAnalyzer() {}
-  
-  void analyze(DFG* g);
 };
 
-/*****************************************************************************
- *  GLOBAL-TO-LOCAL TRANSFORMER                                              *
- *****************************************************************************/
-
-class GlobalToLocal {
+class GlobalToLocal : public DFGTransformer {
  public:
-  vector<Propagator*> rules;
-  NeoCompiler* parent;
-
-  bool is_dump_localized, paranoid;
-  int max_loops, verbosity;
-
   GlobalToLocal(NeoCompiler* parent, Args* args);
   ~GlobalToLocal() {}
-  
-  void localize(DFG* g);
 };
-
 
 /*****************************************************************************
  *  CODE EMITTER                                                             *
@@ -122,6 +114,9 @@ class GlobalToLocal {
 class CodeEmitter {
  public:
   virtual uint8_t* emit_from(DFG* g, int* len) = 0;
+  // If an emitter wants to change some of the core operators, it must
+  // call Env::record_core_ops(parent->interpreter->toplevel)
+  // after it has loaded its modified definitions
 };
 
 class InstructionPropagator; class Instruction;
@@ -145,7 +140,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction* tree2instructions(Field* f);
   Instruction* primitive_to_instruction(OperatorInstance* oi);
   Instruction* literal_to_instruction(ProtoType* l);
-  Instruction* dfg2instructions(DFG* g);
+  Instruction* dfg2instructions(AM* g);
   Instruction* vec_op_store(ProtoType* t); // allocates globals for vector ops
 };
 
@@ -169,10 +164,12 @@ class Compiler : public EventConsumer {
 class NeoCompiler : public Compiler {
  public:
   Path proto_path;
-  bool is_dump_code, is_dump_all; int is_early_terminate;
+  bool is_dump_code, is_dump_all, is_dump_analyzed, is_dump_interpreted,
+    is_dump_raw_localized, is_dump_localized; 
+  int is_early_terminate;
+  bool paranoid; int verbosity;
   ProtoInterpreter* interpreter;
-  ProtoAnalyzer* analyzer;
-  GlobalToLocal* localizer;
+  DFGTransformer *analyzer, *localizer;
   CodeEmitter* emitter;
   const char* last_script; // the last piece of text fed to start the compiler
 

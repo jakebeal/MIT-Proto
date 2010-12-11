@@ -1,8 +1,8 @@
 ;;(macro par all) ; No more par: specials like all can't be renamed w. macros
-(primitive apply (lambda &rest (inputs arg0)) (output arg0))
+(primitive apply (fn|lambda &rest (inputs arg0)) (output arg0))
 
 ;; Boolean operations
-(macro if (test true-expr false-expr) 
+(macro if (test true-expr false-expr)
   (let ((?x ,test))
     (mux ?x (restrict ?x ,true-expr) (restrict (not ?x) ,false-expr))))
 (macro and (x y) (if ,x ,y 0))
@@ -23,7 +23,7 @@
 (primitive + (&rest number) (unlit (lcs arg0)))
 (primitive - (number &rest number) (unlit (lcs arg0 arg1)))
 (primitive * (&rest number) (unlit (last arg0)))
-(primitive / (number &rest scalar) (unlit arg0))
+(primitive / (quotient|number &rest divisors|scalar) (unlit arg0))
 
 (primitive > (number number) boolean)
 (primitive < (number number) boolean)
@@ -44,8 +44,8 @@
 (def neg? (x) (< x 0))
 (def pos? (x) (> x 0))
 
-(primitive mod (scalar scalar) scalar)
-(primitive pow (scalar scalar) scalar)
+(primitive mod (num|scalar divisor|scalar) scalar)
+(primitive pow (base|scalar exponent|scalar) scalar)
 (primitive sqrt (scalar) scalar)
 (primitive log (scalar) scalar)
 (def exp (x) (pow e x))
@@ -54,9 +54,9 @@
 
 (def denormalizeN (x oldmin oldmax newmin newmax)
   (+ (- newmin oldmin) (* x (/ (- newmax newmin) (- oldmax oldmin)))))
-(def denormalize (x min max) (denormalizeN x 0 1 min max))
+(def denormalize (x newmin newmax) (denormalizeN x 0 1 newmin newmax))
 
-(primitive rnd (scalar scalar) scalar)
+(primitive rnd (min|scalar max|scalar) scalar)
 (def rndint (n) (let ((v (rnd 0 n))) (- v (mod v 1))))
 
 
@@ -66,7 +66,7 @@
 (primitive tan (scalar) scalar)
 (primitive asin (scalar) scalar)
 (primitive acos (scalar) scalar)
-(primitive atan2 (scalar scalar) scalar)
+(primitive atan2 (y|scalar x|scalar) scalar)
 (primitive sinh (scalar) scalar)
 (primitive cosh (scalar) scalar)
 (primitive tanh (scalar) scalar)
@@ -125,8 +125,8 @@
 
 ;; Space
 ;; sensors & actuators
-(primitive mov (vector) arg0 :side-effect)
-(primitive flex (scalar) arg0 :side-effect)
+(primitive mov (velocity|vector) arg0 :side-effect)
+(primitive flex (angle|scalar) arg0 :side-effect)
 (primitive speed () scalar)
 (primitive bearing () scalar)
 
@@ -150,6 +150,7 @@
 (primitive min-hood ((field number)) (ft arg0) :space :time)
 (primitive max-hood ((field number)) (ft arg0) :space :time)
 (primitive int-hood ((field number)) (ft (unlit arg0)) :space :time)
+(primitive sum-hood ((field number)) (ft (unlit arg0)) :space :time)
 
 (def is-self () (= (nbr-range) 0))
 (macro any-hood+ (value) (any-hood (if (is-self) false ,value)))
@@ -163,11 +164,15 @@
 (primitive fold-hood ((lambda (local local) (unlit arg0)) 
 		      (unlit (nth (inputs arg0) 0))
 		      (unlit (nth (inputs arg0) 1)))
-	   (unlit (nth (inputs arg0) 0)) :space :time)
+  (unlit (nth (inputs arg0) 0)) :space :time)
 (primitive fold-hood* ((lambda (local local) (unlit arg0))
 	   	       (lambda (local) (unlit (nth (inputs arg0) 1)))
 		       (unlit (nth (inputs arg1) 0)))
-	   (unlit (nth (inputs arg0) 0)) :space :time)
+  (unlit (nth (inputs arg0) 0)) :space :time)
+(primitive fold-hood-plus ((lambda (local local) (unlit (nth (inputs arg0) 0)))
+	   		   (lambda (local) (unlit (nth (inputs arg0) 1)))
+			   (unlit (nth (inputs arg1) 0)))
+  (unlit (output arg1)) :space :time)
 
 ;; Time
 (primitive dt () scalar)

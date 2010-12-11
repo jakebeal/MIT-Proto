@@ -37,26 +37,30 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   compiler_error|=!sexpr; terminate_on_error();
   compile_phase = "interpretation"; // PHASE: sexpr -> IR
   interpreter->interpret(sexpr); // terminates on error internally
+  if(is_dump_interpreted) interpreter->dfg->print(cpout);
   if(is_early_terminate==3) 
     { *cperr << "Stopping before analysis" << endl; exit(0); }
   
   compile_phase = "analysis"; // PHASE: IR manipulation
-  analyzer->analyze(interpreter->main); // terminates on error internally
+  analyzer->transform(interpreter->dfg); // terminates on error internally
+  if(is_dump_analyzed) interpreter->dfg->print(cpout);
   if(is_early_terminate==2) 
     { *cperr << "Stopping before localization" << endl; exit(0); }
   
-  compile_phase = "legality check"; // PHASE: code emission
-  Propagator *p = new CheckTypeConcreteness();
-  p->propagate(interpreter->main);
+  compile_phase = "legality check"; // PHASE: legality check
+  IRPropagator *p = new CheckTypeConcreteness();
+  p->propagate(interpreter->dfg);
   compile_phase = "localization"; // PHASE: Global-to-local transformation
-  localizer->localize(interpreter->main); // terminates on error internally
-  //compile_phase = "local analysis"; // PHASE: IR manipulation
-  //analyzer->analyze(interpreter->main); // terminates on error internally
+  localizer->transform(interpreter->dfg); // terminates on error internally
+  if(is_dump_raw_localized) interpreter->dfg->print(cpout);
+  compile_phase = "local analysis"; // PHASE: IR manipulation
+  analyzer->transform(interpreter->dfg); // terminates on error internally
+  if(is_dump_localized) interpreter->dfg->print(cpout);
   if(is_early_terminate==1) 
     { *cperr << "Stopping before emission" << endl; exit(0); }
   
   compile_phase = "emission"; // PHASE: code emission
-  return emitter->emit_from(interpreter->main, len);
+  return emitter->emit_from(interpreter->dfg, len);
 }
 
 /*****************************************************************************
@@ -64,11 +68,17 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
  *****************************************************************************/
 NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
   is_dump_all = args->extract_switch("-CDall");
+  is_dump_interpreted = args->extract_switch("-CDinterpreted") | is_dump_all;
+  is_dump_analyzed = args->extract_switch("-CDanalyzed") | is_dump_all;
+  is_dump_raw_localized = args->extract_switch("-CDraw-localized")|is_dump_all;
+  is_dump_localized = args->extract_switch("-CDlocalized") | is_dump_all;
   is_dump_code = args->extract_switch("--instructions") | is_dump_all;
   is_early_terminate = (args->extract_switch("--no-emission") ? 1 : 0);
   if(args->extract_switch("--no-localization")) is_early_terminate = 2;
   if(args->extract_switch("--no-analysis")) is_early_terminate = 3;
   last_script="";
+  paranoid = args->extract_switch("--paranoid");
+  verbosity = (args->extract_switch("--verbosity")?args->pop_int():0);
 
   // Set up paths
   // srcdir is an undocumented option used for uninstalled execution

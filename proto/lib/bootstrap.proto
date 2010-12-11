@@ -1,8 +1,12 @@
-(primitive restrict (scalar any) arg1 :space) ;; permissive boolean input
-(primitive mux (scalar any any) (lcs arg1 arg2)) ;; permissive boolean input
+(primitive restrict (test|scalar value|any) arg1 :space) ;; permissive boolean input
+(primitive mux (test|scalar true-expr|any false-expr|any) (lcs arg1 arg2)) ;; permissive boolean input
+;(primitive delay (local) local :time
+;  :type-constraints ((= value arg0)))
 (primitive delay (local) arg0 :time)
 (primitive dchange () boolean :space :time)
 (primitive not (scalar) boolean) ;; permissive boolean input
 (primitive tup (&rest any) (tupof arg0))
-(primitive elt (tuple scalar) (nth arg0 arg1))
+;(primitive elt (tuple i|scalar) any
+;  :type-constraints ((= value (nth arg0 arg1))))
+(primitive elt (tuple i|scalar) (nth arg0 arg1))
 (primitive local (local) (fieldof arg0) :space :time) ; usually left implicit

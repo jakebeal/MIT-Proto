@@ -11,6 +11,8 @@ libcompiler_la_SOURCES = \
 	lexer.cpp \
 	enumlexer.cpp \
 	paleocompiler.cpp \
+	prototypes.cpp \
+	ir.cpp \
 	interpreter.cpp \
 	analyzer.cpp \
 	emitter.cpp \

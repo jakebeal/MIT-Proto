@@ -50,7 +50,7 @@ int main (int argc, char *argv[]) {
     uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
 #endif
   } else {
-    post("WARNING: %d unhandled arguments:",args->argc-2);
+    post("Error: %d unhandled arguments:",args->argc-2);
     for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
     post("\n");
   }

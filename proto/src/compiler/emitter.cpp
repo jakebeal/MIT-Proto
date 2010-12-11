@@ -18,8 +18,7 @@ map<string,int> primitive2op;
 map<int,int> op_stackdeltas;
 
 // instructions like SQRT_OP that have no special rules or pointers
-class Instruction : public CompilationElement {
-public:
+struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   Instruction *next,*prev; // sequence links
   int location; // -1 = unknown
    // instructions "neighboring" this one
@@ -33,7 +32,6 @@ public:
     this->op=op; stack_delta=op_stackdeltas[op]; env_delta=ed; 
     location=-1; next=prev=NULL;
   }
-  virtual bool isA(string c){return c=="Instruction"||CompilationElement::isA(c);}
   virtual void print(ostream* out=0) {
     *out << (opnames.count(op) ? opnames[op] : "<UNKNOWN OP>");
     for(int i=0;i<parameters.size();i++) { *out << ", " << i2s(parameters[i]); }
@@ -92,19 +90,15 @@ void print_chain(Instruction* chain, ostream* out, int compactness=0) {
 }
 
 
-class Global : public Instruction {
-public:
+struct Global : public Instruction { reflection_sub(Global,Instruction);
   int index;
   Global(OPCODE op) : Instruction(op) { index = -1; }
-  virtual bool isA(string c){return c=="Global"||Instruction::isA(c);}
 };
 
-class iDEF_VM : public Instruction {
-public:
+struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
   int export_len, n_exports, n_globals, n_states, max_stack, max_env;
   iDEF_VM() : Instruction(DEF_VM_OP) 
   { export_len=n_exports=n_globals=n_states=max_stack=max_env=-1;}
-  virtual bool isA(string c){return c=="iDEF_VM"||Instruction::isA(c);}
   bool resolved() { 
     return export_len>=0 && n_exports>=0 && n_globals>=0 && n_states>=0 
              && max_stack>=0 && max_env>=0 && Instruction::resolved(); 
@@ -118,19 +112,16 @@ public:
 };
 
  // DEF_FUN_k_OP, DEF_FUN_OP, DEF_FUN16_OP
-class iDEF_FUN : public Global {
-public:
+struct iDEF_FUN : public Global { reflection_sub(iDEF_FUN,Global);
   Instruction* ret;
   int fun_size;
   iDEF_FUN() : Global(DEF_FUN_OP) { ret=NULL; fun_size=-1; }
-  virtual bool isA(string c){return c=="iDEF_FUN"||Global::isA(c);}
   bool resolved() { return fun_size>=0 && Instruction::resolved(); }
   int size() { return (fun_size<0) ? -1 : Instruction::size(); }
 };
 
 // DEF_TUP_OP, DEF_VEC_OP, DEF_NUM_VEC_OP, DEV_NUM_VEC_k_OP
-class iDEF_TUP : public Global {
-public:
+struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
   int size;
   iDEF_TUP(int size,bool literal=false) : Global(DEF_TUP_OP) { 
     this->size=size;
@@ -145,21 +136,18 @@ public:
       } else ierror("Tuple too large: "+i2s(size)+" > 255");
     }
   }
-  virtual bool isA(string c){return c=="iDEF_TUP"||Global::isA(c);}
 };
 
-class iLET : public Instruction { // LET_OP, LET_k_OP
-public:
+// LET_OP, LET_k_OP
+struct iLET : public Instruction { reflection_sub(iLET,Instruction);
   Instruction* pop;
   set<Instruction*, CompilationElement_cmp> usages;
   iLET() : Instruction(LET_1_OP,1) { pop=NULL; }
-  virtual bool isA(string c){return c=="iLET"||Instruction::isA(c);}
   bool resolved() { return pop!=NULL && Instruction::resolved(); }
 };
 
 // REF_OP, REF_k_OP, GLO_REF16_OP, GLO_REF_OP, GLO_REF_k_OP
-class Reference : public Instruction {
-public:
+struct Reference : public Instruction { reflection_sub(Reference,Instruction);
   CompilationElement* store; // either an iLET or a Global
   int offset; bool vec_op;
   Reference(CompilationElement* store) : Instruction(GLO_REF_OP) { 
@@ -172,7 +160,6 @@ public:
     if(!store->isA("Global")) ierror("Vector reference to non-global");
     this->store=store; offset=-1; padd(255); vec_op=true;
   }
-  virtual bool isA(string c){return c=="Reference"||Instruction::isA(c);}
   bool resolved() { return offset>=0 && Instruction::resolved(); }
   int size() { return (offset<0) ? -1 : Instruction::size(); }
   void set_offset(int o) {
@@ -227,12 +214,12 @@ void InstructionPropagator::note_change(Instruction* i)
 void InstructionPropagator::queue_nbrs(Instruction* i, int marks) {
   if(i->prev) worklist_i.insert(i->prev); // sequence neighbors
   if(i->next) worklist_i.insert(i->next);
-  set<Instruction*>::iterator j=i->dependents.begin(); // any asking for wakeup
-  for( ; j!=i->dependents.end(); j++) worklist_i.insert(*j);
+  // plus any asking for wakeup...
+  for_set(Instruction*,i->dependents,j) worklist_i.insert(*j);
  }
 
 bool InstructionPropagator::propagate(Instruction* chain) {
-  if(verbosity>=1) *cpout << "Executing analyzer " << to_str() << endl;
+  V1<<"Executing analyzer "<<to_str()<<endl;
   any_changes=false; root = chain_start(chain);
   // initialize worklists
   worklist_i.clear(); 
@@ -275,7 +262,7 @@ public:
       ss += i2s(stack_height[chain])+" "; es += i2s(env_height[chain])+" ";
       chain=chain->next;
     }
-    if(verbosity>=2) *cpout << ss << endl << es << endl;
+    V2 << ss << endl << es << endl;
     int final = stack_height[chain_end(root)];
     if(final) ierror("Stack resolves to non-zero height: "+i2s(final));
     iDEF_VM* dv = (iDEF_VM*)root;
@@ -321,23 +308,23 @@ public:
     if(i->isA("iLET")) { iLET* l = (iLET*)i;
       if(l->pop!=NULL) return; // don't do it when pops are resolved
       vector<iLET*> sources; sources.push_back(l);
-      if(verbosity>=2) *cpout << "Considering a LET";
+      V2 << "Considering a LET";
       vector<set<Instruction*, CompilationElement_cmp> > usages;
       usages.push_back(l->usages); //1 per src
       Instruction* pointer = l->next;
       while(!usages.empty()) {
-        if(verbosity>=2) *cpout << ".";
+        V2 << ".";
         while(sources.size()>usages.size()) sources.pop_back(); // cleanup...
         if(pointer==NULL) ierror("Couldn't find all usages of let");
         if(pointer->isA("iLET")) { // add subs in
-          if(verbosity>=2) *cpout << "\n Adding sub LET";
+          V2 << "\n Adding sub LET";
           iLET* sub = (iLET*)pointer; sources.push_back(sub);
           usages.push_back(sub->usages);
         } else if(pointer->isA("Reference")) { // it's somebody's reference?
-          if(verbosity>=2) *cpout << "\n Searching for reference... offset = ";
+          V2 << "\n Searching for reference... offset = ";
           for(int j=0;j<usages.size();j++) {
             if(usages[j].count(pointer)) {
-              if(verbosity>=2) *cpout << (sources.size()-1-j) << " ";
+              V2 << (sources.size()-1-j) << " ";
               ((Reference*)pointer)->set_offset(sources.size()-1-j);
               usages[j].erase(pointer);
               break;
@@ -345,13 +332,13 @@ public:
           }
           // trim any empty usages on top of the stack
           while(usages.size() && usages[usages.size()-1].empty()) {
-            if(verbosity>=2) *cpout << "\n Popping a LET";
+            V2 << "\n Popping a LET";
             usages.pop_back();
           }
         }
         if(!usages.empty()) pointer=pointer->next;
       }
-      if(verbosity>=2) *cpout << "\n Adding pop of size "<<sources.size()<<"\n";
+      V2 << "\n Adding pop of size "<<sources.size()<<"\n";
       if(sources.size()<=MAX_LET_OPS) {
         l->pop=new Instruction(POP_LET_OP+sources.size());
       } else {
@@ -359,7 +346,7 @@ public:
       }
       l->pop->env_delta = -sources.size();
       for(int i=0;i<sources.size();i++) sources[i]->pop = l->pop;
-      if(verbosity>=2) *cpout << " Completed LET resolution\n";
+      V2 << " Completed LET resolution\n";
       chain_insert(pointer,l->pop);
     }
   }
@@ -380,7 +367,7 @@ public:
         j=j->next;  if(!j) ierror("DEF_FUN_OP can't find matching RET_OP");
       }
       if(size>0 && df->fun_size != size) {
-        if(verbosity>=2) *cpout << " Fun size is " << size << endl;
+        V2 << " Fun size is " << size << endl;
         df->fun_size=size; df->parameters.clear();
         // now adjust the op
         if(df->fun_size>1 && df->fun_size<=MAX_DEF_FUN_OPS) 
@@ -397,9 +384,8 @@ public:
       Reference* r = (Reference*)i;
       if(r->offset==-1 && r->store->isA("Global") && 
          ((Global*)r->store)->index >= 0) {
-        if(verbosity>=2) 
-          *cpout << " Global index to " << r->store->to_str()
-                 << " is " << ((Global*)r->store)->index << endl;
+        V2<<" Global index to "<<ce2s(r->store)<<" is "<<
+          ((Global*)r->store)->index << endl;
         r->set_offset(((Global*)r->store)->index);
         note_change(i);
       }
@@ -477,7 +463,7 @@ public:
 /*****************************************************************************
  *  STATIC/LOCAL TYPE CHECKER                                                *
  *****************************************************************************/
-// ensures that all 
+// ensures that all fields are local and concrete
 class Emittable {
  public:
   // concreteness of fields comes from their types
@@ -502,19 +488,15 @@ class Emittable {
     if(op->isA("Literal") || op->isA("Parameter") || op->isA("Primitive")) {
       return true;
     } else if(op->isA("CompoundOp")) {
-      CompoundOp* cop = dynamic_cast<CompoundOp*>(op); 
-      set<Field*>::iterator fit;
-      for(fit=cop->body->edges.begin(); fit!=cop->body->edges.end(); fit++)
-        if(!acceptable(*fit)) return false;
-      return true;
+      return true; // its fields are checked elsewhere
     } else return false; // generic operator
   }
 };
 
 
-class CheckEmittableType : public Propagator {
+class CheckEmittableType : public IRPropagator {
  public:
-  CheckEmittableType(ProtoKernelEmitter* parent) : Propagator(true,false)
+  CheckEmittableType(ProtoKernelEmitter* parent) : IRPropagator(true,false)
   { verbosity = parent->verbosity; }
   virtual void print(ostream* out=0) { *out << "CheckEmittableType"; }
   virtual void act(Field* f) {
@@ -661,9 +643,10 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
   is_dump_hex = args->extract_switch("--hexdump");
   print_compact = (args->extract_switch("--emit-compact") ? 2 :
                    (args->extract_switch("--emit-semicompact") ? 1 : 0));
-  verbosity = args->extract_switch("--emitter-verbosity")?args->pop_int():0;
+  verbosity = args->extract_switch("--emitter-verbosity") ? 
+    args->pop_int() : parent->verbosity;
   max_loops=args->extract_switch("--emitter-max-loops")?args->pop_int():10;
-  paranoid = args->extract_switch("--emitter-paranoid");
+  paranoid = args->extract_switch("--emitter-paranoid")|parent->paranoid;
   // load operation definitions
   string name = "core.ops"; load_ops(name,parent); terminate_on_error();
   // setup rule collection
@@ -704,15 +687,13 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   return chain_start(chain);
 }
 
-Instruction* ProtoKernelEmitter::dfg2instructions(DFG* g) {
-  set<Field*, CompilationElement_cmp> minima;
-  for(set<Field*>::iterator i=g->edges.begin();i!=g->edges.end();i++) 
-    if(!(*i)->consumers.size()) minima.insert(*i);
+Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
+  Fset minima, f; root->all_fields(&f);
+  for_set(Field*,f,i) if(!(*i)->consumers.size()) minima.insert(*i);
   
   //cout << "Minima identified: " << v2s(&minima) << endl;
   iDEF_FUN *fnstart = new iDEF_FUN(); Instruction *chain=fnstart;
-  for(set<Field*>::iterator i=minima.begin();i!=minima.end();i++)
-    chain_i(&chain, tree2instructions(*i));
+  for_set(Field*,minima,i) chain_i(&chain, tree2instructions(*i));
   if(minima.size()>1) { // needs an all
     Instruction* all = new Instruction(ALL_OP);
     if(minima.size()>=256) ierror("Too many minima: "+minima.size());
@@ -731,16 +712,15 @@ string hexbyte(uint8_t v) {
 uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   CheckEmittableType echecker(this); echecker.propagate(g);
 
-  if(verbosity>=1) *cpout << "Linearizing DFG to instructions...\n";
+  V1<<"Linearizing DFG to instructions...\n";
   start = end = new iDEF_VM(); // start of every script
-  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
-  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) // translate each function
-    chain_i(&end,dfg2instructions(((CompoundOp*)((*i).first))->body));
-  chain_i(&end,dfg2instructions(g)); // next the main
+  for_set(AM*,g->relevant,i) // translate each function
+    if((*i)!=g->output->domain) chain_i(&end,dfg2instructions(*i));
+  chain_i(&end,dfg2instructions(g->output->domain)); // next the main
   chain_i(&end,new Instruction(EXIT_OP)); // add the end op
   if(verbosity>=2) print_chain(start,cpout,2);
   
-  if(verbosity>=1) *cpout << "Resolving unknowns in instruction sequence...\n";
+  V1<<"Resolving unknowns in instruction sequence...\n";
   for(int i=0;i<max_loops;i++) {
     bool changed=false;
     for(int j=0;j<rules.size();j++) {
@@ -753,7 +733,7 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   CheckResolution rchecker(this); rchecker.propagate(start);
   
   // finally, output
-  if(verbosity>=1) *cpout << "Outputting final instruction sequence...\n";
+  V1<<"Outputting final instruction sequence...\n";
   *len= (end->location + end->size());
   uint8_t* buf = (uint8_t*)calloc(*len,sizeof(uint8_t));
   start->output(buf);

@@ -344,38 +344,38 @@ is 8 _   Bravo<Scalar 3>, Delta<Scalar 4> --> [+] --> Charlie<D:(unlit (lcs arg0
 is 9 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 
 // tests lambda types & simplification of apply
-// test: $(P2B) -CDall "(apply * (apply + 3 4) (mid))"
-// is 0 _ Amorphous Mediums:
-// is 1 _   [Medium: Alfa = root]
-// is 2 _ Fields:
-// is 3 _   Bravo: Alfa --> <D:(output arg0)> OUTPUT
-// is 4 _   Charlie: Alfa --> <Lambda [*]>
-// is 5 _   Delta: Alfa --> <D:(output arg0)>
-// is 6 _   Echo: Alfa --> <Lambda [+]>
-// is 7 _   Foxtrot: Alfa --> <Scalar 3>
-// is 8 _   Golf: Alfa --> <Scalar 4>
-// is 9 _   Hotel: Alfa --> <Scalar>
-// is 10 _ Operator Instances:
-// is 11 _   Charlie<Lambda [*]>, Delta<D:(output arg0)>, Hotel<Scalar> --> [apply] --> Bravo<D:(output arg0)> OUTPUT
-// is 12 _   [Lit: <Lambda [*]>] --> Charlie<Lambda [*]>
-// is 13 _   Echo<Lambda [+]>, Foxtrot<Scalar 3>, Golf<Scalar 4> --> [apply] --> Delta<D:(output arg0)>
-// is 14 _   [Lit: <Lambda [+]>] --> Echo<Lambda [+]>
-// is 15 _   [Lit: <Scalar 3>] --> Foxtrot<Scalar 3>
-// is 16 _   [Lit: <Scalar 4>] --> Golf<Scalar 4>
-// is 17 _   [mid] --> Hotel<Scalar>
-// is 18 _ Amorphous Mediums:
-// is 19 _   [Medium: Alfa = root]
-// is 20 _ Fields:
-// is 21 _   India: Alfa --> <Scalar 7>
-// is 22 _   Hotel: Alfa --> <Scalar>
-// is 23 _   Juliet: Alfa --> <Scalar> OUTPUT
-// is 24 _ Operator Instances:
-// is 25 _   [mid] --> Hotel<Scalar>
-// is 26 _   [Lit: <Scalar 7>] --> India<Scalar 7>
-// is 27 _   India<Scalar 7>, Hotel<Scalar> --> [*] --> Juliet<Scalar> OUTPUT
+test: $(P2B) -CDall "(apply * (apply + 3 4) (mid))"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <D:(output arg0)> OUTPUT
+is 4 _   Charlie: Alfa --> <Lambda [*]>
+is 5 _   Delta: Alfa --> <D:(output arg0)>
+is 6 _   Echo: Alfa --> <Lambda [+]>
+is 7 _   Foxtrot: Alfa --> <Scalar 3>
+is 8 _   Golf: Alfa --> <Scalar 4>
+is 9 _   Hotel: Alfa --> <Scalar>
+is 10 _ Operator Instances:
+is 11 _   Charlie<Lambda [*]>, Delta<D:(output arg0)>, Hotel<Scalar> --> [apply] --> Bravo<D:(output arg0)> OUTPUT
+is 12 _   [Lit: <Lambda [*]>] --> Charlie<Lambda [*]>
+is 13 _   Echo<Lambda [+]>, Foxtrot<Scalar 3>, Golf<Scalar 4> --> [apply] --> Delta<D:(output arg0)>
+is 14 _   [Lit: <Lambda [+]>] --> Echo<Lambda [+]>
+is 15 _   [Lit: <Scalar 3>] --> Foxtrot<Scalar 3>
+is 16 _   [Lit: <Scalar 4>] --> Golf<Scalar 4>
+is 17 _   [mid] --> Hotel<Scalar>
+is 18 _ Amorphous Mediums:
+is 19 _   [Medium: Alfa = root]
+is 20 _ Fields:
+is 21 _   Hotel: Alfa --> <Scalar>
+is 22 _   India: Alfa --> <Scalar> OUTPUT
+is 23 _   Juliet: Alfa --> <Scalar 7>
+is 24 _ Operator Instances:
+is 25 _   [mid] --> Hotel<Scalar>
+is 26 _   Juliet<Scalar 7>, Hotel<Scalar> --> [*] --> India<Scalar> OUTPUT
+is 27 _   [Lit: <Scalar 7>] --> Juliet<Scalar 7>
 
 test: $(P2B) -CDall "((lambda () (+ 2 3)))"
-is 0 _ Function: lambda-0 called 1 times
+is 0 _ Function: lambda~4 [Signature:  --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -391,18 +391,18 @@ is 12 _   [Medium: Echo = root]
 is 13 _ Fields:
 is 14 _   Foxtrot: Echo --> <D:return> OUTPUT
 is 15 _ Operator Instances:
-is 16 _   [Fun: lambda-0] --> Foxtrot<D:return> OUTPUT
+is 16 _   [Fun: lambda~4] --> Foxtrot<D:return> OUTPUT
 
-test: $(P2B) -CDall "(def double (x) (+ x x)) (double (double 3))" --function-inlining-threshold 0
-is 0 _ Function: double called 2 times
+test: $(P2B) -CDall "(def double (x|scalar) (+ x x)) (double (double 3))" --function-inlining-threshold 0
+is 0 _ Function: double [Signature: <Scalar> --> <D:return>] called 2 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
-is 4 _     Bravo: Alfa --> <Any>
+is 4 _     Bravo: Alfa --> <Scalar>
 is 5 _     Charlie: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
 is 6 _   Operator Instances:
-is 7 _     [Parameter 0: x] --> Bravo<Any>
-is 8 _     Bravo<Any>, Bravo<Any> --> [+] --> Charlie<D:(unlit (lcs arg0))> OUTPUT
+is 7 _     [Parameter 0: x] --> Bravo<Scalar>
+is 8 _     Bravo<Scalar>, Bravo<Scalar> --> [+] --> Charlie<D:(unlit (lcs arg0))> OUTPUT
 is 9 _ Amorphous Mediums:
 is 10 _   [Medium: Delta = root]
 is 11 _ Fields:
@@ -414,8 +414,15 @@ is 16 _   Foxtrot<D:return> --> [Fun: double] --> Echo<D:return> OUTPUT
 is 17 _   Golf<Scalar 3> --> [Fun: double] --> Foxtrot<D:return>
 is 18 _   [Lit: <Scalar 3>] --> Golf<Scalar 3>
 
+test: $(P2B) -CDall "(def froz (x &optional y) (+ x (mid))) (- (froz) (froz 1 2 3) (sin 2 3))"
+is 0 _ Error during interpretation:
+is 1 _ command-line:1 Error: Called [Fun: froz] with 0 arguments; it requires from 1 to 2
+is 2 _ command-line:1 Error: Called [Fun: froz] with 3 arguments; it requires from 1 to 2
+is 3 _ command-line:1 Error: Called [sin] with 2 arguments; it requires exactly 1
+is 4 _ Compilation failed.
+
 test: $(P2B) -CDall "(def fooloop (y) (+ y (restrict (> y 0) (fooloop (+ y -1))))) (fooloop 3)" --function-inlining-threshold 2
-is 0 _ Function: fooloop called 2 times
+is 0 _ Function: fooloop [Signature: <Any> --> <D:return>] called 2 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _     [Medium: Bravo = Alfa | Charlie]
@@ -445,7 +452,7 @@ is 26 _   Mike: Kilo --> <Scalar 3>
 is 27 _ Operator Instances:
 is 28 _   Mike<Scalar 3> --> [Fun: fooloop] --> Lima<D:return> OUTPUT
 is 29 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
-is 30 _ Function: fooloop called 2 times
+is 30 _ Function: fooloop [Signature: <Any> --> <D:return>] called 2 times
 
 test: $(P2B) -CDall "(let ((x 3) (x 4)) x)"
 is 0 _ Error during interpretation:
@@ -476,7 +483,7 @@ is 2 _ Compilation failed.
 
 test: $(P2B) -CDall "(lambda (x 3) 4)"
 is 0 _ Error during interpretation:
-is 1 _ command-line:1 Error: Bad parameter: 3
+is 1 _ command-line:1 Error: Parameter name not a symbol: 3
 is 2 _ Compilation failed.
 
 test: $(P2B) -CDall "(lambda x 4)"
@@ -486,7 +493,7 @@ is 2 _ Compilation failed.
 
 test: $(P2B) -CDall "(lambda (&rest x y) 4)"
 is 0 _ Error during interpretation:
-is 1 _ command-line:1 Error: Bad signature structure: (&rest x y)
+is 1 _ command-line:1 Error: No signature past '&rest' variable: (&rest x y)
 is 2 _ Compilation failed.
 
 test: $(P2B) -CDall "(+ NaN -Inf inf pi e)"
@@ -514,7 +521,7 @@ is 20 _ Operator Instances:
 is 21 _   [Lit: <Scalar nan>] --> Hotel<Scalar nan> OUTPUT
 
 test: $(P2B) -CDall "(xor true false)"
-is 0 _ Function: xor called 1 times
+is 0 _ Function: xor [Signature: <Any> <Any> --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -643,7 +650,7 @@ is 10 _   [Lit: <Scalar 5>] --> Delta<Scalar 5>
 is 11 _   [Lit: <Scalar 3.14159>] --> Echo<Scalar 3.14159>
 
 test: $(P2B) -CDall "(macro addx (x) (lambda (y) (+ ,x y))) ((addx 4) 5)"
-is 0 _ Function: lambda-0 called 1 times
+is 0 _ Function: lambda~4 [Signature: <Any> --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -660,7 +667,7 @@ is 13 _ Fields:
 is 14 _   Foxtrot: Echo --> <D:return> OUTPUT
 is 15 _   Golf: Echo --> <Scalar 5>
 is 16 _ Operator Instances:
-is 17 _   Golf<Scalar 5> --> [Fun: lambda-0] --> Foxtrot<D:return> OUTPUT
+is 17 _   Golf<Scalar 5> --> [Fun: lambda~4] --> Foxtrot<D:return> OUTPUT
 is 18 _   [Lit: <Scalar 5>] --> Golf<Scalar 5>
 
 test: $(P2B) -CDall "(primitive foo (((baz) bar)) zog)"
@@ -671,13 +678,9 @@ is 3 _ Compilation failed.
 
 // This checks ability to have no content to output & arg parsing
 test: $(P2B) -CDall "(primitive foo (args) arg2)"
-is 0 _ Amorphous Mediums:
-is 1 _   [Medium: Alfa = root]
-is 2 _ Fields:
-is 3 _ Operator Instances:
-is 4 _ Error during analysis:
-is 5 _  Error: Program has no content.
-is 6 _ Compilation failed.
+is 0 _ Error during interpretation:
+is 1 _  Error: Program has no content.
+is 2 _ Compilation failed.
 
 test: $(P2B) -CDall "(primitive foo ((field (field scalar))) scalar)"
 is 0 _ Error during interpretation:
@@ -792,8 +795,9 @@ is 17 _   Golf: Alfa --> <Scalar 3> OUTPUT
 is 18 _ Operator Instances:
 is 19 _   [Lit: <Scalar 3>] --> Golf<Scalar 3> OUTPUT
 
+// Testing function call resolving on path; also inlining
 test: $(P2B) -CDall "(timer)"
-is 0 _ Function: timer called 1 times
+is 0 _ Function: timer [Signature:  --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _     [Medium: Bravo = Alfa | Charlie]
@@ -828,17 +832,17 @@ is 31 _ Fields:
 is 32 _   November: Kilo --> <Boolean>
 is 33 _   Papa: Kilo --> <Boolean>
 is 34 _   Quebec: Kilo --> <Scalar> OUTPUT
-is 35 _   Romeo: Oscar --> <Scalar>
-is 36 _   Sierra: Mike --> <Scalar 0>
+is 35 _   Romeo: Mike --> <Scalar 0>
+is 36 _   Sierra: Oscar --> <Scalar>
 is 37 _   Tango: Oscar --> <Scalar>
 is 38 _   Uniform: Oscar --> <Scalar>
 is 39 _ Operator Instances:
 is 40 _   [dchange] --> November<Boolean>
 is 41 _   November<Boolean> --> [not] --> Papa<Boolean>
-is 42 _   November<Boolean>, Sierra<Scalar 0>, Tango<Scalar> --> [mux] --> Quebec<Scalar> OUTPUT
-is 43 _   Quebec<Scalar> --> [delay] --> Romeo<Scalar>
-is 44 _   [Lit: <Scalar 0>] --> Sierra<Scalar 0>
-is 45 _   Romeo<Scalar>, Uniform<Scalar> --> [+] --> Tango<Scalar>
+is 42 _   November<Boolean>, Romeo<Scalar 0>, Tango<Scalar> --> [mux] --> Quebec<Scalar> OUTPUT
+is 43 _   [Lit: <Scalar 0>] --> Romeo<Scalar 0>
+is 44 _   Quebec<Scalar> --> [delay] --> Sierra<Scalar>
+is 45 _   Sierra<Scalar>, Uniform<Scalar> --> [+] --> Tango<Scalar>
 is 46 _   [dt] --> Uniform<Scalar>
 
 test: $(P2B) -CDall "(len (tup 3 4))"
@@ -1045,10 +1049,9 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3> OUTPUT
 
 test: $(P2B) -CDanalyzed "(elt 7)"
-is 0 _ Error during analysis:
-is 1 _ command-line:1 Error: Alfa<Scalar 7> --> [elt] --> Bravo<D:(nth arg0 arg1)> has 1 arguments, but signature is [Signature: <Tuple<Any>...> <Scalar> --> <D:(nth arg0 arg1)>]
-is 2 _ command-line:1 Error: Type inference: conflict: Alfa: Charlie --> <Scalar 7> vs. Alfa<Scalar 7> --> [elt] --> Bravo<D:(nth arg0 arg1)>
-is 3 _ Compilation failed.
+is 0 _ Error during interpretation:
+is 1 _ command-line:1 Error: Called [elt] with 1 arguments; it requires exactly 2
+is 2 _ Compilation failed.
 
 
 test: $(P2B) -CDanalyzed "(+ 2 (sqrt 3) 4 (> 5 6))"
@@ -1058,6 +1061,14 @@ is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar 7.73205> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 7.73205>] --> Bravo<Scalar 7.73205> OUTPUT
+
+test: $(P2B) -CDanalyzed "(> (tup 1 0 0 -4) 1)"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Boolean false> OUTPUT
+is 4 _ Operator Instances:
+is 5 _   [Lit: <Boolean false>] --> Bravo<Boolean false> OUTPUT
 
 test: $(P2B) -CDanalyzed "(elt '(3 (1 val) 5) (elt '(2 2 2) (rnd 1 2)))"
 is 0 _ Amorphous Mediums:
@@ -1137,6 +1148,44 @@ is 3 _   Bravo: Alfa --> <Boolean false> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Boolean false>] --> Bravo<Boolean false> OUTPUT
 
+// funcall usage tracking:
+test: $(P2B) -CDanalyzed "(def foo () (mid)) (def bar (x) (+ 3 x)) (nbr (tup foo bar (tup foo)))"
+is 0 _ Function: foo [Signature:  --> <D:return>] called 2 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar> OUTPUT
+is 5 _   Operator Instances:
+is 6 _     [mid] --> Bravo<Scalar> OUTPUT
+is 7 _ Function: bar [Signature: <Any> --> <D:return>] called 1 times
+is 8 _   Amorphous Mediums:
+is 9 _     [Medium: Charlie = root]
+is 10 _   Fields:
+is 11 _     Delta: Charlie --> <Number>
+is 12 _     Echo: Charlie --> <Number> OUTPUT
+is 13 _     Foxtrot: Charlie --> <Scalar 3>
+is 14 _   Operator Instances:
+is 15 _     [Parameter 0: x] --> Delta<Number>
+is 16 _     Foxtrot<Scalar 3>, Delta<Number> --> [+] --> Echo<Number> OUTPUT
+is 17 _     [Lit: <Scalar 3>] --> Foxtrot<Scalar 3>
+is 18 _ Amorphous Mediums:
+is 19 _   [Medium: Golf = root]
+is 20 _ Fields:
+is 21 _   Hotel: Golf --> <D:(fieldof arg0)> OUTPUT
+is 22 _   India: Golf --> <D:(tupof arg0)>
+is 23 _   Juliet: Golf --> <Lambda [Fun: foo]>
+is 24 _   Kilo: Golf --> <Lambda [Fun: bar]>
+is 25 _   Lima: Golf --> <D:(tupof arg0)>
+is 26 _   Mike: Golf --> <Lambda [Fun: foo]>
+is 27 _ Operator Instances:
+is 28 _   India<D:(tupof arg0)> --> [nbr] --> Hotel<D:(fieldof arg0)> OUTPUT
+is 29 _   Juliet<Lambda [Fun: foo]>, Kilo<Lambda [Fun: bar]>, Lima<D:(tupof arg0)> --> [tup] --> India<D:(tupof arg0)>
+is 30 _   [Lit: <Lambda [Fun: foo]>] --> Juliet<Lambda [Fun: foo]>
+is 31 _   [Lit: <Lambda [Fun: bar]>] --> Kilo<Lambda [Fun: bar]>
+is 32 _   Mike<Lambda [Fun: foo]> --> [tup] --> Lima<D:(tupof arg0)>
+is 33 _   [Lit: <Lambda [Fun: foo]>] --> Mike<Lambda [Fun: foo]>
+
+
 // funcall propagation & backpropagation
 test: $(P2B) -CDanalyzed "(+ ((lambda (x) 2) 4) ((lambda (x y) (mux (dt) x y)) 3 3))"
 is 0 _ Amorphous Mediums:
@@ -1177,7 +1226,7 @@ is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 
 // Testing propagation in & out of funcall
 test: $(P2B) -CDanalyzed "((lambda (x) (set-dt x)) 5)" --function-inlining-threshold 0
-is 0 _ Function: lambda-0 called 1 times
+is 0 _ Function: lambda~4 [Signature: <Any> --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1192,12 +1241,12 @@ is 11 _ Fields:
 is 12 _   Echo: Delta --> <Scalar 5> OUTPUT
 is 13 _   Foxtrot: Delta --> <Scalar 5>
 is 14 _ Operator Instances:
-is 15 _   Foxtrot<Scalar 5> --> [Fun: lambda-0] --> Echo<Scalar 5> OUTPUT
+is 15 _   Foxtrot<Scalar 5> --> [Fun: lambda~4] --> Echo<Scalar 5> OUTPUT
 is 16 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
 // should end up with 1 timer call
 test: $(P2B) -CDanalyzed "(all (timer) (timer))" --function-inlining-threshold 0
-is 0 _  Function: timer called 1 times
+is 0 _  Function: timer [Signature:  --> <D:return>] called 1 times
 is 21 _ Amorphous Mediums:
 is 22 _   [Medium: Kilo = root]
 is 23 _ Fields:
@@ -1282,7 +1331,7 @@ is 16 _   [Field~~mid] --> Golf<Field <Scalar>>
 is 17 _   [Lit: <Field <Scalar 1>>] --> Hotel<Field <Scalar 1>>
 is 18 _ Stopping before localization
 
-
+// Test inlining
 test: $(P2B) -CDanalyzed "(def foo (x) (+ 1 x)) (def bar (x y) (* x y)) (bar (foo (foo (mid))) (bar (foo (mid)) (foo 3)))" --function-inlining-threshold -1
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1332,13 +1381,86 @@ is 15 _   Bravo<Scalar> --> [sqrt] --> Foxtrot<Scalar>
 is 16 _   Bravo<Scalar> --> [sqrt] --> Golf<Scalar>
 is 17 _   Bravo<Scalar> --> [sqrt] --> Hotel<Scalar>
 
-// make sure restrictions happen on cross-domain boundaries
-// test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) (if (rnd 0 1) x 3))"
-// is 0 _ Amorphous Mediums:
 
-// references in lambdas to other DFGs
+
+// make sure restrictions happen on cross-domain boundaries
+test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) (if (rnd 0 1) x 3))"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _   [Medium: Bravo = Alfa | Charlie]
+is 3 _   [Medium: Delta = Alfa | Echo]
+is 4 _ Fields:
+is 5 _   Foxtrot: Alfa --> <Scalar>
+is 6 _   Golf: Alfa --> <Scalar>
+is 7 _   Hotel: Alfa --> <Scalar 1>
+is 8 _   Charlie: Alfa --> <Scalar>
+is 9 _   India: Alfa --> <Scalar 0>
+is 10 _   Juliet: Alfa --> <Scalar 1>
+is 11 _   Kilo: Alfa --> <Scalar> OUTPUT
+is 12 _   Lima: Bravo --> <Scalar>
+is 13 _   Echo: Alfa --> <Boolean>
+is 14 _   Mike: Delta --> <Scalar 3>
+is 15 _ Operator Instances:
+is 16 _   Golf<Scalar>, Hotel<Scalar 1> --> [+] --> Foxtrot<Scalar>
+is 17 _   [mid] --> Golf<Scalar>
+is 18 _   [Lit: <Scalar 1>] --> Hotel<Scalar 1>
+is 19 _   India<Scalar 0>, Juliet<Scalar 1> --> [rnd] --> Charlie<Scalar>
+is 20 _   [Lit: <Scalar 0>] --> India<Scalar 0>
+is 21 _   [Lit: <Scalar 1>] --> Juliet<Scalar 1>
+is 22 _   Charlie<Scalar>, Lima<Scalar>, Mike<Scalar 3> --> [mux] --> Kilo<Scalar> OUTPUT
+is 23 _   Charlie<Scalar>, Foxtrot<Scalar> --> [restrict] --> Lima<Scalar>
+is 24 _   Charlie<Scalar> --> [not] --> Echo<Boolean>
+is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
+
+// NEIGHORHOOD OPERATIONS
+// Simple neighborhood:
+test: $(P2B) -CDanalyzed -CDlocalized "(max-hood (nbr (= (mid) 0)))"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Boolean> OUTPUT
+is 4 _   Charlie: Alfa --> <Field <Boolean>>
+is 5 _   Delta: Alfa --> <Boolean>
+is 6 _   Echo: Alfa --> <Scalar>
+is 7 _   Foxtrot: Alfa --> <Scalar 0>
+is 8 _ Operator Instances:
+is 9 _   Charlie<Field <Boolean>> --> [max-hood] --> Bravo<Boolean> OUTPUT
+is 10 _   Delta<Boolean> --> [nbr] --> Charlie<Field <Boolean>>
+is 11 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
+is 12 _   [mid] --> Echo<Scalar>
+is 13 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
+//is 14 _ Function: lambda~4 [Signature: <Boolean> --> <D:return>] called 1 times
+//is 15 _   Amorphous Mediums:
+//is 16 _     [Medium: Golf = root]
+//is 17 _   Fields:
+//is 18 _     Hotel: Golf --> <Local>
+//is 19 _     India: Golf --> <Field <Local>> OUTPUT
+//is 20 _   Operator Instances:
+//is 21 _     [Parameter 0: arg~5] --> Hotel<Local>
+//is 22 _     Hotel<Local> --> [nbr] --> India<Field <Local>> OUTPUT
+//is 23 _ Amorphous Mediums:
+//is 24 _   [Medium: Alfa = root]
+//is 25 _ Fields:
+//is 26 _   Delta: Alfa --> <Boolean>
+//is 27 _   Echo: Alfa --> <Scalar>
+//is 28 _   Foxtrot: Alfa --> <Scalar 0>
+//is 29 _   Juliet: Alfa --> <D:(unlit (output arg1))> OUTPUT
+//is 30 _   Kilo: Alfa --> <Lambda [max]>
+//is 31 _   Lima: Alfa --> <Lambda [Fun: lambda~4]>
+//is 32 _ Operator Instances:
+//is 33 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
+//is 34 _   [mid] --> Echo<Scalar>
+//is 35 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
+//is 36 _   Kilo<Lambda [max]>, Lima<Lambda [Fun: lambda~4]>, Delta<Boolean> --> [fold-hood-plus] --> Juliet<D:(unlit (output arg1))> OUTPUT
+//is 37 _   [Lit: <Lambda [max]>] --> Kilo<Lambda [max]>
+//is 38 _   [Lit: <Lambda [Fun: lambda~4]>] --> Lima<Lambda [Fun: lambda~4]>
+
+// references in lambdas to external variables
 // test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) ((lambda (y) (* x y)) 3))"
 // is 0 _ Amorphous Mediums:
+
+// Neighborhood variables: "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
+// Neighborhood variables: "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
 
 // test: $(P2B) -CDanalyzed "(def foo (x) (+ x (mid))) (apply foo (- (mid) 1))"
 // test: $(P2B) -CDanalyzed "(apply / `(8 12) 2 3)"

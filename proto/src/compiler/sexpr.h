@@ -16,10 +16,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 using namespace std;
 
-struct SExpr : CompilationElement {
+struct SExpr : CompilationElement { reflection_sub(SExpr,CE);
   static bool NO_LINE_BREAKS;
-  virtual string type_of() { return "SExpr"; }
-  virtual bool isA(string c){return c=="SExpr"?true:CompilationElement::isA(c);}
   bool isSymbol() { return type_of()=="SE_Symbol"; }
   bool isList() { return type_of()=="SE_List"; }
   bool isScalar() { return type_of()=="SE_Scalar"; }
@@ -33,14 +31,12 @@ struct SExpr : CompilationElement {
   virtual SExpr* copy() = 0;
 };
 
-struct SE_Scalar: SExpr {
+struct SE_Scalar: SExpr { reflection_sub(SE_Scalar,SExpr);
   float value;
   SE_Scalar(float value) { this->value = value; }
   SE_Scalar(SE_Scalar* src) { this->value=src->value; inherit_attributes(src); }
   SExpr* copy() { return new SE_Scalar(this); }
   void print(ostream *out=cpout) { *out << value; }
-  string type_of() { return "SE_Scalar"; }
-  virtual bool isA(string c){ return (c=="SE_Scalar")?true:SExpr::isA(c); }
 
   virtual bool operator== (float v) { return v==value; }
   virtual bool operator== (SExpr *ex) {
@@ -48,7 +44,7 @@ struct SE_Scalar: SExpr {
   }
 };
 
-struct SE_Symbol : SExpr {
+struct SE_Symbol : SExpr { reflection_sub(SE_Symbol,SExpr);
   string name;
   static bool case_insensitive; // Neocompiler is case sensitive, Paleo is not
   SE_Symbol(string name) { 
@@ -61,8 +57,6 @@ struct SE_Symbol : SExpr {
   SE_Symbol(SE_Symbol* src) { this->name=src->name; inherit_attributes(src);}
   SExpr* copy() { return new SE_Symbol(this); }
   void print(ostream *out=cpout) { *out << name; }
-  string type_of() { return "SE_Symbol"; }
-  virtual bool isA(string c){ return (c=="SE_Symbol")?true:SExpr::isA(c); }
 
   virtual bool operator== (string s) { return s==name; }
   virtual bool operator== (SExpr *ex) {
@@ -70,7 +64,7 @@ struct SE_Symbol : SExpr {
   }
 };
 
-struct SE_List : SExpr {
+struct SE_List : SExpr { reflection_sub(SE_List,SExpr);
   vector<SExpr*> children;
   SExpr* copy() {
     SE_List *dst = new SE_List();
@@ -92,8 +86,6 @@ struct SE_List : SExpr {
     }
     pp_pop(); *out << ")";
   }
-  string type_of() { return "SE_List"; }
-  virtual bool isA(string c){ return (c=="SE_List")?true:SExpr::isA(c); }
 
   virtual bool operator== (SExpr *ex) {
     if(!ex->isList()) return false;
@@ -107,11 +99,10 @@ struct SE_List : SExpr {
 
 /****** Attribute for carrying SExprs around ******/
 
-struct SExprAttribute : Attribute {
+struct SExprAttribute : Attribute { reflection_sub(SExprAttribute,Attribute);
   bool inherit; SExpr* exp;
   SExprAttribute(SExpr* s,bool inherit=true) { exp=s; this->inherit=inherit; }
   
-  virtual bool isA(string c){ return (c=="SExprAttribute")?true:false; }
   void print(ostream *out=cpout) { *out << "S: "; exp->print(out); }
   virtual Attribute* inherited() { return (inherit ? this : NULL); }
   // no merge defined
@@ -121,5 +112,59 @@ struct SExprAttribute : Attribute {
 
 extern SExpr* read_sexpr(string name, string in);
 extern SExpr* read_sexpr(string name, istream* in=0, ostream* out=0);
+
+
+/****** Utility to make parsing SEList structures easier ******/
+SExpr* sexp_err(CompilationElement *where,string msg); // error & return dummy
+
+struct SE_List_iter {
+  SE_List* container; int index;
+  SE_List_iter(SE_List* s) { index=0; container=s; }
+  SE_List_iter(SExpr* s) { 
+    if(!s->isList())
+      { compile_error(s,"Expected list, but got "+ce2s(s)); s=new SE_List(); }
+    index=0; container=(SE_List*)s;
+  }
+  // true if there are more elements
+  bool has_next() { return (index < container->children.size()); }
+  // if next element is SE_Symbol named s, return true and advances
+  bool on_token(string s) {
+    if(!has_next()) return false;
+    if(!container->children[index]->isSymbol()) return false;
+    if(!(((SE_Symbol*)container->children[index])->name==s)) return false;
+    index++; return true;
+  }
+  // return next expression (if it exists); error if it does not
+  SExpr* peek_next(string name="expression") {
+    if(!has_next()) {return sexp_err(container,"Expected "+name+" is missing");}
+    return container->children[index];
+  }
+  // return next expression (if it exists) and increment; error if it does not
+  SExpr* get_next(string name="expression") {
+    if(!has_next()) {return sexp_err(container,"Expected "+name+" is missing");}
+    return container->children[index++];
+  }
+  // getters specialized for strings and numbers
+  string get_token(string name="expression") {
+    SExpr* tok = get_next(name);
+    if(tok->isSymbol()) { return ((SE_Symbol*)tok)->name;
+    } else { 
+      compile_error(tok,"Expected "+name+" is not a symbol");
+      return "ERROR";
+    }
+  }
+  float get_num(string name="expression") {
+    SExpr* tok = get_next(name);
+    if(tok->isScalar()) { return ((SE_Scalar*)tok)->value;
+    } else { 
+      compile_error(tok,"Expected "+name+" is not a number");
+      return -1;
+    }
+  }
+  // backs up one expression; attempting to unread 0 gets 0
+  void unread(int n=1) { index-=n; if(index<0) index=0; }
+};
+
+
 
 #endif // __SEXPR__

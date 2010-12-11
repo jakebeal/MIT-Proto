@@ -42,8 +42,9 @@ string f2s(float num, int precision=2);
 string i2s(int num);
 string V2S(vector<CompilationElement*> *v);
 #define v2s(x) (V2S((vector<CompilationElement*>*)(x)))
+#define ce2s(t) ((t)->to_str())
 
-// ERROR REPORTING
+// ERROR REPORTING & VERBOSITY
 // Using globals is a little bit ugly, but we're not planning to have
 // the compiler be re-entrant any time soon, so it's fairly safe to assume
 // we'll always have precisely one compiler running.
@@ -56,20 +57,42 @@ void compile_warn(string msg);
 void compile_warn(CompilationElement *where,string msg);
 void terminate_on_error(); // clean-up & kill application
 
+// Standard levels for verbosity:
+#define V1 if(verbosity>=1) *cpout // Major stages
+#define V2 if(verbosity>=2) *cpout // Actions
+#define V3 if(verbosity>=3) *cpout // Fine detail
+#define V4 if(verbosity>=4) *cpout
+#define V5 if(verbosity>=5) *cpout
+
+/****** REFLECTION ******/
+
+// Note: #t means the string literal for token t
+#define reflection_base(t)                                              \
+  virtual string type_of(){return #t;}                                  \
+  virtual bool isA(string c) { return c==#t; }                          \
+  string to_str() { ostringstream s; print(&s); return s.str(); }
+
+#define reflection_sub(t,par)                                           \
+  virtual string type_of() {return #t;}                                 \
+  virtual bool isA(string c) { return c==#t||par::isA(c); }
+
+#define reflection_sub2(t,par1,par2)                                    \
+  virtual string type_of() {return #t;}                                 \
+  virtual bool isA(string c) { return c==#t||par1::isA(c)||par2::isA(c); }
+
+
 /****** COMPILATION ELEMENTS & ATTRIBUTES ******/
-struct Attribute {
+struct Attribute { reflection_base(Attribute);
+  virtual void print(ostream *out=cpout) = 0;
   virtual Attribute* inherited() { return NULL; }
   virtual void merge(Attribute *addition) { 
     ierror("Attempt to merge incompatible attributes: " + this->to_str()
 	   + ", " + addition->to_str());
   };
-  virtual bool isA(string c){ return (c=="Attribute")?true:false; }
-  string to_str() { ostringstream s; print(&s); return s.str(); }
-  virtual void print(ostream *out=cpout) = 0;
 };
 
 
-struct Context : Attribute {
+struct Context : Attribute { reflection_sub(Context,Attribute);
   map<string, pair<int,int>*> places; // file, <start,end>
   
   Context(string file_name,int line)
@@ -105,14 +128,14 @@ struct Context : Attribute {
   }
 };
 
-struct Error : Attribute {
+struct Error : Attribute { reflection_sub(Error,Attribute);
   string msg;
   Error(string msg) { this->msg=msg; }
   void print(ostream *out=cpout) { *out << msg; }
 };
 
 // an boolean attribute that defaults to false, but is true when marked
-struct MarkerAttribute : Attribute {
+struct MarkerAttribute : Attribute { reflection_sub(MarkerAttribute,Attribute);
   bool inherit;
   MarkerAttribute(bool inherit) { this->inherit=inherit; }
 
@@ -122,7 +145,7 @@ struct MarkerAttribute : Attribute {
   { inherit |= ((MarkerAttribute*)_addition)->inherit; }
 };
 
-struct IntAttribute : Attribute {
+struct IntAttribute : Attribute { reflection_sub(IntAttribute,Attribute);
   int value;
   bool inherit;
   IntAttribute(bool inherit=false) { this->inherit=inherit; }
@@ -133,8 +156,10 @@ struct IntAttribute : Attribute {
   { inherit |= ((MarkerAttribute*)_addition)->inherit; }
 };
 
+
 // By default, attributes that are passed around are *not* duplicated
-struct CompilationElement : public Nameable {
+#define CE CompilationElement
+struct CompilationElement : public Nameable { reflection_base(CE);
   static uint32_t max_id;
   uint32_t elmt_id;
   map<string,Attribute*> attributes; // should end up with null in default
@@ -143,20 +168,22 @@ struct CompilationElement : public Nameable {
   CompilationElement() { elmt_id = max_id++; }
   virtual ~CompilationElement() {}
   virtual void inherit_attributes(CompilationElement* src) {
+    if(src==NULL) ierror("Tried to inherit attributes from null source");
     for(att_iter i=src->attributes.begin(); i!=src->attributes.end(); i++) {
       Attribute *a = src->attributes[i->first]->inherited();
       if(a!=NULL) {
-	if(attributes.count(i->first)) {
-	  attributes[i->first]->merge(a);
-	} else {
-	  attributes[i->first] = a;
-	}
+	if(attributes.count(i->first)) attributes[i->first]->merge(a);
+        else attributes[i->first] = a;
       }
     }
   }
-  virtual string type_of() { return "CompilationElement"; }
-  virtual bool isA(string c){ return (c=="CompilationElement")?true:false; }
-  string to_str() { ostringstream s; print(&s); return s.str(); }
+  // attribute utilities
+  void clear_attribute(string a) 
+  { if(attributes.count(a)) { delete attributes[a]; attributes.erase(a); } }
+  bool marked(string a) { return attributes.count(a); }
+  bool mark(string a) { attributes[a]=new MarkerAttribute(true); return true; }
+
+  // typing and printing
   virtual void print(ostream *out=cpout) {
     *out << pp_indent() << "Attributes [" << attributes.size() << "]\n";
     pp_push(2);
@@ -173,6 +200,9 @@ struct CompilationElement_cmp {
     return ce1->elmt_id < ce2->elmt_id;
   }
 };
+#define CEset(x) set<x,CompilationElement_cmp>
+#define CEmap(x,y) map<x,y,CompilationElement_cmp>
+
 // used for some indices
 struct CompilationElementIntPair_cmp {
   bool operator()(const pair<CompilationElement*,int> &ce1, 

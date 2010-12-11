@@ -34,17 +34,20 @@
                                "min-hood" "max-hood" "int-hood"
                                "any-hood" "all-hood"
                                "nbr" "nbr-range" "nbr-bearing"
+			       "nbr-vec" "density" "nbr-lag" "nbr-delay"
+			       "all-time" "any-time" "int-time" "max-time"
+			       "min-time"
                                ) t)
                  "\\b") 
          'font-lock-builtin-face)
    ;; deprecated, abstraction-violating, and other dangerous keywords
    (cons (concat "\\b"
-                 (regexp-opt '("fold-hood" "sum-hood" "probe") t)
+                 (regexp-opt '("fold-hood" "fold-hood*" "fold-hood-plus" "sum-hood" "fold-time" "probe") t)
                  "\\b")
          'font-lock-warning-face)
    ;; other keywords
    (cons (concat "\\b"
-                 (regexp-opt '("def" "let" "let*" "all" "seq" "mux" "and" "or"
+                 (regexp-opt '("def" "primitive" "macro" "let" "let*" "all" "seq" "mux" "and" "or"
                                "unless" "when" "cond" "case" "case-by" "fun" "#t" "#f"
                                "tup" "vec") t)
                  "\\b")
@@ -55,7 +58,7 @@
   (interactive)
   (beginning-of-line)
   (let ((cur-indent 0)
-	(extra-indents (regexp-opt '("def" "if" "mux" "unless" "when") t))
+	(extra-indents (regexp-opt '("def" "primitive" "macro" "if" "mux" "unless" "when") t))
 	(let-indents (regexp-opt '("let" "let*" "letfed") t))) 
     (unless (bobp) ; first line indents to zero
       (condition-case nil

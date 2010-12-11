@@ -14,122 +14,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "compiler.h"
 
 /*****************************************************************************
- *  PROPAGATOR                                                               *
- *****************************************************************************/
-
-void queue_all_fields(DFG* g, Propagator* p) {
-  p->worklist_f = g->edges;
-  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
-  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) {
-    CompoundOp* op = (CompoundOp*)((*i).first);
-    p->worklist_f.insert(op->body->edges.begin(),op->body->edges.end());
-  }
-}
-
-void queue_all_ops(DFG* g, Propagator* p) {
-  p->worklist_o = g->nodes;
-  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
-  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) {
-    CompoundOp* op = (CompoundOp*)((*i).first);
-    p->worklist_o.insert(op->body->nodes.begin(),op->body->nodes.end());
-  }
-}
-
-void queue_all_ams(DFG* g, Propagator* p) {
-  p->worklist_a = g->spaces;
-  map<Operator*,set<OperatorInstance*, CompilationElement_cmp> >::iterator i;
-  for(i=g->funcalls.begin();i!=g->funcalls.end();i++) {
-    CompoundOp* op = (CompoundOp*)((*i).first);
-    p->worklist_a.insert(op->body->spaces.begin(),op->body->spaces.end());
-  }
-}
-
-// neighbor marking:
-enum { F_MARK=1, O_MARK=2, A_MARK=4 };
-CompilationElement* src;
-set<CompilationElement*,CompilationElement_cmp> queued;
-void Propagator::queue_nbrs(Field* f, int marks) {
-  if(marks&F_MARK || queued.count(f)) return;   queued.insert(f);
-  if(f!=src) { if(act_fields) { worklist_f.insert(f); } marks |= F_MARK; }
-  
-  queue_nbrs(f->producer,marks); queue_nbrs(f->domain,marks);
-  set<pair<OperatorInstance*,int> >::iterator i=f->consumers.begin();
-  for( ;i!=f->consumers.end();i++) queue_nbrs((*i).first,marks);
-  for(int i=0;i<f->selectors.size();i++) queue_nbrs(f->selectors[i],marks);
-}
-void Propagator::queue_nbrs(OperatorInstance* oi, int marks) {
-  if(marks&O_MARK || queued.count(oi)) return;   queued.insert(oi);
-  if(oi!=src) { if(act_ops) { worklist_o.insert(oi); } marks |= O_MARK; }
-
-  queue_nbrs(oi->output,marks);
-  for(int i=0;i<oi->inputs.size();i++) queue_nbrs(oi->inputs[i],marks);
-  // if it's a compound op, queue the parameters & output
-}
-void Propagator::queue_nbrs(AM* am, int marks) {
-  if(marks&A_MARK || queued.count(am)) return;   queued.insert(am);
-  if(am!=src) { if(act_am) { worklist_a.insert(am); } marks |= A_MARK; }
-
-  if(am==src) { // Fields & Ops don't affect one another through AM
-    if(am->parent) queue_nbrs(am->parent,marks);
-    if(am->selector) queue_nbrs(am->selector,marks);
-    for(set<AM*>::iterator i=am->children.begin();i!=am->children.end();i++)
-      queue_nbrs(*i,marks);
-    for(set<Field*>::iterator i=am->fields.begin();i!=am->fields.end();i++)
-      queue_nbrs(*i,marks);
-  }
-}
-
-void Propagator::note_change(AM* am) 
-{ queued.clear(); any_changes=true; src=am; queue_nbrs(am); }
-void Propagator::note_change(Field* f) 
-{ queued.clear(); any_changes=true; src=f; queue_nbrs(f); }
-void Propagator::note_change(OperatorInstance* oi) 
-{ queued.clear(); any_changes=true; src=oi; queue_nbrs(oi); }
-
-void Propagator::maybe_set_range(Field* f,ProtoType* range) {
-  if(!ProtoType::equal(f->range,range)) { 
-    if(verbosity>=2) 
-      *cpout<<"  Changing type of "<<f->to_str()<<" to "<<range->to_str()<<endl;
-    f->range=range; note_change(f);
-  }
-}
-
-bool Propagator::propagate(DFG* g) {
-  if(verbosity>=1) *cpout << "Executing analyzer " << to_str() << endl;
-  any_changes=false; root=g;
-  // initialize worklists
-  if(act_fields) queue_all_fields(g,this); else worklist_f.clear();
-  if(act_ops) queue_all_ops(g,this); else worklist_o.clear();
-  if(act_am) queue_all_ams(g,this); else worklist_a.clear();
-  // walk through worklists until empty
-  preprop();
-  int steps_remaining = 
-    1+loop_abort*(worklist_f.size()+worklist_o.size()+worklist_a.size());
-  while(steps_remaining>0 && 
-        (!worklist_f.empty() || !worklist_o.empty() || !worklist_a.empty())) {
-    // each time through, try executing one from each worklist
-    if(!worklist_f.empty()) {
-      Field* f = *worklist_f.begin(); worklist_f.erase(f); 
-      if(f->container->edges.count(f)) // ignore deleted elements
-        { act(f); steps_remaining--; }
-    }
-    if(!worklist_o.empty()) {
-      OperatorInstance* oi = *worklist_o.begin(); worklist_o.erase(oi);
-      if(oi->container->nodes.count(oi)) // ignore deleted elements
-        { act(oi); steps_remaining--; }
-    }
-    if(!worklist_a.empty()) {
-      AM* am = *worklist_a.begin(); worklist_a.erase(am); 
-      if(am->container->spaces.count(am)) // ignore deleted elements
-        { act(am); steps_remaining--; }
-    }
-  }
-  if(steps_remaining<=0) ierror("Aborting due to apparent infinite loop.");
-  postprop();
-  return any_changes;
-}
-
-/*****************************************************************************
  *  TYPE CONCRETENESS                                                        *
  *****************************************************************************/
 
@@ -142,16 +26,14 @@ class Concreteness {
     if(t->isA("ProtoScalar")) { return true;
     } else if(t->isA("ProtoSymbol")) { return true;
     } else if(t->isA("ProtoTuple")) { 
-      ProtoTuple* tp = dynamic_cast<ProtoTuple*>(t);
+      ProtoTuple* tp = T_TYPE(t);
       for(int i=0;i<tp->types.size();i++)
         if(!acceptable(tp->types[i])) return false;
       return true;
-    } else if(t->isA("ProtoLambda")) { 
-      ProtoLambda* tl = dynamic_cast<ProtoLambda*>(t); 
-      return tl->op==NULL || acceptable(tl->op);
+    } else if(t->isA("ProtoLambda")) {
+      return L_VAL(t)==NULL || acceptable(L_VAL(t));
     } else if(t->isA("ProtoField")) {
-      ProtoField* tf = dynamic_cast<ProtoField*>(t); 
-      return tf->hoodtype==NULL || acceptable(tf->hoodtype);
+      return F_VAL(t)==NULL || acceptable(F_VAL(t));
     } else return false; // all others
   }
   // concreteness of operators, for ProtoLambda:
@@ -159,11 +41,7 @@ class Concreteness {
     if(op->isA("Literal") || op->isA("Parameter") || op->isA("Primitive")) {
       return true;
     } else if(op->isA("CompoundOp")) {
-      CompoundOp* cop = dynamic_cast<CompoundOp*>(op); 
-      set<Field*>::iterator fit;
-      for(fit=cop->body->edges.begin(); fit!=cop->body->edges.end(); fit++)
-        if(!acceptable(*fit)) return false;
-      return true;
+      return true; // its fields are checked elsewhere
     } else return false; // generic operator
   }
 };
@@ -173,6 +51,75 @@ void CheckTypeConcreteness::act(Field* f) {
     //ierror(f,"Type is ambiguous: "+f->to_str());
     compile_error(f,"Type is ambiguous: "+f->to_str());
 }
+
+/*****************************************************************************
+ *  TYPE CONSTRAINTS                                                         *
+ *****************************************************************************/
+
+ProtoType* ref_err_scratch = new ProtoType();
+ProtoType** typeref_error(CompilationElement *where,string msg) {
+  compile_error(where,"Type reference: "+msg); return &ref_err_scratch;
+}
+
+SExpr* get_sexp(CE* src, string attribute) {
+  Attribute* a = src->attributes[attribute];
+  if(a==NULL || !a->isA("SExprAttribute"))
+    return sexp_err(src,"Couldn't get expression for: "+a->to_str());
+  return ((SExprAttribute*)a)->exp;
+}
+
+
+ProtoType** get_type_ref(OperatorInstance* oi, SExpr* ref) {
+  if(ref->isSymbol()) {
+    if(*ref=="value") {
+      return &oi->output->range;
+    }
+  } else if(ref->isList()) {
+    SE_List_iter li(ref);
+    if(li.on_token("nth")) {
+      // Challenge: with an unknown ref, this can apply to all the elements!
+      // Dilemma: do we go with "return a reference to all" or do we make
+      // parallel get & set operations?  I'm inclined to the latter...
+    }
+  }
+  return typeref_error(ref,"Unknown type reference: "+ce2s(ref));
+}
+
+// new system: :type-constraints SExprs
+// assumes constraint has already been checked for syntactic sanity
+void apply_constraint(OperatorInstance* oi, SE_List* constraint) {
+  SE_List_iter li(constraint);
+  if(li.on_token("=")) { // types should be identical
+    ProtoType **a = get_type_ref(oi,li.get_next("type reference"));
+    ProtoType **b = get_type_ref(oi,li.get_next("type reference"));
+    ProtoType *joint = ProtoType::gcs(*a,*b); 
+    if(joint==NULL) {
+      ierror("Equality constraint failed, but don't know how to handle yet.");
+    } else {
+      cout << "Action "<<ce2s(constraint)<<" should assert "<<ce2s(joint)<<endl;
+      //maybe_set_ref(oi,constraint[0],joint);
+      //maybe_set_ref(oi,constraint[1],joint);
+    }
+    // first, take the GCS, then compare them together
+    // if it's OK, then push back:  maybe_set_ref(oi,constraint[i]);
+    // if it's not OK, then call for resolution
+  } else {
+    compile_error("Unknown constraint '"+ce2s(li.peek_next())+"'");
+  }
+}
+
+void apply_constraints(OperatorInstance* oi, SExpr* constraints) {
+  if(!constraints->isList()) 
+    {compile_error(constraints,"Constraints must be list: "+ce2s(constraints));return;}
+  SE_List_iter li((SE_List*)constraints);
+  while(li.has_next()) {
+    SExpr* ct = li.get_next();
+    if(!ct->isList() || ((SE_List*)ct)->len()!=3)
+      {compile_error(ct,"Constraint must be a 3-item list: "+ce2s(ct)); return;}
+    apply_constraint(oi,(SE_List*)ct);
+  }
+}
+
 
 /*****************************************************************************
  *  TYPE RESOLUTION                                                          *
@@ -190,14 +137,21 @@ class TypeResolution {
     } else if(t->isA("ProtoScalar")) { return true;
     } else if(t->isA("ProtoSymbol")) { return true;
     } else if(t->isA("ProtoTuple")) { 
-      ProtoTuple* tp = dynamic_cast<ProtoTuple*>(t);
+      ProtoTuple* tp = T_TYPE(t);
       for(int i=0;i<tp->types.size();i++)
         if(!acceptable(tp->types[i])) return false;
       return true;
-    } else if(t->isA("ProtoLambda")) { return true;
+    } else if(t->isA("ProtoLambda")) {
+      Signature* s = L_VAL(t)->signature;
+      if(!acceptable(s->output)) return false;
+      if(s->rest_input && !acceptable(s->output)) return false;
+      for(int i=0;i<s->required_inputs.size();i++)
+        if(!acceptable(s->required_inputs[i])) return false;
+      for(int i=0;i<s->optional_inputs.size();i++)
+        if(!acceptable(s->optional_inputs[i])) return false;
+      return true;
     } else if(t->isA("ProtoField")) {
-      ProtoField* tf = dynamic_cast<ProtoField*>(t); 
-      return tf->hoodtype==NULL || acceptable(tf->hoodtype);
+      return F_VAL(t)==NULL || acceptable(F_VAL(t));
     } else return false; // all others
   }
 };
@@ -205,12 +159,10 @@ class TypeResolution {
 
 
 // used during type resolution
-struct TypeVector : public ProtoTuple {
+struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
   //vector<ProtoType*> types;
   TypeVector() : ProtoTuple(true) {}
   virtual void print(ostream* out=0);
-  virtual bool isA(string c){return c==type_of()||ProtoType::isA(c);}
-  virtual string type_of() { return "TypeVector"; }
   // factory methods
   static TypeVector* op_types_from(OperatorInstance* oi, int start);
   static TypeVector* sig_type_range(Signature* s,int begin,int end);
@@ -235,7 +187,15 @@ TypeVector* TypeVector::sig_type_range(Signature* s,int begin,int end) {
 }
 
 TypeVector* TypeVector::input_types(Signature* sig) {
-  ierror("Haven't written signature typevec routing yet.");
+  TypeVector *tv = new TypeVector();
+  for(int i=0;i<sig->required_inputs.size();i++)
+    tv->types.push_back(sig->required_inputs[i]);
+  for(int i=0;i<sig->optional_inputs.size();i++)
+    tv->types.push_back(sig->optional_inputs[i]);
+  if(sig->rest_input!=NULL) {
+    tv->bounded = false;tv->types.push_back(sig->rest_input);
+  }
+  return tv;
 }
 
 void TypeVector::print(ostream* out) { 
@@ -255,9 +215,10 @@ ProtoType* if_non_derived(ProtoType* t) { return t->isA("DerivedType")?NULL:t;}
 
 ProtoType* if_derivable(ProtoType* t, ProtoType* sigtype) {
   // don't derive from derived types
-  if(t->isA("DerivedType")) return NULL;
+  if(!TypeResolution::acceptable(t)) return NULL;
   // don't derive from signature type mismatches
-  if(!sigtype->isA("DerivedType") && !sigtype->supertype_of(t)) return NULL;
+  if(TypeResolution::acceptable(sigtype) && !sigtype->supertype_of(t)) 
+    return NULL;
   return t;
 }
 
@@ -366,11 +327,12 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
     string var = ((SE_Symbol*)ref)->name;
     // ARGS: the set of argument types 
     // ARGK: the type of the kth argument (0-based)
-    if(DerivedType::is_arg_ref(var)) { return arg_ref((SE_Symbol*)ref,oi);
+    if(DerivedType::is_arg_ref(var)) { 
+      return arg_ref((SE_Symbol*)ref,oi);
     } else if(var=="return") {
       if(!oi->op->isA("CompoundOp")) 
         return type_error(ref,"'return' only valid for compound operators");
-      ProtoType* rtype = ((CompoundOp*)oi->op)->body->output->range;
+      ProtoType* rtype = ((CompoundOp*)oi->op)->output->range;
       return rtype->isA("DerivedType") ? NULL : rtype;
     } // else fall through to fail
   } else if(ref->isScalar()) { // expected to be only used inside nth
@@ -391,17 +353,19 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
       if(!subs[1]->isA("ProtoScalar"))
         return type_error(ref,"'nth' requires a scalar index: "+ref->to_str());
       ProtoScalar* n = dynamic_cast<ProtoScalar*>(subs[1]);
-      vector<ProtoType*> *source;
+      vector<ProtoType*> *source; bool bounded;
       if(subs[0]->isA("TypeVector")) {
         source = &(dynamic_cast<TypeVector*>(subs[0]))->types;
+        bounded = (dynamic_cast<TypeVector*>(subs[0]))->bounded;
       } else if(subs[0]->isA("ProtoTuple")) {
         source = &(dynamic_cast<ProtoTuple*>(subs[0]))->types;
+        bounded = (dynamic_cast<ProtoTuple*>(subs[0]))->bounded;
       } else return type_error(oi,"'nth' needs tuple: "+subs[0]->to_str());
       if(source->size()==0) return type_error(oi,"'nth' source is empty");
       if(n->constant) { // if 2nd is a literal, access the argument
-        if(n->value<0 || n->value>=source->size())
-          return type_error(oi,"'nth' reference out of bounds: "+n->to_str());
-        return (*source)[(int)n->value];
+        if(n->value<0 || (bounded && n->value>=source->size()))
+          return type_error(oi,"'nth' reference out of bounds: "+n->to_str()+" on "+subs[0]->to_str());
+        return (*source)[MIN((int)n->value,source->size()-1)];
       } else { // otherwise, take the LCS of the source
         ProtoType* compound = (*source)[0];
         for(int i=1;i<source->size();i++) 
@@ -459,8 +423,8 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
       ProtoLambda* t = dynamic_cast<ProtoLambda*>(subs[0]);
       ProtoType* rtype = NULL;
       if(t->op->isA("Primitive")) { rtype = t->op->signature->output;
-      } else if(t->op->isA("CompoundOp")) { 
-        rtype = ((CompoundOp*)oi->op)->body->output->range;
+      } else if(t->op->isA("CompoundOp")) {
+        rtype = ((CompoundOp*)t->op)->output->range;
       } else {
         ierror("'output' derivation can't resolve for op: "+t->op->to_str());
       }
@@ -473,7 +437,8 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
       if(t->op->isA("Primitive")) { 
         rtype = TypeVector::input_types(t->op->signature);
       } else if(t->op->isA("CompoundOp")) {
-        ierror("input derivation not yet done for compoundops");
+        rtype = TypeVector::input_types(t->op->signature);
+        //ierror("input derivation not yet done for compoundops");
       } else {
         ierror("'inputs' derivation can't resolve for op: "+t->op->to_str());
       }
@@ -513,9 +478,9 @@ ProtoType* resolve_type(OperatorInstance* context, ProtoType* type) {
   return NULL; // unresolvable by this means
 }
 
-class TypePropagator : public Propagator {
+class TypePropagator : public IRPropagator {
  public:
-  TypePropagator(ProtoAnalyzer* parent, Args* args) : Propagator(true,true) {
+  TypePropagator(DFGTransformer* parent, Args* args) : IRPropagator(true,true) {
     verbosity = args->extract_switch("--type-propagator-verbosity") ? 
       args->pop_int() : parent->verbosity;
   }
@@ -527,22 +492,18 @@ class TypePropagator : public Propagator {
     ProtoType* ct = resolve_type(c.first,rawc);
     if(!ct) return true;// ignore unresolved
     ProtoType* newtype = ProtoType::gcs(*tmp,ct);
-    if(verbosity>=3) *cpout<<"   Back constraint on: "<<c.first->to_str()<<
-                       "\n    "<<(*tmp)->to_str()<<" vs. "<<ct->to_str()<<"...";
-    if(newtype) {
-      if(verbosity>=3) *cpout << " ok" << endl; 
-      *tmp = newtype; return true; 
-    }
-    if(verbosity>=3) *cpout<<" FAIL"<<endl;
+    V3<<"   Back constraint on: "<<ce2s(c.first)<<
+      "\n    "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"...";
+    if(newtype) { V3<<" ok\n"; *tmp = newtype; return true; }
+    else V3<<" FAIL\n";
 
     // On merge failure, either add an implicit type conversion or error
     // if vector is needed and scalar is provided, convert to a size-1 vector
     if((*tmp)->isA("ProtoScalar") && ct->isA("ProtoVector")) {
-      if(verbosity>=2) *cpout<<"Converting Scalar to 1-Vector\n";
-      OperatorInstance* tup = new OperatorInstance(Env::TUP,f->domain);
-      f->container->inherit_and_add(f->producer,tup);
+      V2<<"Converting Scalar to 1-Vector\n";
+      OI* tup = new OperatorInstance(f->producer,Env::core_op("tup"),f->domain);
       tup->add_input(f);
-      f->container->relocate_source(c.first,c.second,tup->output);
+      root->relocate_source(c.first,c.second,tup->output);
       note_change(tup); return false; // let constraint retry later...
     }
 
@@ -552,28 +513,26 @@ class TypePropagator : public Propagator {
       ProtoField* ft = dynamic_cast<ProtoField*>(ct);
 
       if(!ft->hoodtype || ProtoType::gcs(*tmp,ft->hoodtype)) {
-        FieldOp* fo = FieldOp::get_field_op(f->producer);
+        Operator* fo = FieldOp::get_field_op(f->producer);
         if(f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
-          if(verbosity>=2) *cpout<<"    Converting pointwise to field op\n";
-          OperatorInstance* foi = new OperatorInstance(fo,f->domain);
-          f->container->inherit_and_add(f->producer,foi);
-          f->container->relocate_source(c.first,c.second,foi->output);
+          V2<<"  Fieldify pointwise: "<<ce2s(f->producer)<<endl;
+          OI* foi = new OperatorInstance(f->producer,fo,f->domain);
+          root->relocate_source(c.first,c.second,foi->output);
           note_change(foi); return false; // let constraint retry later...
         } else {
-          if(verbosity>=2)*cpout<<"   Inserting 'local' at "<<f->to_str()<<endl;
-          OperatorInstance* local = new OperatorInstance(Env::LOCAL,f->domain);
-          f->container->inherit_and_add(f->producer,local);
+          V2<<"  Inserting 'local' at "<<ce2s(f)<<endl;
+          OI* local = new OI(f->producer,Env::core_op("local"),f->domain);
           local->add_input(f);
-          f->container->relocate_source(c.first,c.second,local->output);
+          root->relocate_source(c.first,c.second,local->output);
           note_change(local); return false; // let constraint retry later...
         }
       }
     }
     
     // if source is field and user is "local", send to the local's consumers
-    if((*tmp)->isA("ProtoField") && c.first->op==Env::LOCAL) {
-      if(verbosity>=2) *cpout<<"   Deleting 'local' at "<<f->to_str()<<endl;
-      f->container->relocate_consumers(c.first->output,f);
+    if((*tmp)->isA("ProtoField") && c.first->op==Env::core_op("local")) {
+      V2<<"  Deleting 'local' at "<<ce2s(f)<<endl;
+      root->relocate_consumers(c.first->output,f);
       return false;
     }
     
@@ -582,9 +541,9 @@ class TypePropagator : public Propagator {
       ProtoField* ft = dynamic_cast<ProtoField*>(*tmp);
       int pw = c.first->pointwise();
       if(pw!=0 && (!ft->hoodtype || ProtoType::gcs(ct,ft->hoodtype))) {
-        FieldOp* fo = FieldOp::get_field_op(c.first); // might be upgradable
+        Operator* fo = FieldOp::get_field_op(c.first); // might be upgradable
         if(fo) {
-          if(verbosity>=2) *cpout<<"    Converting pointwise to field op\n";
+          V2<<"  Fieldify pointwise: "<<ce2s(c.first)<<endl;
           c.first->op = fo; note_change(c.first);
         }
         return false; // in any case, don't fail out now
@@ -597,14 +556,13 @@ class TypePropagator : public Propagator {
   }
 
   void act(Field* f) {
-    if(verbosity>=3) *cpout << " Considering field "<<f->to_str()<<endl;
+    V3 << " Considering field "<<ce2s(f)<<endl;
     // Ignore old type (it may change) [except Parameter]; use producer type
     ProtoType* tmp=resolve_type(f->producer,f->producer->op->signature->output);
     if(f->producer->op->isA("Parameter")) tmp=f->range;
     if(!tmp) return; // if producer unresolvable, give up
     // GCS against consumers
-    set<pair<OperatorInstance*,int> >::iterator i=f->consumers.begin();
-    for( ;i!=f->consumers.end();i++)
+    for_set(Consumer,f->consumers,i)
       if(!back_constraint(&tmp,f,*i)) return; // type problem handled within
     // GCS against selectors
     if(f->selectors.size()) {
@@ -629,15 +587,21 @@ class TypePropagator : public Propagator {
   // Resolve shouldn't care about the current type!
 
   void act(OperatorInstance* oi) {
-    if(verbosity>=3) *cpout << " Considering op instance "<<oi->to_str()<<endl;
+    V3 << " Considering op instance "<<ce2s(oi)<<endl;
      //check if number of inputs is legal
     if(!oi->op->signature->legal_length(oi->inputs.size())) {
-      compile_error(oi,oi->to_str()+" has "+i2s(oi->inputs.size())+" argumen"
+      compile_error(oi,oi->to_str()+" has "+i2s(oi->inputs.size())+" argumen"+
                     "ts, but signature is "+oi->op->signature->to_str());
       return;
     }
     
     if(oi->op->isA("Primitive")) { // constrain against signature
+      // new-style resolution
+      if(oi->op->marked(":type-constraints"))
+        apply_constraints(oi,get_sexp(oi->op,":type-constraints"));
+      
+      // old-style resolution
+      
       ProtoType* newtype = resolve_type(oi,oi->output->range);
       if(newtype) { maybe_set_range(oi->output,newtype);
       } else if(oi->attributes.count("LETFED-MUX") &&
@@ -654,9 +618,9 @@ class TypePropagator : public Propagator {
     } else if(oi->op->isA("Parameter")) { // constrain against all calls
       // find LCS of input types
       ProtoType* inputs = NULL;
-      set<OperatorInstance*, CompilationElement_cmp> *srcs = 
-        &root->funcalls[((Parameter*)oi->op)->container];
-      for(set<OperatorInstance*>::iterator i=srcs->begin();i!=srcs->end();i++) {
+      OIset *srcs = &root->funcalls[((Parameter*)oi->op)->container];
+      for_set(OI*,*srcs,i) {
+        if((*i)->op->isA("Literal")) return; // can't work with lambdas
         ProtoType* ti = (*i)->nth_input(((Parameter*)oi->op)->index);
         if(!ti) return; // can't work with derived types
         inputs = inputs? ProtoType::lcs(inputs,ti) : ti;
@@ -667,7 +631,7 @@ class TypePropagator : public Propagator {
       if(!newtype) {compile_error(oi,"type conflict for "+oi->to_str());return;}
       maybe_set_range(oi->output,newtype);
     } else if(oi->op->isA("CompoundOp")) { // constrain against params & output
-      ProtoType* rtype = ((CompoundOp*)oi->op)->body->output->range;
+      ProtoType* rtype = ((CompoundOp*)oi->op)->output->range;
       if(!rtype->isA("DerivedType")) maybe_set_range(oi->output,rtype);
     } else if(oi->op->isA("Literal")) { // ignore: already be fully resolved
       // ignored
@@ -686,27 +650,22 @@ class TypePropagator : public Propagator {
 // scalars & shorter vectors are treated as having 0s all the way out
 int compare_numbers(ProtoType* a, ProtoType* b) { // 1-> a>b; -1-> a<b; 0-> a=b
   if(a->isA("ProtoScalar") && b->isA("ProtoScalar")) {
-    double va = (dynamic_cast<ProtoScalar*>(a))->value;
-    double vb = (dynamic_cast<ProtoScalar*>(b))->value;
-    return (va==vb) ? 0 : ((va>vb) ? 1 : -1);
+    return (S_VAL(a)==S_VAL(b)) ? 0 : ((S_VAL(a)>S_VAL(b)) ? 1 : -1);
   } else if(a->isA("ProtoScalar") || b->isA("ProtoScalar")) {
     int sx = a->isA("ProtoScalar") ? -1 : 1;
-    double s = (dynamic_cast<ProtoScalar*>(a->isA("ProtoScalar")?a:b))->value;
-    ProtoTuple* v = dynamic_cast<ProtoTuple*>(a->isA("ProtoScalar")?b:a);
-    ProtoScalar* s0 = dynamic_cast<ProtoScalar*>(v->types[0]);
-    if(s==s0->value) {
-      if(v->types.size()>=2) {
-        ProtoScalar* s1 = dynamic_cast<ProtoScalar*>(v->types[0]);
-        return sx * ((s1->value == 0) ? 0 : ((s1->value > 0) ? 1 : -1));
-      } else return 0;
-    } else return (sx * ((s0->value > s) ? 1 : -1));
+    double s = S_VAL(a->isA("ProtoScalar")?a:b);
+    ProtoTuple* v = T_TYPE(a->isA("ProtoScalar")?b:a);
+    if(s==S_VAL(v->types[0])) {
+      for(int i=1;i<v->types.size();i++) {
+        if(S_VAL(v->types[i])!=0) return sx*((S_VAL(v->types[1])>0)?1:-1);
+      }
+      return 0;
+    } else return (sx * ((S_VAL(v->types[0]) > s) ? 1 : -1));
   } else { // 2 vectors
-    ProtoTuple* va = dynamic_cast<ProtoTuple*>(a);
-    ProtoTuple* vb = dynamic_cast<ProtoTuple*>(b);
+    ProtoTuple *va = T_TYPE(a), *vb = T_TYPE(b);
     int la = va->types.size(), lb = vb->types.size(), len = MAX(la,lb);
     for(int i=0;i<len;i++) {
-      double sa = (i<la)?(dynamic_cast<ProtoScalar*>(va->types[i]))->value:0;
-      double sb = (i<lb)?(dynamic_cast<ProtoScalar*>(vb->types[i]))->value:0;
+      double sa=(i<la)?S_VAL(va->types[i]):0, sb=(i<lb)?S_VAL(vb->types[i]):0;
       if(sa!=sb) { return (sa>sb) ?  1 : -1; }
     }
     return 0;
@@ -715,12 +674,10 @@ int compare_numbers(ProtoType* a, ProtoType* b) { // 1-> a>b; -1-> a<b; 0-> a=b
 
 ProtoNumber* add_consts(ProtoType* a, ProtoType* b) {
   if(a->isA("ProtoScalar") && b->isA("ProtoScalar")) {
-    double va = (dynamic_cast<ProtoScalar*>(a))->value;
-    double vb = (dynamic_cast<ProtoScalar*>(b))->value;
-    return new ProtoScalar(va+vb);
+    return new ProtoScalar(S_VAL(a)+S_VAL(b));
   } else if(a->isA("ProtoScalar") || b->isA("ProtoScalar")) {
-    double s = (dynamic_cast<ProtoScalar*>(a->isA("ProtoScalar")?a:b))->value;
-    ProtoTuple* v = dynamic_cast<ProtoTuple*>(a->isA("ProtoScalar")?b:a);
+    double s = S_VAL(a->isA("ProtoScalar")?a:b);
+    ProtoTuple* v = T_TYPE(a->isA("ProtoScalar")?b:a);
     ProtoVector* out = new ProtoVector(v->bounded);
     for(int i=0;i<v->types.size();i++) { 
        ProtoScalar* element = dynamic_cast<ProtoScalar*>(v->types[i]);
@@ -729,22 +686,20 @@ ProtoNumber* add_consts(ProtoType* a, ProtoType* b) {
     (dynamic_cast<ProtoScalar*>(out->types[0]))->value += s;
     return out;
   } else { // 2 vectors
-    ProtoTuple* va = dynamic_cast<ProtoTuple*>(a);
-    ProtoTuple* vb = dynamic_cast<ProtoTuple*>(b);
+    ProtoTuple *va = T_TYPE(a), *vb = T_TYPE(b);
     ProtoVector* out = new ProtoVector(va->bounded && vb->bounded);
     int la = va->types.size(), lb = vb->types.size(), len = MAX(la,lb);
     for(int i=0;i<len;i++) {
-      double sa = (i<la)?(dynamic_cast<ProtoScalar*>(va->types[i]))->value:0;
-      double sb = (i<lb)?(dynamic_cast<ProtoScalar*>(vb->types[i]))->value:0;
+      double sa=(i<la)?S_VAL(va->types[i]):0, sb=(i<lb)?S_VAL(vb->types[i]):0;
       out->add(new ProtoScalar(sa+sb));
     }
     return out;
   }
 }
 
-class ConstantFolder : public Propagator {
+class ConstantFolder : public IRPropagator {
  public:
-  ConstantFolder(ProtoAnalyzer* parent, Args* args) : Propagator(false,true) {
+  ConstantFolder(DFGTransformer* parent, Args* args) : IRPropagator(false,true) {
     verbosity = args->extract_switch("--constant-folder-verbosity") ? 
       args->pop_int() : parent->verbosity;
   }
@@ -753,13 +708,11 @@ class ConstantFolder : public Propagator {
   // FieldOp compatible accessors
   ProtoType* nth_type(OperatorInstance* oi, int i) {
     ProtoType* src = oi->inputs[i]->range;
-    if(oi->op->isA("FieldOp")) src = dynamic_cast<ProtoField*>(src)->hoodtype;
+    if(oi->op->isA("FieldOp")) src = F_VAL(src);
     return src;
   }
-  double nth_scalar(OperatorInstance* oi, int i) 
-  { return dynamic_cast<ProtoScalar*>(nth_type(oi,i))->value; }
-  ProtoTuple* nth_tuple(OperatorInstance* oi, int i) 
-  { return dynamic_cast<ProtoTuple*>(nth_type(oi,i)); }
+  double nth_scalar(OI* oi, int i) {return S_VAL(nth_type(oi,i));}
+  ProtoTuple* nth_tuple(OI* oi, int i) { return T_TYPE(nth_type(oi,i)); }
   void maybe_set_output(OperatorInstance* oi,ProtoType* content) {
     if(oi->op->isA("FieldOp")) content = new ProtoField(content);
     maybe_set_range(oi->output,content);
@@ -801,12 +754,10 @@ class ConstantFolder : public Propagator {
       for(int i=1;i<oi->inputs.size();i++) 
         sum=add_consts(sum,nth_type(oi,i));
       // multiply by negative 1
-      if(sum->isA("ProtoScalar")) {
-        ProtoScalar* s = dynamic_cast<ProtoScalar*>(sum); s->value *= -1;
+      if(sum->isA("ProtoScalar")) { S_VAL(sum) *= -1;
       } else { // vector
         ProtoVector* s = dynamic_cast<ProtoVector*>(sum); 
-        for(int i=0;i<s->types.size();i++)
-          (dynamic_cast<ProtoScalar*>(s->types[i]))->value *= -1;
+        for(int i=0;i<s->types.size();i++) S_VAL(s->types[i]) *= -1;
       }
       // add in first
       sum = add_consts(sum,nth_type(oi,0));
@@ -823,10 +774,8 @@ class ConstantFolder : public Propagator {
       // final optional stage of vector multiplication
       if(vnum) {
         ProtoVector *pv = new ProtoVector(vnum->bounded);
-        for(int i=0;i<vnum->types.size();i++) {
-          double numi = (dynamic_cast<ProtoScalar*>(vnum->types[i]))->value;
-          pv->add(new ProtoScalar(numi*mults));
-        }
+        for(int i=0;i<vnum->types.size();i++)
+          pv->add(new ProtoScalar(S_VAL(vnum->types[i])*mults));
         maybe_set_output(oi,pv);
       } else {
         maybe_set_output(oi,new ProtoScalar(mults));
@@ -840,10 +789,8 @@ class ConstantFolder : public Propagator {
       } else if(oi->inputs[0]->range->isA("ProtoVector")) { // vector
         ProtoTuple *num = nth_tuple(oi,0);
         ProtoVector *pv = new ProtoVector(num->bounded);
-        for(int i=0;i<num->types.size();i++) {
-          double numi = (dynamic_cast<ProtoScalar*>(num->types[i]))->value;
-          pv->add(new ProtoScalar(numi/denom));
-        }
+        for(int i=0;i<num->types.size();i++)
+          pv->add(new ProtoScalar(S_VAL(num->types[i])/denom));
         maybe_set_output(oi,pv);
       }
     } else if(name==">") {
@@ -923,8 +870,7 @@ class ConstantFolder : public Propagator {
       maybe_set_output(oi,sum);
     } else if(name=="min-hood" || name=="max-hood" || name=="any-hood"
               || name=="all-hood") {
-      ProtoType* src = oi->inputs[0]->range;
-      maybe_set_output(oi,dynamic_cast<ProtoField*>(src)->hoodtype);
+      maybe_set_output(oi,F_VAL(oi->inputs[0]->range));
     }
   }
   
@@ -934,9 +880,9 @@ class ConstantFolder : public Propagator {
  *  LITERALIZER                                                              *
  *****************************************************************************/
 
-class Literalizer : public Propagator {
+class Literalizer : public IRPropagator {
  public:
-  Literalizer(ProtoAnalyzer* parent, Args* args) : Propagator(true,true) {
+  Literalizer(DFGTransformer* parent, Args* args) : IRPropagator(true,true) {
     verbosity = args->extract_switch("--literalizer-verbosity") ? 
       args->pop_int() : parent->verbosity;
   }
@@ -945,14 +891,11 @@ class Literalizer : public Propagator {
     if(f->producer->op->isA("Literal")) return; // literals are already set
     if(f->producer->op->attributes.count(":side-effect")) return; // keep sides
     if(f->range->isLiteral()) {
-      Operator* lit = new Literal(f->range);
-      OperatorInstance* oi = new OperatorInstance(lit,f->domain);
-      f->container->inherit_and_add(f->producer,oi);
-      if(verbosity>=2)
-        *cpout<<" Literalizing:\n  "<<f->producer->to_str()<<" \n  into "
-              <<oi->to_str()<<endl;
-      DFG::relocate_consumers(f,oi->output); note_change(f);
-      f->container->delete_node(f->producer); // kill old op
+      OI *oldoi = f->producer;
+      OI *newoi = root->add_literal(f->range,f->domain,oldoi)->producer;
+      V2<<" Literalizing:\n  "<<ce2s(oldoi)<<" \n  into "<<ce2s(newoi)<<endl;
+      root->relocate_consumers(f,newoi->output); note_change(f);
+      root->delete_node(oldoi); // kill old op
     }
   }
 
@@ -963,15 +906,11 @@ class Literalizer : public Propagator {
     if(name=="apply") {
       if(oi->inputs[0]->range->isA("ProtoLambda") && 
          oi->inputs[0]->range->isLiteral()) {
-        ProtoLambda* lf = dynamic_cast<ProtoLambda*>(oi->inputs[0]->range);
-        OperatorInstance* newoi=new OperatorInstance(lf->op,oi->output->domain);
+        OI* newoi=new OI(oi,L_VAL(oi->inputs[0]->range),oi->output->domain);
         for(int i=1;i<oi->inputs.size();i++) newoi->add_input(oi->inputs[i]);
-        oi->container->inherit_and_add(oi,newoi);
-        if(verbosity>=2)
-          *cpout<<" Literalizing:\n  "<<oi->to_str()<<" \n  into "
-                <<newoi->to_str()<<endl;
-        DFG::relocate_consumers(oi->output,newoi->output); note_change(oi);
-        oi->container->delete_node(oi); // kill old op
+        V2<<" Literalizing:\n  "<<ce2s(oi)<<" \n  into "<<ce2s(newoi)<<endl;
+        root->relocate_consumers(oi->output,newoi->output); note_change(oi);
+        root->delete_node(oi); // kill old op
       }
     }
   }
@@ -986,51 +925,61 @@ class Literalizer : public Propagator {
 //  - erase marks on everything leading to a side-effect or an output
 //  - erase everything still marked as "dead"
 
-class DeadCodeEliminator : public Propagator {
- public:
-  set<Field*, CompilationElement_cmp> kill_f;
-  set<AM*, CompilationElement_cmp> kill_a;
-  DeadCodeEliminator(ProtoAnalyzer* parent, Args* args)
-    : Propagator(true,false,true) {
-    verbosity = args->extract_switch("--dead-code-eliminator-verbosity") ? 
-      args->pop_int() : parent->verbosity;
+map<string,pair<bool,int> > arg_mem;
+int mem_arg(Args* args,string name,int defaultv) {
+  if(!arg_mem.count(name)) {
+    if(args->extract_switch(name.c_str()))
+      arg_mem[name] = make_pair<bool,int>(true,args->pop_int());
+    else
+      arg_mem[name] = make_pair<bool,int>(false,-1);
   }
+  return arg_mem[name].first ? arg_mem[name].second : defaultv;
+}
+
+class DeadCodeEliminator : public IRPropagator {
+ public:
+  Fset kill_f; AMset kill_a;
+  DeadCodeEliminator(DFGTransformer* par, Args* args)
+    : IRPropagator(true,false,true) {
+    verbosity=mem_arg(args,"--dead-code-eliminator-verbosity",par->verbosity);
+  }
+  
   virtual void print(ostream* out=0) { *out << "DeadCodeEliminator"; }
   void preprop() { kill_f = worklist_f; kill_a = worklist_a; }
   void postprop() {
     any_changes = !kill_f.empty() || !kill_a.empty();
     while(!kill_f.empty()) {
       Field* f = *kill_f.begin(); kill_f.erase(f);
-      if(verbosity>=2) *cpout<<" Deleting field "<<f->to_str()<<endl;
-      f->container->delete_node(f->producer);
+      V2<<" Deleting field "<<ce2s(f)<<endl;
+      root->delete_node(f->producer);
     }
     while(!kill_a.empty()) {
       AM* am = *kill_a.begin(); kill_a.erase(am);
-      if(verbosity>=2) *cpout<<" Deleting AM "<<am->to_str()<<endl;
-      am->container->delete_space(am);
+      V2<<" Deleting AM "<<ce2s(am)<<endl;
+      root->delete_space(am);
     }
   }
   
   void act(Field* f) {
     if(!kill_f.count(f)) return; // only check the dead
     bool live=false;
-    if(f->container->output==f) live=true; // output is live
+    if(f->is_output()) live=true; // output is live
     if(f->producer->op->attributes.count(":side-effect")) live=true;
-    set<pair<OperatorInstance*,int> >::iterator i=f->consumers.begin();
-    for( ;i!=f->consumers.end();i++) // live consumer -> live
+    for_set(Consumer,f->consumers,i) // live consumer -> live
       if(!kill_f.count((*i).first->output)) {live=true;break;}
-    for(int i=0;i<f->selectors.size();i++) // live selector -> live
-      if(!kill_a.count(f->selectors[i])) {live=true;break;}
+    for_set(AM*,f->selectors,ai) // live selector -> live
+      if(!kill_a.count(*ai)) {live=true;break;}
     if(live) { kill_f.erase(f); note_change(f); }
   }
   
   void act(AM* am) {
     if(!kill_a.count(am)) return; // only check the dead
     bool live=false;
-    for(set<AM*>::iterator i=am->children.begin();i!=am->children.end();i++)
+    for_set(AM*,am->children,i)
       if(!kill_a.count(*i)) {live=true;break;} // live child -> live
-    for(set<Field*>::iterator i=am->fields.begin();i!=am->fields.end();i++)
+    for_set(Field*,am->fields,i)
       if(!kill_f.count(*i)) {live=true;break;} // live domain -> live
+    if(am->bodyOf!=NULL) {live=true;} // don't delete root AMs
     if(live) { kill_a.erase(am); note_change(am); }
   }
 };
@@ -1041,12 +990,11 @@ class DeadCodeEliminator : public Propagator {
  *****************************************************************************/
 
 #define DEFAULT_INLINING_THRESHOLD 10
-class FunctionInlining : public Propagator {
+class FunctionInlining : public IRPropagator {
  public:
   int threshold; // # ops to make something an inlining target
-  set<OperatorInstance*, CompilationElement_cmp> targets;
-  FunctionInlining(ProtoAnalyzer* parent, Args* args)
-    : Propagator(false,true,false) {
+  FunctionInlining(DFGTransformer* parent, Args* args)
+    : IRPropagator(false,true,false) {
     verbosity = args->extract_switch("--function-inlining-verbosity") ? 
       args->pop_int() : parent->verbosity;
     threshold = args->extract_switch("--function-inlining-threshold") ?
@@ -1056,154 +1004,47 @@ class FunctionInlining : public Propagator {
   
   void act(OperatorInstance* oi) {
     if(!oi->op->isA("CompoundOp")) return; // can only inline compound ops
-    if(oi->container->container == oi->op) return; // don't inline recursive
+    if(oi->recursive()) return; // don't inline recursive
     // check that either the body or the container is small
-    int bodysize = ((CompoundOp*)oi->op)->body->nodes.size();
-    int containersize = oi->container->nodes.size();
+    Fset bodyfields;
+    int bodysize = ((CompoundOp*)oi->op)->body->size();
+    int containersize = oi->output->domain->root()->size();
     if(threshold!=-1 && bodysize>threshold && containersize>threshold) return;
-
+    
     // actually carry out the inlining
-    if(verbosity>=2) *cpout<<" Inlining function "<<oi->to_str()<<endl;
-    note_change(oi);
-    oi->container->make_op_inline(oi);
+    V2<<" Inlining function "<<ce2s(oi)<<endl;
+    note_change(oi); root->make_op_inline(oi);
   }
 };
 
-
-/*****************************************************************************
- *  INTEGRITY CERTIFICATION                                                  *
- *****************************************************************************/
-
-class CertifyBackpointers : public Propagator {
- public:
-  bool bad;
-  CertifyBackpointers(int verbosity):Propagator(true,true,true){
-    this->verbosity = verbosity;
-  }
-  virtual void print(ostream* out=0) { *out << "CertifyBackpointers"; }
-  void preprop() { 
-    bad=false;
-    if(!root->edges.count(root->output))
-      { bad=true; compile_error("Bad DFG root"); }
-  }
-  void postprop() {
-    //if(bad) root->print(&cout);
-    if(bad) ierror("Backpointer certification failed.");
-  }
-  void act(Field* f) {
-    // producer OK
-    if(! (f->container->nodes.count(f->producer) && f->producer->output==f))
-      { bad=true; compile_error(f,"Bad producer of "+f->to_str()); }
-    // consumer OK
-    set<pair<OperatorInstance*,int> >::iterator i=f->consumers.begin();
-    for( ;i!=f->consumers.end();i++) {
-      if(! (f->container->nodes.count((*i).first) &&
-            (*i).second < (*i).first->inputs.size() &&
-            (*i).first->inputs[(*i).second]==f))
-        { bad=true; compile_error(f,"Bad consumer "+i2s((*i).second)+" of "+f->to_str());}
-    }
-    // selectors OK
-    for(int i=0;i<f->selectors.size();i++) {
-      if(! (f->container->spaces.count(f->selectors[i]) &&
-            f->selectors[i]->selector==f))
-        { bad=true; compile_error(f,"Bad selector "+i2s(i)+" of "+f->to_str());}
-    }
-    // domain OK
-    if(!f->container->spaces.count(f->domain))
-      { bad=true; compile_error(f,"No such domain for "+f->to_str()); }
-    if(!f->domain->fields.count(f))
-      { bad=true; compile_error(f,"Domain doesn't track field: "+f->to_str()); }
-    // container OK
-    if(!f->container->edges.count(f))
-      { bad=true; compile_error(f,"Bad container of "+f->to_str()); }
-  }
-  
-  void act(OperatorInstance* oi) {
-    // output OK
-    if(! (oi->container->edges.count(oi->output) && oi->output->producer==oi))
-      { bad=true; compile_error(oi,"Bad output of "+oi->op->to_str()); }
-    // inputs OK
-    for(int i=0;i<oi->inputs.size();i++) {
-      if(!oi->container->edges.count(oi->inputs[i]) ||
-         !oi->inputs[i]->consumers.count(make_pair(oi,i)))
-       {bad=true;compile_error(oi,"Bad input "+i2s(i)+" of "+oi->op->to_str());}
-    }
-    // container OK
-    if(!oi->container->nodes.count(oi))
-      { bad=true; compile_error(oi,"Bad container of "+oi->op->to_str()); }
-  }
-  
-  void act(AM* am) {
-    // selector & parent OK
-    if(am->parent) {
-      if(!am->container->edges.count(am->selector) ||
-         index_of(&am->selector->selectors,am)==-1)
-        {bad=true;compile_error(am,"Bad selector of "+am->to_str()); }
-      if(!am->container->spaces.count(am->parent) ||
-         !am->parent->children.count(am))
-        {bad=true;compile_error(am,"Bad parent of "+am->to_str()); }
-    }
-    // children OK
-    for(set<AM*>::iterator i=am->children.begin();i!=am->children.end();i++)
-      if(!(am->container->spaces.count(*i) && (*i)->parent==am)) 
-        { bad=true; compile_error(am,"Bad child of "+am->to_str()); }
-    // fields OK
-    for(set<Field*>::iterator i=am->fields.begin();i!=am->fields.end();i++)
-      if(!(am->container->edges.count(*i) && (*i)->domain==am))
-        { bad=true; compile_error(am,"Bad field of "+am->to_str()); }
-    // container OK
-    if(!am->container->spaces.count(am))
-      { bad=true; compile_error(am,"Bad container of "+am->to_str()); }
-  }
-};
 
 /*****************************************************************************
  *  TOP-LEVEL ANALYZER                                                       *
  *****************************************************************************/
 
 // some test classes
-class InfiniteLoopPropagator : public Propagator {
+class InfiniteLoopPropagator : public IRPropagator {
 public:
-  InfiniteLoopPropagator() : Propagator(true,false) {}
+  InfiniteLoopPropagator() : IRPropagator(true,false) {}
   void act(Field* f) { note_change(f); }
 };
-class NOPPropagator : public Propagator {
+class NOPPropagator : public IRPropagator {
 public:
-  NOPPropagator() : Propagator(true,true,true) {}
+  NOPPropagator() : IRPropagator(true,true,true) {}
 };
 
 
 ProtoAnalyzer::ProtoAnalyzer(NeoCompiler* parent, Args* args) {
-  is_dump_analyzed = args->extract_switch("-CDanalyzed") | parent->is_dump_all;
-  verbosity = args->extract_switch("--analyzer-verbosity")?args->pop_int():0;
+  verbosity = args->extract_switch("--analyzer-verbosity") ? 
+    args->pop_int() : parent->verbosity;
   max_loops=args->extract_switch("--analyzer-max-loops")?args->pop_int():10;
-  paranoid = args->extract_switch("--analyzer-paranoid");
+  paranoid = args->extract_switch("--analyzer-paranoid")|parent->paranoid;
   // set up rule collection
   rules.push_back(new TypePropagator(this,args));
   rules.push_back(new ConstantFolder(this,args));
   rules.push_back(new Literalizer(this,args));
   rules.push_back(new DeadCodeEliminator(this,args));
   rules.push_back(new FunctionInlining(this,args));
-}
-
-void ProtoAnalyzer::analyze(DFG* g) {
-  CertifyBackpointers checker(verbosity);
-  if(paranoid) checker.propagate(g); // make sure we're starting OK
-  for(int i=0;i<max_loops;i++) {
-    if(!g->edges.size() || !g->nodes.size()) {
-      compile_error("Program has no content."); terminate_on_error();
-    }
-    bool changed=false;
-    for(int j=0;j<rules.size();j++) {
-      changed |= rules[j]->propagate(g); terminate_on_error();
-      if(paranoid) checker.propagate(g); // make sure we didn't break anything
-    }
-    if(!changed) break;
-    if(i==(max_loops-1))
-      compile_warn("Analyzer giving up after "+i2s(max_loops)+" loops");
-  }
-  checker.propagate(g); // make sure we didn't break anything
-  if(is_dump_analyzed) g->print_with_funcalls(cpout);
 }
 
 
@@ -1220,26 +1061,117 @@ Operator* op_err(CompilationElement *where,string msg); // from interpreter
 // 3. inputs to nbr ops are combined together into a tuple input
 // 4. inputs to locals are turned are marked with "loopref"
 // 5. 
-class HoodToFolder : public Propagator {
+class HoodToFolder : public IRPropagator {
 public:
-  HoodToFolder(GlobalToLocal* parent, Args* args) : Propagator(false,true) {
+  HoodToFolder(GlobalToLocal* parent, Args* args) : IRPropagator(false,true) {
     verbosity = args->extract_switch("--hood-to-folder-verbosity") ?
       args->pop_int() : parent->verbosity;
   }
-  virtual void print(ostream* out=0) { *out << "HoodTofolder"; }
-
-  Field* make_nbr_subroutine(OperatorInstance* oi,vector<Field*>* locals,
-                             vector<Field>* exports) {
+  virtual void print(ostream* out=0) { *out << "HoodToFolder"; }
+  
+  CEmap(Operator*,CompoundOp*) localization_cache;
+  Operator* localize_operator(Operator* op) {
+    V4<<"    Localizing operator: "<<ce2s(op)<<endl;
+    if(op->isA("Literal")) {
+      if(((Literal*)op)->value->isA("ProtoField"))
+        return new Literal(op,F_VAL(((Literal*)op)->value)); // strip field
+      else return op;
+    } else if(op->isA("Primitive")) {
+      Operator* local = LocalFieldOp::get_local_op(op);
+      return (local!=NULL) ? local : op;
+    } else if(op->isA("CompoundOp")) {
+      V5<<"     Checking localization cache\n";
+      if(localization_cache.count(op)) return localization_cache[op];
+      // if it's already pointwise, just return
+      V5<<"     Checking whether op is already pointwise\n";
+      Fset fields; ((CompoundOp*)op)->body->all_fields(&fields);
+      bool local=true;
+      for_set(Field*,fields,i) {
+        V5<<"      Considering field "<<ce2s(*i)<<endl;
+        if((*i)->range->isA("ProtoField")) 
+          local=false;
+      }
+      if(local) return op;
+      // Walk through ops: local & nbr ops are flattened, others are localized
+      V5<<"     Transforming op to local\n";
+      CompoundOp* newop = new CompoundOp((CompoundOp*)op);
+      OIset ois; newop->body->all_ois(&ois);
+      for_set(OI*,ois,i) {
+        cout<<"Attempting to localize operator: "<<ce2s(*i)<<endl;
+        if((*i)->op==Env::core_op("nbr")) {
+          root->relocate_consumers((*i)->output,(*i)->inputs[0]);
+        } else if((*i)->op==Env::core_op("local")) {
+          root->relocate_consumers((*i)->output,(*i)->inputs[0]);
+        } else {
+          (*i)->op = localize_operator((*i)->op);
+          (*i)->output->range = (*i)->op->signature->output; // fix output
+        }
+      }
+      localization_cache[op] = newop;
+      return newop;
+    } else if(op->isA("Parameter")) { 
+      return op; // parameters always OK
+    }
+    ierror("Don't know how to localize operator: "+ce2s(op));
+  }
+  
+  CompoundOp* make_nbr_subroutine(OperatorInstance* oi, Field** exportf) {
+    V3<<"   Creating subroutine for: "<<ce2s(oi)<<endl;
+    // First, find all field-valued ops feeding this summary operator
+    OIset elts; vector<Field*> exports; OIset q; q.insert(oi);
+    while(q.size()) {
+      OperatorInstance* next = *q.begin(); q.erase(next);
+      for(int i=0;i<next->inputs.size();i++) {
+        Field* f = next->inputs[i];
+        if(f->producer->op==Env::core_op("nbr")) { // record exported fields
+          if(!f->producer->inputs.size())
+            ierror("No input for nbr operator: "+f->producer->to_str());
+          if(index_of(&exports,f->producer->inputs[0])==-1)
+            exports.push_back(f->producer->inputs[0]);
+        } 
+        if(f->range->isA("ProtoField") && !elts.count(f->producer))
+          { elts.insert(f->producer); q.insert(f->producer); }
+      }
+    }
+    V3<<"    Found "<<elts.size()<<" elements"<<endl;
+    V3<<"    Found "<<exports.size()<<" exports"<<endl;
+    // create the compound op
+    CompoundOp* cop=root->derive_op(&elts,oi->domain(),&exports,oi->inputs[0]);
+    cop = (CompoundOp*)localize_operator(cop);
+    //cop = tuplize_inputs(cop);
+    
+    // construct input structure
+    if(exports.size()==0) {
+      *exportf = root->add_literal(new ProtoScalar(0),oi->domain(),oi);
+    } else if(exports.size()==1) {
+      *exportf = exports[0];
+    } else {
+      OI* tup=new OperatorInstance(oi,Env::core_op("tup"),oi->domain());
+      for(int i=0;i<exports.size();i++) tup->add_input(exports[i]);
+      *exportf = tup->output;
+    }
+    vector<Field*> in; in.push_back(*exportf);
+    
+    // add multiplier if needed
+    if(oi->op->name=="int-hood") {
+      V3<<"   Adding int-hood multiplier\n";
+      OI *oin=new OperatorInstance(oi,Env::core_op("infinitesimal"),cop->body);
+      OI *tin=new OperatorInstance(oi,Env::core_op("*"),cop->body);
+      tin->add_input(oin->output); tin->add_input(cop->output);
+      cop->output = tin->output;
+    }
+    return cop;
   }
 
-  /*
   Operator* nbr_op_to_folder(OperatorInstance* oi) {
     string name = oi->op->name;
-    if(name=="min-hood") { return min;
-    } else if(name=="max-hood") { return max;
-    } else if(name=="any-hood") { return or;
-    } else if(name=="all-hood") { return and;
-    } else if(name=="int-hood") { return +;
+    V3<<"   Selecting folder for: "<<name<<endl;
+    if(name=="min-hood") { return Env::core_op("min");
+    } else if(name=="max-hood") { return Env::core_op("max");
+    } else if(name=="any-hood") { return Env::core_op("max");
+    } else if(name=="all-hood") { return Env::core_op("min");
+    } else if(name=="int-hood") { return Env::core_op("+");
+    } else if(name=="sum-hood") { return Env::core_op("+");
     } else {
       return op_err(oi,"Can't convert summary '"+name+"' to local operator");
     }
@@ -1249,67 +1181,33 @@ public:
     // conversions begin at summaries (field-to-local ops)
     if(oi->inputs.size()==1 && oi->inputs[0]->range->isA("ProtoField") &&
        oi->output->range->isA("ProtoLocal")) {
-      // (fold-hood folder init input-tuple)
-      vector<Field*> locals, exports;
-      Field* nbrop = make_nbr_subroutine(oi,&locals, &exports);
-      if(oi->op->name=="int-hood") {
-        add a multiplication by (infinitesimal) to the nbrop output;
-      }
-      Operator* folder = nbr_op_to_folder(oi->op);
-      OperatorInstance* noi = new OperatorInstance(fold_hood_plus,oi->output->domain);
-      oi->parent->inherit_and_add(noi,oi);
-      // first, the folding routine
-      OperatorInstance* fop = new OperatorInstance(folder.first,oi->output->domain);
-      oi->parent->inherit_and_add(fop,oi);
-      noi->inputs.push_back(fop); // folder op
-      // next, the fusing routing
-      Literal* lit = new Literal(folder.second);
-      OperatorInstance* iop = new OperatorInstance(lit,oi->output->domain);
-      oi->parent->inherit_and_add(iop,oi);
-      noi->inputs.push_back(iop); // init op
-      if(exports.size()==1) {
-        noi->inputs.push_back(exports[0]);
-      } else {
-        OperatorInstance* tup = new OperatorInstance(tup,oi->output->domain);
-        oi->parent->inherit_and_add(tup,oi);
-        noi->inputs.push_back(tup->output);
-        for(int i=0;i<exports.size();i++) tup->inputs.push_back(exports[i]);
-      }
-      // get the appropriate operator
-      // 
+      V2<<"  Changing to fold-hood: "<<ce2s(oi)<<endl;
+      // (fold-hood-plus folder fn input)
+      AM* space = oi->output->domain; Field* exportf;
+      CompoundOp* nbrop = make_nbr_subroutine(oi,&exportf);
+      Operator* folder = nbr_op_to_folder(oi);
+      OI* noi = new OperatorInstance(oi,Env::core_op("fold-hood-plus"),space);
+      // hook the inputs up to the fold-hood
+      V3<<"   Connecting inputs to foldhood\n";
+      noi->add_input(root->add_literal(new ProtoLambda(folder),space,oi));
+      noi->add_input(root->add_literal(new ProtoLambda(nbrop),space,oi));
+      noi->add_input(exportf);
+      // switch consumers and quit
+      V3<<"   Changing over consumers\n";
+      root->relocate_consumers(oi->output,noi->output); note_change(oi);
+      root->delete_node(oi);
     }
   }
-
-  */
 };
 
 GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
-  is_dump_localized = args->extract_switch("-CDlocalized")|parent->is_dump_all;
-  verbosity=args->extract_switch("--localizer-verbosity")?args->pop_int():0;
+  verbosity=args->extract_switch("--localizer-verbosity") ? 
+    args->pop_int() : parent->verbosity;
   max_loops=args->extract_switch("--localizer-max-loops")?args->pop_int():10;
-  paranoid = args->extract_switch("--localizer-paranoid");
+  paranoid = args->extract_switch("--localizer-paranoid")|parent->paranoid;
   // set up rule collection
   rules.push_back(new HoodToFolder(this,args));
-}
-
-void GlobalToLocal::localize(DFG* g) {
-  CertifyBackpointers checker(verbosity);
-  if(paranoid) checker.propagate(g); // make sure we're starting OK
-  for(int i=0;i<max_loops;i++) {
-    if(!g->edges.size() || !g->nodes.size()) {
-      compile_error("Program has no content."); terminate_on_error();
-    }
-    bool changed=false;
-    for(int j=0;j<rules.size();j++) {
-      changed |= rules[j]->propagate(g); terminate_on_error();
-      if(paranoid) checker.propagate(g); // make sure we didn't break anything
-    }
-    if(!changed) break;
-    if(i==(max_loops-1))
-      compile_warn("Localizer giving up after "+i2s(max_loops)+" loops");
-  }
-  checker.propagate(g); // make sure we didn't break anything
-  if(is_dump_localized) g->print_with_funcalls(cpout);
+  rules.push_back(new DeadCodeEliminator(this,args));
 }
 
 /* GOING GLOBAL TO LOCAL:
@@ -1327,12 +1225,23 @@ void GlobalToLocal::localize(DFG* g) {
        that looks like two different exports...
  */
 
-/*
-  Current failure rate: 17/69
+/*****************************************************************************
+ *  GENERIC TRANSFORMATION CYCLER                                            *
+ *****************************************************************************/
 
-  First thing to build:
-    get the damned type reasoning right!  DONE
-    FieldOp -> pointwise "pushed down" to field
-    find_hood_fn_ops
-    ops_to_hood_fn
- */
+void DFGTransformer::transform(DFG* g) {
+  CertifyBackpointers checker(verbosity);
+  if(paranoid) checker.propagate(g); // make sure we're starting OK
+  for(int i=0;i<max_loops;i++) {
+    bool changed=false;
+    for(int j=0;j<rules.size();j++) {
+      changed |= rules[j]->propagate(g); terminate_on_error();
+      if(paranoid) checker.propagate(g); // make sure we didn't break anything
+    }
+    if(!changed) break;
+    if(i==(max_loops-1))
+      compile_warn("Transformer giving up after "+i2s(max_loops)+" loops");
+  }
+  checker.propagate(g); // make sure we didn't break anything
+}
+
