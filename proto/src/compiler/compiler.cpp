@@ -37,6 +37,8 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   compiler_error|=!sexpr; terminate_on_error();
   compile_phase = "interpretation"; // PHASE: sexpr -> IR
   interpreter->interpret(sexpr); // terminates on error internally
+  if(interpreter->dfg->output==NULL)
+    { compile_error("Program has no content."); terminate_on_error(); }
   if(is_dump_interpreted) interpreter->dfg->print(cpout);
   if(is_early_terminate==3) 
     { *cperr << "Stopping before analysis" << endl; exit(0); }

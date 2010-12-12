@@ -360,7 +360,7 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   OIset nodes; Fset edges; AMset spaces;
   CEmap(Operator*,OIset) funcalls; // List of times each op is used
   Field* output;
-  AMset relevant; // roots of those funcalls that are actually made
+  AMset relevant; // root (and use count) of funcalls that are used
   
   DataflowGraph() { output = NULL; } // base state
   void print(ostream* out=0);

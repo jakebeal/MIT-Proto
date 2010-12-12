@@ -387,17 +387,18 @@ Field* DFG::add_parameter(CompoundOp* op,string name,int idx,AM* space,CE* src)
 { return (new OI(src,new Parameter(op,name,idx),space))->output; }
 
 void DFG::determine_relevant() {
-  if(output==NULL)
-    { compile_error("Program has no content."); terminate_on_error(); }
-  relevant.clear();
+  if(output==NULL) return; // can't search yet
+  relevant.clear(); funcalls.clear();
   set<AM*> q; q.insert(output->domain);
   while(q.size()) {
     AM* next = *q.begin(); q.erase(next); relevant.insert(next);
     OIset ois; next->all_ois(&ois);
-    for_set(OI*,ois,i) {
-      vector<CompoundOp*> refs; collect_op_references((*i)->op,&refs);
-      for(int i=0;i<refs.size();i++) 
+    for_set(OI*,ois,oi) {
+      vector<CompoundOp*> refs; collect_op_references((*oi)->op,&refs);
+      for(int i=0;i<refs.size();i++) {
+        funcalls[refs[i]].insert(*oi);
         if(!relevant.count(refs[i]->body)) { q.insert(refs[i]->body); }
+      }
     }
   }
 }

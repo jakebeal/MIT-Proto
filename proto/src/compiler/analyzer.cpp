@@ -1242,6 +1242,7 @@ void DFGTransformer::transform(DFG* g) {
     if(i==(max_loops-1))
       compile_warn("Transformer giving up after "+i2s(max_loops)+" loops");
   }
+  g->determine_relevant();
   checker.propagate(g); // make sure we didn't break anything
 }
 

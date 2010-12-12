@@ -552,6 +552,22 @@ is 27 _ Operator Instances:
 is 28 _   [Lit: <Boolean true>] --> Juliet<Boolean true> OUTPUT
 is 29 _ Stopping before localization
 
+// Make sure that extra function calls are ignored by "relevant" count
+test: $(P2B) "(def foo () (mid)) (def bar () (* (foo) (foo))) (foo)" -CDanalyzed --function-inlining-threshold 0
+is 0 _ Function: foo [Signature:  --> <D:return>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar> OUTPUT
+is 5 _   Operator Instances:
+is 6 _     [mid] --> Bravo<Scalar> OUTPUT
+is 7 _ Amorphous Mediums:
+is 8 _   [Medium: Charlie = root]
+is 9 _ Fields:
+is 10 _   Delta: Charlie --> <Scalar> OUTPUT
+is 11 _ Operator Instances:
+is 12 _   [Fun: foo] --> Delta<Scalar> OUTPUT
+
 test: $(P2B) -CDall "(let ((a 3) (b (+ a 1)) (c (+ a b))) c)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Couldn't find definition of a
