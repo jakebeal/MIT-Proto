@@ -74,16 +74,16 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(vdo
 = 1 3 0
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(vdot (tup 1 2 3) (tup 1 2 3))"
 = 1 3 14
-// test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(pow (vlen (tup 1 2 3)) 2)"
-// = 1 3 14
-// test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(vlen (normalize (tup 1 2 3)))"
-// = 1 3 1
-//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rotate pi (tup 1 0) )"
-//= 1 3 -1
-//= 1 4 0
-// test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rotate (/ pi 2) (tup 1 0) )"
-// = 1 3 0
-// = 1 4 1
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(pow (vlen (tup 1 2 3)) 2)"
+= 1 3 14
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(vlen (normalize (tup 1 2 3)))"
+//= 1 3 1
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rotate pi (tup 1 0) )"
+= 1 3 -1
+= 1 4 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rotate (/ pi 2) (tup 1 0) )"
+= 1 3 0
+= 1 4 1
 
 
 
