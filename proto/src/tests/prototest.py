@@ -397,7 +397,7 @@ class ConfigParser():
                    " nearly equal to ")
            }
 
-    string_fns = {"is_nan" : ((lambda act, exp: act.lower() == "nan"), 1, " is "),
+    string_fns = {"is_nan" : ((lambda act, exp: act.lower() in ("nan","-nan")), 1, " is "),
                   "is" : ((lambda act, exp: act.lower() == exp.lower()), 0, " is "),
                   "has": ((lambda act, exp: act.lower().find(exp.lower()) != -1), 0, " has ")}
 
