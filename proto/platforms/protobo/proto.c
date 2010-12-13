@@ -1,1 +1,1 @@
-../kernel/proto.c
+../../src/kernel/proto.c
