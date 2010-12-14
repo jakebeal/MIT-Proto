@@ -16,10 +16,14 @@ endif
 " Set syntax to proto
 let b:current_syntax = "proto"
 
+" Patterns
+syn match protoFunctionDef '\s*\S\+' contained display
+syn match protoLanguageComment ";.*$" contains=@protoCommentGroup
+
 " Define keywords
 syn keyword protoLanguageKeywords null
 syn keyword protoLanguageKeywords quote
-syn keyword protoLanguageKeywords def
+syn keyword protoLanguageKeywords def nextgroup=protoFunctionDef
 syn keyword protoLanguageKeywords let
 syn keyword protoLanguageKeywords let*
 syn keyword protoLanguageKeywords all
@@ -88,11 +92,11 @@ syn keyword protoLanguageKeywords rnd
 syn keyword protoLanguageKeywords rndint
 syn keyword protoLanguageKeywords vdot
 syn keyword protoLanguageKeywords vlen
-syn keyword protoLanguageKeywords normalize
+syn keyword protoLanguageKeywords normalize norm
 syn keyword protoLanguageKeywords polar-to-rect
 syn keyword protoLanguageKeywords rect-to-polar
 syn keyword protoLanguageKeywords rotate
-syn keyword protoLanguageKeywords tuple
+syn keyword protoLanguageKeywords tuple tup
 syn keyword protoLanguageKeywords len
 syn keyword protoLanguageKeywords elt
 syn keyword protoLanguageKeywords nul-tup
@@ -144,32 +148,31 @@ syn keyword protoLanguageKeywords dither
 syn keyword protoLanguageKeywords elect
 syn keyword protoLanguageKeywords flip
 syn keyword protoLanguageKeywords timer
-
-
-"" Comments follow semi-colon(s)
-syn match protoLanguageComment ";.*$" contains=@protoCommentGroup
-
+syn keyword protoLanguageKeywords red
+syn keyword protoLanguageKeywords green
+syn keyword protoLanguageKeywords blue
+syn keyword protoLanguageKeywords probe
 
 
 "" Parenthsis Highlighting stolen from 
 "" Rainbow Parenthsis (http://www.vim.org/scripts/script.php?script_id=1230)
 
-hi level1c ctermfg=brown
-hi level2c ctermfg=Darkblue
-hi level3c ctermfg=darkgreen
-hi level4c ctermfg=darkgray
-hi level5c ctermfg=darkcyan
-hi level6c ctermfg=darkmagenta
-hi level7c ctermfg=darkred
-hi level8c ctermfg=brown
-hi level9c ctermfg=black
-hi level10c ctermfg=gray
-hi level11c ctermfg=Darkblue
-hi level12c ctermfg=darkmagenta
-hi level13c ctermfg=darkgreen
-hi level14c ctermfg=darkred
+hi level1c ctermfg=darkcyan
+hi level2c ctermfg=darkred
+hi level3c ctermfg=darkyellow
+hi level4c ctermfg=darkblue
+hi level5c ctermfg=darkmagenta
+hi level6c ctermfg=darkblue
+hi level7c ctermfg=darkgreen
+hi level8c ctermfg=darkcyan
+hi level9c ctermfg=darkred
+hi level10c ctermfg=darkyellow
+hi level11c ctermfg=darkgreen
+hi level12c ctermfg=darkblue
+hi level13c ctermfg=darkmagenta
+hi level14c ctermfg=darkgreen
 hi level15c ctermfg=darkcyan
-hi level16c ctermfg=red
+hi level16c ctermfg=darkred
 
 syn region level1 matchgroup=level1c start=/(/ end=/)/ contains=TOP,level1,level2,level3,level4,level5,level6,level7,level8,level9,level10,level11,level12,level13,level14,level15, level16,NoInParens
 syn region level2 matchgroup=level2c start=/(/ end=/)/ contains=TOP,level2,level3,level4,level5,level6,level7,level8,level9,level10,level11,level12,level13,level14,level15, level16,NoInParens
@@ -193,3 +196,5 @@ syn region level16 matchgroup=level16c start=/(/ end=/)/ contains=TOP,level16,No
 " Define highlighting
 hi def link protoLanguageKeywords Statement
 hi def link protoLanguageComment Comment
+hi def link protoFunctionDef Constant
+
