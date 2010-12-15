@@ -160,10 +160,9 @@ struct ProtoLambda: public ProtoLocal {
 struct ProtoField : public ProtoType {
   reflection_sub(ProtoField,ProtoType);
   ProtoType* hoodtype; // must be local, but derived types defer resolution
-  ProtoField() { hoodtype=NULL; }
+  ProtoField() { hoodtype=new ProtoType(); }
   ProtoField(ProtoType* hoodtype) { this->hoodtype = hoodtype; }
-  virtual void print(ostream* out=0)
-  { *out<<"<Field"; if(hoodtype){ *out<<" ";hoodtype->print(out);} *out<<">"; }
+  virtual void print(ostream* out=0) { *out<<"<Field "<<ce2s(hoodtype)<<">"; }
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t);

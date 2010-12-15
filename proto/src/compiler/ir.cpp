@@ -196,13 +196,15 @@ bool CompoundOp::compute_side_effects() {
 Parameter::Parameter(CompoundOp* op, string name, int index, 
                      ProtoType* type, ProtoType* def) : Operator(op) { 
   if(type==NULL) type = new ProtoType();
+  if(def==NULL) def = new ProtoType();
   signature = new Signature(op,type); defaultValue = def; 
   this->name=name; this->index=index; container=op;
 }
 
 void Parameter::print(ostream* out) { 
   *out << "[Parameter " << index << ": "<< name;
-  if(defaultValue) defaultValue->print(out);
+  ProtoType any;
+  if(!ProtoType::equal(defaultValue,&any)) *out<<"|"<<ce2s(defaultValue);
   *out<<"]";
 }
 

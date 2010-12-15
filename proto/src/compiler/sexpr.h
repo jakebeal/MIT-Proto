@@ -120,9 +120,11 @@ SExpr* sexp_err(CompilationElement *where,string msg); // error & return dummy
 struct SE_List_iter {
   SE_List* container; int index;
   SE_List_iter(SE_List* s) { index=0; container=s; }
-  SE_List_iter(SExpr* s) { 
-    if(!s->isList())
-      { compile_error(s,"Expected list, but got "+ce2s(s)); s=new SE_List(); }
+  SE_List_iter(SExpr* s,string name="expression") { // named used for error
+    if(!s->isList()) {
+      compile_error(s,"Expected "+name+" to be a list: "+ce2s(s));
+      SExpr* news=new SE_List(); news->inherit_attributes(s); s=news;
+    }
     index=0; container=(SE_List*)s;
   }
   // true if there are more elements

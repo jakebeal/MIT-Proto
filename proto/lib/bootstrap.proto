@@ -9,4 +9,6 @@
 ;(primitive elt (tuple i|scalar) any
 ;  :type-constraints ((= value (nth arg0 arg1))))
 (primitive elt (tuple i|scalar) (nth arg0 arg1))
-(primitive local (local) (fieldof arg0) :space :time) ; usually left implicit
+;(primitive local (local) (fieldof arg0) :space :time) ; usually left implicit
+(primitive local (local) field :space :time ; usually left implicit
+  :type-constraints ((= value (fieldof arg0))))

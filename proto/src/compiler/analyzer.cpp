@@ -56,11 +56,6 @@ void CheckTypeConcreteness::act(Field* f) {
  *  TYPE CONSTRAINTS                                                         *
  *****************************************************************************/
 
-ProtoType* ref_err_scratch = new ProtoType();
-ProtoType** typeref_error(CompilationElement *where,string msg) {
-  compile_error(where,"Type reference: "+msg); return &ref_err_scratch;
-}
-
 SExpr* get_sexp(CE* src, string attribute) {
   Attribute* a = src->attributes[attribute];
   if(a==NULL || !a->isA("SExprAttribute"))
@@ -68,58 +63,206 @@ SExpr* get_sexp(CE* src, string attribute) {
   return ((SExprAttribute*)a)->exp;
 }
 
+// NOTE: This container structure is temporary and crap
+struct TypePropagator;
+class TypeConstraintApplicator {
 
-ProtoType** get_type_ref(OperatorInstance* oi, SExpr* ref) {
-  if(ref->isSymbol()) {
-    if(*ref=="value") {
-      return &oi->output->range;
-    }
-  } else if(ref->isList()) {
-    SE_List_iter li(ref);
-    if(li.on_token("nth")) {
-      // Challenge: with an unknown ref, this can apply to all the elements!
-      // Dilemma: do we go with "return a reference to all" or do we make
-      // parallel get & set operations?  I'm inclined to the latter...
-    }
+  /********** TYPE READING **********/
+  ProtoType* get_op_return(Operator* op) {
+    if(!op->isA("CompoundOp"))
+      return type_err(op,"'return' used on non-compound operator:"+ce2s(op));
+    return ((CompoundOp*)op)->output->range;
   }
-  return typeref_error(ref,"Unknown type reference: "+ce2s(ref));
-}
 
-// new system: :type-constraints SExprs
-// assumes constraint has already been checked for syntactic sanity
-void apply_constraint(OperatorInstance* oi, SE_List* constraint) {
-  SE_List_iter li(constraint);
-  if(li.on_token("=")) { // types should be identical
-    ProtoType **a = get_type_ref(oi,li.get_next("type reference"));
-    ProtoType **b = get_type_ref(oi,li.get_next("type reference"));
-    ProtoType *joint = ProtoType::gcs(*a,*b); 
-    if(joint==NULL) {
-      ierror("Equality constraint failed, but don't know how to handle yet.");
+  ProtoTuple* get_all_args(OperatorInstance* oi) {
+    ProtoTuple *t = new ProtoTuple();
+    for(int i=0;i<oi->inputs.size();i++) t->add(oi->inputs[i]->range);
+    return t;
+  }
+  
+  ProtoType* get_nth_arg(OperatorInstance* oi, int n) {
+    if(n < oi->op->signature->required_inputs.size()) { // ordinary argument
+      if(n<oi->inputs.size()) return oi->inputs[n]->range;
+      return type_err(oi,"Can't find type"+i2s(n)+" in "+ce2s(oi));
+    } else if(n < oi->op->signature->n_fixed()) {
+      if(n<oi->inputs.size()) return oi->inputs[n]->range;
+      ierror("Nth arg calls not handling non-asserted optional arguments yet");
+    } else if(n==oi->op->signature->n_fixed() && oi->op->signature->rest_input) {// rest
+      ProtoTuple *t = new ProtoTuple();
+      for(int i=n;i<oi->inputs.size();i++) t->add(oi->inputs[i]->range);
+      return t;
+    }
+    return type_err(oi,"Can't find input"+i2s(n)+" in "+ce2s(oi));
+  }
+
+  // returns -1 if not argref; otherwise, argref
+  // DEPRECATED
+  int is_arg_ref(string s) {
+    if(s.size()<4) return -1;
+    if(s.substr(0,3)=="arg") {
+      string num = s.substr(3,s.size()-3);
+      if(str_is_number(num.c_str()))
+        return atoi(num.c_str());
+    }
+    return -1;
+  }
+  
+  // return the best available information on the referred type
+  ProtoType* get_ref(OperatorInstance* oi, SExpr* ref) {
+    if(ref->isSymbol()) {
+      // These will be removed, and replaced with references to named variables
+      // "arg0", "arg1", ...: the type of the kth argument (0-based)
+      int n = is_arg_ref(((SE_Symbol*)ref)->name);
+      if(n>=0) return get_nth_arg(oi,n);
+      // "args": a tuple of argument types
+      if(*ref=="args") return get_all_args(oi);
+      // value: the output of a function
+      if(*ref=="value") return oi->output->range;
+      
+      // return: the value of a compound operator's output field
+      if(*ref=="return") return get_op_return(oi->op);
+    } else if(ref->isList()) {
+      SE_List_iter li(ref);
+      // "fieldof": field containing a local
+      if(li.on_token("fieldof"))
+        return new ProtoField(get_ref(oi,li.get_next("type")));
+      // "ft": type of local contained by a field
+      //if(li.on_token("ft"))
+      // "inputs": the types of a function's input signature
+      //if(li.on_token("inputs"))
+      // "last": find the last type in a tuple
+      //if(li.on_token("last")) 
+      // "lcs": finds the least common superclass of a set of types
+      //if(li.on_token("lcs")) return get_lcs(&li);
+      // "nth": finds the nth type in a tuple
+      //if(li.on_token("nth")) return get_nth_type(&li);
+      // "outputs": the type of a function's output
+      //if(li.on_token("output"))
+      // "tupof": tuple w. a set of types as arguments
+      //if(li.on_token("tupof"))
+      // "unlit": generalize away literal values
+      //if(li.on_token("unlit"))
+    }
+    ierror(ref,"Unknown type reference: "+ce2s(ref)); // temporary, to help test suite
+    return type_err(ref,"Unknown type reference: "+ce2s(ref));
+  }
+  
+  /********** TYPE ASSERTION **********/
+  bool maybe_change_type(ProtoType** type,ProtoType* value) {
+    if((*type)->supertype_of(value) && !value->supertype_of(*type)) {
+      V2<<"  Changing type "<<ce2s(*type)<<" to "<<ce2s(value)<<endl;
+      *type = value; return true;
+    }
+    return false;
+  }
+  
+  bool assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value) {
+    if(n < oi->op->signature->required_inputs.size()) { // ordinary argument
+      if(n<oi->inputs.size())
+        return maybe_change_type(&oi->inputs[n]->range,value);
+    } else if(n < oi->op->signature->n_fixed()) {
+      if(n<oi->inputs.size())
+        return maybe_change_type(&oi->inputs[n]->range,value);
+      ierror("Nth arg calls not handling non-asserted optional arguments yet");
+    } else if(n==oi->op->signature->n_fixed() && oi->op->signature->rest_input) {// rest
+      ierror("Handling of assertion on rest arguments no implemented yet");
+    }
+    ierror("Failed assertion on argument "+i2s(n)+" of "+ce2s(oi));
+  }
+  bool assert_all_args(OperatorInstance* oi, ProtoType* value) {
+    ierror("Not yet implemented");
+    return false;
+  }
+  bool assert_op_return(Operator* f, ProtoType* value) {
+    ierror("Not yet implemented");
+    return false;
+  }
+  
+  bool assert_on_field(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+    if(!value->isA("ProtoField"))
+      ierror("'fieldof' assertion on non-field type: "+ref->to_str());
+    return assert_ref(oi,ref,F_VAL(value));
+  }
+  
+  // Core assert dispatch function
+  // If possible, modify the referred type with a GCS.
+  bool assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+    if(ref->isSymbol()) {
+      // These will be removed, and replaced with references to named variables
+      // "arg0", "arg1", ...: the type of the kth argument (0-based)
+      int n = is_arg_ref(((SE_Symbol*)ref)->name);
+      if(n>=0) return assert_nth_arg(oi,n,value);
+      // "args": a tuple of argument types
+      if(*ref=="args") return assert_all_args(oi,value);
+      // value: the output of a function
+      if(*ref=="value") return maybe_change_type(&oi->output->range,value);
+      
+      // return: the value of a compound operator's output field
+      if(*ref=="return") return assert_op_return(oi->op,value);
+    } else if(ref->isList()) {
+      SE_List_iter li(ref);
+      // "fieldof": field containing a local
+      if(li.on_token("fieldof")) 
+        return assert_on_field(oi,li.get_next("type"),value);
+      // "ft": type of local contained by a field
+      //if(li.on_token("ft"))
+      // "inputs": the types of a function's input signature
+      //if(li.on_token("inputs"))
+      // "last": find the last type in a tuple
+      //if(li.on_token("last")) 
+      // "lcs": finds the least common superclass of a set of types
+      //if(li.on_token("lcs")) return get_lcs(&li);
+      // "nth": finds the nth type in a tuple
+      //if(li.on_token("nth")) return get_nth_type(&li);
+      // "outputs": the type of a function's output
+      //if(li.on_token("output"))
+      // "tupof": tuple w. a set of types as arguments
+      //if(li.on_token("tupof"))
+      // "unlit": generalize away literal values
+      //if(li.on_token("unlit"))
+    }
+    ierror(ref,"Unknown type reference: "+ce2s(ref)); // temporary, to help test suite
+    return type_err(ref,"Unknown type reference: "+ce2s(ref));
+  }
+
+  /********** External Interface **********/
+public:
+  bool apply_constraint(OperatorInstance* oi, SExpr* constraint) {
+    SE_List_iter li(constraint,"type constraint");
+    if(!li.has_next())
+      { compile_error(constraint,"Empty type constraint"); return false; }
+    if(li.on_token("=")) { // types should be identical
+      SExpr *aref = li.get_next("type reference");
+      SExpr *bref=li.get_next("type reference");
+      ProtoType *a = get_ref(oi,aref), *b = get_ref(oi,bref);
+      // first, take the GCS
+      ProtoType *joint = ProtoType::gcs(a,b);
+      if(joint==NULL) { // if GCS shows conflict, attempt to correct
+        ierror("Equality constraint failed, but don't know how to handle yet.");
+      } else { // if GCS succeeded, assert onto referred locations
+        return assert_ref(oi,aref,joint) | assert_ref(oi,bref,joint);
+      }
+      // if it's OK, then push back:  maybe_set_ref(oi,constraint[i]);
+      // if it's not OK, then call for resolution
     } else {
-      cout << "Action "<<ce2s(constraint)<<" should assert "<<ce2s(joint)<<endl;
-      //maybe_set_ref(oi,constraint[0],joint);
-      //maybe_set_ref(oi,constraint[1],joint);
+      compile_error("Unknown constraint '"+ce2s(li.peek_next())+"'");
     }
-    // first, take the GCS, then compare them together
-    // if it's OK, then push back:  maybe_set_ref(oi,constraint[i]);
-    // if it's not OK, then call for resolution
-  } else {
-    compile_error("Unknown constraint '"+ce2s(li.peek_next())+"'");
+    return false;
   }
-}
-
-void apply_constraints(OperatorInstance* oi, SExpr* constraints) {
-  if(!constraints->isList()) 
-    {compile_error(constraints,"Constraints must be list: "+ce2s(constraints));return;}
-  SE_List_iter li((SE_List*)constraints);
-  while(li.has_next()) {
-    SExpr* ct = li.get_next();
-    if(!ct->isList() || ((SE_List*)ct)->len()!=3)
-      {compile_error(ct,"Constraint must be a 3-item list: "+ce2s(ct)); return;}
-    apply_constraint(oi,(SE_List*)ct);
+  
+  bool apply_constraints(OperatorInstance* oi, SExpr* constraints) {
+    bool changed=false;
+    SE_List_iter li(constraints,"type constraint set");
+    while(li.has_next()) 
+      { changed |= apply_constraint(oi,li.get_next("type constraint")); }
+    return changed;
   }
-}
 
+  int verbosity;
+  TypeConstraintApplicator(IRPropagator* parent) {
+    verbosity=parent->verbosity;
+  }
+};
 
 /*****************************************************************************
  *  TYPE RESOLUTION                                                          *
@@ -486,6 +629,67 @@ class TypePropagator : public IRPropagator {
   }
   virtual void print(ostream* out=0) { *out << "TypePropagator"; }
   
+  // implicit type conversion or other modification to fix conflict
+  // returns true if repair is successful
+  bool repair_conflict(Field* f,Consumer c,ProtoType* ftype,ProtoType* ctype) {
+    // if vector is needed and scalar is provided, convert to a size-1 vector
+    if(ftype->isA("ProtoScalar") && ctype->isA("ProtoVector")) {
+      if(c.first==NULL) return true; // let it be repaired in Field action stage
+      V2<<"Converting Scalar to 1-Vector\n";
+      OI* tup = new OperatorInstance(f->producer,Env::core_op("tup"),f->domain);
+      tup->add_input(f);
+      root->relocate_source(c.first,c.second,tup->output);
+      note_change(tup); return true; // let constraint retry later...
+    }
+    
+    // if source is local and user wants a field, add a "local" op
+    // or replace no-argument source with a field op
+    if(ftype->isA("ProtoLocal") && ctype->isA("ProtoField")) {
+      if(c.first==NULL) return true; // let it be repaired in Field action stage
+      ProtoField* ft = dynamic_cast<ProtoField*>(ctype);
+      if(ProtoType::gcs(ftype,ft->hoodtype)) {
+        Operator* fo = FieldOp::get_field_op(f->producer);
+        if(f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
+          V2<<"  Fieldify pointwise: "<<ce2s(f->producer)<<endl;
+          OI* foi = new OperatorInstance(f->producer,fo,f->domain);
+          root->relocate_source(c.first,c.second,foi->output);
+          note_change(foi); return true; // let constraint retry later...
+        } else {
+          V2<<"  Inserting 'local' at "<<ce2s(f)<<endl;
+          OI* local = new OI(f->producer,Env::core_op("local"),f->domain);
+          local->add_input(f);
+          root->relocate_source(c.first,c.second,local->output);
+          note_change(local); return true; // let constraint retry later...
+        }
+      }
+    }
+    
+    // if source is field and user is "local", send to the local's consumers
+    if(ftype->isA("ProtoField") && c.first&&c.first->op==Env::core_op("local")){
+      if(c.first==NULL) return true; // let it be repaired in Field action stage
+      V2<<"  Deleting 'local' at "<<ce2s(f)<<endl;
+      root->relocate_consumers(c.first->output,f);
+      return true;
+    }
+    
+    // if source is field and user is pointwise, upgrade to field op
+    if(ftype->isA("ProtoField") && ctype->isA("ProtoLocal")) {
+      if(c.first==NULL) return true; // let it be repaired in Field action stage
+      ProtoField* ft = dynamic_cast<ProtoField*>(ftype);
+      int pw = c.first->pointwise();
+      if(pw!=0 && ProtoType::gcs(ctype,ft->hoodtype)) {
+        Operator* fo = FieldOp::get_field_op(c.first); // might be upgradable
+        if(fo) {
+          V2<<"  Fieldify pointwise: "<<ce2s(c.first)<<endl;
+          c.first->op = fo; note_change(c.first);
+        }
+        return true; // in any case, don't fail out now
+      }
+    }
+    
+    return false; // repair has failed
+  }
+
   // apply a consumer constraint, managing implicit type conversions 
   bool back_constraint(ProtoType** tmp,Field* f,pair<OperatorInstance*,int> c) {
     ProtoType* rawc = c.first->op->signature->nth_type(c.second);
@@ -497,59 +701,8 @@ class TypePropagator : public IRPropagator {
     if(newtype) { V3<<" ok\n"; *tmp = newtype; return true; }
     else V3<<" FAIL\n";
 
-    // On merge failure, either add an implicit type conversion or error
-    // if vector is needed and scalar is provided, convert to a size-1 vector
-    if((*tmp)->isA("ProtoScalar") && ct->isA("ProtoVector")) {
-      V2<<"Converting Scalar to 1-Vector\n";
-      OI* tup = new OperatorInstance(f->producer,Env::core_op("tup"),f->domain);
-      tup->add_input(f);
-      root->relocate_source(c.first,c.second,tup->output);
-      note_change(tup); return false; // let constraint retry later...
-    }
-
-    // if source is local and user wants a field, add a "local" op
-    // or replace no-argument source with a field op
-    if((*tmp)->isA("ProtoLocal") && ct->isA("ProtoField")) {
-      ProtoField* ft = dynamic_cast<ProtoField*>(ct);
-
-      if(!ft->hoodtype || ProtoType::gcs(*tmp,ft->hoodtype)) {
-        Operator* fo = FieldOp::get_field_op(f->producer);
-        if(f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
-          V2<<"  Fieldify pointwise: "<<ce2s(f->producer)<<endl;
-          OI* foi = new OperatorInstance(f->producer,fo,f->domain);
-          root->relocate_source(c.first,c.second,foi->output);
-          note_change(foi); return false; // let constraint retry later...
-        } else {
-          V2<<"  Inserting 'local' at "<<ce2s(f)<<endl;
-          OI* local = new OI(f->producer,Env::core_op("local"),f->domain);
-          local->add_input(f);
-          root->relocate_source(c.first,c.second,local->output);
-          note_change(local); return false; // let constraint retry later...
-        }
-      }
-    }
-    
-    // if source is field and user is "local", send to the local's consumers
-    if((*tmp)->isA("ProtoField") && c.first->op==Env::core_op("local")) {
-      V2<<"  Deleting 'local' at "<<ce2s(f)<<endl;
-      root->relocate_consumers(c.first->output,f);
-      return false;
-    }
-    
-    // if source is field and user is pointwise, upgrade to field op
-    if((*tmp)->isA("ProtoField") && ct->isA("ProtoLocal")) {
-      ProtoField* ft = dynamic_cast<ProtoField*>(*tmp);
-      int pw = c.first->pointwise();
-      if(pw!=0 && (!ft->hoodtype || ProtoType::gcs(ct,ft->hoodtype))) {
-        Operator* fo = FieldOp::get_field_op(c.first); // might be upgradable
-        if(fo) {
-          V2<<"  Fieldify pointwise: "<<ce2s(c.first)<<endl;
-          c.first->op = fo; note_change(c.first);
-        }
-        return false; // in any case, don't fail out now
-      }
-    }
-  
+    // On merge failure, attempt to repair conflict
+    if(repair_conflict(f,c,*tmp,ct)) return false;
     // having fallen through all cases, throw type error
     type_error(f,"conflict: "+f->to_str()+" vs. "+c.first->to_str());
     return false;
@@ -561,6 +714,18 @@ class TypePropagator : public IRPropagator {
     ProtoType* tmp=resolve_type(f->producer,f->producer->op->signature->output);
     if(f->producer->op->isA("Parameter")) tmp=f->range;
     if(!tmp) return; // if producer unresolvable, give up
+    // GCS against current value
+    if(!f->range->isA("DerivedType")) {
+      ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
+      if(!newtmp) {
+        if(repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) return;
+        type_error(f,"incompatible type and signature "+f->to_str()+": "+
+                   ce2s(tmp)+" vs. "+ce2s(f->range));
+        return;
+      }
+      tmp=newtmp;
+      }
+
     // GCS against consumers
     for_set(Consumer,f->consumers,i)
       if(!back_constraint(&tmp,f,*i)) return; // type problem handled within
@@ -597,9 +762,12 @@ class TypePropagator : public IRPropagator {
     
     if(oi->op->isA("Primitive")) { // constrain against signature
       // new-style resolution
-      if(oi->op->marked(":type-constraints"))
-        apply_constraints(oi,get_sexp(oi->op,":type-constraints"));
-      
+      if(oi->op->marked(":type-constraints")) {
+        TypeConstraintApplicator tca(this);
+        if(tca.apply_constraints(oi,get_sexp(oi->op,":type-constraints")))
+          note_change(oi);
+      }
+
       // old-style resolution
       
       ProtoType* newtype = resolve_type(oi,oi->output->range);

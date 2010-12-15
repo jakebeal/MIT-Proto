@@ -30,11 +30,11 @@ is 0 _ Testing type relations:
 is 1 _ Generic types:
 is 2 _ <Any> > <Any>: TRUE, reverse: TRUE
 is 3 _ <Any> > <Local>: TRUE, reverse: FALSE
-is 4 _ <Any> > <Field>: TRUE, reverse: FALSE
+is 4 _ <Any> > <Field <Any>>: TRUE, reverse: FALSE
 is 5 _ <Any> > <Lambda>: TRUE, reverse: FALSE
 is 6 _ <Any> > <Scalar>: TRUE, reverse: FALSE
 is 7 _ <Scalar> > <Number>: FALSE, reverse: TRUE
-is 8 _ <Scalar> > <Field>: FALSE, reverse: FALSE
+is 8 _ <Scalar> > <Field <Any>>: FALSE, reverse: FALSE
 is 9 _ <Vector<Scalar>...> > <Tuple<Any>...>: FALSE, reverse: TRUE
 is 10 _ <Scalar> > <Boolean>: TRUE, reverse: FALSE
 is 11 _ <Scalar> > <Symbol>: FALSE, reverse: FALSE
@@ -43,7 +43,7 @@ is 13 _ <Vector<Scalar>...> > <Number>: FALSE, reverse: TRUE
 is 14 _ <Vector<Scalar>...> > <Boolean>: FALSE, reverse: FALSE
 is 15 _ <Symbol> > <Boolean>: FALSE, reverse: FALSE
 is 16 _ <Symbol> > <Local>: FALSE, reverse: TRUE
-is 17 _ <Field> > <Local>: FALSE, reverse: FALSE
+is 17 _ <Field <Any>> > <Local>: FALSE, reverse: FALSE
 is 18 _ <Lambda> > <Local>: FALSE, reverse: TRUE
 is 19 _ <Tuple<Any>...> > <Local>: FALSE, reverse: TRUE
 is 20 _ Literals:
@@ -64,9 +64,9 @@ is 34 _ <Symbol bar> > <Symbol>: FALSE, reverse: TRUE
 is 35 _ <Any> > <Symbol foo>: TRUE, reverse: FALSE
 is 36 _ <Symbol foo> > <Symbol bar>: FALSE, reverse: FALSE
 is 37 _ Tuples:
-is 38 _ <2-Tuple<Scalar 3>,<Symbol>> > <Tuple<Scalar 3>,<Any>,<Field>...>: FALSE, reverse: TRUE
+is 38 _ <2-Tuple<Scalar 3>,<Symbol>> > <Tuple<Scalar 3>,<Any>,<Field <Any>>...>: FALSE, reverse: TRUE
 is 39 _ <2-Tuple<Scalar 3>,<Symbol>> > <Tuple<Any>...>: FALSE, reverse: TRUE
-is 40 _ <Tuple<Scalar 3>,<Any>,<Field>...> > <Tuple<Any>...>: FALSE, reverse: TRUE
+is 40 _ <Tuple<Scalar 3>,<Any>,<Field <Any>>...> > <Tuple<Any>...>: FALSE, reverse: TRUE
 is 41 _ <Tuple<Any>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: TRUE, reverse: FALSE
 is 42 _ <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
 is 43 _ <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
@@ -92,9 +92,9 @@ is 62 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <3-Vector<Scalar 3>,<Scalar 
 is 63 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: FALSE, reverse: FALSE
 is 64 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
 is 65 _ Fields:
-is 66 _ <Field <Scalar 3>> > <Field>: FALSE, reverse: TRUE
+is 66 _ <Field <Scalar 3>> > <Field <Any>>: FALSE, reverse: TRUE
 is 67 _ <Field <Scalar 3>> > <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>: FALSE, reverse: FALSE
-is 68 _ <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field>: FALSE, reverse: TRUE
+is 68 _ <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field <Any>>: FALSE, reverse: TRUE
 is 69 _ <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field <3-Tuple<Scalar 3>,<Any>,<Scalar 5>>>: FALSE, reverse: TRUE
 is 70 _ Testing least-common-supertype:
 is 71 _ LCS ordered pairs:
@@ -108,7 +108,7 @@ is 78 _ LCS(<Boolean>,<Vector<Scalar>...>) = <Number>; inverse match = TRUE
 is 79 _ LCS(<Boolean true>,<Scalar 5>) = <Scalar>; inverse match = TRUE
 is 80 _ LCS(<Vector<Scalar>...>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <Tuple<Local>...>; inverse match = TRUE
 is 81 _ LCS(<Boolean>,<Lambda>) = <Local>; inverse match = TRUE
-is 82 _ LCS(<Vector<Scalar>...>,<Field>) = <Any>; inverse match = TRUE
+is 82 _ LCS(<Vector<Scalar>...>,<Field <Any>>) = <Any>; inverse match = TRUE
 is 83 _ LCS in-class generalization:
 is 84 _ LCS(<Boolean false>,<Boolean true>) = <Boolean>; inverse match = TRUE
 is 85 _ LCS(<Boolean true>,<Scalar 1>) = <Scalar 1>; inverse match = TRUE
@@ -131,7 +131,7 @@ is 101 _ GCS cross-class:
 is 102 _ GCS(<Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = NULL; inverse match = TRUE
 is 103 _ GCS(<Vector<Scalar>...>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = NULL; inverse match = TRUE
 is 104 _ GCS(<Boolean>,<Lambda>) = NULL; inverse match = TRUE
-is 105 _ GCS(<Vector<Scalar>...>,<Field>) = NULL; inverse match = TRUE
+is 105 _ GCS(<Vector<Scalar>...>,<Field <Any>>) = NULL; inverse match = TRUE
 is 106 _ GCS(<Number>,<Tuple<Any>...>) = <Vector<Scalar>...>; inverse match = TRUE
 is 107 _ GCS(<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>,<Number>) = NULL; inverse match = TRUE
 is 108 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Number>) = <3-Vector<Scalar 3>,<Scalar>,<Scalar 5>>; inverse match = TRUE
@@ -146,8 +146,8 @@ is 116 _ GCS(<Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>,<3-Tuple<Scalar
 is 117 _ GCS(<Tuple<Scalar 3>,<Scalar 4>,<Any>...>,<Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>; inverse match = TRUE
 is 118 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
 is 119 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>; inverse match = TRUE
-is 120 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field>...>) = NULL; inverse match = TRUE
-is 121 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Field>...>; inverse match = TRUE
+is 120 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field <Any>>...>) = NULL; inverse match = TRUE
+is 121 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field <Any>>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Field <Any>>...>; inverse match = TRUE
 is 122 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
 is 123 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
 is 124 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Vector<Scalar>,<Scalar 4>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
@@ -703,6 +703,17 @@ is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Field type must have a local subtype
 is 2 _ Compilation failed.
 
+// This test checks handling of malformed type constraints
+test: $(P2B) "(primitive zog (any) any :type-constraints foo) (primitive foo (field) any :type-constraints (bluff)) (foo (zog 3))"
+is 0 _ Error during analysis:
+is 1 _ command-line:1 Error: Expected type constraint to be a list: bluff
+is 2 _ command-line:1 Error: Empty type constraint
+is 3 _ command-line:1 Error: Expected type constraint to be a list: bluff
+is 4 _ command-line:1 Error: Empty type constraint
+is 5 _ command-line:1 Error: Expected type constraint set to be a list: foo
+is 6 _ Compilation failed.
+
+
 test: $(P2B) -CDall "(nbr 3)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -902,12 +913,12 @@ is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
 is 4 _   Charlie: Alfa --> <D:(output arg0)>
-is 5 _   Delta: Alfa --> <Lambda [Op[Signature: <Scalar> &rest <Field> --> <Local>]]>
+is 5 _   Delta: Alfa --> <Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>
 is 6 _   Echo: Alfa --> <Scalar 2>
 is 7 _ Operator Instances:
 is 8 _   Charlie<D:(output arg0)> --> [sin] --> Bravo<Scalar> OUTPUT
-is 9 _   Delta<Lambda [Op[Signature: <Scalar> &rest <Field> --> <Local>]]>, Echo<Scalar 2> --> [apply] --> Charlie<D:(output arg0)>
-is 10 _   [ltest] --> Delta<Lambda [Op[Signature: <Scalar> &rest <Field> --> <Local>]]>
+is 9 _   Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>, Echo<Scalar 2> --> [apply] --> Charlie<D:(output arg0)>
+is 10 _   [ltest] --> Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>
 is 11 _   [Lit: <Scalar 2>] --> Echo<Scalar 2>
 is 12 _ Stopping before analysis
 
@@ -1288,14 +1299,14 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Field <Scalar 0.14112>>] --> Bravo<Field <Scalar 0.14112>> OUTPUT
 is 6 _ Stopping before localization
 
-test: $(P2B) -CDanalyzed "(min-hood (sin (nbr 3)))"
-is 0 _ Amorphous Mediums:
-is 1 _   [Medium: Alfa = root]
-is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <Scalar 0.14112> OUTPUT
-is 4 _ Operator Instances:
-is 5 _   [Lit: <Scalar 0.14112>] --> Bravo<Scalar 0.14112> OUTPUT
-is 6 _ Stopping before localization
+//test: $(P2B) -CDanalyzed "(min-hood (sin (nbr 3)))"
+//is 0 _ Amorphous Mediums:
+//is 1 _   [Medium: Alfa = root]
+//is 2 _ Fields:
+//is 3 _   Bravo: Alfa --> <Scalar 0.14112> OUTPUT
+//is 4 _ Operator Instances:
+//is 5 _   [Lit: <Scalar 0.14112>] --> Bravo<Scalar 0.14112> OUTPUT
+//is 6 _ Stopping before localization
 
 // insertion of "local" ops
 test: $(P2B) -CDanalyzed "(int-hood 1)"
