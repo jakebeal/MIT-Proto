@@ -1299,6 +1299,7 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Field <Scalar 0.14112>>] --> Bravo<Field <Scalar 0.14112>> OUTPUT
 is 6 _ Stopping before localization
 
+// Test is broken because new type-propagator system is incomplete
 //test: $(P2B) -CDanalyzed "(min-hood (sin (nbr 3)))"
 //is 0 _ Amorphous Mediums:
 //is 1 _   [Medium: Alfa = root]
