@@ -25,7 +25,9 @@ struct ProtoInterpreter; class NeoCompiler;
  *  INTERPRETER                                                              *
  *****************************************************************************/
 
-// Binding environments: tracks name/object associations during interpretation
+/**
+ * Binding environments: tracks name/object associations during interpretation
+ */
 struct Env {
   Env* parent; ProtoInterpreter* cp;
   map<string,CompilationElement*> bindings;
@@ -34,12 +36,17 @@ struct Env {
   Env(Env* parent) { this->parent=parent; cp = parent->cp; }
   void bind(string name, CompilationElement* value);
   void force_bind(string name, CompilationElement* value);
-  // Lookups: w/o type, returns NULL on failure; w. type, checks, returns dummy
+
+  /**
+   * Lookups: w/o type, returns NULL on failure; w. type, checks, returns dummy
+   */
   CompilationElement* lookup(string name, bool recursed=false);
   CompilationElement* lookup(SE_Symbol* sym, string type);
   
-  // operators needed to be accessed unshadowed by compiler
-  // These are gathered after initialization, but before user code is loaded
+  /**
+   * Operators needed to be accessed unshadowed by compiler. These are gathered
+   * after initialization, but before user code is loaded.
+   */
   static map<string,Operator*> core_ops;
   static void record_core_ops(Env* toplevel);
   static Operator* core_op(string name);
@@ -61,7 +68,10 @@ class ProtoInterpreter {
   static Signature* sexp_to_sig(SExpr* s,Env* bindloc=NULL,CompoundOp* op=NULL,AM* space=NULL);
 
  private:
-  void interpret(SExpr* sexpr, bool recursed); // internal only
+  /**
+   * FOR INTERNAL USE ONLY
+   */
+  void interpret(SExpr* sexpr, bool recursed);
   void interpret_file(string name);
   
   Operator* sexp_to_op(SExpr* s, Env *env);  
@@ -72,16 +82,17 @@ class ProtoInterpreter {
   SExpr* macro_substitute(SExpr* src,Env* e,SE_List* wrapper=NULL);
   ProtoType* symbolic_literal(string name);
 
-  // compiler special-form handlers
+  /// compiler special-form handlers
   Field* let_to_graph(SE_List* s, AM* space, Env *env,bool incremental);
+  /// compiler special-form handlers
   Field* letfed_to_graph(SE_List* s, AM* space, Env *env);
+  /// compiler special-form handlers
   Field* restrict_to_graph(SE_List* s, AM* space, Env *env);
 };
 
-/*****************************************************************************
- *  RULE-BASED GRAPH TRANSFORMATION                                          *
- *****************************************************************************/
-
+/**
+ * RULE-BASED GRAPH TRANSFORMATION
+ */
 class DFGTransformer {
  public:
   vector<IRPropagator*> rules;
@@ -106,17 +117,18 @@ class GlobalToLocal : public DFGTransformer {
   ~GlobalToLocal() {}
 };
 
-/*****************************************************************************
- *  CODE EMITTER                                                             *
- *****************************************************************************/
-
-// this is a framework class: we'll have multiple instantiations
+/**
+ * CODE EMITTER.
+ *  this is a framework class: we'll have multiple instantiations
+ */
 class CodeEmitter {
- public:
-  virtual uint8_t* emit_from(DFG* g, int* len) = 0;
-  // If an emitter wants to change some of the core operators, it must
-  // call Env::record_core_ops(parent->interpreter->toplevel)
-  // after it has loaded its modified definitions
+  public:
+    /**
+     * If an emitter wants to change some of the core operators, it must
+     * call Env::record_core_ops(parent->interpreter->toplevel)
+     * after it has loaded its modified definitions
+     */
+    virtual uint8_t* emit_from(DFG* g, int* len) = 0;
 };
 
 class InstructionPropagator; class Instruction;
@@ -131,9 +143,12 @@ class ProtoKernelEmitter : public CodeEmitter {
 
  private:
   vector<InstructionPropagator*> rules;
-   // global & env storage
+
+  /// global & env storage
   map<Field*,CompilationElement*, CompilationElement_cmp> memory;
-  map<string,pair<int,int> > sv_ops; // list of scalar/vector ops
+
+  /// list of scalar/vector ops
+  map<string,pair<int,int> > sv_ops; 
   Instruction *start, *end;
 
   void load_ops(string name, NeoCompiler* parent);
@@ -141,14 +156,18 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction* primitive_to_instruction(OperatorInstance* oi);
   Instruction* literal_to_instruction(ProtoType* l);
   Instruction* dfg2instructions(AM* g);
-  Instruction* vec_op_store(ProtoType* t); // allocates globals for vector ops
+
+  /// allocates globals for vector ops
+  Instruction* vec_op_store(ProtoType* t);
 };
 
 /*****************************************************************************
  *  TOP-LEVEL COMPILER                                                       *
  *****************************************************************************/
 
-// Interface class (shared w. PaleoCompiler)
+/**
+ * Interface class (shared w. PaleoCompiler)
+ */
 class Compiler : public EventConsumer {
  public:
   Compiler(Args* args) {}
@@ -160,7 +179,9 @@ class Compiler : public EventConsumer {
   virtual void set_platform(string path) = 0;
 };
 
-// NeoCompiler implementation
+/**  
+ * NeoCompiler implementation
+ */
 class NeoCompiler : public Compiler {
  public:
   Path proto_path;
@@ -168,10 +189,12 @@ class NeoCompiler : public Compiler {
     is_dump_raw_localized, is_dump_localized; 
   int is_early_terminate;
   bool paranoid; int verbosity;
+  string infile;
   ProtoInterpreter* interpreter;
   DFGTransformer *analyzer, *localizer;
   CodeEmitter* emitter;
-  const char* last_script; // the last piece of text fed to start the compiler
+  /// the last piece of text fed to start the compiler
+  const char* last_script;
 
  public:
   NeoCompiler(Args* args);
@@ -182,7 +205,7 @@ class NeoCompiler : public Compiler {
   void set_platform(string path);
 };
 
-// list of internal tests:
+/// list of internal tests:
 void type_system_tests();
 
 #endif // __NEOCOMPILER__

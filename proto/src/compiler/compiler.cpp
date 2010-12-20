@@ -80,6 +80,7 @@ NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
   if(args->extract_switch("--no-analysis")) is_early_terminate = 3;
   last_script="";
   paranoid = args->extract_switch("--paranoid");
+  infile = (args->extract_switch("--infile"))?args->pop_next():"";
   verbosity = (args->extract_switch("--verbosity")?args->pop_int():0);
 
   // Set up paths

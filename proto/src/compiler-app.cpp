@@ -21,7 +21,14 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 void run_test_suite(); // testing kludge
 
 int main (int argc, char *argv[]) {
-  post("PROTO v%d (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n", PROTO_VERSION, CORE_CMD_OPS);
+  post("PROTO v%d%s (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
+		  PROTO_VERSION,
+#if __USE_NEOCOMPILER__
+		  "[neo]",
+#else
+		  "[paleo]",
+#endif
+		  CORE_CMD_OPS);
   Args *args = new Args(argc,argv); // set up the arg parser
   plugins.ensure_initialized(args);
   
@@ -39,7 +46,18 @@ int main (int argc, char *argv[]) {
   int len;
   if(args->argc==1) {
 #if __USE_NEOCOMPILER__
-    uerror("Not provided anything to compiler");
+  if(neocompiler->infile.length()>0) {
+	ifstream fileStream(neocompiler->infile.c_str());
+	if(fileStream.is_open()) {
+	  string line;
+      getline(fileStream, line);
+	  uint8_t* s = neocompiler->compile(line.c_str(),&len);
+	} else {
+      uerror("Could not open input file");
+	}
+  } else {
+	uerror("Not provided anything to compiler");
+  }
 #else
     uint8_t* s = compiler->compile("(app)",&len);
 #endif

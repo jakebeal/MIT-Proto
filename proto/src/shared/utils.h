@@ -248,9 +248,9 @@ double get_real_secs ();
 
 // system-dependent directory separator
 #ifdef __WIN32__
-#define DIRECTORY_SEP '/'
-#else
 #define DIRECTORY_SEP '\\'
+#else
+#define DIRECTORY_SEP '/'
 #endif
 
 
