@@ -1,5 +1,4 @@
-/* Proto optimizer
-Copyright (C) 2009, Jacob Beal, and contributors 
+/* Proto optimizer Copyright (C) 2009, Jacob Beal, and contributors 
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -27,8 +26,11 @@ class Concreteness {
     } else if(t->isA("ProtoSymbol")) { return true;
     } else if(t->isA("ProtoTuple")) { 
       ProtoTuple* tp = T_TYPE(t);
-      for(int i=0;i<tp->types.size();i++)
-        if(!acceptable(tp->types[i])) return false;
+      for(int i=0;i<tp->types.size();i++) {
+        if(!acceptable(tp->types[i])) {
+          return false;
+        }
+      }
       return true;
     } else if(t->isA("ProtoLambda")) {
       return L_VAL(t)==NULL || acceptable(L_VAL(t));
@@ -88,7 +90,7 @@ class TypeConstraintApplicator {
       if(n<oi->inputs.size()) return oi->inputs[n]->range;
       ierror("Nth arg calls not handling non-asserted optional arguments yet");
     } else if(n==oi->op->signature->n_fixed() && oi->op->signature->rest_input) {// rest
-      ProtoTuple *t = new ProtoTuple();
+      ProtoTuple *t = new ProtoTuple(true);
       for(int i=n;i<oi->inputs.size();i++) t->add(oi->inputs[i]->range);
       return t;
     }
@@ -139,7 +141,11 @@ class TypeConstraintApplicator {
       // "outputs": the type of a function's output
       //if(li.on_token("output"))
       // "tupof": tuple w. a set of types as arguments
-      //if(li.on_token("tupof"))
+      if(li.on_token("tupof")) {
+         ProtoType* reftype = get_ref(oi,li.get_next("type"));
+         ProtoTuple* copy = new ProtoTuple(dynamic_cast<ProtoTuple*>(reftype));
+         return copy;
+      }
       // "unlit": generalize away literal values
       //if(li.on_token("unlit"))
     }
@@ -157,6 +163,7 @@ class TypeConstraintApplicator {
   }
   
   bool assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value) {
+    V3<<"   assert_nth_arg: oi="<<ce2s(oi)<<", n="<<n<<", val="<<ce2s(value)<<endl;
     if(n < oi->op->signature->required_inputs.size()) { // ordinary argument
       if(n<oi->inputs.size())
         return maybe_change_type(&oi->inputs[n]->range,value);
@@ -165,7 +172,7 @@ class TypeConstraintApplicator {
         return maybe_change_type(&oi->inputs[n]->range,value);
       ierror("Nth arg calls not handling non-asserted optional arguments yet");
     } else if(n==oi->op->signature->n_fixed() && oi->op->signature->rest_input) {// rest
-      ierror("Handling of assertion on rest arguments no implemented yet");
+      return maybe_change_type(&oi->output->range,value);
     }
     ierror("Failed assertion on argument "+i2s(n)+" of "+ce2s(oi));
   }
@@ -182,6 +189,12 @@ class TypeConstraintApplicator {
     if(!value->isA("ProtoField"))
       ierror("'fieldof' assertion on non-field type: "+ref->to_str());
     return assert_ref(oi,ref,F_VAL(value));
+  }
+  
+  bool assert_on_tup(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+    if(!value->isA("ProtoTuple"))
+      ierror("'tupof' assertion on non-field type: "+ref->to_str());
+    return assert_ref(oi,ref,T_TYPE(value));
   }
   
   // Core assert dispatch function
@@ -217,7 +230,8 @@ class TypeConstraintApplicator {
       // "outputs": the type of a function's output
       //if(li.on_token("output"))
       // "tupof": tuple w. a set of types as arguments
-      //if(li.on_token("tupof"))
+      if(li.on_token("tupof"))
+        return assert_on_tup(oi,li.get_next("type"),value);
       // "unlit": generalize away literal values
       //if(li.on_token("unlit"))
     }
@@ -235,11 +249,13 @@ public:
       SExpr *aref = li.get_next("type reference");
       SExpr *bref=li.get_next("type reference");
       ProtoType *a = get_ref(oi,aref), *b = get_ref(oi,bref);
+      V3<<"  apply_constraint: a="<<ce2s(a)<<", b="<<ce2s(b) << endl;
       // first, take the GCS
       ProtoType *joint = ProtoType::gcs(a,b);
       if(joint==NULL) { // if GCS shows conflict, attempt to correct
         ierror("Equality constraint failed, but don't know how to handle yet.");
       } else { // if GCS succeeded, assert onto referred locations
+        V3<<"  apply_constraint: joint="<<ce2s(joint)<< endl;
         return assert_ref(oi,aref,joint) | assert_ref(oi,bref,joint);
       }
       // if it's OK, then push back:  maybe_set_ref(oi,constraint[i]);

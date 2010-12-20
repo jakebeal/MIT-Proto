@@ -460,7 +460,14 @@ void process_app_args(Args *args) {
 }
 
 int main (int argc, char *argv[]) {
-  post("PROTO v%d (%d OPS)\n (Developed by MIT Space-Time Programming Group 2005-2008)\n", PROTO_VERSION, CORE_CMD_OPS);
+  post("PROTO v%d%s (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
+      PROTO_VERSION,
+#if __USE_NEOCOMPILER__
+      "[neo]",
+#else
+      "[paleo]",
+#endif
+      CORE_CMD_OPS);
   Args *args = new Args(argc,argv); // set up the arg parser
 
   // initialize randomness  [JAH: fmod added for OS X bug]
