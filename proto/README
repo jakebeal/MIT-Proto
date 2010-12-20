@@ -66,6 +66,8 @@ Proto depends on the following applications and libraries:
 * Open Dynamics Engine (ODE) v0.8  [optional]
 * Xmu (X miscellaneous utility routines - usually already installed)
 * Xi (X input Extension library - usually already installed)
+* Doxygen (optional) for API documentation building
+* Graphviz (optional) for graph generation in API documentation
 
 If you have all of these installed, you should just be able to run
 'make' in this directory and have the whole thing build correctly.
