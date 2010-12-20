@@ -156,7 +156,7 @@ void Args::undefault(BOOL *target,const char* pos,const char* neg) {
 void Args::save_ptr() { save_ptrs.push_back(argp); }
 void Args::restore_ptr() { argp = save_ptrs.back(); save_ptrs.pop_back(); }
 
-// read args from optional .[appname] and ~/.[appname] files
+/// read args from optional .[appname] and ~/.[appname] files
 void Args::add_defaults() {
   char* dirstrip = strrchr(argv[0],DIRECTORY_SEP);
   string appname = dirstrip ? &(dirstrip[1]) : argv[0];

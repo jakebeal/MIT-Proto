@@ -29,10 +29,10 @@ extern ostream *cpout, *cperr, *cplog; // Compiler output streams
 /****** OUTPUT HANDLING ******/
 struct CompilationElement;
 
-// Report a compiler internal error (i.e. not caused by user)
+/// Report a compiler internal error (i.e. not caused by user)
 void ierror(string msg);
 void ierror(CompilationElement *where, string msg);
-// pretty-print indenting
+/// pretty-print indenting
 void pp_push(int n=1);
 void pp_pop();
 string pp_indent();
@@ -44,18 +44,24 @@ string V2S(vector<CompilationElement*> *v);
 #define v2s(x) (V2S((vector<CompilationElement*>*)(x)))
 #define ce2s(t) ((t)->to_str())
 
-// ERROR REPORTING & VERBOSITY
-// Using globals is a little bit ugly, but we're not planning to have
-// the compiler be re-entrant any time soon, so it's fairly safe to assume
-// we'll always have precisely one compiler running.
-extern string compile_phase; // name of current phase, for error reporting
-extern bool compiler_error; // when true, terminate & exit gracefully
-extern bool compiler_test_mode; // when true, errors exit w. status 0
+/********** ERROR REPORTING & VERBOSITY **********/
+/*
+ * Using globals is a little bit ugly, but we're not planning to have
+ * the compiler be re-entrant any time soon, so it's fairly safe to assume
+ * we'll always have precisely one compiler running.
+ */
+/// name of current phase, for error reporting
+extern string compile_phase;
+/// when true, terminate & exit gracefully
+extern bool compiler_error;
+/// when true, errors exit w. status 0
+extern bool compiler_test_mode;
 void compile_error(string msg);
 void compile_error(CompilationElement *where,string msg);
 void compile_warn(string msg);
 void compile_warn(CompilationElement *where,string msg);
-void terminate_on_error(); // clean-up & kill application
+/// clean-up & kill application
+void terminate_on_error();
 
 // Standard levels for verbosity:
 #define V1 if(verbosity>=1) *cpout // Major stages
@@ -134,7 +140,9 @@ struct Error : Attribute { reflection_sub(Error,Attribute);
   void print(ostream *out=cpout) { *out << msg; }
 };
 
-// an boolean attribute that defaults to false, but is true when marked
+/**
+ * A boolean attribute that defaults to false, but is true when marked
+ */
 struct MarkerAttribute : Attribute { reflection_sub(MarkerAttribute,Attribute);
   bool inherit;
   MarkerAttribute(bool inherit) { this->inherit=inherit; }
@@ -203,7 +211,9 @@ struct CompilationElement_cmp {
 #define CEset(x) set<x,CompilationElement_cmp>
 #define CEmap(x,y) map<x,y,CompilationElement_cmp>
 
-// used for some indices
+/**
+ * used for some indices
+ */
 struct CompilationElementIntPair_cmp {
   bool operator()(const pair<CompilationElement*,int> &ce1, 
                   const pair<CompilationElement*,int> &ce2) const {

@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	p2b 
 
 docs:
-	$(MAKE) -C doc
+	$(MAKE) -C doc clean-local 
+	$(MAKE) -C doc 
