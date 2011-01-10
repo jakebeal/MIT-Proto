@@ -143,6 +143,7 @@ struct ProtoVector : public ProtoTuple, public ProtoNumber {
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t) { return ProtoTuple::gcs(t); }
 };
+#define V_TYPE(x) (dynamic_cast<ProtoVector*>(x))
 
 struct ProtoLambda: public ProtoLocal {
   reflection_sub(ProtoLambda,ProtoLocal);
@@ -197,13 +198,16 @@ struct Signature : public CompilationElement { reflection_sub(Signature,CE);
   ProtoType* rest_input;
   
   Signature(CE* src, ProtoType* output=NULL);
-  Signature(Signature* src); // copy constructor
+  /// copy constructor
+  Signature(Signature* src);
   virtual void print(ostream* out=0);
   
-  bool legal_length(int n); // is n a permissible number of args?
+  /// true if n a permissible number of args
+  bool legal_length(int n);
   ProtoType* nth_type(int n);
   int n_fixed() { return required_inputs.size()+optional_inputs.size(); }
-  string num_arg_str(); // English description of number of allowed types
+  /// English description of number of allowed types
+  string num_arg_str();
 };
 
 // OPERATORS are functions mapping from fields to fields
@@ -363,6 +367,7 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   
   DataflowGraph() { output = NULL; } // base state
   void print(ostream* out=0);
+  void printdot(ostream* out=0);
   
   // DFG manipulation
   void relocate_input(OI* src, int src_loc, OI* dst,int dst_loc);

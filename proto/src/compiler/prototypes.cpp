@@ -21,11 +21,32 @@ bool ProtoTuple::supertype_of(ProtoType* sub) {
   int ll = types.size(), sl = tsub->types.size(), len = MAX(ll,sl);
   for(int i=0;i<len;i++) {
     ProtoType *mine,*subs;
-    if(i>=ll) { if(bounded) return false; else mine = types[ll-1]; }
-    else mine = types[i];
-    if(i>=sl) { if(tsub->bounded) return (!bounded && i==len-1); else subs = tsub->types[sl-1]; }
-    else subs = tsub->types[i];
-    if(!mine->supertype_of(subs)) return false;
+    if(i>=ll) { 
+      if(bounded) 
+        return false; 
+      else {
+        if(ll>1)
+          mine = types[ll-1]; //rest elem
+        else
+          return true;
+      }
+    } else {
+      mine = types[i];
+    }
+    if(i>=sl) { 
+      if(tsub->bounded) {
+        return (!bounded); 
+      } else {
+        if(sl>1)
+          subs = tsub->types[sl-1]; 
+        else
+          return false;
+      }
+    } else {
+      subs = tsub->types[i];
+    }
+    if(!mine->supertype_of(subs)) 
+      return false;
   }
   return true;
 }

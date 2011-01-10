@@ -194,11 +194,11 @@ test: $(P2B) -CDall "(+ 3 4)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 3>
 is 5 _   Delta: Alfa --> <Scalar 4>
 is 6 _ Operator Instances:
-is 7 _   Charlie<Scalar 3>, Delta<Scalar 4> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 7 _   Charlie<Scalar 3>, Delta<Scalar 4> --> [+] --> Bravo<Number> OUTPUT
 is 8 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 is 9 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 is 10 _ Amorphous Mediums:
@@ -222,23 +222,23 @@ test: $(P2B) -CDall "(+ 1 (+ (+ 2 3) (+ 4)) 5)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 1>
-is 5 _   Delta: Alfa --> <D:(unlit (lcs arg0))>
-is 6 _   Echo: Alfa --> <D:(unlit (lcs arg0))>
+is 5 _   Delta: Alfa --> <Number>
+is 6 _   Echo: Alfa --> <Number>
 is 7 _   Foxtrot: Alfa --> <Scalar 2>
 is 8 _   Golf: Alfa --> <Scalar 3>
-is 9 _   Hotel: Alfa --> <D:(unlit (lcs arg0))>
+is 9 _   Hotel: Alfa --> <Number>
 is 10 _   India: Alfa --> <Scalar 4>
 is 11 _   Juliet: Alfa --> <Scalar 5>
 is 12 _ Operator Instances:
-is 13 _   Charlie<Scalar 1>, Delta<D:(unlit (lcs arg0))>, Juliet<Scalar 5> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 13 _   Charlie<Scalar 1>, Delta<Number>, Juliet<Scalar 5> --> [+] --> Bravo<Number> OUTPUT
 is 14 _   [Lit: <Scalar 1>] --> Charlie<Scalar 1>
-is 15 _   Echo<D:(unlit (lcs arg0))>, Hotel<D:(unlit (lcs arg0))> --> [+] --> Delta<D:(unlit (lcs arg0))>
-is 16 _   Foxtrot<Scalar 2>, Golf<Scalar 3> --> [+] --> Echo<D:(unlit (lcs arg0))>
+is 15 _   Echo<Number>, Hotel<Number> --> [+] --> Delta<Number>
+is 16 _   Foxtrot<Scalar 2>, Golf<Scalar 3> --> [+] --> Echo<Number>
 is 17 _   [Lit: <Scalar 2>] --> Foxtrot<Scalar 2>
 is 18 _   [Lit: <Scalar 3>] --> Golf<Scalar 3>
-is 19 _   India<Scalar 4> --> [+] --> Hotel<D:(unlit (lcs arg0))>
+is 19 _   India<Scalar 4> --> [+] --> Hotel<Number>
 is 20 _   [Lit: <Scalar 4>] --> India<Scalar 4>
 is 21 _   [Lit: <Scalar 5>] --> Juliet<Scalar 5>
 is 22 _ Amorphous Mediums:
@@ -254,11 +254,11 @@ is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar 3>
 is 4 _   Charlie: Alfa --> <Scalar 4>
-is 5 _   Delta: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 5 _   Delta: Alfa --> <Number> OUTPUT
 is 6 _ Operator Instances:
 is 7 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
 is 8 _   [Lit: <Scalar 4>] --> Charlie<Scalar 4>
-is 9 _   Bravo<Scalar 3>, Charlie<Scalar 4> --> [+] --> Delta<D:(unlit (lcs arg0))> OUTPUT
+is 9 _   Bravo<Scalar 3>, Charlie<Scalar 4> --> [+] --> Delta<Number> OUTPUT
 
 test: $(P2B) -CDall "(let () 2 3 4)"
 is 0 _ Amorphous Mediums:
@@ -297,11 +297,11 @@ is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar 5>
 is 4 _   Charlie: Alfa --> <Scalar 2>
-is 5 _   Delta: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 5 _   Delta: Alfa --> <Number> OUTPUT
 is 6 _ Operator Instances:
 is 7 _   [Lit: <Scalar 5>] --> Bravo<Scalar 5>
 is 8 _   [Lit: <Scalar 2>] --> Charlie<Scalar 2>
-is 9 _   Bravo<Scalar 5>, Bravo<Scalar 5>, Charlie<Scalar 2> --> [+] --> Delta<D:(unlit (lcs arg0))> OUTPUT
+is 9 _   Bravo<Scalar 5>, Bravo<Scalar 5>, Charlie<Scalar 2> --> [+] --> Delta<Number> OUTPUT
 
 test: $(P2B) -CDall "(restrict 1 (+ 3 4))"
 is 0 _ Amorphous Mediums:
@@ -309,12 +309,12 @@ is 1 _   [Medium: Alfa = root]
 is 2 _   [Medium: Bravo = Alfa | Charlie]
 is 3 _ Fields:
 is 4 _   Charlie: Alfa --> <Scalar 1>
-is 5 _   Delta: Bravo --> <D:(unlit (lcs arg0))> OUTPUT
+is 5 _   Delta: Bravo --> <Number> OUTPUT
 is 6 _   Echo: Bravo --> <Scalar 3>
 is 7 _   Foxtrot: Bravo --> <Scalar 4>
 is 8 _ Operator Instances:
 is 9 _   [Lit: <Scalar 1>] --> Charlie<Scalar 1>
-is 10 _   Echo<Scalar 3>, Foxtrot<Scalar 4> --> [+] --> Delta<D:(unlit (lcs arg0))> OUTPUT
+is 10 _   Echo<Scalar 3>, Foxtrot<Scalar 4> --> [+] --> Delta<Number> OUTPUT
 is 11 _   [Lit: <Scalar 3>] --> Echo<Scalar 3>
 is 12 _   [Lit: <Scalar 4>] --> Foxtrot<Scalar 4>
 
@@ -325,22 +325,22 @@ is 2 _   [Medium: Bravo = Alfa | Charlie]
 is 3 _ Fields:
 is 4 _   Delta: Alfa --> <Scalar 3>
 is 5 _   Charlie: Alfa --> <Scalar 0>
-is 6 _   Echo: Bravo --> <D:arg1> OUTPUT
+is 6 _   Echo: Bravo --> <Any> OUTPUT
 is 7 _ Operator Instances:
 is 8 _   [Lit: <Scalar 3>] --> Delta<Scalar 3>
 is 9 _   [Lit: <Scalar 0>] --> Charlie<Scalar 0>
-is 10 _   Charlie<Scalar 0>, Delta<Scalar 3> --> [restrict] --> Echo<D:arg1> OUTPUT
+is 10 _   Charlie<Scalar 0>, Delta<Scalar 3> --> [restrict] --> Echo<Any> OUTPUT
 
 test: $(P2B) -CDall "(def x 3) (+ x 4)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar 3>
-is 4 _   Charlie: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 4 _   Charlie: Alfa --> <Number> OUTPUT
 is 5 _   Delta: Alfa --> <Scalar 4>
 is 6 _ Operator Instances:
 is 7 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
-is 8 _   Bravo<Scalar 3>, Delta<Scalar 4> --> [+] --> Charlie<D:(unlit (lcs arg0))> OUTPUT
+is 8 _   Bravo<Scalar 3>, Delta<Scalar 4> --> [+] --> Charlie<Number> OUTPUT
 is 9 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 
 // tests lambda types & simplification of apply
@@ -348,17 +348,17 @@ test: $(P2B) -CDall "(apply * (apply + 3 4) (mid))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(output arg0)> OUTPUT
+is 3 _   Bravo: Alfa --> <ANY> OUTPUT
 is 4 _   Charlie: Alfa --> <Lambda [*]>
-is 5 _   Delta: Alfa --> <D:(output arg0)>
+is 5 _   Delta: Alfa --> <ANY>
 is 6 _   Echo: Alfa --> <Lambda [+]>
 is 7 _   Foxtrot: Alfa --> <Scalar 3>
 is 8 _   Golf: Alfa --> <Scalar 4>
 is 9 _   Hotel: Alfa --> <Scalar>
 is 10 _ Operator Instances:
-is 11 _   Charlie<Lambda [*]>, Delta<D:(output arg0)>, Hotel<Scalar> --> [apply] --> Bravo<D:(output arg0)> OUTPUT
+is 11 _   Charlie<Lambda [*]>, Delta<ANY>, Hotel<Scalar> --> [apply] --> Bravo<ANY> OUTPUT
 is 12 _   [Lit: <Lambda [*]>] --> Charlie<Lambda [*]>
-is 13 _   Echo<Lambda [+]>, Foxtrot<Scalar 3>, Golf<Scalar 4> --> [apply] --> Delta<D:(output arg0)>
+is 13 _   Echo<Lambda [+]>, Foxtrot<Scalar 3>, Golf<Scalar 4> --> [apply] --> Delta<ANY>
 is 14 _   [Lit: <Lambda [+]>] --> Echo<Lambda [+]>
 is 15 _   [Lit: <Scalar 3>] --> Foxtrot<Scalar 3>
 is 16 _   [Lit: <Scalar 4>] --> Golf<Scalar 4>
@@ -379,11 +379,11 @@ is 0 _ Function: lambda~4 [Signature:  --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
-is 4 _     Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 4 _     Bravo: Alfa --> <Number> OUTPUT
 is 5 _     Charlie: Alfa --> <Scalar 2>
 is 6 _     Delta: Alfa --> <Scalar 3>
 is 7 _   Operator Instances:
-is 8 _     Charlie<Scalar 2>, Delta<Scalar 3> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 8 _     Charlie<Scalar 2>, Delta<Scalar 3> --> [+] --> Bravo<Number> OUTPUT
 is 9 _     [Lit: <Scalar 2>] --> Charlie<Scalar 2>
 is 10 _     [Lit: <Scalar 3>] --> Delta<Scalar 3>
 is 11 _ Amorphous Mediums:
@@ -399,10 +399,10 @@ is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
 is 4 _     Bravo: Alfa --> <Scalar>
-is 5 _     Charlie: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 5 _     Charlie: Alfa --> <Number> OUTPUT
 is 6 _   Operator Instances:
 is 7 _     [Parameter 0: x] --> Bravo<Scalar>
-is 8 _     Bravo<Scalar>, Bravo<Scalar> --> [+] --> Charlie<D:(unlit (lcs arg0))> OUTPUT
+is 8 _     Bravo<Scalar>, Bravo<Scalar> --> [+] --> Charlie<Number> OUTPUT
 is 9 _ Amorphous Mediums:
 is 10 _   [Medium: Delta = root]
 is 11 _ Fields:
@@ -428,21 +428,21 @@ is 2 _     [Medium: Alfa = root]
 is 3 _     [Medium: Bravo = Alfa | Charlie]
 is 4 _   Fields:
 is 5 _     Delta: Alfa --> <Any>
-is 6 _     Echo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 6 _     Echo: Alfa --> <Number> OUTPUT
 is 7 _     Charlie: Alfa --> <Boolean>
 is 8 _     Foxtrot: Alfa --> <Scalar 0>
 is 9 _     Golf: Bravo --> <D:return>
-is 10 _     Hotel: Bravo --> <D:(unlit (lcs arg0))>
-is 11 _     India: Bravo --> <D:arg1>
+is 10 _     Hotel: Bravo --> <Number>
+is 11 _     India: Bravo --> <Any>
 is 12 _     Juliet: Bravo --> <Scalar -1>
 is 13 _   Operator Instances:
 is 14 _     [Parameter 0: y] --> Delta<Any>
-is 15 _     Delta<Any>, Golf<D:return> --> [+] --> Echo<D:(unlit (lcs arg0))> OUTPUT
+is 15 _     Delta<Any>, Golf<D:return> --> [+] --> Echo<Number> OUTPUT
 is 16 _     Delta<Any>, Foxtrot<Scalar 0> --> [>] --> Charlie<Boolean>
 is 17 _     [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
-is 18 _     Hotel<D:(unlit (lcs arg0))> --> [Fun: fooloop] --> Golf<D:return>
-is 19 _     India<D:arg1>, Juliet<Scalar -1> --> [+] --> Hotel<D:(unlit (lcs arg0))>
-is 20 _     Charlie<Boolean>, Delta<Any> --> [restrict] --> India<D:arg1>
+is 18 _     Hotel<Number> --> [Fun: fooloop] --> Golf<D:return>
+is 19 _     India<Any>, Juliet<Scalar -1> --> [+] --> Hotel<Number>
+is 20 _     Charlie<Boolean>, Delta<Any> --> [restrict] --> India<Any>
 is 21 _     [Lit: <Scalar -1>] --> Juliet<Scalar -1>
 is 22 _ Amorphous Mediums:
 is 23 _   [Medium: Kilo = root]
@@ -500,14 +500,14 @@ test: $(P2B) -CDall "(+ NaN -Inf inf pi e)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar nan>
 is 5 _   Delta: Alfa --> <Scalar -inf>
 is 6 _   Echo: Alfa --> <Scalar inf>
 is 7 _   Foxtrot: Alfa --> <Scalar 3.14159>
 is 8 _   Golf: Alfa --> <Scalar 2.71828>
 is 9 _ Operator Instances:
-is 10 _   Charlie<Scalar nan>, Delta<Scalar -inf>, Echo<Scalar inf>, Foxtrot<Scalar 3.14159>, Golf<Scalar 2.71828> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 10 _   Charlie<Scalar nan>, Delta<Scalar -inf>, Echo<Scalar inf>, Foxtrot<Scalar 3.14159>, Golf<Scalar 2.71828> --> [+] --> Bravo<Number> OUTPUT
 is 11 _   [Lit: <Scalar nan>] --> Charlie<Scalar nan>
 is 12 _   [Lit: <Scalar -inf>] --> Delta<Scalar -inf>
 is 13 _   [Lit: <Scalar inf>] --> Echo<Scalar inf>
@@ -527,12 +527,12 @@ is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
 is 4 _     Bravo: Alfa --> <Any>
 is 5 _     Charlie: Alfa --> <Any>
-is 6 _     Delta: Alfa --> <D:(lcs arg1 arg2)> OUTPUT
+is 6 _     Delta: Alfa --> <Any> OUTPUT
 is 7 _     Echo: Alfa --> <Boolean>
 is 8 _   Operator Instances:
 is 9 _     [Parameter 0: x] --> Bravo<Any>
 is 10 _     [Parameter 1: y] --> Charlie<Any>
-is 11 _     Bravo<Any>, Echo<Boolean>, Charlie<Any> --> [mux] --> Delta<D:(lcs arg1 arg2)> OUTPUT
+is 11 _     Bravo<Any>, Echo<Boolean>, Charlie<Any> --> [mux] --> Delta<Any> OUTPUT
 is 12 _     Charlie<Any> --> [not] --> Echo<Boolean>
 is 13 _ Amorphous Mediums:
 is 14 _   [Medium: Foxtrot = root]
@@ -580,25 +580,25 @@ is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar 3>
-is 4 _   Charlie: Alfa --> <D:(unlit (lcs arg0))>
+is 4 _   Charlie: Alfa --> <Number>
 is 5 _   Delta: Alfa --> <Scalar 1>
-is 6 _   Echo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 6 _   Echo: Alfa --> <Number> OUTPUT
 is 7 _ Operator Instances:
 is 8 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
-is 9 _   Bravo<Scalar 3>, Delta<Scalar 1> --> [+] --> Charlie<D:(unlit (lcs arg0))>
+is 9 _   Bravo<Scalar 3>, Delta<Scalar 1> --> [+] --> Charlie<Number>
 is 10 _   [Lit: <Scalar 1>] --> Delta<Scalar 1>
-is 11 _   Bravo<Scalar 3>, Charlie<D:(unlit (lcs arg0))> --> [+] --> Echo<D:(unlit (lcs arg0))> OUTPUT
+is 11 _   Bravo<Scalar 3>, Charlie<Number> --> [+] --> Echo<Number> OUTPUT
 
 test: $(P2B) -CDall "(macro foo (x y) (+ ,x ,y ,x)) (foo 3 4)" 
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 3>
 is 5 _   Delta: Alfa --> <Scalar 4>
 is 6 _   Echo: Alfa --> <Scalar 3>
 is 7 _ Operator Instances:
-is 8 _   Charlie<Scalar 3>, Delta<Scalar 4>, Echo<Scalar 3> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 8 _   Charlie<Scalar 3>, Delta<Scalar 4>, Echo<Scalar 3> --> [+] --> Bravo<Number> OUTPUT
 is 9 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 is 10 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 is 11 _   [Lit: <Scalar 3>] --> Echo<Scalar 3>
@@ -613,12 +613,12 @@ test: $(P2B) -CDall "(macro foo (x) (+ 2 ,@x)) (foo (4 5))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 2>
 is 5 _   Delta: Alfa --> <Scalar 4>
 is 6 _   Echo: Alfa --> <Scalar 5>
 is 7 _ Operator Instances:
-is 8 _   Charlie<Scalar 2>, Delta<Scalar 4>, Echo<Scalar 5> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 8 _   Charlie<Scalar 2>, Delta<Scalar 4>, Echo<Scalar 5> --> [+] --> Bravo<Number> OUTPUT
 is 9 _   [Lit: <Scalar 2>] --> Charlie<Scalar 2>
 is 10 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 is 11 _   [Lit: <Scalar 5>] --> Echo<Scalar 5>
@@ -628,10 +628,10 @@ is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar 3>
-is 4 _   Charlie: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 4 _   Charlie: Alfa --> <Number> OUTPUT
 is 5 _ Operator Instances:
 is 6 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
-is 7 _   Bravo<Scalar 3>, Bravo<Scalar 3> --> [+] --> Charlie<D:(unlit (lcs arg0))> OUTPUT
+is 7 _   Bravo<Scalar 3>, Bravo<Scalar 3> --> [+] --> Charlie<Number> OUTPUT
 
 test: $(P2B) -CDall "(if 2 3 4)"
 is 0 _ Amorphous Mediums:
@@ -640,13 +640,13 @@ is 2 _   [Medium: Bravo = Alfa | Charlie]
 is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Scalar 2>
-is 6 _   Foxtrot: Alfa --> <D:(lcs arg1 arg2)> OUTPUT
+is 6 _   Foxtrot: Alfa --> <Any> OUTPUT
 is 7 _   Golf: Bravo --> <Scalar 3>
 is 8 _   Echo: Alfa --> <Boolean>
 is 9 _   Hotel: Delta --> <Scalar 4>
 is 10 _ Operator Instances:
 is 11 _   [Lit: <Scalar 2>] --> Charlie<Scalar 2>
-is 12 _   Charlie<Scalar 2>, Golf<Scalar 3>, Hotel<Scalar 4> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)> OUTPUT
+is 12 _   Charlie<Scalar 2>, Golf<Scalar 3>, Hotel<Scalar 4> --> [mux] --> Foxtrot<Any> OUTPUT
 is 13 _   [Lit: <Scalar 3>] --> Golf<Scalar 3>
 is 14 _   Charlie<Scalar 2> --> [not] --> Echo<Boolean>
 is 15 _   [Lit: <Scalar 4>] --> Hotel<Scalar 4>
@@ -655,12 +655,12 @@ test: $(P2B) -CDall "(macro addpi (x) (+ ,@x pi)) (macro dup2 (x) (addpi (,x ,x)
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 5>
 is 5 _   Delta: Alfa --> <Scalar 5>
 is 6 _   Echo: Alfa --> <Scalar 3.14159>
 is 7 _ Operator Instances:
-is 8 _   Charlie<Scalar 5>, Delta<Scalar 5>, Echo<Scalar 3.14159> --> [+] --> Bravo<D:(unlit (lcs arg0))> OUTPUT
+is 8 _   Charlie<Scalar 5>, Delta<Scalar 5>, Echo<Scalar 3.14159> --> [+] --> Bravo<Number> OUTPUT
 is 9 _   [Lit: <Scalar 5>] --> Charlie<Scalar 5>
 is 10 _   [Lit: <Scalar 5>] --> Delta<Scalar 5>
 is 11 _   [Lit: <Scalar 3.14159>] --> Echo<Scalar 3.14159>
@@ -671,11 +671,11 @@ is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
 is 4 _     Bravo: Alfa --> <Any>
-is 5 _     Charlie: Alfa --> <D:(unlit (lcs arg0))> OUTPUT
+is 5 _     Charlie: Alfa --> <Number> OUTPUT
 is 6 _     Delta: Alfa --> <Scalar 4>
 is 7 _   Operator Instances:
 is 8 _     [Parameter 0: y] --> Bravo<Any>
-is 9 _     Delta<Scalar 4>, Bravo<Any> --> [+] --> Charlie<D:(unlit (lcs arg0))> OUTPUT
+is 9 _     Delta<Scalar 4>, Bravo<Any> --> [+] --> Charlie<Number> OUTPUT
 is 10 _     [Lit: <Scalar 4>] --> Delta<Scalar 4>
 is 11 _ Amorphous Mediums:
 is 12 _   [Medium: Echo = root]
@@ -718,10 +718,10 @@ test: $(P2B) -CDall "(nbr 3)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(fieldof arg0)> OUTPUT
+is 3 _   Bravo: Alfa --> <Field <Any>> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 3>
 is 5 _ Operator Instances:
-is 6 _   Charlie<Scalar 3> --> [nbr] --> Bravo<D:(fieldof arg0)> OUTPUT
+is 6 _   Charlie<Scalar 3> --> [nbr] --> Bravo<Field <Any>> OUTPUT
 is 7 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 
 test: $(P2B) -CDall "(letfed ((x 3 (+ x y 1)) (y 2 (* x 3))) (- x y))"
@@ -732,31 +732,31 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <D:(lcs arg1 arg2)>
-is 8 _   Golf: Delta --> <D:arg0>
+is 7 _   Foxtrot: Alfa --> <Any>
+is 8 _   Golf: Delta --> <Local>
 is 9 _   Hotel: Bravo --> <Scalar 3>
-is 10 _   India: Alfa --> <D:(lcs arg1 arg2)>
-is 11 _   Juliet: Delta --> <D:arg0>
+is 10 _   India: Alfa --> <Any>
+is 11 _   Juliet: Delta --> <Local>
 is 12 _   Kilo: Bravo --> <Scalar 2>
-is 13 _   Lima: Delta --> <D:(unlit (lcs arg0))>
+is 13 _   Lima: Delta --> <Number>
 is 14 _   Mike: Delta --> <Scalar 1>
-is 15 _   November: Delta --> <D:(unlit (last arg0))>
+is 15 _   November: Delta --> <Number>
 is 16 _   Oscar: Delta --> <Scalar 3>
-is 17 _   Papa: Alfa --> <D:(unlit (lcs arg0 arg1))> OUTPUT
+is 17 _   Papa: Alfa --> <Number> OUTPUT
 is 18 _ Operator Instances:
 is 19 _   [dchange] --> Charlie<Boolean>
 is 20 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 21 _   Charlie<Boolean>, Hotel<Scalar 3>, Lima<D:(unlit (lcs arg0))> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)>
-is 22 _   Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
+is 21 _   Charlie<Boolean>, Hotel<Scalar 3>, Lima<Number> --> [mux] --> Foxtrot<Any>
+is 22 _   Foxtrot<Any> --> [delay] --> Golf<Local>
 is 23 _   [Lit: <Scalar 3>] --> Hotel<Scalar 3>
-is 24 _   Charlie<Boolean>, Kilo<Scalar 2>, November<D:(unlit (last arg0))> --> [mux] --> India<D:(lcs arg1 arg2)>
-is 25 _   India<D:(lcs arg1 arg2)> --> [delay] --> Juliet<D:arg0>
+is 24 _   Charlie<Boolean>, Kilo<Scalar 2>, November<Number> --> [mux] --> India<Any>
+is 25 _   India<Any> --> [delay] --> Juliet<Local>
 is 26 _   [Lit: <Scalar 2>] --> Kilo<Scalar 2>
-is 27 _   Golf<D:arg0>, Juliet<D:arg0>, Mike<Scalar 1> --> [+] --> Lima<D:(unlit (lcs arg0))>
+is 27 _   Golf<Local>, Juliet<Local>, Mike<Scalar 1> --> [+] --> Lima<Number>
 is 28 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
-is 29 _   Golf<D:arg0>, Oscar<Scalar 3> --> [*] --> November<D:(unlit (last arg0))>
+is 29 _   Golf<Local>, Oscar<Scalar 3> --> [*] --> November<Number>
 is 30 _   [Lit: <Scalar 3>] --> Oscar<Scalar 3>
-is 31 _   Foxtrot<D:(lcs arg1 arg2)>, India<D:(lcs arg1 arg2)> --> [-] --> Papa<D:(unlit (lcs arg0 arg1))> OUTPUT
+is 31 _   Foxtrot<Any>, India<Any> --> [-] --> Papa<Number> OUTPUT
 
 test: $(P2B) -CDall "(rep t 0 (+ t (dt)))"
 is 0 _ Amorphous Mediums:
@@ -766,18 +766,18 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <D:(lcs arg1 arg2)> OUTPUT
-is 8 _   Golf: Delta --> <D:arg0>
+is 7 _   Foxtrot: Alfa --> <Any> OUTPUT
+is 8 _   Golf: Delta --> <Local>
 is 9 _   Hotel: Bravo --> <Scalar 0>
-is 10 _   India: Delta --> <D:(unlit (lcs arg0))>
+is 10 _   India: Delta --> <Number>
 is 11 _   Juliet: Delta --> <Scalar>
 is 12 _ Operator Instances:
 is 13 _   [dchange] --> Charlie<Boolean>
 is 14 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 15 _   Charlie<Boolean>, Hotel<Scalar 0>, India<D:(unlit (lcs arg0))> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)> OUTPUT
-is 16 _   Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
+is 15 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Foxtrot<Any> OUTPUT
+is 16 _   Foxtrot<Any> --> [delay] --> Golf<Local>
 is 17 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 18 _   Golf<D:arg0>, Juliet<Scalar> --> [+] --> India<D:(unlit (lcs arg0))>
+is 18 _   Golf<Local>, Juliet<Scalar> --> [+] --> India<Number>
 is 19 _   [dt] --> Juliet<Scalar>
 is 20 _ Amorphous Mediums:
 is 21 _   [Medium: Alfa = root]
@@ -805,13 +805,13 @@ is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <D:(ft arg0)> OUTPUT
-is 4 _   Charlie: Alfa --> <D:(unlit (lcs arg0))>
+is 4 _   Charlie: Alfa --> <Number>
 is 5 _   Delta: Alfa --> <Scalar 1>
 is 6 _   Echo: Alfa --> <D:(fieldof arg0)>
 is 7 _   Foxtrot: Alfa --> <Scalar 2>
 is 8 _ Operator Instances:
-is 9 _   Charlie<D:(unlit (lcs arg0))> --> [min-hood] --> Bravo<D:(ft arg0)> OUTPUT
-is 10 _   Delta<Scalar 1>, Echo<D:(fieldof arg0)> --> [+] --> Charlie<D:(unlit (lcs arg0))>
+is 9 _   Charlie<Number> --> [min-hood] --> Bravo<D:(ft arg0)> OUTPUT
+is 10 _   Delta<Scalar 1>, Echo<D:(fieldof arg0)> --> [+] --> Charlie<Number>
 is 11 _   [Lit: <Scalar 1>] --> Delta<Scalar 1>
 is 12 _   Foxtrot<Scalar 2> --> [nbr] --> Echo<D:(fieldof arg0)>
 is 13 _   [Lit: <Scalar 2>] --> Foxtrot<Scalar 2>
@@ -835,15 +835,15 @@ is 7 _     Echo: Alfa --> <Boolean>
 is 8 _     Foxtrot: Alfa --> <D:(lcs arg1 arg2)> OUTPUT
 is 9 _     Golf: Delta --> <D:arg0>
 is 10 _     Hotel: Bravo --> <Scalar 0>
-is 11 _     India: Delta --> <D:(unlit (lcs arg0))>
+is 11 _     India: Delta --> <Number>
 is 12 _     Juliet: Delta --> <Scalar>
 is 13 _   Operator Instances:
 is 14 _     [dchange] --> Charlie<Boolean>
 is 15 _     Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 16 _     Charlie<Boolean>, Hotel<Scalar 0>, India<D:(unlit (lcs arg0))> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)> OUTPUT
+is 16 _     Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)> OUTPUT
 is 17 _     Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
 is 18 _     [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 19 _     Golf<D:arg0>, Juliet<Scalar> --> [+] --> India<D:(unlit (lcs arg0))>
+is 19 _     Golf<D:arg0>, Juliet<Scalar> --> [+] --> India<Number>
 is 20 _     [dt] --> Juliet<Scalar>
 is 21 _ Amorphous Mediums:
 is 22 _   [Medium: Kilo = root]
@@ -877,29 +877,29 @@ is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
-is 4 _   Charlie: Alfa --> <D:(tupof arg0)>
+is 4 _   Charlie: Alfa --> <Tuple<Any>...>
 is 5 _   Delta: Alfa --> <Scalar 3>
 is 6 _   Echo: Alfa --> <Scalar 4>
 is 7 _ Operator Instances:
-is 8 _   Charlie<D:(tupof arg0)> --> [len] --> Bravo<Scalar> OUTPUT
-is 9 _   Delta<Scalar 3>, Echo<Scalar 4> --> [tup] --> Charlie<D:(tupof arg0)>
-is 10 _   [Lit: <Scalar 3>] --> Delta<Scalar 3>
-is 11 _   [Lit: <Scalar 4>] --> Echo<Scalar 4>
+is 8 _   Charlie<Tuple<Any>...> --> [len] --> Bravo<Scalar> OUTPUT
+is 9 _   Delta<Scalar 3>, Echo<Scalar 4> --> [tup] --> Charlie<Tuple<Any>...>
+is 10 _  [Lit: <Scalar 3>] --> Delta<Scalar 3>
+is 11 _  [Lit: <Scalar 4>] --> Echo<Scalar 4>
 
 test: $(P2B) -CDall "(primitive tupzer ((tuple 3 any)) (vector &rest 4)) (tupzer (tup 3 (nbr 5)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Vector<Scalar 4>...> OUTPUT
-is 4 _   Charlie: Alfa --> <D:(tupof arg0)>
+is 4 _   Charlie: Alfa --> <Tuple<Any>...>
 is 5 _   Delta: Alfa --> <Scalar 3>
-is 6 _   Echo: Alfa --> <D:(fieldof arg0)>
+is 6 _   Echo: Alfa --> <Field <Any>>
 is 7 _   Foxtrot: Alfa --> <Scalar 5>
 is 8 _ Operator Instances:
-is 9 _   Charlie<D:(tupof arg0)> --> [tupzer] --> Bravo<Vector<Scalar 4>...> OUTPUT
-is 10 _   Delta<Scalar 3>, Echo<D:(fieldof arg0)> --> [tup] --> Charlie<D:(tupof arg0)>
+is 9 _   Charlie<Tuple<Any>...> --> [tupzer] --> Bravo<Vector<Scalar 4>...> OUTPUT
+is 10 _   Delta<Scalar 3>, Echo<Field <Any>> --> [tup] --> Charlie<Tuple<Any>...>
 is 11 _   [Lit: <Scalar 3>] --> Delta<Scalar 3>
-is 12 _   Foxtrot<Scalar 5> --> [nbr] --> Echo<D:(fieldof arg0)>
+is 12 _   Foxtrot<Scalar 5> --> [nbr] --> Echo<Field <Any>>
 is 13 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
 test: $(P2B) -CDall "(primitive tupzer ((tuple 3 any)) (vector &rest number)) (tupzer (tup 3 (nbr 5)))"
@@ -912,12 +912,12 @@ is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
-is 4 _   Charlie: Alfa --> <D:(output arg0)>
+is 4 _   Charlie: Alfa --> <Any>
 is 5 _   Delta: Alfa --> <Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>
 is 6 _   Echo: Alfa --> <Scalar 2>
 is 7 _ Operator Instances:
-is 8 _   Charlie<D:(output arg0)> --> [sin] --> Bravo<Scalar> OUTPUT
-is 9 _   Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>, Echo<Scalar 2> --> [apply] --> Charlie<D:(output arg0)>
+is 8 _   Charlie<Any> --> [sin] --> Bravo<Scalar> OUTPUT
+is 9 _   Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>, Echo<Scalar 2> --> [apply] --> Charlie<Any>
 is 10 _   [ltest] --> Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>
 is 11 _   [Lit: <Scalar 2>] --> Echo<Scalar 2>
 is 12 _ Stopping before analysis
@@ -930,45 +930,45 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <D:(lcs arg1 arg2)>
-is 8 _   Golf: Delta --> <D:arg0>
-is 9 _   Hotel: Alfa --> <D:(nth arg0 arg1)>
+is 7 _   Foxtrot: Alfa --> <Any>
+is 8 _   Golf: Delta --> <Local>
+is 9 _   Hotel: Alfa --> <Any>
 is 10 _   India: Alfa --> <Scalar 0>
-is 11 _   Juliet: Alfa --> <D:(nth arg0 arg1)>
+is 11 _   Juliet: Alfa --> <Any>
 is 12 _   Kilo: Alfa --> <Scalar 1>
-is 13 _   Lima: Delta --> <D:(nth arg0 arg1)>
+is 13 _   Lima: Delta --> <Any>
 is 14 _   Mike: Delta --> <Scalar 0>
-is 15 _   November: Delta --> <D:(nth arg0 arg1)>
+is 15 _   November: Delta --> <Any>
 is 16 _   Oscar: Delta --> <Scalar 1>
-is 17 _   Papa: Bravo --> <D:(tupof arg0)>
+is 17 _   Papa: Bravo --> <Tuple<Any>...>
 is 18 _   Quebec: Bravo --> <Scalar 7>
 is 19 _   Romeo: Bravo --> <Scalar 8>
-is 20 _   Sierra: Delta --> <D:(tupof arg0)>
-is 21 _   Tango: Delta --> <D:(unlit (lcs arg0))>
+is 20 _   Sierra: Delta --> <Tuple<Any>...>
+is 21 _   Tango: Delta --> <Number>
 is 22 _   Uniform: Delta --> <Scalar 1>
-is 23 _   Victor: Delta --> <D:(unlit (last arg0))>
+is 23 _   Victor: Delta --> <Number>
 is 24 _   Whiskey: Alfa --> <Scalar> OUTPUT
 is 25 _ Operator Instances:
 is 26 _   [dchange] --> Charlie<Boolean>
 is 27 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 28 _   Charlie<Boolean>, Papa<D:(tupof arg0)>, Sierra<D:(tupof arg0)> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)>
-is 29 _   Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
-is 30 _   Foxtrot<D:(lcs arg1 arg2)>, India<Scalar 0> --> [elt] --> Hotel<D:(nth arg0 arg1)>
+is 28 _   Charlie<Boolean>, Papa<Tuple<Any>...>, Sierra<Tuple<Any>...> --> [mux] --> Foxtrot<Any>
+is 29 _   Foxtrot<Any> --> [delay] --> Golf<Local>
+is 30 _   Foxtrot<Any>, India<Scalar 0> --> [elt] --> Hotel<Any>
 is 31 _   [Lit: <Scalar 0>] --> India<Scalar 0>
-is 32 _   Foxtrot<D:(lcs arg1 arg2)>, Kilo<Scalar 1> --> [elt] --> Juliet<D:(nth arg0 arg1)>
+is 32 _   Foxtrot<Any>, Kilo<Scalar 1> --> [elt] --> Juliet<Any>
 is 33 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
-is 34 _   Golf<D:arg0>, Mike<Scalar 0> --> [elt] --> Lima<D:(nth arg0 arg1)>
+is 34 _   Golf<Local>, Mike<Scalar 0> --> [elt] --> Lima<Any>
 is 35 _   [Lit: <Scalar 0>] --> Mike<Scalar 0>
-is 36 _   Golf<D:arg0>, Oscar<Scalar 1> --> [elt] --> November<D:(nth arg0 arg1)>
+is 36 _   Golf<Local>, Oscar<Scalar 1> --> [elt] --> November<Any>
 is 37 _   [Lit: <Scalar 1>] --> Oscar<Scalar 1>
-is 38 _   Quebec<Scalar 7>, Romeo<Scalar 8> --> [tup] --> Papa<D:(tupof arg0)>
+is 38 _   Quebec<Scalar 7>, Romeo<Scalar 8> --> [tup] --> Papa<Tuple<Any>...>
 is 39 _   [Lit: <Scalar 7>] --> Quebec<Scalar 7>
 is 40 _   [Lit: <Scalar 8>] --> Romeo<Scalar 8>
-is 41 _   Tango<D:(unlit (lcs arg0))>, Victor<D:(unlit (last arg0))> --> [tup] --> Sierra<D:(tupof arg0)>
-is 42 _   Lima<D:(nth arg0 arg1)>, Uniform<Scalar 1> --> [+] --> Tango<D:(unlit (lcs arg0))>
+is 41 _   Tango<Number>, Victor<Number> --> [tup] --> Sierra<Tuple<Any>...>
+is 42 _   Lima<Any>, Uniform<Scalar 1> --> [+] --> Tango<Number>
 is 43 _   [Lit: <Scalar 1>] --> Uniform<Scalar 1>
-is 44 _   November<D:(nth arg0 arg1)>, Lima<D:(nth arg0 arg1)> --> [*] --> Victor<D:(unlit (last arg0))>
-is 45 _   Hotel<D:(nth arg0 arg1)>, Juliet<D:(nth arg0 arg1)> --> [pow] --> Whiskey<Scalar> OUTPUT
+is 44 _   November<Any>, Lima<Any> --> [*] --> Victor<Number>
+is 45 _   Hotel<Any>, Juliet<Any> --> [pow] --> Whiskey<Scalar> OUTPUT
 
 
 test: $(P2B) -CDall "(letfed (((tup (tup a b) c) (tup (tup 2 3) 4) (tup (tup a c) b))) c)"
@@ -997,17 +997,17 @@ is 21 _   Tango: Delta --> <D:(nth arg0 arg1)>
 is 22 _   Uniform: Delta --> <Scalar 1>
 is 23 _   Victor: Delta --> <D:(nth arg0 arg1)>
 is 24 _   Whiskey: Delta --> <Scalar 1>
-is 25 _   Xray: Bravo --> <D:(tupof arg0)>
-is 26 _   Yankee: Bravo --> <D:(tupof arg0)>
+is 25 _   Xray: Bravo --> <Tuple<Any>...>
+is 26 _   Yankee: Bravo --> <Tuple<Any>...>
 is 27 _   Zulu: Bravo --> <Scalar 2>
 is 28 _   Plural: Bravo --> <Scalar 3>
 is 29 _   Beak: Bravo --> <Scalar 4>
-is 30 _   Pronunciation: Delta --> <D:(tupof arg0)>
-is 31 _   Sow: Delta --> <D:(tupof arg0)>
+is 30 _   Pronunciation: Delta --> <Tuple<Any>...>
+is 31 _   Sow: Delta --> <Tuple<Any>...>
 is 32 _ Operator Instances:
 is 33 _   [dchange] --> Charlie<Boolean>
 is 34 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 35 _   Charlie<Boolean>, Xray<D:(tupof arg0)>, Pronunciation<D:(tupof arg0)> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)>
+is 35 _   Charlie<Boolean>, Xray<Tuple<Any>...>, Pronunciation<Tuple<Any>...> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)>
 is 36 _   Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
 is 37 _   Foxtrot<D:(lcs arg1 arg2)>, India<Scalar 0> --> [elt] --> Hotel<D:(nth arg0 arg1)>
 is 38 _   [Lit: <Scalar 0>] --> India<Scalar 0>
@@ -1025,13 +1025,13 @@ is 49 _   Papa<D:(nth arg0 arg1)>, Uniform<Scalar 1> --> [elt] --> Tango<D:(nth 
 is 50 _   [Lit: <Scalar 1>] --> Uniform<Scalar 1>
 is 51 _   Golf<D:arg0>, Whiskey<Scalar 1> --> [elt] --> Victor<D:(nth arg0 arg1)>
 is 52 _   [Lit: <Scalar 1>] --> Whiskey<Scalar 1>
-is 53 _   Yankee<D:(tupof arg0)>, Beak<Scalar 4> --> [tup] --> Xray<D:(tupof arg0)>
-is 54 _   Zulu<Scalar 2>, Plural<Scalar 3> --> [tup] --> Yankee<D:(tupof arg0)>
+is 53 _   Yankee<Tuple<Any>...>, Beak<Scalar 4> --> [tup] --> Xray<Tuple<Any>...>
+is 54 _   Zulu<Scalar 2>, Plural<Scalar 3> --> [tup] --> Yankee<Tuple<Any>...>
 is 55 _   [Lit: <Scalar 2>] --> Zulu<Scalar 2>
 is 56 _   [Lit: <Scalar 3>] --> Plural<Scalar 3>
 is 57 _   [Lit: <Scalar 4>] --> Beak<Scalar 4>
-is 58 _   Sow<D:(tupof arg0)>, Tango<D:(nth arg0 arg1)> --> [tup] --> Pronunciation<D:(tupof arg0)>
-is 59 _   Romeo<D:(nth arg0 arg1)>, Victor<D:(nth arg0 arg1)> --> [tup] --> Sow<D:(tupof arg0)>
+is 58 _   Sow<Tuple<Any>...>, Tango<D:(nth arg0 arg1)> --> [tup] --> Pronunciation<Tuple<Any>...>
+is 59 _   Romeo<D:(nth arg0 arg1)>, Victor<D:(nth arg0 arg1)> --> [tup] --> Sow<Tuple<Any>...>
 
 
 test: $(P2B) -CDanalyzed "(set-dt (restrict 2 (all (probe (all 3) 1))))"
@@ -1199,17 +1199,17 @@ is 18 _ Amorphous Mediums:
 is 19 _   [Medium: Golf = root]
 is 20 _ Fields:
 is 21 _   Hotel: Golf --> <D:(fieldof arg0)> OUTPUT
-is 22 _   India: Golf --> <D:(tupof arg0)>
+is 22 _   India: Golf --> <Tuple<Any>...>
 is 23 _   Juliet: Golf --> <Lambda [Fun: foo]>
 is 24 _   Kilo: Golf --> <Lambda [Fun: bar]>
-is 25 _   Lima: Golf --> <D:(tupof arg0)>
+is 25 _   Lima: Golf --> <Tuple<Any>...>
 is 26 _   Mike: Golf --> <Lambda [Fun: foo]>
 is 27 _ Operator Instances:
-is 28 _   India<D:(tupof arg0)> --> [nbr] --> Hotel<D:(fieldof arg0)> OUTPUT
-is 29 _   Juliet<Lambda [Fun: foo]>, Kilo<Lambda [Fun: bar]>, Lima<D:(tupof arg0)> --> [tup] --> India<D:(tupof arg0)>
+is 28 _   India<Tuple<Any>...> --> [nbr] --> Hotel<D:(fieldof arg0)> OUTPUT
+is 29 _   Juliet<Lambda [Fun: foo]>, Kilo<Lambda [Fun: bar]>, Lima<Tuple<Any>...> --> [tup] --> India<Tuple<Any>...>
 is 30 _   [Lit: <Lambda [Fun: foo]>] --> Juliet<Lambda [Fun: foo]>
 is 31 _   [Lit: <Lambda [Fun: bar]>] --> Kilo<Lambda [Fun: bar]>
-is 32 _   Mike<Lambda [Fun: foo]> --> [tup] --> Lima<D:(tupof arg0)>
+is 32 _   Mike<Lambda [Fun: foo]> --> [tup] --> Lima<Tuple<Any>...>
 is 33 _   [Lit: <Lambda [Fun: foo]>] --> Mike<Lambda [Fun: foo]>
 
 
@@ -1472,14 +1472,14 @@ is 13 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
 //is 26 _   Delta: Alfa --> <Boolean>
 //is 27 _   Echo: Alfa --> <Scalar>
 //is 28 _   Foxtrot: Alfa --> <Scalar 0>
-//is 29 _   Juliet: Alfa --> <D:(unlit (output arg1))> OUTPUT
+//is 29 _   Juliet: Alfa --> <Number> OUTPUT
 //is 30 _   Kilo: Alfa --> <Lambda [max]>
 //is 31 _   Lima: Alfa --> <Lambda [Fun: lambda~4]>
 //is 32 _ Operator Instances:
 //is 33 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
 //is 34 _   [mid] --> Echo<Scalar>
 //is 35 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
-//is 36 _   Kilo<Lambda [max]>, Lima<Lambda [Fun: lambda~4]>, Delta<Boolean> --> [fold-hood-plus] --> Juliet<D:(unlit (output arg1))> OUTPUT
+//is 36 _   Kilo<Lambda [max]>, Lima<Lambda [Fun: lambda~4]>, Delta<Boolean> --> [fold-hood-plus] --> Juliet<Number> OUTPUT
 //is 37 _   [Lit: <Lambda [max]>] --> Kilo<Lambda [max]>
 //is 38 _   [Lit: <Lambda [Fun: lambda~4]>] --> Lima<Lambda [Fun: lambda~4]>
 

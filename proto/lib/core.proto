@@ -1,5 +1,8 @@
 ;;(macro par all) ; No more par: specials like all can't be renamed w. macros
-(primitive apply (fn|lambda &rest (inputs arg0)) (output arg0))
+;(primitive apply (fn|lambda &rest (inputs arg0)) (output arg0))
+(primitive apply (fn|lambda &rest any) any 
+  :type-constraints((= value (output arg0))
+                    (= arg1 (inputs arg0))))
 
 ;; Boolean operations
 (macro if (test true-expr false-expr)
@@ -18,12 +21,15 @@
 (macro pi 3.14159265358979323846264338)
 (macro e 2.71828182845904523536)
 
-
 ;; arithmetic
-(primitive + (&rest number) (unlit (lcs arg0)))
-(primitive - (number &rest number) (unlit (lcs arg0 arg1)))
-(primitive * (&rest number) (unlit (last arg0)))
-(primitive / (quotient|number &rest divisors|scalar) (unlit arg0))
+(primitive + (&rest number) number
+  :type-constraints ((= value (unlit (lcs arg0)))))
+(primitive - (number &rest number) number
+  :type-constraints ((= value (unlit (lcs arg0 arg1)))))
+(primitive * (&rest number) number
+  :type-constraints ((= value (unlit (last arg0)))))
+(primitive / (quotient|number &rest divisors|scalar) number
+  :type-constraints ((= value (unlit arg0))))
 
 (primitive > (number number) boolean)
 (primitive < (number number) boolean)
@@ -31,8 +37,12 @@
 (primitive <= (number number) boolean)
 (primitive >= (number number) boolean)
 
-(primitive min (&rest number) (lcs args))
-(primitive max (&rest number) (lcs args))
+;(primitive min (&rest number) (lcs args))
+(primitive min (&rest number) number
+  :type-constraints ((= value (lcs arg0))))
+;(primitive max (&rest number) (lcs args))
+(primitive max (&rest number) number
+  :type-constraints ((= value (lcs arg0))))
 (primitive abs (scalar) scalar)
 
 (primitive floor (scalar) scalar)
@@ -125,13 +135,19 @@
 
 ;; Space
 ;; sensors & actuators
-(primitive mov (velocity|vector) arg0 :side-effect)
-(primitive flex (angle|scalar) arg0 :side-effect)
+;(primitive mov (velocity|vector) arg0 :side-effect)
+(primitive mov (velocity|vector) vector :side-effect
+  :type-constraints((= value arg0)))
+;(primitive flex (angle|scalar) arg0 :side-effect)
+(primitive flex (angle|scalar) scalar :side-effect
+  :type-constraints((= value arg0)))
 (primitive speed () scalar)
 (primitive bearing () scalar)
 
 ;; communication operators
-(primitive nbr (local) (fieldof arg0) :space :time)
+;(primitive nbr (local) (fieldof arg0) :space :time)
+(primitive nbr (local) field :space :time
+  :type-constraints((= value (fieldof arg0))))
 
 ;; space-time metrics
 (primitive nbr-range () (field scalar) :space :time)
@@ -147,10 +163,18 @@
 ;; summary operators
 (primitive any-hood ((field scalar)) boolean :space :time) ;; permissive boolean input
 (primitive all-hood ((field scalar)) boolean :space :time) ;; permissive boolean input
-(primitive min-hood ((field number)) (ft arg0) :space :time)
-(primitive max-hood ((field number)) (ft arg0) :space :time)
-(primitive int-hood ((field number)) (ft (unlit arg0)) :space :time)
-(primitive sum-hood ((field number)) (ft (unlit arg0)) :space :time)
+;(primitive min-hood ((field number)) (ft arg0) :space :time)
+(primitive min-hood ((field number)) number :space :time
+  :type-constraints ((= value (ft arg0))))
+;(primitive max-hood ((field number)) (ft arg0) :space :time)
+(primitive max-hood ((field number)) number :space :time
+  :type-constraints ((= value (ft arg0))))
+;(primitive int-hood ((field number)) (ft (unlit arg0)) :space :time)
+(primitive int-hood ((field number)) number :space :time
+  :type-constraints ((= value (ft (unlit arg0)))))
+;(primitive sum-hood ((field number)) (ft (unlit arg0)) :space :time)
+(primitive sum-hood ((field number)) number :space :time
+  :type-constraints ((= value (ft (unlit arg0)))))
 
 (def is-self () (= (nbr-range) 0))
 (macro any-hood+ (value) (any-hood (if (is-self) false ,value)))
@@ -158,13 +182,17 @@
 (macro min-hood+ (value) (min-hood (if (is-self) inf ,value)))
 (macro max-hood+ (value) (max-hood (if (is-self) -inf ,value)))
 
-; fold-hood's lambda takes a partial summary and the value from a nbr
-; and combines them to make a new partial summary.  The 2nd argument is
-; the inital summary and the 3rd argument is the value to share
-(primitive fold-hood ((lambda (local local) (unlit arg0)) 
-		      (unlit (nth (inputs arg0) 0))
-		      (unlit (nth (inputs arg0) 1)))
-  (unlit (nth (inputs arg0) 0)) :space :time)
+;; fold-hood's lambda takes a partial summary and the value from a nbr
+;; and combines them to make a new partial summary.  The 2nd argument is
+;; the inital summary and the 3rd argument is the value to share
+;(primitive fold-hood ((lambda (local local) (unlit arg0)) 
+;		      (unlit (nth (inputs arg0) 0))
+;		      (unlit (nth (inputs arg0) 1)))
+;  (unlit (nth (inputs arg0) 0)) :space :time)
+(primitive fold-hood ((lambda (local local) (unlit arg0)) local local) local :space :time
+  :type-constraints((= arg1 (unlit (nth (inputs arg0) 0)))
+                    (= arg2 (unlit (nth (inputs arg0) 1)))
+                    (= value (unlit (nth (inputs arg0) 0)))))
 (primitive fold-hood* ((lambda (local local) (unlit arg0))
 	   	       (lambda (local) (unlit (nth (inputs arg0) 1)))
 		       (unlit (nth (inputs arg1) 0)))

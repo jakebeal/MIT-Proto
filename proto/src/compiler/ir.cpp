@@ -383,6 +383,48 @@ void dfg_print_function(ostream* out,AM* root,Field* output) {
   pp_pop();
 }
 
+static int step=0;
+static string pastSteps = "";
+void dot_print_function(ostream* out,AM* root,Field* output) {
+  stringstream ss, head;
+  step++;
+
+  OIset nodes; root->all_ois(&nodes);
+  for_set(OI*,nodes,oit) {
+    OI* oi = (*oit);
+    //operator name
+    if(oi->nicename().length() > 0 && oi->op->name.length() > 0)
+      ss << "    " << oi->nicename() << step << "[label=\"" << oi->op->name <<
+         "\" shape=box];" << endl;
+    //inputs
+    for(int i=0; i<oi->inputs.size(); i++) {
+      if(oi->inputs[i]->nicename().length() > 0)
+        ss << "    " << oi->inputs[i]->nicename() << step << " [label=\"" <<
+           oi->inputs[i]->nicename() << "\"];" << endl;
+        ss << "    " << oi->inputs[i]->nicename() << step << " -> " <<
+           oi->nicename() << step << " [label=\"" <<
+           oi->inputs[i]->range->to_str() << "\"];" << endl;
+    }
+    //output
+    if(oi->op->name.length() > 0)
+      ss << "    " << oi->nicename() << step << " -> " <<
+         oi->output->nicename() << step << " [label=\"" <<
+         oi->output->range->to_str() << "\"];" << endl;
+  }
+  
+  *out << "digraph dfg {" << endl;
+  if( ss.str().length() > 0 ) {
+    ss << "  }\n";
+    head << "  subgraph cluster" << step << " {\n";
+    head << "    color=blue;\n";
+    head << "    label=\"Step #" << step << "\";\n";
+    head << ss.str();
+    pastSteps += head.str();
+  }
+  *out << pastSteps;
+  *out << "}" << endl;
+}
+
 Field* DFG::add_literal(ProtoType* val,AM* space,CompilationElement* src)
 { return (new OI(src,new Literal(src,val),space))->output; }
 Field* DFG::add_parameter(CompoundOp* op,string name,int idx,AM* space,CE* src)
@@ -560,6 +602,10 @@ void DFG::print(ostream* out) {
     }
   }
   dfg_print_function(out,output->domain->root(),output);
+}
+
+void DFG::printdot(ostream* out) {
+  dot_print_function(out,output->domain->root(),output);
 }
 
 /*****************************************************************************

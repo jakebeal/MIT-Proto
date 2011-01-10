@@ -42,7 +42,7 @@ string f2s(float num, int precision=2);
 string i2s(int num);
 string V2S(vector<CompilationElement*> *v);
 #define v2s(x) (V2S((vector<CompilationElement*>*)(x)))
-#define ce2s(t) ((t)->to_str())
+#define ce2s(t) ((t)?(t)->to_str():"NULL")
 
 /********** ERROR REPORTING & VERBOSITY **********/
 /*

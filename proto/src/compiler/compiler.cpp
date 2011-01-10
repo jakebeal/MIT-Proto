@@ -39,13 +39,21 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   interpreter->interpret(sexpr); // terminates on error internally
   if(interpreter->dfg->output==NULL)
     { compile_error("Program has no content."); terminate_on_error(); }
-  if(is_dump_interpreted) interpreter->dfg->print(cpout);
+  if(is_dump_interpreted) {
+    interpreter->dfg->print(cpout);
+    if(verbosity>4)
+      interpreter->dfg->printdot(cpout);
+  }
   if(is_early_terminate==3) 
     { *cperr << "Stopping before analysis" << endl; exit(0); }
   
   compile_phase = "analysis"; // PHASE: IR manipulation
   analyzer->transform(interpreter->dfg); // terminates on error internally
-  if(is_dump_analyzed) interpreter->dfg->print(cpout);
+  if(is_dump_analyzed) {
+    interpreter->dfg->print(cpout);
+    if(verbosity>4)
+      interpreter->dfg->printdot(cpout);
+  }
   if(is_early_terminate==2) 
     { *cperr << "Stopping before localization" << endl; exit(0); }
   
@@ -54,10 +62,18 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   p->propagate(interpreter->dfg);
   compile_phase = "localization"; // PHASE: Global-to-local transformation
   localizer->transform(interpreter->dfg); // terminates on error internally
-  if(is_dump_raw_localized) interpreter->dfg->print(cpout);
+  if(is_dump_raw_localized) {
+    interpreter->dfg->print(cpout);
+    if(verbosity>4)
+      interpreter->dfg->printdot(cpout);
+  }
   compile_phase = "local analysis"; // PHASE: IR manipulation
   analyzer->transform(interpreter->dfg); // terminates on error internally
-  if(is_dump_localized) interpreter->dfg->print(cpout);
+  if(is_dump_localized) {
+    interpreter->dfg->print(cpout);
+    if(verbosity>4)
+      interpreter->dfg->printdot(cpout);
+  }
   if(is_early_terminate==1) 
     { *cperr << "Stopping before emission" << endl; exit(0); }
   
