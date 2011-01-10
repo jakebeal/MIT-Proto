@@ -14,7 +14,6 @@ AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_HEADER([src/config.h])
 
 AM_INIT_AUTOMAKE
-AM_SILENT_RULES
 
 AC_PROG_LIBTOOL
 # Compiler stuff
