@@ -22,12 +22,16 @@
 (macro e 2.71828182845904523536)
 
 ;; arithmetic
+;(primitive + (&rest number) (unlit (lcs arg0)))
 (primitive + (&rest number) number
   :type-constraints ((= value (unlit (lcs arg0)))))
+;(primitive - (number &rest number) (unlit (lcs arg0 arg1)))
 (primitive - (number &rest number) number
   :type-constraints ((= value (unlit (lcs arg0 arg1)))))
+;(primitive * (&rest number) (unlit (last arg0)))
 (primitive * (&rest number) number
-  :type-constraints ((= value (unlit (last arg0)))))
+  :type-constraints ((= value (unlit (lcs arg0)))))
+;(primitive / (number &rest scalar) (unlit arg0))
 (primitive / (quotient|number &rest divisors|scalar) number
   :type-constraints ((= value (unlit arg0))))
 

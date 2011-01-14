@@ -2,7 +2,11 @@ noinst_LTLIBRARIES = libcompiler.la
 
 INCLUDES = \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/shared
+	-I$(top_srcdir)/src/shared 
+
+SUBDIRS = \
+			 . \
+			 unittests
 
 libcompiler_la_SOURCES = \
 	lisp.cpp \

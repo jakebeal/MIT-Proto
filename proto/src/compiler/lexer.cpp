@@ -1963,4 +1963,3 @@ SExpr* read_sexpr(string name, istream* in, ostream* out) {
   yylex_destroy(); // reset state
   return sexp;
 }
-

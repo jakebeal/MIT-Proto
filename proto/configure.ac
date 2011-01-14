@@ -15,6 +15,9 @@ AC_CONFIG_HEADER([src/config.h])
 
 AM_INIT_AUTOMAKE
 
+# CPPUnit
+AM_PATH_CPPUNIT(1.9.6)
+
 AC_PROG_LIBTOOL
 # Compiler stuff
 
@@ -75,6 +78,7 @@ AC_CONFIG_FILES([Makefile
                  lib/core/Makefile
                  src/Makefile
                  src/compiler/Makefile
+                 src/compiler/unittests/Makefile
                  src/kernel/Makefile
                  src/motelink/Makefile
                  src/shared/Makefile

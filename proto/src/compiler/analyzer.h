@@ -21,4 +21,57 @@ class CheckTypeConcreteness : public IRPropagator {
   virtual void act(Field* f);
 };
 
+class Deliteralization {
+ public:
+   static ProtoType* deliteralize(ProtoType* base);
+};
+
+class TypeConstraintApplicator {
+ public:
+  int verbosity;
+  TypeConstraintApplicator(IRPropagator* parent) {
+    (parent)?verbosity=parent->verbosity:verbosity=0;
+  }
+  bool apply_constraint(OperatorInstance* oi, SExpr* constraint);
+  bool apply_constraints(OperatorInstance* oi, SExpr* constraints);
+ private:
+  ProtoType* get_op_return(Operator* op);
+  ProtoTuple* get_all_args(OperatorInstance* oi);
+  ProtoType* get_nth_arg(OperatorInstance* oi, int n);
+  int is_arg_ref(string s);
+  ProtoType* get_ref_symbol(OperatorInstance* oi, SExpr* ref);
+  ProtoType* get_ref_last(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_lcs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_nth(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoTuple* tupleOrVector(vector<ProtoType*> types);
+  ProtoType* get_ref_tupof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_fieldof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_unlit(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_ft(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_inputs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_output(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
+  ProtoType* get_ref_list(OperatorInstance* oi, SExpr* ref);
+  ProtoType* get_ref(OperatorInstance* oi, SExpr* ref);
+  bool maybe_change_type(ProtoType** type,ProtoType* value);
+  bool assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value);
+  bool assert_all_args(OperatorInstance* oi, ProtoType* value);
+  bool assert_op_return(Operator* f, ProtoType* value);
+  bool assert_on_field(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_on_tup(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_on_ft(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_on_output(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_on_inputs(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_on_last(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  ProtoType* getLCS(ProtoType* nextType, ProtoType* prevType, bool isRestElem);
+  bool assert_on_lcs(OperatorInstance* oi, SExpr* ref, ProtoType* value, SE_List_iter* li);
+  bool assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li);
+  bool assert_on_unlit(OperatorInstance* oi, SExpr* next, ProtoType* value);
+  bool isRestElement(OperatorInstance* oi, SExpr* ref);
+  bool assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_ref_list(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  ProtoType* coerceType(ProtoType* a, ProtoType* b);
+};
+
+
 #endif // __ANALYZER__

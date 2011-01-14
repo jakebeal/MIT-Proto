@@ -77,6 +77,7 @@ struct ProtoTuple : virtual public ProtoLocal {
   }
   virtual ~ProtoTuple() {}
   void add(ProtoType* t) { types.push_back(t); }
+  void clear() { types.clear(); }
   virtual void print(ostream* out=0);
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
@@ -122,6 +123,7 @@ struct ProtoScalar : public ProtoNumber{
   virtual ProtoType* gcs(ProtoType* t);
   virtual bool isLiteral() { return constant; }
 };
+#define S_TYPE(x) (dynamic_cast<ProtoScalar*>(x))
 #define S_VAL(x) (dynamic_cast<ProtoScalar*>(x)->value)
 
 struct ProtoBoolean : public ProtoScalar {
@@ -137,7 +139,7 @@ struct ProtoVector : public ProtoTuple, public ProtoNumber {
   reflection_sub2(ProtoVector,ProtoNumber,ProtoTuple);
   ProtoVector() : ProtoTuple(false) {this->types.push_back(new ProtoScalar());}
   ProtoVector(bool bounded) : ProtoTuple(bounded) { }
-  ProtoVector(ProtoVector* src) : ProtoTuple(src) { } 
+  ProtoVector(ProtoTuple* src) : ProtoTuple(src) { } 
   virtual ~ProtoVector() {}
   virtual void print(ostream* out=0);
   virtual ProtoType* lcs(ProtoType* t);
@@ -170,6 +172,7 @@ struct ProtoField : public ProtoType {
   virtual bool isLiteral() { return hoodtype->isLiteral(); }
   virtual int pointwise() { return 0; } // definitely not pointwise
 };
+#define F_TYPE(x) (dynamic_cast<ProtoField*>(x))
 #define F_VAL(x) (dynamic_cast<ProtoField*>(x)->hoodtype)
 
 struct DerivedType : public ProtoType {

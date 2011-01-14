@@ -74,7 +74,7 @@ SExpr* get_sexp(CE* src, string attribute) {
  * The Deliteralization of a tuple is a tuple where each element has been
  * unliteralized.
  */
-ProtoType* deliteralize(ProtoType* base) {
+ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   if(base->isA("ProtoVector")) {
     ProtoVector* t = dynamic_cast<ProtoVector*>(base);
     ProtoVector* newt = new ProtoVector(t->bounded);
@@ -124,25 +124,25 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
 };
 
 // NOTE: This container structure is temporary and crap
-struct TypePropagator;
-class TypeConstraintApplicator {
+//struct TypePropagator;
+//class TypeConstraintApplicator {
 
   /********** TYPE READING **********/
-  ProtoType* get_op_return(Operator* op) {
+  ProtoType* TypeConstraintApplicator::get_op_return(Operator* op) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!op->isA("CompoundOp"))
       return type_err(op,"'return' used on non-compound operator:"+ce2s(op));
     return ((CompoundOp*)op)->output->range;
   }
 
-  ProtoTuple* get_all_args(OperatorInstance* oi) {
+  ProtoTuple* TypeConstraintApplicator::get_all_args(OperatorInstance* oi) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoTuple *t = new ProtoTuple();
     for(int i=0;i<oi->inputs.size();i++) t->add(oi->inputs[i]->range);
     return t;
   }
   
-  ProtoType* get_nth_arg(OperatorInstance* oi, int n) {
+  ProtoType* TypeConstraintApplicator::get_nth_arg(OperatorInstance* oi, int n) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(n < oi->op->signature->required_inputs.size()) { // ordinary argument
       if(n<oi->inputs.size()) return oi->inputs[n]->range;
@@ -167,7 +167,7 @@ class TypeConstraintApplicator {
    * Another example: is_arg_ref("asdf") = -1
    * @DEPRECATED
    */
-  int is_arg_ref(string s) {
+  int TypeConstraintApplicator::is_arg_ref(string s) {
     if(s.size()<4) return -1;
     if(s.substr(0,3)=="arg") {
       string num = s.substr(3,s.size()-3);
@@ -180,7 +180,7 @@ class TypeConstraintApplicator {
   /**
    * Gets a reference of type symbol (e.g., arg0, args, value, etc.).
    */
-  ProtoType* get_ref_symbol(OperatorInstance* oi, SExpr* ref) {
+  ProtoType* TypeConstraintApplicator::get_ref_symbol(OperatorInstance* oi, SExpr* ref) {
     DEBUG_FUNCTION(__FUNCTION__);
     // These will be removed, and replaced with references to named variables
     // "arg0", "arg1", ...: the type of the kth argument (0-based)
@@ -201,7 +201,7 @@ class TypeConstraintApplicator {
    * Gets a reference for 'last'.  Expects a tuple.
    * For example: (last <3-Tuple<Scalar 0>,<Scalar 1>,<Scalar 2>>) = <Scalar 2>
    */
-  ProtoType* get_ref_last(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_last(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* nextType = get_ref(oi,li->get_next("type"));
     if(!nextType->isA("ProtoTuple")) {
@@ -217,7 +217,7 @@ class TypeConstraintApplicator {
    * Operates on proto types and rest elements.
    * For example: (lcs <Scalar> <Scalar 2> <3-Vector>) = <Number>
    */
-  ProtoType* get_ref_lcs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_lcs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* nextType = NULL;
     ProtoType* compound = NULL;
@@ -248,7 +248,7 @@ class TypeConstraintApplicator {
    * Returns the nth type of a tuple.
    * For example: (nth <3-Tuple<Scalar 0>,<Scalar 1>,<Scalar 2>>, 1) = <Scalar 1>
    */
-  ProtoType* get_ref_nth(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_nth(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     //get tuple
     ProtoType* nextType = get_ref(oi,li->get_next("type"));
@@ -272,16 +272,45 @@ class TypeConstraintApplicator {
       return new ProtoType();  //return <Any>
     }
   }
+
+  /**
+   * If all elements of tuple are <Scalar>, then it returns a ProtoVector,
+   * otherwise it returns tuple.
+   */
+  ProtoTuple* TypeConstraintApplicator::tupleOrVector(vector<ProtoType*> types) {
+    //TODO: I'm certain I can make this faster
+    ProtoTuple* ret = NULL;
+    bool allScalar = true;
+    for(int i=0; allScalar && i<types.size(); i++) {
+      //V4<<" ["<<i<<"] type = "<<ce2s(tuple->types[i])<<endl;
+      if(!types[i]->isA("ProtoScalar"))
+        allScalar = false;
+    }
+    if(allScalar) ret = new ProtoVector(true);
+    else ret = new ProtoTuple(true);
+    for(int i=0; i<types.size(); i++) {
+      ret->add(types[i]);
+    }
+    return ret;
+  }
   
   /**
-   * Returns a tuple of its arguments.
-   * For example: (tupof <Scalar 1> <Scalar 2>) = <2-Tuple <Scalar 1>,<Scalar 2>>
+   * Returns a tuple of its arguments or a vector if all arguments are scalars.
+   * For example: (tupof <Scalar 1> <Tuple<Any>...>) = <2-Tuple <Scalar 1>,<Tuple<Any>...>>
+   * For example: (tupof <Scalar 1> <Scalar 2>) = <2-Vector <Scalar 1>,<Scalar 2>>
    */
-  ProtoType* get_ref_tupof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_tupof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
-    ProtoType* reftype = get_ref(oi,li->get_next("type"));
-    V4<<"get_ref tupof " << ce2s(reftype) <<endl;
-    return T_TYPE(reftype);
+    V4 << "get_ref tupof ";
+    ProtoType* reftype = NULL;
+    vector<ProtoType*> types;
+    while( li->has_next() ) {
+       reftype = get_ref(oi,li->get_next("type"));
+       V4 << ce2s(reftype) << ", ";
+       types.push_back(reftype);
+    }
+    V4 << endl;
+    return tupleOrVector(types);
   }
   
   /**
@@ -289,7 +318,7 @@ class TypeConstraintApplicator {
    * For example: (fieldof <Scalar 1>) = <Field <Scalar 1>>
    * Expects input to be a <Local>.  Otherwise returns the <Field> directly.
    */
-  ProtoType* get_ref_fieldof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_fieldof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* hoodtype = get_ref(oi,li->get_next("type"));
     // if it's already a field, it's been coerced
@@ -304,7 +333,7 @@ class TypeConstraintApplicator {
    * Returns the deliteralized value of its argument.
    * For example: (unlit <Scalar 1>) = <Scalar>
    */
-  ProtoType* get_ref_unlit(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_unlit(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     // get the argument
     ProtoType* reftype = get_ref(oi,li->get_next("type"));
@@ -315,7 +344,7 @@ class TypeConstraintApplicator {
       return type_err(ref,"Unexpected extra argument "+ce2s(unexpected));
     }
     V4<<"get_ref unlit " << ce2s(reftype) <<endl;
-    return deliteralize(reftype);
+    return Deliteralization::deliteralize(reftype);
   }
   
   /**
@@ -323,7 +352,7 @@ class TypeConstraintApplicator {
    * For example: (unlit <Field <Scalar 1>>) = <Scalar 1>
    * Expects a field as input.  May coerce a <Number>.
    */
-  ProtoType* get_ref_ft(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_ft(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* reftype = get_ref(oi,li->get_next("type"));
     if(!reftype->isA("ProtoField")) {
@@ -344,7 +373,7 @@ class TypeConstraintApplicator {
    *   (def foo (scalar vector) number)
    *   (inputs <Lambda foo>) = <2-Tuple <Scalar>,<Vector>>
    */
-  ProtoType* get_ref_inputs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_inputs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* reftype = get_ref(oi,li->get_next("type"));
     if(!reftype->isA("ProtoLambda")) { 
@@ -367,7 +396,7 @@ class TypeConstraintApplicator {
    *   (def foo (scalar vector) number)
    *   (output <Lambda foo>) = <Number>
    */
-  ProtoType* get_ref_output(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
+  ProtoType* TypeConstraintApplicator::get_ref_output(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* reftype = get_ref(oi,li->get_next("type"));
     if(!reftype->isA("ProtoLambda")) { 
@@ -381,7 +410,7 @@ class TypeConstraintApplicator {
   /**
    * Gets the reference type for any 'list' type (any non-symbol)
    */
-  ProtoType* get_ref_list(OperatorInstance* oi, SExpr* ref) {
+  ProtoType* TypeConstraintApplicator::get_ref_list(OperatorInstance* oi, SExpr* ref) {
     DEBUG_FUNCTION(__FUNCTION__);
     SE_List_iter* li = new SE_List_iter(ref);
     // "fieldof": field containing a local
@@ -416,10 +445,10 @@ class TypeConstraintApplicator {
   /**
    * Return the best available information on the referred type
    */
-  ProtoType* get_ref(OperatorInstance* oi, SExpr* ref) {
+  ProtoType* TypeConstraintApplicator::get_ref(OperatorInstance* oi, SExpr* ref) {
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
-    V4<<" get_ref on " << ce2s(ref) << endl;
+    V4<<" get_ref on " << ce2s(ref) << " from " << ce2s(oi) << endl;
     if(ref->isSymbol()) {
       ProtoType* ret = get_ref_symbol(oi,ref);
       V4<<" get_ref returns: " << ce2s(ret) << endl;
@@ -434,7 +463,7 @@ class TypeConstraintApplicator {
   }
 
   /********** TYPE ASSERTION **********/
-  bool maybe_change_type(ProtoType** type,ProtoType* value) {
+  bool TypeConstraintApplicator::maybe_change_type(ProtoType** type,ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if((*type)->supertype_of(value) && !value->supertype_of(*type)) {
       V2<<"  Changing type "<<ce2s(*type)<<" to "<<ce2s(value)<<endl;
@@ -444,7 +473,7 @@ class TypeConstraintApplicator {
     return false;
   }
   
-  bool assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(n < oi->op->signature->required_inputs.size()) { // ordinary argument
       V4<<"   assert_nth_arg: oi["<<n<<"]= "<<ce2s(oi->inputs[n]->range)<<", val="<<ce2s(value)<<endl;
@@ -459,41 +488,52 @@ class TypeConstraintApplicator {
       V4<<"   assert_nth_arg: REST"<<endl;
       //for each item in the tuple, maybe_change_type of input[n++]
       bool ret=false;
-      for(int i=n;i<oi->inputs.size();i++) {
-         V4<<"     assert_nth_arg: oi["<<i<<"]= "
+      ProtoTuple* tup = NULL;
+      if(value->isA("ProtoTuple")) {
+        tup = T_TYPE(value);
+        for(int i=n;i<oi->inputs.size();i++) {
+          //TODO: check sizes
+          V4<<"     assert_nth_arg: oi["<<i<<"]= "
+            <<ce2s(oi->inputs[i]->range)<<", val="<<ce2s(tup->types[i])<<endl;
+          ret = maybe_change_type(&oi->inputs[i]->range,tup->types[i]);
+        }
+      } else {
+        for(int i=n;i<oi->inputs.size();i++) {
+          V4<<"     assert_nth_arg: oi["<<i<<"]= "
             <<ce2s(oi->inputs[i]->range)<<", val="<<ce2s(value)<<endl;
-         ret = maybe_change_type(&oi->inputs[i]->range,value);
+          ret = maybe_change_type(&oi->inputs[i]->range,value);
+        }
       }
       return ret;
     }
     ierror("Failed assertion on argument "+i2s(n)+" of "+ce2s(oi));
   }
-  bool assert_all_args(OperatorInstance* oi, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_all_args(OperatorInstance* oi, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     ierror("Not yet implemented");
     return false;
   }
-  bool assert_op_return(Operator* f, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_op_return(Operator* f, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     ierror("Not yet implemented");
     return false;
   }
   
-  bool assert_on_field(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_field(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoField"))
       ierror("'fieldof' assertion on non-field type: "+ref->to_str());
     return assert_ref(oi,ref,F_VAL(value));
   }
   
-  bool assert_on_tup(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_tup(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoTuple"))
       ierror("'tupof' assertion on non-tuple type: "+ref->to_str());
     return assert_ref(oi,ref,T_TYPE(value));
   }
   
-  bool assert_on_ft(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_ft(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoField")) {
       if(value->isA("ProtoNumber")) {
@@ -505,7 +545,7 @@ class TypeConstraintApplicator {
     return assert_ref(oi,ref, dynamic_cast<ProtoField*>(value)->hoodtype);
   }
   
-  bool assert_on_output(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_output(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     //TODO: is it OK to use get_ref here?
     ProtoType* lambda_arg = get_ref(oi,ref);
@@ -516,7 +556,7 @@ class TypeConstraintApplicator {
     return assert_ref(oi,ref,sig->output);
   }
   
-  bool assert_on_inputs(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_inputs(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     //TODO: is it OK to use get_ref here?
     ProtoType* lambda_arg = get_ref(oi,ref);
@@ -531,7 +571,7 @@ class TypeConstraintApplicator {
     return assert_ref(oi,ref,ret);
   }
   
-  bool assert_on_last(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_last(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     //TODO: This needs to define the types and number of elements in the tuple
     // e.g., (last <Tuple<Any>...>) = <Scalar 2>  should make
@@ -543,7 +583,7 @@ class TypeConstraintApplicator {
     return false;
   }
 
-  ProtoType* getLCS(ProtoType* nextType, ProtoType* prevType, bool isRestElem) {
+  ProtoType* TypeConstraintApplicator::getLCS(ProtoType* nextType, ProtoType* prevType, bool isRestElem) {
     ProtoType* compound = prevType;
     // if it's a &rest element, take the LCS of each sub-argument
     if(isRestElem && nextType->isA("ProtoTuple")) {
@@ -564,7 +604,7 @@ class TypeConstraintApplicator {
     return compound;
   }
   
-  bool assert_on_lcs(OperatorInstance* oi, SExpr* ref, ProtoType* value, SE_List_iter* li) {
+  bool TypeConstraintApplicator::assert_on_lcs(OperatorInstance* oi, SExpr* ref, ProtoType* value, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     SExpr* next = NULL;
     // get the first arg to LCS
@@ -583,7 +623,7 @@ class TypeConstraintApplicator {
     return ret;
   }
   
-  bool assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li) {
+  bool TypeConstraintApplicator::assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     //TODO: This needs to define the types and number of elements in the tuple
     // e.g., (nth <Tuple<Any>...> 2) = <Scalar 2>  should make
@@ -597,22 +637,22 @@ class TypeConstraintApplicator {
     return ret;
   }
   
-  bool assert_on_unlit(OperatorInstance* oi, SExpr* next, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_on_unlit(OperatorInstance* oi, SExpr* next, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
-    return assert_ref(oi,next,deliteralize(value));
+    return assert_ref(oi,next,Deliteralization::deliteralize(value));
   }
 
   /**
    * Returns true iff type is a Tuple derived from a &rest element
    */
-  bool isRestElement(OperatorInstance* oi, SExpr* ref) {
+  bool TypeConstraintApplicator::isRestElement(OperatorInstance* oi, SExpr* ref) {
     //TODO: is this the right way to tell if it's a real Tuple or a &rest
     //      element?
     return oi->op->signature->rest_input 
        && is_arg_ref(((SE_Symbol*)ref)->name)==oi->op->signature->n_fixed();
   }
 
-  bool assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     // These will be removed, and replaced with references to named variables
     // "arg0", "arg1", ...: the type of the kth argument (0-based)
@@ -632,7 +672,7 @@ class TypeConstraintApplicator {
     if(*ref=="return") return assert_op_return(oi->op,value);
   }
   
-  bool assert_ref_list(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_ref_list(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     SE_List_iter li(ref);
     // "fieldof": field containing a local
@@ -666,7 +706,7 @@ class TypeConstraintApplicator {
 
   // Core assert dispatch function
   // If possible, modify the referred type with a GCS.
-  bool assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
+  bool TypeConstraintApplicator::assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
     V2<<" assert_ref "<< ce2s(ref) << " as " << ce2s(value) << endl;
@@ -679,7 +719,7 @@ class TypeConstraintApplicator {
     return type_err(ref,"Unknown type reference: "+ce2s(ref));
   }
   
-  ProtoType* coerceType(ProtoType* a, ProtoType* b) {
+  ProtoType* TypeConstraintApplicator::coerceType(ProtoType* a, ProtoType* b) {
      ProtoType* coerceA = a;
      ProtoType* coerceB = b;
      ProtoType* ret = NULL;
@@ -695,8 +735,7 @@ class TypeConstraintApplicator {
   }
 
   /********** External Interface **********/
-public:
-  bool apply_constraint(OperatorInstance* oi, SExpr* constraint) {
+  bool TypeConstraintApplicator::apply_constraint(OperatorInstance* oi, SExpr* constraint) {
     DEBUG_FUNCTION(__FUNCTION__);
     SE_List_iter li(constraint,"type constraint");
     if(!li.has_next())
@@ -729,7 +768,7 @@ public:
     return false;
   }
   
-  bool apply_constraints(OperatorInstance* oi, SExpr* constraints) {
+  bool TypeConstraintApplicator::apply_constraints(OperatorInstance* oi, SExpr* constraints) {
     DEBUG_FUNCTION(__FUNCTION__);
     bool changed=false;
     SE_List_iter li(constraints,"type constraint set");
@@ -738,11 +777,7 @@ public:
     return changed;
   }
 
-  int verbosity;
-  TypeConstraintApplicator(IRPropagator* parent) {
-    verbosity=parent->verbosity;
-  }
-};
+//};
 
 /*****************************************************************************
  *  TYPE RESOLUTION                                                          *
@@ -975,7 +1010,7 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
     } else if(opname=="unlit") { // remove literalness from a type
       if(subs.size()!=1 || subs[0]->isA("TypeVector"))
         return type_error(ref,"'unlit' takes a single type: "+ref->to_str());
-      return deliteralize(subs[0]);
+      return Deliteralization::deliteralize(subs[0]);
     // TUPOF: tuple w. a set of types as arguments
     } else if(opname=="tupof") {
       if(subs.size()!=1 || !subs[0]->isA("TypeVector"))
@@ -1217,7 +1252,7 @@ class TypePropagator : public IRPropagator {
           type_error(oi,"Can't resolve letfed type: not enough mux arguments");
         Field* init = oi->inputs[1]; // true input = init
         if(!init->range->isA("DerivedType"))
-          maybe_set_range(oi->output,deliteralize(init->range));
+          maybe_set_range(oi->output,Deliteralization::deliteralize(init->range));
       }
 
       // ALSO: find GCS of producer, consumers, & field values
