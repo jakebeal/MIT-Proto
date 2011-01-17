@@ -406,10 +406,18 @@ void dot_print_function(ostream* out,AM* root,Field* output) {
            oi->inputs[i]->range->to_str() << "\"];" << endl;
     }
     //output
-    if(oi->op->name.length() > 0)
+    if(oi->op->name.length() > 0) {
       ss << "    " << oi->nicename() << step << " -> " <<
          oi->output->nicename() << step << " [label=\"" <<
          oi->output->range->to_str() << "\"];" << endl;
+      if(oi->output==output) { //mark as OUTPUT
+        ss << "    " << oi->output->nicename() << step << " [label=\"" << oi->nicename() <<
+           "\" shape=doubleoctagon];" << endl;
+      } else {
+        ss << "    " << oi->output->nicename() << step << " [label=\"" << oi->nicename() <<
+           "\"];" << endl;
+      }
+    }
   }
   
   *out << "digraph dfg {" << endl;
