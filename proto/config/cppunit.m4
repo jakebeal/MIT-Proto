@@ -9,6 +9,8 @@ AC_ARG_WITH(cppunit-prefix,[  --with-cppunit-prefix=PFX   Prefix where CppUnit i
 AC_ARG_WITH(cppunit-exec-prefix,[  --with-cppunit-exec-prefix=PFX  Exec prefix where CppUnit is installed (optional)],
             cppunit_config_exec_prefix="$withval", cppunit_config_exec_prefix="")
 
+AC_DEFINE([WANT_CPPUNIT], 1, [Define if you have the CPPUnit Testing Framework available])
+
   if test x$cppunit_config_exec_prefix != x ; then
      cppunit_config_args="$cppunit_config_args --exec-prefix=$cppunit_config_exec_prefix"
      if test x${CPPUNIT_CONFIG+set} != xset ; then
@@ -28,6 +30,7 @@ AC_ARG_WITH(cppunit-exec-prefix,[  --with-cppunit-exec-prefix=PFX  Exec prefix w
   AC_MSG_CHECKING(for Cppunit - version >= $cppunit_version_min)
   no_cppunit=""
   if test "$CPPUNIT_CONFIG" = "no" ; then
+    WANT_CPPUNIT=false
     AC_MSG_RESULT(no)
     no_cppunit=yes
   else
@@ -69,8 +72,10 @@ AC_ARG_WITH(cppunit-exec-prefix,[  --with-cppunit-exec-prefix=PFX  Exec prefix w
         $cppunit_micro_version \>= $cppunit_micro_min `
 
     if test "$cppunit_version_proper" = "1" ; then
+      WANT_CPPUNIT=true
       AC_MSG_RESULT([$cppunit_major_version.$cppunit_minor_version.$cppunit_micro_version])
     else
+      WANT_CPPUNIT=false
       AC_MSG_RESULT(no)
       no_cppunit=yes
     fi
@@ -83,6 +88,8 @@ AC_ARG_WITH(cppunit-exec-prefix,[  --with-cppunit-exec-prefix=PFX  Exec prefix w
      CPPUNIT_LIBS=""
      ifelse([$3], , :, [$3])
   fi
+
+  AM_CONDITIONAL(WANT_CPPUNIT, $WANT_CPPUNIT)
 
   AC_SUBST(CPPUNIT_CFLAGS)
   AC_SUBST(CPPUNIT_LIBS)
