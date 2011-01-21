@@ -21,29 +21,24 @@ bool ProtoTuple::supertype_of(ProtoType* sub) {
   int ll = types.size(), sl = tsub->types.size(), len = MAX(ll,sl);
   for(int i=0;i<len;i++) {
     ProtoType *mine,*subs;
-    if(i>=ll) { 
-      if(bounded) 
-        return false; 
-      else {
-        if(ll>1)
-          mine = types[ll-1]; //rest elem
-        else
-          return true;
+    // Get the type of the putative parent
+    if(i<ll) { mine = types[i]; // normal element
+    } else { // beyond the apparent end of the tuple
+      if(bounded) return false; // if child is longer than parent, not a sub
+      else { // otherwise, use the rest type
+        if(ll==0) ierror("Unbounded tuple must have a rest element.");
+        mine = types[ll-1]; //rest elem
       }
-    } else {
-      mine = types[i];
     }
-    if(i>=sl) { 
-      if(tsub->bounded) {
-        return (!bounded); 
+    // Get the type of the putative child
+    if(i<sl) { subs = tsub->types[i]; // normal element
+    } else { // beyond the apparent end of the tuple
+      if(tsub->bounded) { 
+        return (!bounded && i==len-1); // sub if end aligns w. parent "rest" elt
       } else {
-        if(sl>1)
-          subs = tsub->types[sl-1]; 
-        else
-          return false;
+        if(sl==0) ierror("Unbounded tuple must have a rest element.");
+        subs = tsub->types[sl-1]; // rest elem
       }
-    } else {
-      subs = tsub->types[i];
     }
     if(!mine->supertype_of(subs)) 
       return false;
