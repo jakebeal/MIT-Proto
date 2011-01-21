@@ -270,10 +270,11 @@ class TestFile():
         #Write Logs
         if self.failed:
             print " FAILED %d out of %d tests" % (len([t for t in self.tests if t.failed]), len(self.tests))
-            for t in self.tests:
-               if t.failed:
-                  print " Proto arg: %s" % t.protoarg
-                  print "   Results: %s" % t.get_result()
+            if verbosity >= 2:
+                for t in self.tests:
+                    if t.failed:
+                        print " Proto arg: %s" % t.protoarg
+                        print "   Results: %s" % t.get_result()
         else:
             print " passed all %d tests" % len(self.tests)
 
