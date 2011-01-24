@@ -259,17 +259,29 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     ProtoTuple* tup = dynamic_cast<ProtoTuple*>(nextType);
     //get index
     ProtoType* indexType = get_ref(oi,li->get_next("type"));
+    /* Don't necessarily need this to be a Scalar
     if(!indexType->isA("ProtoScalar")) {
       ierror(ref,"Expected ProtoScalar, but got "+ce2s(indexType)); // temporary, to help test suite
       return type_err(ref,"Expected ProtoScalar, but got "+ce2s(indexType));
     }
-    ProtoScalar* index = dynamic_cast<ProtoScalar*>(indexType);
-    if(tup->types.size() > index->value) {
+    */
+    ProtoScalar* index = NULL;
+    if( indexType->isA("ProtoScalar") )
+       index = dynamic_cast<ProtoScalar*>(indexType);
+    if(index != NULL && tup->types.size() > index->value) {
       V4<<" - tup[index] = " << ce2s(tup->types[index->value]) << endl;
       return tup->types[index->value];
     } else {
-      V4<<" - can't get the nth type yet... deferring"<< endl;
-      return new ProtoType();  //return <Any>
+      V4<<" - can't get the nth type yet... trying LCS"<< endl;
+      ProtoType* ret = NULL;  
+      if(tup->types.size() > 0)
+        ret = tup->types[0];
+      for(int i=1; i<tup->types.size() && ret != NULL; i++) {
+        ret = ProtoType::lcs(ret,tup->types[i]);
+      }
+      if(ret == NULL)
+        return new ProtoType();
+      return ret;
     }
   }
 
@@ -305,9 +317,18 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     ProtoType* reftype = NULL;
     vector<ProtoType*> types;
     while( li->has_next() ) {
-       reftype = get_ref(oi,li->get_next("type"));
-       V4 << ce2s(reftype) << ", ";
-       types.push_back(reftype);
+      SExpr* expr = li->get_next("type");
+      reftype = get_ref(oi,expr);
+      if(isRestElement(oi,expr) && reftype->isA("ProtoTuple")) {
+        ProtoTuple* tup = T_TYPE(reftype);
+        for(int i=0; i<tup->types.size(); i++) {
+          V4 << ce2s(tup->types[i]) << ", ";
+          types.push_back(tup->types[i]);
+        }
+      } else {
+        V4 << ce2s(reftype) << ", ";
+        types.push_back(reftype);
+      }
     }
     V4 << endl;
     return tupleOrVector(types);
@@ -321,11 +342,6 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
   ProtoType* TypeConstraintApplicator::get_ref_fieldof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* hoodtype = get_ref(oi,li->get_next("type"));
-    // if it's already a field, it's been coerced
-    if(hoodtype->isA("ProtoField")) {
-       return hoodtype;
-    }
-    // otherwise, make it a field
     return new ProtoField(hoodtype);
   }
   
@@ -349,15 +365,17 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
   
   /**
    * Returns the field-type of its input.
-   * For example: (unlit <Field <Scalar 1>>) = <Scalar 1>
-   * Expects a field as input.  May coerce a <Number>.
+   * For example: (ft <Field <Scalar 1>>) = <Scalar 1>
+   * Expects a field as input. 
+   * Can coerce a ProtoField from a ProtoLocal e.g.,
+   * (ft <Scalar 1>) = <Scalar 1>
    */
   ProtoType* TypeConstraintApplicator::get_ref_ft(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* reftype = get_ref(oi,li->get_next("type"));
     if(!reftype->isA("ProtoField")) {
-      if(reftype->isA("ProtoNumber")) {
-        V4<<"coercing a ProtoNumber into a ProtoField"<< endl;
+      if(reftype->isA("ProtoLocal")) {
+        V3<<"Coercing a ProtoField for {"<<ce2s(ref)<<"} of {"<<ce2s(oi)<<"}"<<endl;
         return reftype;
       }
       ierror(ref,"Expected ProtoField, but got "+ce2s(reftype)); // temporary, to help test suite
@@ -387,6 +405,7 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     for(int i=0; i<sig->n_fixed(); i++) {
       ret->add(sig->nth_type(i));
     }
+    if(sig->rest_input) ret->add(sig->rest_input);
     return ret;
   }
 
@@ -472,53 +491,75 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     V4<<"  NOT Changing type "<<ce2s(*type)<<" to "<<ce2s(value)<<endl;
     return false;
   }
+
+  /**
+   * Returns true if n is the &rest element of oi
+   */
+  bool isNthArgRest(OI* oi, int n) {
+    return (n==oi->op->signature->n_fixed() && oi->op->signature->rest_input);
+  }
   
+  /**
+   * Asserts that the nth argument of oi is value.
+   */
   bool TypeConstraintApplicator::assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
-    if(n < oi->op->signature->required_inputs.size()) { // ordinary argument
-      V4<<"   assert_nth_arg: oi["<<n<<"]= "<<ce2s(oi->inputs[n]->range)<<", val="<<ce2s(value)<<endl;
-      if(n<oi->inputs.size())
-        return maybe_change_type(&oi->inputs[n]->range,value);
-    } else if(n < oi->op->signature->n_fixed()) {
-      V4<<"   assert_nth_arg: oi["<<n<<"]= "<<ce2s(oi->inputs[n]->range)<<", val="<<ce2s(value)<<endl;
-      if(n<oi->inputs.size())
-        return maybe_change_type(&oi->inputs[n]->range,value);
-      ierror("Nth arg calls not handling non-asserted optional arguments yet");
-    } else if(n==oi->op->signature->n_fixed() && oi->op->signature->rest_input) {// rest
-      V4<<"   assert_nth_arg: REST"<<endl;
-      //for each item in the tuple, maybe_change_type of input[n++]
-      bool ret=false;
-      ProtoTuple* tup = NULL;
-      if(value->isA("ProtoTuple")) {
-        tup = T_TYPE(value);
-        for(int i=n;i<oi->inputs.size();i++) {
-          //TODO: check sizes
-          V4<<"     assert_nth_arg: oi["<<i<<"]= "
-            <<ce2s(oi->inputs[i]->range)<<", val="<<ce2s(tup->types[i])<<endl;
-          ret = maybe_change_type(&oi->inputs[i]->range,tup->types[i]);
+    if(n >= 0 && n <= oi->inputs.size()) {
+      if(isNthArgRest(oi,n) && value->isA("ProtoTuple")) {
+        ProtoTuple* inputTup = new ProtoTuple(true);
+        // add all the inputs to a tuple
+        for(int i=oi->op->signature->n_fixed(); i<oi->inputs.size(); i++) {
+          inputTup->add(oi->inputs[i]->range);
         }
-      } else {
-        for(int i=n;i<oi->inputs.size();i++) {
-          V4<<"     assert_nth_arg: oi["<<i<<"]= "
-            <<ce2s(oi->inputs[i]->range)<<", val="<<ce2s(value)<<endl;
-          ret = maybe_change_type(&oi->inputs[i]->range,value);
+        V4<<"   assert_nth_arg (rest): oi["<<n<<"]= "<<ce2s(inputTup)<<", val="<<ce2s(value)<<endl;
+        // for all the inputs, change their type if necessary
+        ProtoTuple* valueTup = T_TYPE(value);
+        bool retVal = true;
+        for(int i=0; i<inputTup->types.size(); i++) {
+           ProtoType* valType = NULL;
+           // if valueTup is unbounded, use the last element for all remaining
+           if(i>=valueTup->types.size()) {
+             valType = valueTup->types[valueTup->types.size()-1];
+           } else {
+             valType = valueTup->types[i];
+           }
+           retVal =
+              maybe_change_type(&oi->inputs[i+oi->op->signature->n_fixed()]->range,
+                                valType);
         }
+        return retVal;
       }
-      return ret;
+      V4<<"   assert_nth_arg: oi["<<n<<"]= "<<ce2s(oi->inputs[n]->range)<<", val="<<ce2s(value)<<endl;
+      if(n<oi->inputs.size())
+        return maybe_change_type(&oi->inputs[n]->range,value);
     }
-    ierror("Failed assertion on argument "+i2s(n)+" of "+ce2s(oi));
+    ierror("Could not find argument "+i2s(n)+" of "+ce2s(oi));
   }
+
+  /**
+   * Asserts that all the arguments of oi are value.
+   * @WARNING not implemented
+   */
   bool TypeConstraintApplicator::assert_all_args(OperatorInstance* oi, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     ierror("Not yet implemented");
     return false;
   }
+
+  /**
+   * Asserts that output oi is value.
+   * @WARNING not implemented
+   */
   bool TypeConstraintApplicator::assert_op_return(Operator* f, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     ierror("Not yet implemented");
     return false;
   }
   
+  /**
+   * Asserts that (fieldof ref) = value.
+   * Expects ref to resolve to a ProtoLocal.
+   */
   bool TypeConstraintApplicator::assert_on_field(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoField"))
@@ -526,6 +567,10 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     return assert_ref(oi,ref,F_VAL(value));
   }
   
+  /**
+   * Asserts that (tupof ref) = value.
+   * Expects ref to resolve to a ProtoLocal.
+   */
   bool TypeConstraintApplicator::assert_on_tup(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoTuple"))
@@ -533,56 +578,104 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     return assert_ref(oi,ref,T_TYPE(value));
   }
   
+  /**
+   * Asserts that (ft ref) = value.
+   * Expects ref to resolve to a ProtoField.
+   */
   bool TypeConstraintApplicator::assert_on_ft(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoField")) {
       if(value->isA("ProtoNumber")) {
         V4 << "coercing a ProtoNumber into a ProtoField" << endl;
-        return assert_ref(oi,ref,value);
+        return assert_ref(oi,ref,new ProtoField(value));
       }
       ierror("'ft' assertion on non-field type: "+ref->to_str());
     }
-    return assert_ref(oi,ref, dynamic_cast<ProtoField*>(value)->hoodtype);
+    return assert_ref(oi,ref, F_TYPE(value));
   }
   
+  /**
+   * Asserts that (output ref) = value.
+   * Expects ref to resolve to a ProtoLambda.
+   */
   bool TypeConstraintApplicator::assert_on_output(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
-    //TODO: is it OK to use get_ref here?
     ProtoType* lambda_arg = get_ref(oi,ref);
     if(!lambda_arg->isA("ProtoLambda"))
        ierror("'output' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+lambda_arg->to_str()+")");
     ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(lambda_arg);
-    Signature* sig = lambda->op->signature;
-    return assert_ref(oi,ref,sig->output);
+    //Signature* sig = lambda->op->signature;
+    return assert_ref(oi,ref,lambda);
+    /*
+    if(!value->isA("ProtoLambda"))
+       ierror("'output' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+value->to_str()+")");
+    return assert_ref(oi,ref,L_TYPE(value));
+    */
   }
   
+  /**
+   * Asserts that (inputs ref) = value.
+   * Expects ref to resolve to a ProtoLambda.
+   * Expects value to be a ProtoTuple.
+   */
   bool TypeConstraintApplicator::assert_on_inputs(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
-    //TODO: is it OK to use get_ref here?
     ProtoType* lambda_arg = get_ref(oi,ref);
     if(!lambda_arg->isA("ProtoLambda"))
        ierror("'inputs' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+lambda_arg->to_str()+")");
     ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(lambda_arg);
     Signature* sig = lambda->op->signature;
-    ProtoTuple* ret = new ProtoTuple(true);
-    for(int i=0; i<sig->n_fixed(); i++) {
-       ret->add(sig->nth_type(i));
+    if(!value->isA("ProtoTuple"))
+       ierror("'inputs' assertion on a non-tuple type: value (it's a "+value->to_str()+")");
+    ProtoTuple* tup = T_TYPE(value);
+    for(int i=0;i<sig->n_fixed()&&i<tup->types.size();i++) {
+      sig->set_nth_type(i, ProtoType::gcs(sig->nth_type(i),tup->types[i]));
     }
-    return assert_ref(oi,ref,ret);
+    /* TODO: Not sure how to do REST elements yet
+    if(sig->rest_input) {
+       ProtoType* gcs = 
+          ProtoType::gcs(sig->rest_input,tup->types[tup->types.size()-1]);
+       if(gcs)
+         sig->rest_input = gcs;
+    }
+    */
+    return assert_ref(oi,ref,lambda);
+    /*
+    if(!value->isA("ProtoLambda"))
+       ierror("'inputs' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+value->to_str()+")");
+    return assert_ref(oi,ref,L_TYPE(value));
+    */
   }
   
+  /**
+   * Asserts that (last ref) = value.
+   * Expects ref to resolve to a ProtoTuple.
+   */
   bool TypeConstraintApplicator::assert_on_last(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
-    //TODO: This needs to define the types and number of elements in the tuple
-    // e.g., (last <Tuple<Any>...>) = <Scalar 2>  should make
-    // <Tuple<Any>...,<Scalar 2>>
-    if(value->isA("ProtoTuple")) {
-       ProtoTuple* tup = T_TYPE(value);
-       return assert_ref(oi,ref,tup->types[tup->types.size()-1]);
+    ProtoType* argtype = get_ref(oi, ref);
+    if(!argtype->isA("ProtoTuple")) {
+      ProtoTuple* tup = new ProtoTuple();
+      tup->add(value);
+      return assert_ref(oi,ref,tup);
+    } else {
+      ProtoTuple* tup = T_TYPE(argtype);
+      if(tup->bounded) {
+         //last element is value
+         return maybe_change_type(&tup->types[tup->types.size()-1], value);
+      } else {
+         //unbounded... add a type
+         tup->types.push_back(value);
+      }
     }
-    return false;
+    return true;
   }
 
+  /**
+   * Gets the LCS of nextType and prevType.  isRestElem must be true if
+   * nextType is a ProtoTuple derived from a &rest element in its function
+   * signature.
+   */
   ProtoType* TypeConstraintApplicator::getLCS(ProtoType* nextType, ProtoType* prevType, bool isRestElem) {
     ProtoType* compound = prevType;
     // if it's a &rest element, take the LCS of each sub-argument
@@ -604,6 +697,10 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     return compound;
   }
   
+  /**
+   * Asserts that (lcs ref) = value.
+   * Reads the remainder of arguments from li and takes the LCS of all the arguments in ref.
+   */
   bool TypeConstraintApplicator::assert_on_lcs(OperatorInstance* oi, SExpr* ref, ProtoType* value, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     SExpr* next = NULL;
@@ -622,28 +719,67 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     }
     return ret;
   }
+
+  /**
+   * Adds items to 'tup' to ensure that it has at least 'index' elements
+   */
+  bool TypeConstraintApplicator::fillTuple(ProtoTuple* tup, int index) {
+    for(int i=tup->types.size(); i<=index+1; i++) {
+      if(tup->isA("ProtoVector")) {
+        tup->add(new ProtoScalar());
+      } else {
+        tup->add(new ProtoType());
+      }
+    }
+    return true;
+  }
   
+  /**
+   * Asserts that (nth next ...li...) = value.
+   * Expects next to be a ProtoTuple and reads the next type from li, which it
+   * expects to be a ProtoScalar.  Uses the ProtoScalar as the index into the
+   * ProtoTuple.  Asserts that the nth item of the tuple is value.
+   */
   bool TypeConstraintApplicator::assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
-    //TODO: This needs to define the types and number of elements in the tuple
-    // e.g., (nth <Tuple<Any>...> 2) = <Scalar 2>  should make
-    // <Tuple<Any>,<Any>,<Scalar 2>,<Any>...>
+    //tuple
     bool ret = false;
-    V4<< "assert_on_nth: " << ce2s(next) << " : " << ce2s(value) << endl;
-    ret = assert_ref(oi,next,value);
+    ProtoType* tupType = ProtoType::gcs(get_ref(oi,next),new ProtoTuple());
+    if(!tupType->isA("ProtoTuple")) {
+       ierror("'nth' assertion on a non-tuple type: "+next->to_str()+" (it's a "+tupType->to_str()+")");
+    }
+    ret = assert_ref(oi,next,T_TYPE(tupType)); //we can at least say that the first argument is a <Tuple <Any>...>
+    //scalar
     SExpr* indexExpr = li->get_next("type");
-    V4<< "assert_on_nth (index): " << ce2s(indexExpr) << " : " << ce2s(value) << endl;
-    ret = assert_ref(oi,indexExpr,value);
+    ProtoType* indexType = ProtoType::gcs(get_ref(oi,indexExpr),new ProtoScalar());
+    if(indexType == NULL || !indexType->isA("ProtoScalar")) {
+       ierror("'nth' assertion on a non-scalar type: "+indexExpr->to_str()+" (it's a "+indexType->to_str()+")");
+    }
+    ret = assert_ref(oi,indexExpr,S_TYPE(indexType)); //we can at least say that the second arg is a <Scalar>
+    //nth of tup
+    if(indexType->isLiteral() //we know the index & the element already exists
+       && (int)S_VAL(indexType) >= 0
+       && (int)S_VAL(indexType) < T_TYPE(tupType)->types.size()) {
+      ret = maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
+    } else if(indexType->isLiteral() //we know the index & it's valid
+              && (int)S_VAL(indexType) >= 0) {
+      ret = fillTuple(T_TYPE(tupType),(int)S_VAL(indexType))
+         && maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
+    }
     return ret;
   }
   
+  /**
+   * Asserts that (unlit ref) = value.
+   * Asserts a de-literalized value onto its arguments.
+   */
   bool TypeConstraintApplicator::assert_on_unlit(OperatorInstance* oi, SExpr* next, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     return assert_ref(oi,next,Deliteralization::deliteralize(value));
   }
 
   /**
-   * Returns true iff type is a Tuple derived from a &rest element
+   * Returns true iff type is a Tuple derived from a &rest element.
    */
   bool TypeConstraintApplicator::isRestElement(OperatorInstance* oi, SExpr* ref) {
     //TODO: is this the right way to tell if it's a real Tuple or a &rest
@@ -652,6 +788,9 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
        && is_arg_ref(((SE_Symbol*)ref)->name)==oi->op->signature->n_fixed();
   }
 
+  /**
+   * Asserts value onto a symbol (ref) from oi.
+   */
   bool TypeConstraintApplicator::assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     // These will be removed, and replaced with references to named variables
@@ -672,6 +811,9 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     if(*ref=="return") return assert_op_return(oi->op,value);
   }
   
+  /**
+   * Asserts value onto a list (ref) from oi.
+   */
   bool TypeConstraintApplicator::assert_ref_list(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     SE_List_iter li(ref);
@@ -704,8 +846,10 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
       return assert_on_unlit(oi,li.get_next("type"),value);
   }
 
-  // Core assert dispatch function
-  // If possible, modify the referred type with a GCS.
+  /** 
+   * Core assert dispatch function.
+   * If possible, modify the referred type with a GCS.
+   */
   bool TypeConstraintApplicator::assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
@@ -718,22 +862,40 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     ierror(ref,"Unknown type reference: "+ce2s(ref)); // temporary, to help test suite
     return type_err(ref,"Unknown type reference: "+ce2s(ref));
   }
-  
-  ProtoType* TypeConstraintApplicator::coerceType(ProtoType* a, ProtoType* b) {
-     ProtoType* coerceA = a;
-     ProtoType* coerceB = b;
-     ProtoType* ret = NULL;
-     //coerce a Field
-     if(a->isA("ProtoField")) {
-        coerceA = dynamic_cast<ProtoField*>(a)->hoodtype;
-     }
-     if(b->isA("ProtoField")) {
-        coerceB = dynamic_cast<ProtoField*>(b)->hoodtype;
-     }
-     ret = ProtoType::gcs(coerceA,coerceB);
-     return ret;
+
+  bool TypeConstraintApplicator::repair_field_constraint(OI* oi, 
+                                                         ProtoField* field,
+                                                         ProtoType* local) {
+    V4 << "Repair changing " << ce2s(local);
+    local = ProtoType::gcs(field,new ProtoField(local));
+    V4 << " to " << ce2s(local) << endl;
+    if(oi->pointwise()==1) {
+      //Fieldify
+      Operator* fo = FieldOp::get_field_op(oi);
+      if(fo) {
+        V4 << "Repair changing op" << ce2s(oi->op);
+        oi->op = fo;
+        V4 << " to " << ce2s(oi->op) << endl;
+      }
+    }
+    if(!oi->output->range->isA("ProtoField")) {
+      //Change output
+      V4 << "Repair changing output " << ce2s(oi->output->range);
+      oi->output->range = new ProtoField(oi->output->range);
+      V4 << " to " << ce2s(oi->output->range) << endl;
+    }
   }
 
+  bool TypeConstraintApplicator::repair_constraint_failure(OI* oi, 
+                                                           ProtoType* ftype, 
+                                                           ProtoType* ctype) {
+    if(ftype->isA("ProtoField") && ctype->isA("ProtoLocal")) {
+      return repair_field_constraint(oi, F_TYPE(ftype), ctype);
+    } else if(ctype->isA("ProtoField") && ftype->isA("ProtoLocal")) {
+      return repair_field_constraint(oi, F_TYPE(ctype), ftype);
+    }
+  }
+  
   /********** External Interface **********/
   bool TypeConstraintApplicator::apply_constraint(OperatorInstance* oi, SExpr* constraint) {
     DEBUG_FUNCTION(__FUNCTION__);
@@ -750,14 +912,16 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
       // first, take the GCS
       ProtoType *joint = ProtoType::gcs(a,b);
       if(joint==NULL) { // if GCS shows conflict, attempt to correct
-        joint = coerceType(a, b);
-        if(joint==NULL) {
+        if(verbosity > 4)
+          parentRoot->root->printdot(cpout);
+        if(!repair_constraint_failure(oi,a,b))
           ierror("Equality constraint failed, but don't know how to handle yet.");
-        }
       } else { // if GCS succeeded, assert onto referred locations
         V3<<"  apply_constraint: joint="<<ce2s(joint)<< endl;
         bool ret = assert_ref(oi,aref,joint) | assert_ref(oi,bref,joint);
         V4<<"  apply_constraint: done"<< endl;
+        if(verbosity > 4)
+          parentRoot->root->printdot(cpout);
         return ret;
       }
       // if it's OK, then push back:  maybe_set_ref(oi,constraint[i]);
@@ -874,7 +1038,7 @@ ProtoType* if_derivable(TypeVector* tv, TypeVector* sigtypes) {
   return tv;
 }
 
-// returns null to indicate a non-useful type
+/// returns null to indicate a non-useful type
 ProtoType* type_error(CompilationElement *where,string msg) {
   compile_error(where,"Type inference: "+msg); return NULL;
 }
@@ -891,15 +1055,33 @@ ProtoType* Signature::nth_type(int n) {
   return type_error(this,"Can't find type"+i2s(n)+" in "+to_str());
 }
 
+void Signature::set_nth_type(int n,ProtoType* val) {
+  if(n < required_inputs.size()) {
+     required_inputs[n] = val;
+     return;
+  }
+  n-= required_inputs.size();
+  if(n < optional_inputs.size()) {
+     optional_inputs[n] = val;
+     return;
+  }
+  n-= optional_inputs.size();
+  if(rest_input) {
+     rest_input = val;
+  }
+}
+
 ProtoType* OperatorInstance::nth_input(int n) {
   if(n < op->signature->n_fixed()) { // ordinary argument
     return if_derivable(inputs[n]->range,op->signature->nth_type(n));
-  } else if(n==op->signature->n_fixed() && op->signature->rest_input) { // rest
-    TypeVector *types = TypeVector::op_types_from(this,n),
-      *sigt = TypeVector::sig_type_range(op->signature,n,inputs.size());
-    return if_derivable(types,sigt);
+  } else if(n>=op->signature->n_fixed() 
+            && n < inputs.size() 
+            && op->signature->rest_input) { // rest
+    return inputs[n]->range;
+  } else if(n==0 && op->signature->rest_input) {
+    return op->signature->rest_input;
   }
-  return type_error(this,"Can't find input"+i2s(n)+" in "+to_str());
+  return type_error(this,"Can't find input "+i2s(n)+" in "+to_str());
 }
 
 ProtoType* OperatorInstance::output_type() {
@@ -1106,6 +1288,7 @@ class TypePropagator : public IRPropagator {
   bool repair_conflict(Field* f,Consumer c,ProtoType* ftype,ProtoType* ctype) {
     // if vector is needed and scalar is provided, convert to a size-1 vector
     if(ftype->isA("ProtoScalar") && ctype->isA("ProtoVector")) {
+      V4<<"repair scalar->vector"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       V2<<"Converting Scalar to 1-Vector\n";
       OI* tup = new OperatorInstance(f->producer,Env::core_op("tup"),f->domain);
@@ -1117,6 +1300,7 @@ class TypePropagator : public IRPropagator {
     // if source is local and user wants a field, add a "local" op
     // or replace no-argument source with a field op
     if(ftype->isA("ProtoLocal") && ctype->isA("ProtoField")) {
+      V4<<"repair local->field"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       ProtoField* ft = dynamic_cast<ProtoField*>(ctype);
       if(ProtoType::gcs(ftype,ft->hoodtype)) {
@@ -1138,6 +1322,7 @@ class TypePropagator : public IRPropagator {
     
     // if source is field and user is "local", send to the local's consumers
     if(ftype->isA("ProtoField") && c.first&&c.first->op==Env::core_op("local")){
+      V4<<"repair field->local"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       V2<<"  Deleting 'local' at "<<ce2s(f)<<endl;
       root->relocate_consumers(c.first->output,f);
@@ -1146,19 +1331,24 @@ class TypePropagator : public IRPropagator {
     
     // if source is field and user is pointwise, upgrade to field op
     if(ftype->isA("ProtoField") && ctype->isA("ProtoLocal")) {
+      V4<<"repair field->pointwise"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       ProtoField* ft = dynamic_cast<ProtoField*>(ftype);
       int pw = c.first->pointwise();
+      V4<<" pointwise? "<< pw << endl;
       if(pw!=0 && ProtoType::gcs(ctype,ft->hoodtype)) {
         Operator* fo = FieldOp::get_field_op(c.first); // might be upgradable
+        V4<<" fieldop = "<< ce2s(fo) << endl;
         if(fo) {
-          V2<<"  Fieldify pointwise: "<<ce2s(c.first)<<endl;
-          c.first->op = fo; note_change(c.first);
+          V2<<"  Fieldify pointwise: "<<ce2s(c.first->op->signature)<<" to "<<ce2s(fo->signature)<<endl;
+          c.first->op = fo; 
+          note_change(c.first);
         }
         return true; // in any case, don't fail out now
       }
     }
     
+    V4<<"no matching repairs"<< endl;
     return false; // repair has failed
   }
 
@@ -1242,17 +1432,28 @@ class TypePropagator : public IRPropagator {
       }
 
       // old-style resolution
-      
+      V4 << "Conducting old-style type resolution on " << ce2s(oi) << endl;
       ProtoType* newtype = resolve_type(oi,oi->output->range);
-      if(newtype) { maybe_set_range(oi->output,newtype);
-      } else if(oi->attributes.count("LETFED-MUX") &&
-                oi->output->range->isA("DerivedType")) {
+      if(newtype) { 
+        maybe_set_range(oi->output,newtype);
+      } 
+
+      V4 << "Attributes of " << ce2s(oi) << ": " << endl;
+      map<string,Attribute*>::const_iterator end = oi->attributes.end();
+      for( map<string,Attribute*>::const_iterator it = oi->attributes.begin(); it != end; ++it) {
+         V4 << "  - " << it->first << endl;
+      }
+      if(oi->attributes.count("LETFED-MUX")
+                && oi->output->range->isA("DerivedType")
+         ){
         // letfed mux resolves from init
         if(oi->inputs.size()<2)
           type_error(oi,"Can't resolve letfed type: not enough mux arguments");
         Field* init = oi->inputs[1]; // true input = init
-        if(!init->range->isA("DerivedType"))
+        if(!init->range->isA("DerivedType")) {
+          V4 << "Resolving LETFED-MUX from init: " << ce2s(init->range) << endl;
           maybe_set_range(oi->output,Deliteralization::deliteralize(init->range));
+        }
       }
 
       // ALSO: find GCS of producer, consumers, & field values
@@ -1548,7 +1749,8 @@ class Literalizer : public IRPropagator {
       if(oi->inputs[0]->range->isA("ProtoLambda") && 
          oi->inputs[0]->range->isLiteral()) {
         OI* newoi=new OI(oi,L_VAL(oi->inputs[0]->range),oi->output->domain);
-        for(int i=1;i<oi->inputs.size();i++) newoi->add_input(oi->inputs[i]);
+        for(int i=1;i<oi->inputs.size();i++) 
+          newoi->add_input(oi->inputs[i]);
         V2<<" Literalizing:\n  "<<ce2s(oi)<<" \n  into "<<ce2s(newoi)<<endl;
         root->relocate_consumers(oi->output,newoi->output); note_change(oi);
         root->delete_node(oi); // kill old op

@@ -29,8 +29,9 @@
 (primitive - (number &rest number) number
   :type-constraints ((= value (unlit (lcs arg0 arg1)))))
 ;(primitive * (&rest number) (unlit (last arg0)))
+;[*] expects at most one argument to be a vector and it must be the last
 (primitive * (&rest number) number
-  :type-constraints ((= value (unlit (lcs arg0)))))
+  :type-constraints ((= value (unlit (last arg0)))))
 ;(primitive / (number &rest scalar) (unlit arg0))
 (primitive / (quotient|number &rest divisors|scalar) number
   :type-constraints ((= value (unlit arg0))))
@@ -189,14 +190,17 @@
 ;; fold-hood's lambda takes a partial summary and the value from a nbr
 ;; and combines them to make a new partial summary.  The 2nd argument is
 ;; the inital summary and the 3rd argument is the value to share
-;(primitive fold-hood ((lambda (local local) (unlit arg0)) 
-;		      (unlit (nth (inputs arg0) 0))
-;		      (unlit (nth (inputs arg0) 1)))
-;  (unlit (nth (inputs arg0) 0)) :space :time)
-(primitive fold-hood ((lambda (local local) (unlit arg0)) local local) local :space :time
-  :type-constraints((= arg1 (unlit (nth (inputs arg0) 0)))
-                    (= arg2 (unlit (nth (inputs arg0) 1)))
-                    (= value (unlit (nth (inputs arg0) 0)))))
+(primitive fold-hood 
+          ((lambda (local local) (unlit arg0)) 
+		      (unlit (nth (inputs arg0) 0))
+		      (unlit (nth (inputs arg0) 1)))
+  (unlit (nth (inputs arg0) 0)) :space :time)
+;(primitive fold-hood (lambda local local) local :space :time
+;  :type-constraints((= (inputs arg0) (tupof local local))
+;                    (= (output arg0) (unlit (inputs arg0)))
+;                    (= arg1 (unlit (nth (inputs arg0) 0)))
+;                    (= arg2 (unlit (nth (inputs arg0) 1)))
+;                    (= value (unlit (nth (inputs arg0) 0)))))
 (primitive fold-hood* ((lambda (local local) (unlit arg0))
 	   	       (lambda (local) (unlit (nth (inputs arg0) 1)))
 		       (unlit (nth (inputs arg1) 0)))
@@ -205,6 +209,13 @@
 	   		   (lambda (local) (unlit (nth (inputs arg0) 1)))
 			   (unlit (nth (inputs arg1) 0)))
   (unlit (output arg1)) :space :time)
+;(primitive fold-hood-plus (lambda(local local) lambda local) local :space :time
+;  :type-constraints((= value (unlit (output arg1)))
+;                    (= (inputs arg0) (tupof local local))
+;                    (= (output arg0) (unlit (inputs arg0)))
+;                    (= (inputs arg1) (tupof local))
+;                    (= (output arg1) (unlit (nth (inputs arg0) 1)))
+;                    (= arg2 (unlit (nth (inputs arg1) 0)))))
 
 ;; Time
 (primitive dt () scalar)

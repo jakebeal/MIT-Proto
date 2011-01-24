@@ -334,6 +334,8 @@ int OperatorInstance::recursive() {
 // pointwise test returns 1 if pointwise, 0 if not, and -1 if unresolved
 int OperatorInstance::pointwise() {
   int opp = output->range->pointwise(); if(opp==0) return 0;
+  if(op->isA("FieldOp"))
+    return 0;
   if(op->isA("Literal") || op->isA("Parameter")) { 
     return opp; // Literal, Parameter: depends only on value
   } else if(op->isA("Primitive")) {

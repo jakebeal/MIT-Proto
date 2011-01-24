@@ -26,15 +26,18 @@ class Deliteralization {
    static ProtoType* deliteralize(ProtoType* base);
 };
 
+struct TypePropagator;
 class TypeConstraintApplicator {
  public:
   int verbosity;
   TypeConstraintApplicator(IRPropagator* parent) {
     (parent)?verbosity=parent->verbosity:verbosity=0;
+    parentRoot = parent;
   }
   bool apply_constraint(OperatorInstance* oi, SExpr* constraint);
   bool apply_constraints(OperatorInstance* oi, SExpr* constraints);
  private:
+  IRPropagator* parentRoot;
   ProtoType* get_op_return(Operator* op);
   ProtoTuple* get_all_args(OperatorInstance* oi);
   ProtoType* get_nth_arg(OperatorInstance* oi, int n);
@@ -70,7 +73,10 @@ class TypeConstraintApplicator {
   bool assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value);
   bool assert_ref_list(OperatorInstance* oi, SExpr* ref, ProtoType* value);
   bool assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value);
+  bool fillTuple(ProtoTuple* tup, int index);
   ProtoType* coerceType(ProtoType* a, ProtoType* b);
+  bool repair_constraint_failure(OI* oi, ProtoType* ftype,ProtoType* ctype);
+  bool repair_field_constraint(OI* oi, ProtoField* field, ProtoType* local);
 };
 
 

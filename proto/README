@@ -68,6 +68,7 @@ Proto depends on the following applications and libraries:
 * Xi (X input Extension library - usually already installed)
 * Doxygen (optional) for API documentation building
 * Graphviz (optional) for graph generation in API documentation
+* CPPUnit (optional) unit testing framework for compiler
 
 If you have all of these installed, you should just be able to run
 'make' in this directory and have the whole thing build correctly.

@@ -388,6 +388,45 @@ void TypeCheckingTestCase::getRefNth() {
   CPPUNIT_ASSERT(S_VAL(ref) == 8);
 }
 
+void TypeCheckingTestCase::getRefNthAllSame() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoField(new ProtoScalar(2)) );
+  req_input.push_back( new ProtoScalar() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar(7));
+  rest->add(new ProtoScalar(7));
+  rest->add(new ProtoScalar(8));
+  //output
+  ProtoTuple* output = new ProtoTuple(true);
+  output->add( new ProtoScalar(4) );
+  output->add( new ProtoScalar(4) );
+  output->add( new ProtoScalar(4) );
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("nth"));
+  sexpr->add(new SE_Symbol("value"));
+  sexpr->add(new SE_Symbol("arg1"));
+  ProtoType* ref = tca->get_ref(oi,sexpr);
+  CPPUNIT_ASSERT(ref->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(ref->isLiteral());
+  CPPUNIT_ASSERT(S_VAL(ref) == 4);
+  sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("nth"));
+  sexpr->add(new SE_Symbol("arg2"));
+  sexpr->add(new SE_Symbol("arg1"));
+  ref = tca->get_ref(oi,sexpr);
+  CPPUNIT_ASSERT(ref->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(!ref->isLiteral());
+}
+
 void TypeCheckingTestCase::getRefLcs() {
   //required_inputs
   vector<ProtoType*> req_input = vector<ProtoType*>();
@@ -476,14 +515,12 @@ void TypeCheckingTestCase::getRefTupof() {
   ref = tca->get_ref(oi,sexpr);
   CPPUNIT_ASSERT(ref->isA("ProtoTuple"));
   tup = T_TYPE(ref);
-  CPPUNIT_ASSERT(tup->types[0]->isA("ProtoTuple"));
-  ProtoTuple* tup2 = T_TYPE(tup->types[0]);
-  CPPUNIT_ASSERT(tup2->types[0]->isA("ProtoScalar"));
-  CPPUNIT_ASSERT(tup2->types[1]->isA("ProtoScalar"));
-  CPPUNIT_ASSERT(tup2->types[2]->isA("ProtoScalar"));
-  CPPUNIT_ASSERT_EQUAL(7, (int)S_VAL(tup2->types[0]));
-  CPPUNIT_ASSERT_EQUAL(8, (int)S_VAL(tup2->types[1]));
-  CPPUNIT_ASSERT_EQUAL(9, (int)S_VAL(tup2->types[2]));
+  CPPUNIT_ASSERT(tup->types[0]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(tup->types[1]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(tup->types[2]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT_EQUAL(7, (int)S_VAL(tup->types[0]));
+  CPPUNIT_ASSERT_EQUAL(8, (int)S_VAL(tup->types[1]));
+  CPPUNIT_ASSERT_EQUAL(9, (int)S_VAL(tup->types[2]));
   
   // rest with others
   sexpr = new SE_List();
@@ -498,14 +535,12 @@ void TypeCheckingTestCase::getRefTupof() {
   CPPUNIT_ASSERT(tup->types[1]->isA("ProtoScalar"));
   CPPUNIT_ASSERT(S_VAL(tup->types[0]) == 2);
   CPPUNIT_ASSERT(S_VAL(tup->types[1]) == 3);
-  CPPUNIT_ASSERT(tup->types[2]->isA("ProtoTuple"));
-  tup2 = T_TYPE(tup->types[2]);
-  CPPUNIT_ASSERT(tup2->types[0]->isA("ProtoScalar"));
-  CPPUNIT_ASSERT(tup2->types[1]->isA("ProtoScalar"));
-  CPPUNIT_ASSERT(tup2->types[2]->isA("ProtoScalar"));
-  CPPUNIT_ASSERT_EQUAL(7, (int)S_VAL(tup2->types[0]));
-  CPPUNIT_ASSERT_EQUAL(8, (int)S_VAL(tup2->types[1]));
-  CPPUNIT_ASSERT_EQUAL(9, (int)S_VAL(tup2->types[2]));
+  CPPUNIT_ASSERT(tup->types[2]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(tup->types[3]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(tup->types[4]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT_EQUAL(7, (int)S_VAL(tup->types[2]));
+  CPPUNIT_ASSERT_EQUAL(8, (int)S_VAL(tup->types[3]));
+  CPPUNIT_ASSERT_EQUAL(9, (int)S_VAL(tup->types[4]));
 }
 
 void TypeCheckingTestCase::getRefOptionalInputs() {
@@ -588,4 +623,527 @@ void TypeCheckingTestCase::getRefRest() {
   CPPUNIT_ASSERT(rest_elem->types[0]->isA("ProtoScalar"));
   CPPUNIT_ASSERT_EQUAL(6, (int)S_VAL(rest_elem->types[0]));
   CPPUNIT_ASSERT_EQUAL(7, (int)S_VAL(rest_elem->types[1]));
+}
+
+void TypeCheckingTestCase::assertNthEmptyRest() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  tca->assert_nth_arg(oi,0,new ProtoTuple(true));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
+  CPPUNIT_ASSERT_EQUAL(0, (int)T_TYPE(oi->nth_input(0))->types.size());
+}
+
+void TypeCheckingTestCase::assertNthArg() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoScalar() );
+  req_input.push_back( new ProtoScalar() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  tca->assert_nth_arg(oi,0,new ProtoScalar(2));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(2, (int)S_VAL(oi->nth_input(0)));
+  tca->assert_nth_arg(oi,1,new ProtoScalar(3));
+  CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(1)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(3, (int)S_VAL(oi->nth_input(1)));
+  tca->assert_nth_arg(oi,2,new ProtoScalar(4));
+  CPPUNIT_ASSERT(oi->nth_input(2)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(2)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(4, (int)S_VAL(oi->nth_input(2)));
+  tca->assert_nth_arg(oi,3,new ProtoScalar(5));
+  CPPUNIT_ASSERT(oi->nth_input(3)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(3)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(5, (int)S_VAL(oi->nth_input(3)));
+  ProtoTuple* restElem = new ProtoTuple(true);
+  restElem->add(new ProtoScalar(6));
+  restElem->add(new ProtoScalar(7));
+  tca->assert_nth_arg(oi,4,restElem);
+  CPPUNIT_ASSERT(oi->nth_input(4)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(4)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(6, (int)S_VAL(oi->nth_input(4)));
+  CPPUNIT_ASSERT(oi->nth_input(5)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(5)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(7, (int)S_VAL(oi->nth_input(5)));
+}
+
+
+void TypeCheckingTestCase::assertRefSymbol() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoScalar() );
+  req_input.push_back( new ProtoScalar() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  tca->assert_ref(oi, new SE_Symbol("arg0"), new ProtoScalar(2));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(2, (int)S_VAL(oi->nth_input(0)));
+  tca->assert_ref(oi, new SE_Symbol("value"), new ProtoVector());
+  CPPUNIT_ASSERT(oi->output->range->isA("ProtoVector"));
+}
+
+void TypeCheckingTestCase::assertRefUnlit() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("unlit"));
+  sexpr->add(new SE_Symbol("arg0"));
+  tca->assert_ref(oi, sexpr, new ProtoScalar(5));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(!oi->nth_input(0)->isLiteral());
+}
+
+void TypeCheckingTestCase::assertRefFieldof() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("fieldof"));
+  sexpr->add(new SE_Symbol("arg0"));
+  tca->assert_ref(oi, sexpr, new ProtoField(new ProtoScalar(5)));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(5, (int)S_VAL(oi->nth_input(0)));
+}
+
+void TypeCheckingTestCase::assertRefFt() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("ft"));
+  sexpr->add(new SE_Symbol("arg0"));
+  tca->assert_ref(oi, sexpr, new ProtoField(new ProtoScalar(5)));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoField"));
+  CPPUNIT_ASSERT(F_VAL(oi->nth_input(0))->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(F_VAL(oi->nth_input(0))->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(5, (int)S_VAL(F_VAL(oi->nth_input(0))));
+}
+
+void TypeCheckingTestCase::assertRefInputs() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  Signature* sig = new Signature( new CE(), new ProtoType() );
+  sig->required_inputs.push_back(new ProtoType());
+  sig->rest_input = new ProtoTuple(true);
+  T_TYPE(sig->rest_input)->types.push_back(new ProtoType());
+  T_TYPE(sig->rest_input)->types.push_back(new ProtoType());
+  ProtoLambda* lambda = new ProtoLambda( new Operator( new CE(), sig ) );
+  req_input.push_back( lambda );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("inputs"));
+  sexpr->add(new SE_Symbol("arg0"));
+  //valueTup = (tup 1 (tup 2 3))
+  ProtoTuple* valueTup = new ProtoTuple(true);
+  valueTup->add(new ProtoScalar(1));
+  ProtoTuple* restTup = new ProtoTuple(true);
+  restTup->add(new ProtoScalar(2));
+  restTup->add(new ProtoScalar(3));
+  valueTup->add(restTup);
+  tca->assert_ref(oi, sexpr, valueTup);
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoLambda"));
+  Signature* osig = L_VAL(oi->nth_input(0))->signature;
+  CPPUNIT_ASSERT(osig->nth_type(0)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT_EQUAL(1, (int)S_VAL(L_VAL(oi->nth_input(0))->signature->nth_type(0)));
+  CPPUNIT_ASSERT(osig->nth_type(2)->isA("ProtoTuple"));
+  CPPUNIT_ASSERT(T_TYPE(osig->nth_type(1))->types[0]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(T_TYPE(osig->nth_type(1))->types[1]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT_EQUAL(2, (int)S_VAL(T_TYPE(osig->nth_type(1))->types[0]));
+  CPPUNIT_ASSERT_EQUAL(3, (int)S_VAL(T_TYPE(osig->nth_type(1))->types[1]));
+}
+
+void TypeCheckingTestCase::assertRefInputsRest() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  Signature* sig = new Signature( new CE(), new ProtoType() );
+  sig->rest_input = new ProtoTuple(); //unbound
+  T_TYPE(sig->rest_input)->clear();
+  T_TYPE(sig->rest_input)->types.push_back(new ProtoNumber());
+  ProtoLambda* lambda = new ProtoLambda( new Operator( new CE(), sig ) );
+  req_input.push_back( lambda );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  //rest
+  ProtoTuple* rest = NULL;
+  //output
+  ProtoNumber* output = new ProtoNumber();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("inputs"));
+  sexpr->add(new SE_Symbol("arg0"));
+  //valueTup = (tup 1 2 3)
+  ProtoTuple* valueTup = new ProtoTuple(true);
+  valueTup->add(new ProtoScalar(1));
+  valueTup->add(new ProtoScalar(2));
+  valueTup->add(new ProtoScalar(3));
+  tca->assert_ref(oi, sexpr, valueTup);
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoLambda"));
+  Signature* osig = L_VAL(oi->nth_input(0))->signature;
+}
+
+void TypeCheckingTestCase::assertRefOutput() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  Signature* sig = new Signature( new CE(), new ProtoScalar() );
+  sig->required_inputs.push_back(new ProtoTuple());
+  sig->required_inputs.push_back(new ProtoTuple());
+  ProtoLambda* lambda = new ProtoLambda( new Operator( new CE(), sig ) );
+  req_input.push_back( lambda );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("output"));
+  sexpr->add(new SE_Symbol("arg0"));
+  tca->assert_ref(oi, sexpr, new ProtoNumber());
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoLambda"));
+  CPPUNIT_ASSERT(L_VAL(oi->nth_input(0))->signature->output->isA("ProtoScalar"));
+}
+
+void TypeCheckingTestCase::assertRefTupof() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("tupof"));
+  sexpr->add(new SE_Symbol("arg0"));
+  tca->assert_ref(oi, sexpr, new ProtoTuple());
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
+}
+
+void TypeCheckingTestCase::assertRefLast() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("last"));
+  sexpr->add(new SE_Symbol("arg0"));
+  ProtoTuple* tup = new ProtoTuple(true);
+  tup->add(new ProtoScalar(2));
+  tup->add(new ProtoScalar(3));
+  tup->add(new ProtoScalar(4));
+  tca->assert_ref(oi, sexpr, tup);
+
+  sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("last"));
+  sexpr->add(new SE_Symbol("arg1"));
+  tca->assert_ref(oi, sexpr, new ProtoScalar(5));
+  
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
+  CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoTuple"));
+  ProtoTuple* rettup = T_TYPE(oi->nth_input(1));
+  ProtoType* retlast = rettup->types[rettup->types.size()-1];
+  CPPUNIT_ASSERT(retlast->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(retlast->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(5, (int)S_VAL(retlast));
+}
+
+void TypeCheckingTestCase::assertRefLastBounded() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  ProtoTuple* arg0 = new ProtoTuple(true);
+  arg0->add(new ProtoType());
+  arg0->add(new ProtoType());
+  arg0->add(new ProtoType());
+  arg0->add(new ProtoTuple());
+  req_input.push_back( arg0 );
+  ProtoTuple* arg1 = new ProtoTuple(true);
+  arg1->add(new ProtoType());
+  arg1->add(new ProtoType());
+  arg1->add(new ProtoType());
+  arg1->add(new ProtoScalar());
+  req_input.push_back( arg1 );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("last"));
+  sexpr->add(new SE_Symbol("arg0"));
+  ProtoTuple* tup = new ProtoTuple(true);
+  tup->add(new ProtoScalar(2));
+  tup->add(new ProtoScalar(3));
+  tup->add(new ProtoScalar(4));
+  tca->assert_ref(oi, sexpr, tup);
+
+  sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("last"));
+  sexpr->add(new SE_Symbol("arg1"));
+  tca->assert_ref(oi, sexpr, new ProtoScalar(5));
+  
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
+  CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoTuple"));
+  ProtoTuple* rettup = T_TYPE(oi->nth_input(1));
+  ProtoType* retlast = rettup->types[rettup->types.size()-1];
+  CPPUNIT_ASSERT(retlast->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(retlast->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(5, (int)S_VAL(retlast));
+}
+
+void TypeCheckingTestCase::assertRefLcs() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoType() );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoTuple* output = new ProtoTuple();
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("lcs"));
+  sexpr->add(new SE_Symbol("arg0"));
+  sexpr->add(new SE_Symbol("arg1"));
+  sexpr->add(new SE_Symbol("arg2"));
+  tca->assert_ref(oi, sexpr, new ProtoNumber());
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoNumber"));
+  CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoNumber"));
+  CPPUNIT_ASSERT(oi->nth_input(2)->isA("ProtoNumber"));
+}
+
+void TypeCheckingTestCase::assertRefNth() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoScalar(1) );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoType* output = new ProtoScalar(4);
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("nth"));
+  sexpr->add(new SE_Symbol("arg0"));
+  sexpr->add(new SE_Symbol("arg1"));
+  tca->assert_ref(oi, sexpr, new ProtoScalar(3));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
+  CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[0]->isA("ProtoType"));
+  CPPUNIT_ASSERT(!T_TYPE(oi->nth_input(0))->types[0]->isLiteral());
+  CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[1]->isA("ProtoScalar"));
+  CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[1]->isLiteral());
+  CPPUNIT_ASSERT_EQUAL(3, (int)S_VAL(T_TYPE(oi->nth_input(0))->types[1]));
+  CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[2]->isA("ProtoType"));
+  CPPUNIT_ASSERT(!T_TYPE(oi->nth_input(0))->types[2]->isLiteral());
+}
+
+void TypeCheckingTestCase::assertRefNthUnlit() {
+  //required_inputs
+  vector<ProtoType*> req_input = vector<ProtoType*>();
+  req_input.push_back( new ProtoType() );
+  req_input.push_back( new ProtoScalar(0) );
+  //optional_inputs
+  vector<ProtoType*> opt_input = vector<ProtoType*>();
+  opt_input.push_back( new ProtoScalar() );
+  opt_input.push_back( new ProtoScalar() );
+  //rest
+  ProtoTuple* rest = new ProtoTuple(true);
+  rest->add(new ProtoScalar());
+  rest->add(new ProtoScalar());
+  //output
+  ProtoType* output = new ProtoScalar(4);
+  OperatorInstance* oi = makeNewOI( req_input, 
+                                    opt_input, 
+                                    rest, 
+                                    output );
+  TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
+  SE_List* sexpr = new SE_List();
+  sexpr->add(new SE_Symbol("nth"));
+  sexpr->add(new SE_Symbol("arg0"));
+  sexpr->add(new SE_Symbol("arg2"));
+  tca->assert_ref(oi, sexpr, new ProtoScalar(3));
+  CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
+  CPPUNIT_ASSERT(oi->nth_input(2)->isA("ProtoScalar"));
+}
+
+void TypeCheckingTestCase::supertype() {
+   ProtoVector* type = new ProtoVector();
+   ProtoVector* value = new ProtoVector(true);
+   value->add(new ProtoScalar());
+   CPPUNIT_ASSERT(type->supertype_of(value));
+   CPPUNIT_ASSERT(!value->supertype_of(type));
 }

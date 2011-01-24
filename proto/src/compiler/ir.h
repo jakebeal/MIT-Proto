@@ -158,6 +158,7 @@ struct ProtoLambda: public ProtoLocal {
   virtual ProtoType* gcs(ProtoType* t);
   virtual bool isLiteral() { return op!=NULL; }
 };
+#define L_TYPE(x) (dynamic_cast<ProtoLambda*>(x))
 #define L_VAL(x) (dynamic_cast<ProtoLambda*>(x)->op)
 
 struct ProtoField : public ProtoType {
@@ -207,8 +208,29 @@ struct Signature : public CompilationElement { reflection_sub(Signature,CE);
   
   /// true if n a permissible number of args
   bool legal_length(int n);
+
+  /**
+   * Returns the nth type in the signature.
+   * For example:
+   * [mod].nth_type(0) = Scalar
+   *
+   * If the nth type is a rest element, the whole element is returned.
+   * For example:
+   * [+].nth_type(0) = Tuple<<Number>...>
+   */
   ProtoType* nth_type(int n);
+
+  /**
+   * Sets the nth_type (see function) of the signature to val.
+   */
+  void set_nth_type(int n, ProtoType* val);
+
+  /**
+   * Returns the fixed size of a function signature.
+   * This is the sum of required_inputs and optional_inputs.
+   */
   int n_fixed() { return required_inputs.size()+optional_inputs.size(); }
+
   /// English description of number of allowed types
   string num_arg_str();
 };

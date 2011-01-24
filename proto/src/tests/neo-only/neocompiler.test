@@ -804,16 +804,16 @@ test: $(P2B) -CDall "(min-hood (+ 1 (nbr 2)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <D:(ft arg0)> OUTPUT
+is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Number>
 is 5 _   Delta: Alfa --> <Scalar 1>
-is 6 _   Echo: Alfa --> <D:(fieldof arg0)>
+is 6 _   Echo: Alfa --> <Field <Any>>
 is 7 _   Foxtrot: Alfa --> <Scalar 2>
 is 8 _ Operator Instances:
-is 9 _   Charlie<Number> --> [min-hood] --> Bravo<D:(ft arg0)> OUTPUT
-is 10 _   Delta<Scalar 1>, Echo<D:(fieldof arg0)> --> [+] --> Charlie<Number>
+is 9 _   Charlie<Number> --> [min-hood] --> Bravo<Number> OUTPUT
+is 10 _   Delta<Scalar 1>, Echo<Field <Any>> --> [+] --> Charlie<Number>
 is 11 _   [Lit: <Scalar 1>] --> Delta<Scalar 1>
-is 12 _   Foxtrot<Scalar 2> --> [nbr] --> Echo<D:(fieldof arg0)>
+is 12 _   Foxtrot<Scalar 2> --> [nbr] --> Echo<Field <Any>>
 is 13 _   [Lit: <Scalar 2>] --> Foxtrot<Scalar 2>
 is 14 _ Amorphous Mediums:
 is 15 _   [Medium: Alfa = root]
@@ -832,18 +832,18 @@ is 4 _     [Medium: Delta = Alfa | Echo]
 is 5 _   Fields:
 is 6 _     Charlie: Alfa --> <Boolean>
 is 7 _     Echo: Alfa --> <Boolean>
-is 8 _     Foxtrot: Alfa --> <D:(lcs arg1 arg2)> OUTPUT
-is 9 _     Golf: Delta --> <D:arg0>
+is 8 _     Foxtrot: Alfa --> <Any> OUTPUT
+is 9 _     Golf: Delta --> <Local>
 is 10 _     Hotel: Bravo --> <Scalar 0>
 is 11 _     India: Delta --> <Number>
 is 12 _     Juliet: Delta --> <Scalar>
 is 13 _   Operator Instances:
 is 14 _     [dchange] --> Charlie<Boolean>
 is 15 _     Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 16 _     Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)> OUTPUT
-is 17 _     Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
+is 16 _     Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Foxtrot<Any> OUTPUT
+is 17 _     Foxtrot<Any> --> [delay] --> Golf<Local>
 is 18 _     [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 19 _     Golf<D:arg0>, Juliet<Scalar> --> [+] --> India<Number>
+is 19 _     Golf<Local>, Juliet<Scalar> --> [+] --> India<Number>
 is 20 _     [dt] --> Juliet<Scalar>
 is 21 _ Amorphous Mediums:
 is 22 _   [Medium: Kilo = root]
@@ -979,23 +979,23 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <D:(lcs arg1 arg2)>
-is 8 _   Golf: Delta --> <D:arg0>
-is 9 _   Hotel: Alfa --> <D:(nth arg0 arg1)>
+is 7 _   Foxtrot: Alfa --> <Any>
+is 8 _   Golf: Delta --> <Local>
+is 9 _   Hotel: Alfa --> <Any>
 is 10 _   India: Alfa --> <Scalar 0>
-is 11 _   Juliet: Alfa --> <D:(nth arg0 arg1)>
+is 11 _   Juliet: Alfa --> <Any>
 is 12 _   Kilo: Alfa --> <Scalar 0>
-is 13 _   Lima: Alfa --> <D:(nth arg0 arg1)>
+is 13 _   Lima: Alfa --> <Any>
 is 14 _   Mike: Alfa --> <Scalar 1>
-is 15 _   November: Alfa --> <D:(nth arg0 arg1)> OUTPUT
+is 15 _   November: Alfa --> <Any> OUTPUT
 is 16 _   Oscar: Alfa --> <Scalar 1>
-is 17 _   Papa: Delta --> <D:(nth arg0 arg1)>
+is 17 _   Papa: Delta --> <Any>
 is 18 _   Quebec: Delta --> <Scalar 0>
-is 19 _   Romeo: Delta --> <D:(nth arg0 arg1)>
+is 19 _   Romeo: Delta --> <Any>
 is 20 _   Sierra: Delta --> <Scalar 0>
-is 21 _   Tango: Delta --> <D:(nth arg0 arg1)>
+is 21 _   Tango: Delta --> <Any>
 is 22 _   Uniform: Delta --> <Scalar 1>
-is 23 _   Victor: Delta --> <D:(nth arg0 arg1)>
+is 23 _   Victor: Delta --> <Any>
 is 24 _   Whiskey: Delta --> <Scalar 1>
 is 25 _   Xray: Bravo --> <Tuple<Any>...>
 is 26 _   Yankee: Bravo --> <Tuple<Any>...>
@@ -1007,31 +1007,31 @@ is 31 _   Sow: Delta --> <Tuple<Any>...>
 is 32 _ Operator Instances:
 is 33 _   [dchange] --> Charlie<Boolean>
 is 34 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 35 _   Charlie<Boolean>, Xray<Tuple<Any>...>, Pronunciation<Tuple<Any>...> --> [mux] --> Foxtrot<D:(lcs arg1 arg2)>
-is 36 _   Foxtrot<D:(lcs arg1 arg2)> --> [delay] --> Golf<D:arg0>
-is 37 _   Foxtrot<D:(lcs arg1 arg2)>, India<Scalar 0> --> [elt] --> Hotel<D:(nth arg0 arg1)>
+is 35 _   Charlie<Boolean>, Xray<Tuple<Any>...>, Pronunciation<Tuple<Any>...> --> [mux] --> Foxtrot<Any>
+is 36 _   Foxtrot<Any> --> [delay] --> Golf<Local>
+is 37 _   Foxtrot<Any>, India<Scalar 0> --> [elt] --> Hotel<Any>
 is 38 _   [Lit: <Scalar 0>] --> India<Scalar 0>
-is 39 _   Hotel<D:(nth arg0 arg1)>, Kilo<Scalar 0> --> [elt] --> Juliet<D:(nth arg0 arg1)>
+is 39 _   Hotel<Any>, Kilo<Scalar 0> --> [elt] --> Juliet<Any>
 is 40 _   [Lit: <Scalar 0>] --> Kilo<Scalar 0>
-is 41 _   Hotel<D:(nth arg0 arg1)>, Mike<Scalar 1> --> [elt] --> Lima<D:(nth arg0 arg1)>
+is 41 _   Hotel<Any>, Mike<Scalar 1> --> [elt] --> Lima<Any>
 is 42 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
-is 43 _   Foxtrot<D:(lcs arg1 arg2)>, Oscar<Scalar 1> --> [elt] --> November<D:(nth arg0 arg1)> OUTPUT
+is 43 _   Foxtrot<Any>, Oscar<Scalar 1> --> [elt] --> November<Any> OUTPUT
 is 44 _   [Lit: <Scalar 1>] --> Oscar<Scalar 1>
-is 45 _   Golf<D:arg0>, Quebec<Scalar 0> --> [elt] --> Papa<D:(nth arg0 arg1)>
+is 45 _   Golf<Local>, Quebec<Scalar 0> --> [elt] --> Papa<Any>
 is 46 _   [Lit: <Scalar 0>] --> Quebec<Scalar 0>
-is 47 _   Papa<D:(nth arg0 arg1)>, Sierra<Scalar 0> --> [elt] --> Romeo<D:(nth arg0 arg1)>
+is 47 _   Papa<Any>, Sierra<Scalar 0> --> [elt] --> Romeo<Any>
 is 48 _   [Lit: <Scalar 0>] --> Sierra<Scalar 0>
-is 49 _   Papa<D:(nth arg0 arg1)>, Uniform<Scalar 1> --> [elt] --> Tango<D:(nth arg0 arg1)>
+is 49 _   Papa<Any>, Uniform<Scalar 1> --> [elt] --> Tango<Any>
 is 50 _   [Lit: <Scalar 1>] --> Uniform<Scalar 1>
-is 51 _   Golf<D:arg0>, Whiskey<Scalar 1> --> [elt] --> Victor<D:(nth arg0 arg1)>
+is 51 _   Golf<Local>, Whiskey<Scalar 1> --> [elt] --> Victor<Any>
 is 52 _   [Lit: <Scalar 1>] --> Whiskey<Scalar 1>
 is 53 _   Yankee<Tuple<Any>...>, Beak<Scalar 4> --> [tup] --> Xray<Tuple<Any>...>
 is 54 _   Zulu<Scalar 2>, Plural<Scalar 3> --> [tup] --> Yankee<Tuple<Any>...>
 is 55 _   [Lit: <Scalar 2>] --> Zulu<Scalar 2>
 is 56 _   [Lit: <Scalar 3>] --> Plural<Scalar 3>
 is 57 _   [Lit: <Scalar 4>] --> Beak<Scalar 4>
-is 58 _   Sow<Tuple<Any>...>, Tango<D:(nth arg0 arg1)> --> [tup] --> Pronunciation<Tuple<Any>...>
-is 59 _   Romeo<D:(nth arg0 arg1)>, Victor<D:(nth arg0 arg1)> --> [tup] --> Sow<Tuple<Any>...>
+is 58 _   Sow<Tuple<Any>...>, Tango<Any> --> [tup] --> Pronunciation<Tuple<Any>...>
+is 59 _   Romeo<Any>, Victor<Any> --> [tup] --> Sow<Tuple<Any>...>
 
 
 test: $(P2B) -CDanalyzed "(set-dt (restrict 2 (all (probe (all 3) 1))))"
@@ -1117,7 +1117,7 @@ is 7 _   Foxtrot: Alfa --> <Scalar> OUTPUT
 is 8 _   Golf: Delta --> <Scalar>
 is 9 _   Hotel: Bravo --> <Scalar 3>
 is 10 _   India: Delta --> <Scalar>
-is 11 _   Juliet: Delta --> <2-Tuple<Scalar>,<Scalar 7>>
+is 11 _   Juliet: Delta --> <2-Vector<Scalar>,<Scalar 7>>
 is 12 _   Kilo: Delta --> <Scalar 7>
 is 13 _   Lima: Delta --> <Scalar 0>
 is 14 _ Operator Instances:
@@ -1126,8 +1126,8 @@ is 16 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
 is 17 _   Charlie<Boolean>, Hotel<Scalar 3>, India<Scalar> --> [mux] --> Foxtrot<Scalar> OUTPUT
 is 18 _   Foxtrot<Scalar> --> [delay] --> Golf<Scalar>
 is 19 _   [Lit: <Scalar 3>] --> Hotel<Scalar 3>
-is 20 _   Juliet<2-Tuple<Scalar>,<Scalar 7>>, Lima<Scalar 0> --> [elt] --> India<Scalar>
-is 21 _   Golf<Scalar>, Kilo<Scalar 7> --> [tup] --> Juliet<2-Tuple<Scalar>,<Scalar 7>>
+is 20 _   Juliet<2-Vector<Scalar>,<Scalar 7>>, Lima<Scalar 0> --> [elt] --> India<Scalar>
+is 21 _   Golf<Scalar>, Kilo<Scalar 7> --> [tup] --> Juliet<2-Vector<Scalar>,<Scalar 7>>
 is 22 _   [Lit: <Scalar 7>] --> Kilo<Scalar 7>
 is 23 _   [Lit: <Scalar 0>] --> Lima<Scalar 0>
 
@@ -1177,7 +1177,7 @@ is 5 _   [Lit: <Boolean false>] --> Bravo<Boolean false> OUTPUT
 
 // funcall usage tracking:
 test: $(P2B) -CDanalyzed "(def foo () (mid)) (def bar (x) (+ 3 x)) (nbr (tup foo bar (tup foo)))"
-is 0 _ Function: foo [Signature:  --> <D:return>] called 2 times
+is 0 _ Function: foo [Signature:  --> <D:return>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1198,20 +1198,9 @@ is 17 _     [Lit: <Scalar 3>] --> Foxtrot<Scalar 3>
 is 18 _ Amorphous Mediums:
 is 19 _   [Medium: Golf = root]
 is 20 _ Fields:
-is 21 _   Hotel: Golf --> <D:(fieldof arg0)> OUTPUT
-is 22 _   India: Golf --> <Tuple<Any>...>
-is 23 _   Juliet: Golf --> <Lambda [Fun: foo]>
-is 24 _   Kilo: Golf --> <Lambda [Fun: bar]>
-is 25 _   Lima: Golf --> <Tuple<Any>...>
-is 26 _   Mike: Golf --> <Lambda [Fun: foo]>
-is 27 _ Operator Instances:
-is 28 _   India<Tuple<Any>...> --> [nbr] --> Hotel<D:(fieldof arg0)> OUTPUT
-is 29 _   Juliet<Lambda [Fun: foo]>, Kilo<Lambda [Fun: bar]>, Lima<Tuple<Any>...> --> [tup] --> India<Tuple<Any>...>
-is 30 _   [Lit: <Lambda [Fun: foo]>] --> Juliet<Lambda [Fun: foo]>
-is 31 _   [Lit: <Lambda [Fun: bar]>] --> Kilo<Lambda [Fun: bar]>
-is 32 _   Mike<Lambda [Fun: foo]> --> [tup] --> Lima<Tuple<Any>...>
-is 33 _   [Lit: <Lambda [Fun: foo]>] --> Mike<Lambda [Fun: foo]>
-
+is 21 _   Hotel: Golf --> <Field <3-Tuple<Lambda [Fun: foo]>,<Lambda [Fun: bar]>,<1-Tuple<Lambda [Fun: foo]>>>> OUTPUT
+is 22 _ Operator Instances:
+is 23 _   [Lit: <Field <3-Tuple<Lambda [Fun: foo]>,<Lambda [Fun: bar]>,<1-Tuple<Lambda [Fun: foo]>>>>] --> Hotel<Field <3-Tuple<Lambda [Fun: foo]>,<Lambda [Fun: bar]>,<1-Tuple<Lambda [Fun: foo]>>>> OUTPUT
 
 // funcall propagation & backpropagation
 test: $(P2B) -CDanalyzed "(+ ((lambda (x) 2) 4) ((lambda (x y) (mux (dt) x y)) 3 3))"

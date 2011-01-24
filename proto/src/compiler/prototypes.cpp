@@ -17,6 +17,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 bool ProtoTuple::supertype_of(ProtoType* sub) { 
   if(!sub->isA(type_of())) return false; // not supertype of non-tuples
   ProtoTuple *tsub = dynamic_cast<ProtoTuple*>(sub);
+  // I'm bounded but sub is not 
+  if(!tsub->bounded && bounded) return false;
   // are elements compatible?
   int ll = types.size(), sl = tsub->types.size(), len = MAX(ll,sl);
   for(int i=0;i<len;i++) {
