@@ -136,6 +136,22 @@ ProtoType* Signature::nth_type(int n) {
   return type_err(this,"Can't find type"+i2s(n)+" in "+to_str());
 }
 
+void Signature::set_nth_type(int n,ProtoType* val) {
+  if(n < required_inputs.size()) {
+     required_inputs[n] = val;
+     return;
+  }
+  n-= required_inputs.size();
+  if(n < optional_inputs.size()) {
+     optional_inputs[n] = val;
+     return;
+  }
+  n-= optional_inputs.size();
+  if(rest_input) {
+     rest_input = val;
+  }
+}
+
 int Signature::parameter_id(SE_Symbol* p, bool err) {
   if(!names.count(p->name)) {
     if(err) compile_error(p,"No parameter named "+ce2s(p)+" in "+ce2s(this));
@@ -350,6 +366,19 @@ Field* OperatorInstance::add_input(Field* f) {
 Field* OperatorInstance::remove_input(int i) {
   if(inputs.size()<=i)ierror("OperatorInstance can't remove nonexistant input");
   inputs[i]->unuse(this,i); return delete_at(&inputs,i);
+}
+
+ProtoType* OperatorInstance::nth_input(int n) {
+  if(n < op->signature->n_fixed()) { // ordinary argument
+    return inputs[n]->range;
+  } else if(n>=op->signature->n_fixed() 
+            && n < inputs.size() 
+            && op->signature->rest_input) { // rest
+    return inputs[n]->range;
+  } else if(n==0 && op->signature->rest_input) {
+    return op->signature->rest_input;
+  }
+  return type_err(this,"Can't find input "+i2s(n)+" in "+to_str());
 }
 
 

@@ -106,27 +106,6 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   }
 }
 
-/** 
- * Used during type resolution.
- * @DEPRICATED
- */
-struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
-  //vector<ProtoType*> types;
-  TypeVector() : ProtoTuple(true) {}
-  virtual void print(ostream* out=0);
-  // factory methods
-  static TypeVector* op_types_from(OperatorInstance* oi, int start);
-  static TypeVector* sig_type_range(Signature* s,int begin,int end);
-  static TypeVector* input_types(Signature* sig);
-  virtual bool supertype_of(ProtoType* sub) {
-    ierror("TypeVectors shouldn't be getting their types compared");
-  }
-};
-
-// NOTE: This container structure is temporary and crap
-//struct TypePropagator;
-//class TypeConstraintApplicator {
-
   /********** TYPE READING **********/
   ProtoType* TypeConstraintApplicator::get_op_return(Operator* op) {
     DEBUG_FUNCTION(__FUNCTION__);
@@ -901,6 +880,7 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     }
   }
 
+// TODO: this code and the other field repair code ought to be merged, somehow
   bool TypeConstraintApplicator::repair_constraint_failure(OI* oi, 
                                                            ProtoType* ftype, 
                                                            ProtoType* ctype) {
@@ -956,162 +936,12 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     return changed;
   }
 
-//};
-
 /*****************************************************************************
  *  TYPE RESOLUTION                                                          *
  *****************************************************************************/
 
-class TypeResolution {
- public:
-  // resolution of fields comes from their types
-  static bool acceptable(Field* f) { return acceptable(f->range); }
-  // concreteness of types
-  static bool acceptable(ProtoType* t) { 
-    if(t->type_of()=="ProtoType") { return true;
-    } else if(t->type_of()=="ProtoLocal") { return true;
-    } else if(t->type_of()=="ProtoNumber") { return true;
-    } else if(t->isA("ProtoScalar")) { return true;
-    } else if(t->isA("ProtoSymbol")) { return true;
-    } else if(t->isA("ProtoTuple")) { 
-      ProtoTuple* tp = T_TYPE(t);
-      for(int i=0;i<tp->types.size();i++)
-        if(!acceptable(tp->types[i])) return false;
-      return true;
-    } else if(t->isA("ProtoLambda")) {
-      ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(t);
-      Operator* op = lambda->op;
-      // hasn't resolved the op yet
-      if(!op) return false;
-      Signature* s = lambda->op->signature;
-      if(!acceptable(s->output)) return false;
-      if(s->rest_input && !acceptable(s->rest_input)) return false;
-      for(int i=0;i<s->required_inputs.size();i++)
-        if(!acceptable(s->required_inputs[i])) return false;
-      for(int i=0;i<s->optional_inputs.size();i++)
-        if(!acceptable(s->optional_inputs[i])) return false;
-      return true;
-    } else if(t->isA("ProtoField")) {
-      return F_VAL(t)==NULL || acceptable(F_VAL(t));
-    } else return false; // all others
-  }
-};
-
-TypeVector* TypeVector::op_types_from(OperatorInstance* oi, int start) {
-  TypeVector *tv = new TypeVector();
-  for(int i=start; i<oi->inputs.size(); i++)
-    tv->types.push_back(oi->inputs[i]->range);
-  return tv;
-}
-
-// returns types [begin,end-1]
-TypeVector* TypeVector::sig_type_range(Signature* s,int begin,int end) {
-  TypeVector *tv = new TypeVector();
-  for(int i=begin; i<end; i++) tv->types.push_back(s->nth_type(i));
-  return tv;
-}
-
-TypeVector* TypeVector::input_types(Signature* sig) {
-  TypeVector *tv = new TypeVector();
-  for(int i=0;i<sig->required_inputs.size();i++)
-    tv->types.push_back(sig->required_inputs[i]);
-  for(int i=0;i<sig->optional_inputs.size();i++)
-    tv->types.push_back(sig->optional_inputs[i]);
-  if(sig->rest_input!=NULL) {
-    tv->bounded = false;tv->types.push_back(sig->rest_input);
-  }
-  return tv;
-}
-
-void TypeVector::print(ostream* out) { 
-  *out<<"<S:"; 
-  for(int i=0;i<types.size();i++) { if(i) *out<<","; types[i]->print(out); }
-  *out<<">";
-}
-
-ProtoType* if_derivable(ProtoType* t, ProtoType* sigtype) {
-  // don't derive from derived types
-  if(!TypeResolution::acceptable(t)) return NULL;
-  // don't derive from signature type mismatches
-  if(TypeResolution::acceptable(sigtype) && !sigtype->supertype_of(t)) 
-    return NULL;
-  return t;
-}
-
-ProtoType* if_derivable(TypeVector* tv, TypeVector* sigtypes) {
-  for(int i=0;i<tv->types.size();i++)
-    if(!if_derivable(tv->types[i],sigtypes->types[i])) return NULL;
-  return tv;
-}
-
-/// returns null to indicate a non-useful type
-ProtoType* type_error(CompilationElement *where,string msg) {
-  compile_error(where,"Type inference: "+msg); return NULL;
-}
-
 // Type resolution needs to be applied to anything that isn't
 // concrete...
-
-void Signature::set_nth_type(int n,ProtoType* val) {
-  if(n < required_inputs.size()) {
-     required_inputs[n] = val;
-     return;
-  }
-  n-= required_inputs.size();
-  if(n < optional_inputs.size()) {
-     optional_inputs[n] = val;
-     return;
-  }
-  n-= optional_inputs.size();
-  if(rest_input) {
-     rest_input = val;
-  }
-}
-
-ProtoType* OperatorInstance::nth_input(int n) {
-  if(n < op->signature->n_fixed()) { // ordinary argument
-    return if_derivable(inputs[n]->range,op->signature->nth_type(n));
-  } else if(n>=op->signature->n_fixed() 
-            && n < inputs.size() 
-            && op->signature->rest_input) { // rest
-    return inputs[n]->range;
-  } else if(n==0 && op->signature->rest_input) {
-    return op->signature->rest_input;
-  }
-  return type_error(this,"Can't find input "+i2s(n)+" in "+to_str());
-}
-
-ProtoType* OperatorInstance::output_type() {
-  return if_derivable(output->range, op->signature->output);
-}
-
-/** 
- * Returns type only if all can resolve to concrete; guaranteed to not
- * corrupt the input type.
- */
-ProtoType* resolve_type(OperatorInstance* context, ProtoType* type) {
-  if(TypeResolution::acceptable(type)) return type; // already resolved
-  // either is a derived type or contains a derived type:
-  if(type->isA("ProtoTuple")) {
-    ProtoTuple* t = dynamic_cast<ProtoTuple*>(type), *newt;
-    if(type->isA("ProtoVector")) {
-      newt = new ProtoVector(dynamic_cast<ProtoTuple*>(t));
-    } else { newt = new ProtoTuple(t); }
-    for(int i=0;i<newt->types.size();i++) {
-      if(TypeResolution::acceptable(newt->types[i])) continue;
-      ProtoType* newsub = resolve_type(context,newt->types[i]);
-      if(!newsub) return NULL; else newt->types[i] = newsub;
-    }
-    return newt;
-  } else if(type->isA("ProtoField")) {
-    ProtoField* t = dynamic_cast<ProtoField*>(type);
-    ProtoType* newsub = resolve_type(context,t->hoodtype);
-    if(!newsub) return NULL;
-    ProtoField* newf = new ProtoField(newsub); newf->inherit_attributes(t);
-    return newf;
-  }
-  return NULL; // unresolvable by this means
-}
 
 class TypePropagator : public IRPropagator {
  public:
@@ -1193,9 +1023,7 @@ class TypePropagator : public IRPropagator {
   /// apply a consumer constraint, managing implicit type conversions 
   bool back_constraint(ProtoType** tmp,Field* f,pair<OperatorInstance*,int> c) {
     DEBUG_FUNCTION(__FUNCTION__);
-    ProtoType* rawc = c.first->op->signature->nth_type(c.second);
-    ProtoType* ct = resolve_type(c.first,rawc);
-    if(!ct) return true;// ignore unresolved
+    ProtoType* ct = c.first->op->signature->nth_type(c.second);
     ProtoType* newtype = ProtoType::gcs(*tmp,ct);
     V3<<"   Back constraint on: "<<ce2s(c.first)<<
       "\n    "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"...";
@@ -1205,21 +1033,20 @@ class TypePropagator : public IRPropagator {
     // On merge failure, attempt to repair conflict
     if(repair_conflict(f,c,*tmp,ct)) return false;
     // having fallen through all cases, throw type error
-    type_error(f,"conflict: "+f->to_str()+" vs. "+c.first->to_str());
+    type_err(f,"conflict: "+f->to_str()+" vs. "+c.first->to_str());
     return false;
   }
 
   void act(Field* f) {
     V3 << " Considering field "<<ce2s(f)<<endl;
     // Ignore old type (it may change) [except Parameter]; use producer type
-    ProtoType* tmp=resolve_type(f->producer,f->producer->op->signature->output);
+    ProtoType* tmp = f->producer->op->signature->output;
     if(f->producer->op->isA("Parameter")) tmp=f->range;
-    if(!tmp) return; // if producer unresolvable, give up
     // GCS against current value
     ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
     if(!newtmp) {
       if(repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) return;
-      type_error(f,"incompatible type and signature "+f->to_str()+": "+
+      type_err(f,"incompatible type and signature "+f->to_str()+": "+
                  ce2s(tmp)+" vs. "+ce2s(f->range));
       return;
     }
@@ -1231,7 +1058,7 @@ class TypePropagator : public IRPropagator {
     // GCS against selectors
     if(f->selectors.size()) {
       tmp = ProtoType::gcs(tmp,new ProtoScalar());
-      if(!tmp) {type_error(f,"non-scalar selector "+f->to_str()); return;}
+      if(!tmp) {type_err(f,"non-scalar selector "+f->to_str()); return;}
     }
     maybe_set_range(f,tmp);
     
@@ -1267,13 +1094,6 @@ class TypePropagator : public IRPropagator {
           note_change(oi);
       }
 
-      // old-style resolution
-      V4 << "Conducting old-style type resolution on " << ce2s(oi) << endl;
-      ProtoType* newtype = resolve_type(oi,oi->output->range);
-      if(newtype) { 
-        maybe_set_range(oi->output,newtype);
-      } 
-
       V4 << "Attributes of " << ce2s(oi) << ": " << endl;
       map<string,Attribute*>::const_iterator end = oi->attributes.end();
       for( map<string,Attribute*>::const_iterator it = oi->attributes.begin(); it != end; ++it) {
@@ -1287,7 +1107,6 @@ class TypePropagator : public IRPropagator {
       for_set(OI*,*srcs,i) {
         if((*i)->op->isA("Literal")) return; // can't work with lambdas
         ProtoType* ti = (*i)->nth_input(((Parameter*)oi->op)->index);
-        if(!ti) return; // can't work with derived types
         inputs = inputs? ProtoType::lcs(inputs,ti) : ti;
       }
       if(!inputs) return;

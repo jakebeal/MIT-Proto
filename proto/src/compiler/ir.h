@@ -367,7 +367,6 @@ struct OperatorInstance : public CompilationElement { reflection_sub(OI,CE);
   Field* remove_input(int i); // disconnects the field, updating its consumers
   // Accessors & utilities
   ProtoType* nth_input(int i);//get range of nth input (sets become vecs/tuples)
-  ProtoType* output_type(); // get the output type
   AM* domain() { return output->domain; } // get the output space
   virtual void print(ostream* out=0);
   int pointwise(); // op has space/time extent? 1=no, 0=yes, -1=unresolved
