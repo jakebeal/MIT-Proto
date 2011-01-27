@@ -98,6 +98,7 @@ Signature::Signature(Signature* src) {
     required_inputs.push_back(src->required_inputs[i]);
   for(int i=0;i<src->optional_inputs.size();i++)
     optional_inputs.push_back(src->optional_inputs[i]);
+  names = src->names; // copy names over
 }
 
 void Signature::print(ostream* out) {
@@ -124,6 +125,34 @@ string Signature::num_arg_str() {
   } else if(high!=low) { return "from "+i2s(low)+" to "+i2s(high);
   } else { return "exactly "+i2s(low);
   }
+}
+
+ProtoType* Signature::nth_type(int n) {
+  if(n < required_inputs.size()) return required_inputs[n];
+  n-= required_inputs.size();
+  if(n < optional_inputs.size()) return optional_inputs[n];
+  n-= optional_inputs.size();
+  if(rest_input) return rest_input;
+  return type_err(this,"Can't find type"+i2s(n)+" in "+to_str());
+}
+
+int Signature::parameter_id(SE_Symbol* p, bool err) {
+  if(!names.count(p->name)) {
+    if(err) compile_error(p,"No parameter named "+ce2s(p)+" in "+ce2s(this));
+    return -2;
+  }
+  if(names[p->name]>=-1) return names[p->name];
+  ierror("Bad parameter #:"+i2s(names[p->name])+" in "+ce2s(this));
+}
+
+ProtoType* Signature::parameter_type(SE_Symbol* p, bool err) {
+  if(!names.count(p->name)) {
+    if(err) return type_err(p,"No parameter named "+ce2s(p)+" in "+ce2s(this));
+    else return NULL;
+  }
+  if(names[p->name]==-1) return output;
+  if(names[p->name]>=0) return nth_type(names[p->name]);
+  ierror("Bad parameter #:"+i2s(names[p->name])+" in "+ce2s(this));
 }
 
 bool Signature::legal_length(int n) { 
@@ -233,6 +262,7 @@ FieldOp::FieldOp(Operator* base) : Primitive(base) {
   for(int i=0;i<b->optional_inputs.size();i++)
     signature->optional_inputs.push_back(fieldop_type(b->optional_inputs[i]));
   if(b->rest_input) signature->rest_input = fieldop_type(b->rest_input);
+  signature->names = b->names;
 }
 
 // table of LocalFieldOps used to date
@@ -260,6 +290,7 @@ LocalFieldOp::LocalFieldOp(Operator* base) : Primitive(base) {
   for(int i=0;i<b->optional_inputs.size();i++)
     signature->optional_inputs.push_back(localop_type(b->optional_inputs[i]));
   if(b->rest_input) signature->rest_input = localop_type(b->rest_input);
+  signature->names = b->names;
 }
 
 /*****************************************************************************

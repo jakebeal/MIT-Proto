@@ -200,6 +200,7 @@ struct Signature : public CompilationElement { reflection_sub(Signature,CE);
   vector<ProtoType*> required_inputs;
   vector<ProtoType*> optional_inputs;
   ProtoType* rest_input;
+  map<string,int> names; // map from names to I/O locations (output = -1)
   
   Signature(CE* src, ProtoType* output=NULL);
   /// copy constructor
@@ -219,6 +220,11 @@ struct Signature : public CompilationElement { reflection_sub(Signature,CE);
    * [+].nth_type(0) = Tuple<<Number>...>
    */
   ProtoType* nth_type(int n);
+
+  /// get type of parameter named p; if it doesn't exist, return error or NULL
+  ProtoType* parameter_type(SE_Symbol* p, bool err=true);
+  /// get index of parameter named p; if it doesn't exist, return error or -2
+  int parameter_id(SE_Symbol* p, bool err=true);
 
   /**
    * Sets the nth_type (see function) of the signature to val.

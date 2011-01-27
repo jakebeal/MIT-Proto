@@ -1,8 +1,8 @@
 ;;(macro par all) ; No more par: specials like all can't be renamed w. macros
 ;(primitive apply (fn|lambda &rest (inputs arg0)) (output arg0))
 (primitive apply (fn|lambda &rest any) any 
-  :type-constraints((= value (output arg0))
-                    (= arg1 (inputs arg0))))
+  :type-constraints((= value (output fn))
+                    (= arg1 (inputs fn))))
 
 ;; Boolean operations
 (macro if (test true-expr false-expr)
@@ -34,7 +34,7 @@
   :type-constraints ((= value (unlit (last arg0)))))
 ;(primitive / (number &rest scalar) (unlit arg0))
 (primitive / (quotient|number &rest divisors|scalar) number
-  :type-constraints ((= value (unlit arg0))))
+  :type-constraints ((= value (unlit quotient))))
 
 (primitive > (number number) boolean)
 (primitive < (number number) boolean)
@@ -105,8 +105,8 @@
 (def rect-to-polar (v) (tup (vlen v) (atan2 (2nd v) (1st v))))
 (def polar-to-rect (p)
   (let ((r (1st p)) (a (2nd p))) (tup (* r (cos a)) (* r (sin a)))))
-(def rotate (radians vector)
-  (polar-to-rect (+ (rect-to-polar vector) (tup 0 radians))))
+(def rotate (radians|scalar v|vector)
+  (polar-to-rect (+ (rect-to-polar v) (tup 0 radians))))
 (def toDegrees (x) (* x (/ 180 pi)))
 (def toRadians (x) (* x (/ pi 180)))
 
@@ -140,12 +140,10 @@
 
 ;; Space
 ;; sensors & actuators
-;(primitive mov (velocity|vector) arg0 :side-effect)
 (primitive mov (velocity|vector) vector :side-effect
-  :type-constraints((= value arg0)))
-;(primitive flex (angle|scalar) arg0 :side-effect)
+  :type-constraints((= value velocity)))
 (primitive flex (angle|scalar) scalar :side-effect
-  :type-constraints((= value arg0)))
+  :type-constraints((= value angle)))
 (primitive speed () scalar)
 (primitive bearing () scalar)
 
@@ -219,7 +217,8 @@
 
 ;; Time
 (primitive dt () scalar)
-(primitive set-dt (scalar) arg0 :side-effect)
+(primitive set-dt (scalar) scalar :side-effect
+  :type-constraints ((= arg0 value)))
 (primitive nbr-lag () (field scalar) :space :time)
 (primitive nbr-delay () (field scalar) :space :time)
 
@@ -249,4 +248,5 @@
 ;;;; DEBUG
 
 (primitive mid () scalar)
-(primitive probe (local scalar) arg0 :side-effect)
+(primitive probe (local scalar) local :side-effect
+  :type-constraints ((= arg0 value)))

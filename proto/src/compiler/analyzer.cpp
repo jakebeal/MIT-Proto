@@ -157,7 +157,7 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
       V4 << "Returning a tuple for &rest: " << ce2s(t) << endl;
       return t;
     }
-    return type_err(oi,"Can't find input"+i2s(n)+" in "+ce2s(oi));
+    return type_err(oi,"Can't find input "+i2s(n)+" in "+ce2s(oi));
   }
 
   /** 
@@ -401,11 +401,12 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(reftype);
     Signature* sig = lambda->op->signature;
     // we only know the length of the inputs if there's no &rest
-    ProtoTuple* ret = new ProtoTuple(sig->n_fixed()>0&&!sig->rest_input);
+    ProtoTuple* ret = new ProtoTuple(!sig->rest_input);
     for(int i=0; i<sig->n_fixed(); i++) {
       ret->add(sig->nth_type(i));
     }
-    if(sig->rest_input) ret->add(sig->rest_input);
+    if(sig->rest_input!=NULL) // rest is unbounded end to tuple
+      ret->add(sig->rest_input);
     return ret;
   }
 
@@ -468,10 +469,16 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
     V4<<" get_ref on " << ce2s(ref) << " from " << ce2s(oi) << endl;
+    V4<<"    Getting type reference for "<<ce2s(ref)<<endl;
     if(ref->isSymbol()) {
-      ProtoType* ret = get_ref_symbol(oi,ref);
-      V4<<" get_ref returns: " << ce2s(ret) << endl;
-      return ret;
+      // Named input/output argument:
+      int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
+      if(n>=0) return get_nth_arg(oi,n);
+      if(n==-1) return oi->output->range;
+      // "args": a tuple of argument types
+      if(*ref=="args") return get_all_args(oi);
+      // return: the value of a compound operator's output field
+      if(*ref=="return") return get_op_return(oi->op);
     } else if(ref->isList()) {
       ProtoType* ret = get_ref_list(oi,ref);
       V4<<" get_ref returns: " << ce2s(ret) << endl;
@@ -854,8 +861,16 @@ struct TypeVector : public ProtoTuple { reflection_sub(TypeVector,ProtoTuple);
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
     V2<<" assert_ref "<< ce2s(ref) << " as " << ce2s(value) << endl;
+    V4<<"    Asserting type "<<ce2s(value)<<" for reference "<<ce2s(ref)<<endl;
     if(ref->isSymbol()) {
-      return assert_ref_symbol(oi,ref,value);
+      // Named input/output argument:
+      int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
+      if(n>=0) return assert_nth_arg(oi,n,value);
+      if(n==-1) return maybe_change_type(&oi->output->range,value);
+      // "args": a tuple of argument types
+      if(*ref=="args") return assert_all_args(oi,value);
+      // return: the value of a compound operator's output field
+      if(*ref=="return") return assert_op_return(oi->op,value);
     } else if(ref->isList()) {
       return assert_ref_list(oi,ref,value);
     }
@@ -1014,15 +1029,6 @@ void TypeVector::print(ostream* out) {
   *out<<">";
 }
 
-/*
-ProtoType* if_non_derived(TypeVector* tv) {
-  for(int i=0;i<tv->types.size();i++)
-    if(tv->types[i]->isA("DerivedType")) return NULL;
-  return tv;
-}
-ProtoType* if_non_derived(ProtoType* t) { return t->isA("DerivedType")?NULL:t;}
-*/
-
 ProtoType* if_derivable(ProtoType* t, ProtoType* sigtype) {
   // don't derive from derived types
   if(!TypeResolution::acceptable(t)) return NULL;
@@ -1045,15 +1051,6 @@ ProtoType* type_error(CompilationElement *where,string msg) {
 
 // Type resolution needs to be applied to anything that isn't
 // concrete...
-
-ProtoType* Signature::nth_type(int n) {
-  if(n < required_inputs.size()) return required_inputs[n];
-  n-= required_inputs.size();
-  if(n < optional_inputs.size()) return optional_inputs[n];
-  n-= optional_inputs.size();
-  if(rest_input) return rest_input;
-  return type_error(this,"Can't find type"+i2s(n)+" in "+to_str());
-}
 
 void Signature::set_nth_type(int n,ProtoType* val) {
   if(n < required_inputs.size()) {
@@ -1088,23 +1085,6 @@ ProtoType* OperatorInstance::output_type() {
   return if_derivable(output->range, op->signature->output);
 }
 
-// assumes ref is already known to be an argref
-// kth argument is actually combo of opinstance & signature nature.
-// if signature includes a rest, then that arg returns a set
-ProtoType* arg_ref(SE_Symbol* s, OperatorInstance* oi) {
-  if(s->name=="args") {
-    TypeVector* types = TypeVector::op_types_from(oi,0),
-      *sigt = TypeVector::sig_type_range(oi->op->signature,0,oi->inputs.size());
-    return if_derivable(types,sigt);
-  }
-  else if (s->name.substr(0,3)=="arg") {
-    int n = atoi(s->name.substr(3,s->name.size()-3).c_str());
-    return oi->nth_input(n);
-  }
-  // must be value
-  return oi->output_type();
-}
-
 // handles:
 // produce singles: output, argK for non-rest
 // produce sets: args, inputs, argK for a rest
@@ -1120,10 +1100,16 @@ ProtoType* arg_ref(SE_Symbol* s, OperatorInstance* oi) {
 ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
   if(ref->isSymbol()) {
     string var = ((SE_Symbol*)ref)->name;
+    // Named input/output argument:
+    int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
+    if(n==-1) return oi->output_type();
+    if(n>=0) return oi->nth_input(n);
+    if(var=="arg0") cout<<"PROBLEM? Didn't find arg0 in "<<ce2s(oi->op)<<endl;
     // ARGS: the set of argument types 
-    // ARGK: the type of the kth argument (0-based)
-    if(DerivedType::is_arg_ref(var)) { 
-      return arg_ref((SE_Symbol*)ref,oi);
+    if(var=="args") {
+      TypeVector* types = TypeVector::op_types_from(oi,0),
+        *sigt=TypeVector::sig_type_range(oi->op->signature,0,oi->inputs.size());
+      return if_derivable(types,sigt);
     } else if(var=="return") {
       if(!oi->op->isA("CompoundOp")) 
         return type_error(ref,"'return' only valid for compound operators");

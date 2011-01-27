@@ -1,22 +1,15 @@
-;(primitive restrict (test|scalar value|any) arg1 :space) ;; permissive boolean input
-(primitive restrict (test|scalar value|any) any :space
-  :type-constraints ((= value arg1))) 
-;(primitive mux (test|scalar true-expr|any false-expr|any) (lcs arg1 arg2)) ;; permissive boolean input
-(primitive mux (test|scalar true-expr|any false-expr|any) any
-  :type-constraints ((= value (lcs arg1 arg2))))
-;(primitive delay (local) arg0 :time)
-(primitive delay (local) local :time
-  :type-constraints ((= value arg0)))
+(primitive restrict (test|scalar base|any) any ;; permissive boolean input
+  :space :type-constraints ((= value base)))
+(primitive mux (test|scalar true-expr|any false-expr|any) any ;; permissive boolean input
+  :type-constraints ((= value (lcs true-expr false-expr))))
+(primitive delay (local) local :time :type-constraints ((= arg0 value)))
 (primitive dchange () boolean :space :time)
 (primitive not (scalar) boolean) ;; permissive boolean input
 ;(primitive tup (&rest any) (tupof arg0))
 (primitive tup (&rest any) tuple 
-  :type-constraints ((= value (tupof arg0))))
-;(primitive elt (tuple i|scalar) (nth arg0 arg1))
-; Ideally, if arg1 is non-literal, type-constraints would be (= value (lcs arg0))
-;  do we have a way to represent that?
+  :type-constraints ((= value arg0))) ; tuplization implicit in rest
 (primitive elt (tuple i|scalar) any
-  :type-constraints ((= value (nth arg0 arg1))))
+  :type-constraints ((= value (nth arg0 i))))
 ;(primitive local (local) (fieldof arg0) :space :time) ; usually left implicit
 (primitive local (local) field :space :time ; usually left implicit
   :type-constraints ((= value (fieldof arg0))))

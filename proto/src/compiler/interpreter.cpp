@@ -160,14 +160,14 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
     } else if(name=="vector") { return new ProtoVector();
     } else if(name=="lambda" || name=="fun") { return new ProtoLambda();
     } else if(name=="field") { return new ProtoField();
-    } else if(name=="return" || DerivedType::is_arg_ref(name)) {
+    } else if(name=="return") {
       return new DerivedType(s);
     } else { return type_err(s,"Unknown type "+s->to_str());
     }
   } else if(s->isList()) {
     SE_List* sl = (SE_List*)s;
     if(!sl->op()->isSymbol()) 
-      return type_err(s,"Compound type must start with symbol: "+s->to_str());
+      return type_err(s,"Compound type must start with symbol: "+ce2s(s));
     string name = ((SE_Symbol*)sl->op())->name;
     if(name=="tuple" || name=="vector") {
       ProtoTuple* t;
@@ -197,9 +197,41 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
     } else { // assume it's a derived type
       return new DerivedType(s);
     }
-  } else {
+  } else { // scalars specify ProtoScalar literals
     return new ProtoScalar(((SE_Scalar*)s)->value);
   }
+}
+
+// test whether expression is a type expression (though not necessarily
+// correctly formatted) without actually trying to interpret
+bool ProtoInterpreter::sexp_is_type(SExpr* s) {
+  if(s->isSymbol()) {
+    string name = ((SE_Symbol*)s)->name;
+    if(name=="any") return true;
+    if(name=="local") return true;
+    if(name=="tuple") return true;
+    if(name=="symbol") return true;
+    if(name=="number") return true;
+    if(name=="scalar") return true;
+    if(name=="boolean") return true;
+    if(name=="vector") return true;
+    if(name=="lambda" || name=="fun") return true;
+    if(name=="field") return true;
+    // If still using DerivedType:
+    if(name=="return") return true;
+  } else if(s->isList()) {
+    SE_List* sl = (SE_List*)s;
+    if(!sl->op()->isSymbol()) return false;
+    string name = ((SE_Symbol*)sl->op())->name;
+    if(name=="tuple" || name=="vector") return true;
+    if(name=="lambda" || name=="fun") return true;
+    if(name=="field") return true;
+    // If still using DerivedType:
+    return true;
+  } else { // scalars specify ProtoScalar literals
+    return true;
+  }
+  return false;
 }
 
 /*****************************************************************************
@@ -335,6 +367,36 @@ SExpr* ProtoInterpreter::macro_substitute(SExpr* src, Env* e, SE_List* wrapper) 
  *  INTERPRETER CORE                                                         *
  *****************************************************************************/
 
+// Parsing nth argument (output = -1)
+pair<string,ProtoType*> ProtoInterpreter::parse_argument(SE_List_iter* i, int n,
+                                                         Signature* sig, bool anonymous_ok) {
+  SExpr *a = i->get_next("argument");
+  SExpr *b = (i->on_token("|")) ? i->get_next("argument") : NULL;
+  string name=""; ProtoType* type=NULL;
+  if(b) { // specified as name|type
+    if(sexp_is_type(a))
+      compile_error(a,"Parameter name cannot be a type");
+    if(a->isSymbol()) name = ((SE_Symbol*)a)->name;
+    else compile_error(a,"Parameter name not a symbol: "+ce2s(a));
+    type = sexp_to_type(b);
+  } else { // determine name or type by parsing
+    if(sexp_is_type(a)) {
+      if(anonymous_ok) type = sexp_to_type(a);
+      else compile_error(a,"Function parameters must be named: "+ce2s(a));
+    }
+    else if(a->isSymbol()) name = ((SE_Symbol*)a)->name;
+    else compile_error(a,"Parameter name not a symbol: "+ce2s(a));
+  }
+  // fall back to defaults where needed
+  if(name=="") name = (n>=0) ? ("arg"+i2s(n)) : "value";
+  if(type==NULL) type = new ProtoType();
+  // record name in signature and return
+  if(sig->names.count(name))
+    compile_error(a,"Cannot bind '"+name+"': already bound");
+  sig->names[name] = n;
+  return make_pair(name,type);
+}
+
 // if bindloc = NULL, then it's a primitive and expressions are types
 // otherwise, it's a normal signature, and they're variables to be bound
 Signature* ProtoInterpreter::sexp_to_sig(SExpr* s, Env* bindloc, CompoundOp* op, AM* space){
@@ -352,27 +414,18 @@ Signature* ProtoInterpreter::sexp_to_sig(SExpr* s, Env* bindloc, CompoundOp* op,
       stage=2; continue;
     }
     // Otherwise, it's an entry in the signature: name, type, or name|type
-    SExpr* elt = li.get_next(); bool elt_is_name = (bindloc!=NULL);
-    SE_Symbol* name = NULL; ProtoType* type=NULL; varid++;
-    if(li.on_token("|"))
-      { elt_is_name=true; type = sexp_to_type(li.get_next("type")); }
-    if(elt_is_name) {
-      if(elt->isSymbol()) name = (SE_Symbol*)elt;
-      else compile_error(elt,"Parameter name not a symbol: "+ce2s(elt));
-    } else { type=sexp_to_type(elt); }
-    if(name==NULL) name = new SE_Symbol("arg"+i2s(varid));
-    if(type==NULL) type = new ProtoType();
+    pair<string,ProtoType*> arg = parse_argument(&li,++varid,sig,bindloc==NULL);
     // Create parameter for functions:
     if(bindloc) {
-      Parameter *p = new Parameter(op,name->name,varid,type);
-      bindloc->bind(p->name,(new OperatorInstance(name,p,space))->output);
+      Parameter *p = new Parameter(op,arg.first,varid,arg.second);
+      bindloc->bind(arg.first,(new OI(s,p,space))->output);
     }
     switch(stage) {
-    case 0: sig->required_inputs.push_back(type); break;
-    case 1: sig->optional_inputs.push_back(type); break;
-    case 2: sig->rest_input = type; stage=3; break; // only one rest
+    case 0: sig->required_inputs.push_back(arg.second); break;
+    case 1: sig->optional_inputs.push_back(arg.second); break;
+    case 2: sig->rest_input = arg.second; stage=3; break; // only one rest
     case 3: return sig_err(s,"No signature past '&rest' variable: "+ce2s(s));
-    default: ierror("Unknown stage while parsing signature: "+s->to_str());
+    default: ierror("Unknown stage while parsing signature: "+ce2s(s));
     }
   }
   return sig;
@@ -383,52 +436,44 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
     return (Operator*)env->lookup((SE_Symbol*)s,"Operator");
   } else if(s->isScalar()) {return op_err(s,s->to_str()+" is not an Operator");
   } else { // it must be a list
-    SE_List *sl = (SE_List*)s;
-    if(!sl->op()->isSymbol()) ierror("Tried to interpret "+s->to_str()+"as op");
-    string opdef = ((SE_Symbol*)sl->op())->name;
+    SE_List_iter li(s);
+    string opdef = li.get_token("operator type");
     // (def name sig body) - constructs operator & graph, then binds
     // (lambda sig body) - constructs operator & graph
     if(opdef=="def" || opdef=="lambda" || opdef=="fun") {
-      if(opdef=="def" && (sl->len()<4 || !sl->children[1]->isSymbol()))
-        return op_err(s,"Malformed def: "+s->to_str());
-      if((opdef=="lambda" || opdef=="fun") && sl->len()<3) 
-        return op_err(s,"Malformed lambda: "+s->to_str());
       int i=1;
-      string name; char tmp[40];
-      if(opdef=="def") name=((SE_Symbol*)sl->children[i++])->name;
+      string name;
+      if(opdef=="def") name=li.get_token("function name");
       // setup the operator & its signature
       CompoundOp* op = new CompoundOp(s,dfg,name);
       if(opdef=="def") env->force_bind(name,op);// bind early to allow recursion
       Env* inner = new Env(env);
-      op->signature = sexp_to_sig(sl->children[i++],inner,op,op->body);
-      op->signature->output = new DerivedType(new SE_Symbol("return"));
+      op->signature = sexp_to_sig(li.get_next("signature"),inner,op,op->body);
+      op->signature->output = new ProtoType();
       // make body sexpr
       SE_List bodylist; bodylist.add(new SE_Symbol("all"));
-      while(i<sl->len()) bodylist.add(sl->children[i++]);
+      while(li.has_next()) bodylist.add(li.get_next());
       SExpr* body = (bodylist.len()==2)?bodylist.children[1]:&bodylist;
       // parsing body sexpr & collect real output value
       op->output = sexp_to_graph(body,op->body,inner);
+      if(op->output==NULL) op->output=field_err(s,op->body,"Function has no content");
       op->compute_side_effects();
       return op;
     } else if(opdef=="primitive") { // constructs & binds operator w/o DFG
       // (primitive name sig out &optional :side-effect)
-      if(sl->len()<4 || !sl->children[1]->isSymbol())
-        return op_err(s,"Malformed primitive: "+s->to_str());
-      string pname = ((SE_Symbol*)sl->children[1])->name;
-      Signature* sig = sexp_to_sig(sl->children[2]);
-      sig->output = sexp_to_type(sl->children[3]);
+      string pname = li.get_token("primitive name");
+      Signature* sig = sexp_to_sig(li.get_next());
+      sig->output = parse_argument(&li,-1,sig).second;
       Operator* p  = new Primitive(s,pname,sig);
       // add in attributes
-      for(int i=4;i<sl->len();i++) {
-        SExpr* v = sl->children[i];
+      while(li.has_next()) {
+        SExpr* v = li.get_next();
         if(!v->isKeyword()) return op_err(v,v->to_str()+" not a keyword");
         if(p->attributes.count(((SE_Symbol*)v)->name))
           compile_warn("Primitive "+pname+" overriding duplicate '"
                        +((SE_Symbol*)v)->name+"' attribute");
-        if(sl->len()>(i+1) && !sl->children[i+1]->isKeyword()) {
-          p->attributes[((SE_Symbol*)v)->name]
-            = new SExprAttribute(sl->children[i+1]);
-          i++;
+        if(li.has_next() && !li.peek_next()->isKeyword()) {
+          p->attributes[((SE_Symbol*)v)->name]=new SExprAttribute(li.get_next());
         } else {
           p->attributes[((SE_Symbol*)v)->name]=new MarkerAttribute(true);
         }
@@ -440,17 +485,17 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
       if(ce && ce->isA("Macro")) {
         SExpr* new_expr;
         if(ce->isA("MacroOperator")) {
-          new_expr = expand_macro((MacroOperator*)ce,sl);
+          new_expr = expand_macro((MacroOperator*)ce,(SE_List*)s);
           if(new_expr->attributes.count("DUMMY")) // Mark of a failure
             return op_err(s,"Macro expansion failed on "+s->to_str());
         } else { // it's a MacroSymbol
-          new_expr = sl->copy();
+          new_expr = s->copy();
           ((SE_List*)new_expr)->children[0]=((Macro*)ce)->pattern;
         }
         return sexp_to_op(new_expr,env);
       }
-      return op_err(sl->op(),"Can't make an operator with "+sl->op()->to_str());
     }
+    return op_err(s,"Can't make an operator with "+opdef);
   }
   ierror("Fell through sexp_to_op w/o returning for: "+s->to_str());
 }

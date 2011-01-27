@@ -64,9 +64,11 @@ class ProtoInterpreter {
   ~ProtoInterpreter();
 
   void interpret(SExpr* sexpr);
+  static bool sexp_is_type(SExpr* s);
   static ProtoType* sexp_to_type(SExpr* s);
   static Signature* sexp_to_sig(SExpr* s,Env* bindloc=NULL,CompoundOp* op=NULL,AM* space=NULL);
-
+  static pair<string,ProtoType*> parse_argument(SE_List_iter* i, int n, Signature* sig, bool anonymous_ok=true);
+  
  private:
   /**
    * FOR INTERNAL USE ONLY
