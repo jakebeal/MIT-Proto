@@ -131,8 +131,9 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       ierror("Nth arg calls not handling non-asserted optional arguments yet");
     } else if(n==oi->op->signature->n_fixed() && oi->op->signature->rest_input) {// rest
       //return a tuple of remaining elements
-      ProtoTuple *t = new ProtoTuple(true);
-      for(int i=n;i<oi->inputs.size();i++) t->add(oi->inputs[i]->range);
+      vector<ProtoType*> vec;
+      for(int i=n;i<oi->inputs.size();i++) vec.push_back(oi->inputs[i]->range);
+      ProtoTuple *t = tupleOrVector(vec);
       V4 << "Returning a tuple for &rest: " << ce2s(t) << endl;
       return t;
     }
@@ -707,17 +708,22 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   }
 
   /**
-   * Adds items to 'tup' to ensure that it has at least 'index' elements
+   * Adds items to 'tup' to ensure that it has at least 'index' elements.
+   * Return true if the size changed.
    */
   bool TypeConstraintApplicator::fillTuple(ProtoTuple* tup, int index) {
-    for(int i=tup->types.size(); i<=index+1; i++) {
+    if(tup->types.size() > index)
+       return false;
+    bool changed = false;
+    for(int i=tup->types.size(); i<index; i++) {
       if(tup->isA("ProtoVector")) {
         tup->add(new ProtoScalar());
       } else {
         tup->add(new ProtoType());
       }
+      changed = true;
     }
-    return true;
+    return changed;
   }
   
   /**
@@ -728,29 +734,48 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
    */
   bool TypeConstraintApplicator::assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
-    //tuple
+    //1) ---tuple---
     bool ret = false;
-    ProtoType* tupType = ProtoType::gcs(get_ref(oi,next),new ProtoTuple());
-    if(!tupType->isA("ProtoTuple")) {
-       ierror("'nth' assertion on a non-tuple type: "+next->to_str()+" (it's a "+tupType->to_str()+")");
+    //ProtoType* tupType = ProtoType::gcs(get_ref(oi,next),new ProtoTuple());
+    ProtoType* tupType = get_ref(oi,next);
+    // ensure that <Any> get treated as ProtoTuple
+    ProtoType* gcsTup = ProtoType::gcs(tupType, new ProtoTuple());
+    if(gcsTup == NULL || !gcsTup->isA("ProtoTuple")) {
+       ierror("'nth' assertion on a non-tuple type: "+next->to_str()
+              +" (it's a "+tupType->to_str()+")");
+       return false;
     }
-    ret = assert_ref(oi,next,T_TYPE(tupType)); //we can at least say that the first argument is a <Tuple <Any>...>
-    //scalar
+    //we can at least say that the first argument is a <Tuple <Any>...>
+    ret = ret || assert_ref(oi,next,T_TYPE(gcsTup)); 
+
+    //2) ---scalar---
     SExpr* indexExpr = li->get_next("type");
     ProtoType* indexType = ProtoType::gcs(get_ref(oi,indexExpr),new ProtoScalar());
     if(indexType == NULL || !indexType->isA("ProtoScalar")) {
        ierror("'nth' assertion on a non-scalar type: "+indexExpr->to_str()+" (it's a "+indexType->to_str()+")");
     }
-    ret = assert_ref(oi,indexExpr,S_TYPE(indexType)); //we can at least say that the second arg is a <Scalar>
-    //nth of tup
+    V4 << " nth assertion found index type: " << ce2s(indexType) << endl;
+    ret = ret || assert_ref(oi,indexExpr,S_TYPE(indexType)); //we can at least say that the second arg is a <Scalar>
+
+    //3) ---nth of tup---
+    tupType = get_ref(oi,next); // re-get the tuple-ized tuple
+    if(!tupType->isA("ProtoTuple"))
+       ierror("'nth' assertion failed to coerce a tuple from type: "+next->to_str()
+              +" (it's a "+tupType->to_str()+")");
+    ProtoTuple* tup = T_TYPE(tupType);
     if(indexType->isLiteral() //we know the index & the element already exists
        && (int)S_VAL(indexType) >= 0
-       && (int)S_VAL(indexType) < T_TYPE(tupType)->types.size()) {
-      ret = maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
+       && (int)S_VAL(indexType) < tup->types.size()) {
+      ret = ret || maybe_change_type(&tup->types[(int)S_VAL(indexType)],value);
     } else if(indexType->isLiteral() //we know the index & it's valid
               && (int)S_VAL(indexType) >= 0) {
-      ret = fillTuple(T_TYPE(tupType),(int)S_VAL(indexType))
-         && maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
+      if(tup->bounded) {
+         ret = ret || (fillTuple(tup,(int)S_VAL(indexType))
+            && maybe_change_type(&tup->types[(int)S_VAL(indexType)-1],value));
+      } else {
+         ret = ret || (fillTuple(tup,(int)S_VAL(indexType)+1) //extra 1 for <Any>...
+            && maybe_change_type(&tup->types[(int)S_VAL(indexType)-1],value));
+      }
     }
     return ret;
   }
@@ -1098,6 +1123,29 @@ class TypePropagator : public IRPropagator {
       map<string,Attribute*>::const_iterator end = oi->attributes.end();
       for( map<string,Attribute*>::const_iterator it = oi->attributes.begin(); it != end; ++it) {
          V4 << "  - " << it->first << endl;
+      }
+      if(oi->attributes.count("LETFED-MUX")) {
+        V4 << " LETFED-MUX in oi: " << ce2s(oi) << endl;
+        V4 << "  output is: " << ce2s(oi->output->range) 
+           << ((oi->output->range->isA("DerivedType"))?"(Derived)":"(non-derived)") 
+           << ((oi->output->range->isLiteral())?"(Literal)":"(non-literal)") 
+           << endl;
+        V4 << "  init is: " << ce2s(oi->inputs[1]->range) 
+           << ((oi->inputs[1]->range->isA("DerivedType"))?"(Derived)":"(non-derived)") 
+           << ((oi->inputs[1]->range->isLiteral())?"(Literal)":"(non-literal)") 
+           << endl;
+      }
+      if(oi->attributes.count("LETFED-MUX")
+//                && oi->output->range->isA("DerivedType")
+         ){
+        // letfed mux resolves from init
+        if(oi->inputs.size()<2)
+          compile_error(oi,"Can't resolve letfed type: not enough mux arguments");
+        Field* init = oi->inputs[1]; // true input = init
+        if(!init->range->isA("DerivedType")) {
+          V4 << "Resolving LETFED-MUX from init: " << ce2s(init->range) << endl;
+          maybe_set_range(oi->output,Deliteralization::deliteralize(init->range));
+        }
       }
       // ALSO: find GCS of producer, consumers, & field values
     } else if(oi->op->isA("Parameter")) { // constrain against all calls
