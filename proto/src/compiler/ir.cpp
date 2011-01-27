@@ -249,8 +249,7 @@ Operator* FieldOp::get_field_op(OperatorInstance* oi) {
 
 // assumes base is pointwise
 ProtoType* fieldop_type(ProtoType* base) {
-  if(base->isA("DerivedType")) return base;
-  else return new ProtoField(base);
+  return new ProtoField(base);
 }
 FieldOp::FieldOp(Operator* base) : Primitive(base) {
   this->base = base; name = "Field~~"+base->name;
@@ -276,7 +275,6 @@ Operator* LocalFieldOp::get_local_op(Operator* op) {
 }
 
 ProtoType* localop_type(ProtoType* base) {
-  if(base->isA("DerivedType")) return base;
   if(base->isA("ProtoField")) return F_VAL(base);
   ierror("Tried to localize non-field type: "+base->to_str());
 }
@@ -588,7 +586,7 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
   CompoundOp* cop = new CompoundOp(out->producer,this); 
   CEmap(AM*,AM*) amap; CEmap(OI*,OI*) omap; CEmap(Field*,Field*) fmap; 
   // Create signature from I/O
-  cop->signature = new Signature(cop,new DerivedType(new SE_Symbol("return"))); 
+  cop->signature = new Signature(cop,new ProtoType());
   for(int i=0;i<in->size();i++)
     cop->signature->required_inputs.push_back((*in)[i]->range);
   

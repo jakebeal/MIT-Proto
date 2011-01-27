@@ -175,7 +175,6 @@ ProtoType* ProtoType::gcs(ProtoType* t) {
 ProtoType* ProtoLocal::gcs(ProtoType* t) { return NULL; }
 ProtoType* ProtoSymbol::gcs(ProtoType* t) { return NULL; }
 ProtoType* ProtoScalar::gcs(ProtoType* t) { return NULL; } // covers boolean
-ProtoType* DerivedType::gcs(ProtoType* t) { return NULL; }
 
 bool element_gcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
   out->bounded = a->bounded || b->bounded;

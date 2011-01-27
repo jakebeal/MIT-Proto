@@ -176,21 +176,6 @@ struct ProtoField : public ProtoType {
 #define F_TYPE(x) (dynamic_cast<ProtoField*>(x))
 #define F_VAL(x) (dynamic_cast<ProtoField*>(x)->hoodtype)
 
-struct DerivedType : public ProtoType {
-  reflection_sub(DerivedType,ProtoType);
-  SExpr* ref;
-  DerivedType(SExpr* ref) { this->ref = ref; }
-  virtual void print(ostream* out=0){ *out<<"<D:"; ref->print(out); *out<<">"; }
-  static bool is_arg_ref(string s); // is this an arg ref?
-  // interpreter returns replacement, or NULL if still unresolvable
-  ProtoType* resolve_type(OperatorInstance* oi) { return resolve_type(oi,ref); }
-  virtual bool supertype_of(ProtoType* sub) { return false; }
-  // LCS of derived-type punts right up to ProtoType
-  virtual ProtoType* gcs(ProtoType* t);
- private:
-  ProtoType* resolve_type(OperatorInstance* oi,SExpr* s);
-};
-
 /*****************************************************************************
  *  OPERATORS & MACROS                                                       *
  *****************************************************************************/

@@ -1085,151 +1085,6 @@ ProtoType* OperatorInstance::output_type() {
   return if_derivable(output->range, op->signature->output);
 }
 
-// handles:
-// produce singles: output, argK for non-rest
-// produce sets: args, inputs, argK for a rest
-// consume singles: ft, lcs
-// consume sets: last, lcs, tupof
-// special: nth: consumes (tuple or type-tuple) + scalar value
-
-  /*
-    Right now, I'm just going to track all of the reference types I use
-    inputs, output: ops on a ProtoLambda
-   */
-
-ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
-  if(ref->isSymbol()) {
-    string var = ((SE_Symbol*)ref)->name;
-    // Named input/output argument:
-    int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
-    if(n==-1) return oi->output_type();
-    if(n>=0) return oi->nth_input(n);
-    if(var=="arg0") cout<<"PROBLEM? Didn't find arg0 in "<<ce2s(oi->op)<<endl;
-    // ARGS: the set of argument types 
-    if(var=="args") {
-      TypeVector* types = TypeVector::op_types_from(oi,0),
-        *sigt=TypeVector::sig_type_range(oi->op->signature,0,oi->inputs.size());
-      return if_derivable(types,sigt);
-    } else if(var=="return") {
-      if(!oi->op->isA("CompoundOp")) 
-        return type_error(ref,"'return' only valid for compound operators");
-      ProtoType* rtype = ((CompoundOp*)oi->op)->output->range;
-      return rtype->isA("DerivedType") ? NULL : rtype;
-    } // else fall through to fail
-  } else if(ref->isScalar()) { // expected to be only used inside nth
-    return new ProtoScalar(((SE_Scalar*)ref)->value);
-  } else if(ref->isList()) {
-    SE_List* rl = (SE_List*)ref;
-    string opname = ((SE_Symbol*)rl->op())->name;
-    // first collect the types of the args, then process the op
-    vector<ProtoType*> subs;
-    for(int i=1;i<rl->len();i++) {
-      ProtoType* sub = resolve_type(oi,(*rl)[i]);
-      if(sub) subs.push_back(sub); else return NULL; // can't resolve yet
-    }
-    // NTH: finds the nth type in a tuple
-    if(opname=="nth") {
-      if(subs.size()!=2)
-        return type_error(ref,"'nth' requires two arguments: "+ref->to_str());
-      if(!subs[1]->isA("ProtoScalar"))
-        return type_error(ref,"'nth' requires a scalar index: "+ref->to_str());
-      ProtoScalar* n = dynamic_cast<ProtoScalar*>(subs[1]);
-      vector<ProtoType*> *source; bool bounded;
-      if(subs[0]->isA("TypeVector")) {
-        source = &(dynamic_cast<TypeVector*>(subs[0]))->types;
-        bounded = (dynamic_cast<TypeVector*>(subs[0]))->bounded;
-      } else if(subs[0]->isA("ProtoTuple")) {
-        source = &(dynamic_cast<ProtoTuple*>(subs[0]))->types;
-        bounded = (dynamic_cast<ProtoTuple*>(subs[0]))->bounded;
-      } else return type_error(oi,"'nth' needs tuple: "+subs[0]->to_str());
-      if(source->size()==0) return type_error(oi,"'nth' source is empty");
-      if(n->constant) { // if 2nd is a literal, access the argument
-        if(n->value<0 || (bounded && n->value>=source->size()))
-          return type_error(oi,"'nth' reference out of bounds: "+n->to_str()+" on "+subs[0]->to_str());
-        return (*source)[MIN((int)n->value,source->size()-1)];
-      } else { // otherwise, take the LCS of the source
-        ProtoType* compound = (*source)[0];
-        for(int i=1;i<source->size();i++) 
-          compound=ProtoType::lcs(compound,(*source)[i]);
-        return compound;
-      }
-    // LCS: finds the least common superclass of set of types
-    } else if(opname=="lcs") {
-      vector<ProtoType*> tset; // collect everything into a set
-      for(int i=0;i<subs.size();i++) {
-        if(subs[i]->isA("TypeVector")) {
-          TypeVector* tv = dynamic_cast<TypeVector*>(subs[i]);
-          for(int i=0;i<tv->types.size();i++) { tset.push_back(tv->types[i]); }
-        } else tset.push_back(subs[i]);
-      }
-      if(tset.size()==0) return type_error(oi,"'lcs' needs at least one type");
-      ProtoType* compound = tset[0];
-      for(int i=1;i<tset.size();i++) compound=ProtoType::lcs(compound,tset[i]);
-      return compound;
-    // LAST: find the last type in a set
-    } else if(opname=="last") {
-      if(subs.size()!=1 || !subs[0]->isA("TypeVector"))
-        return type_error(ref,"'last' takes a single set: "+ref->to_str());
-      TypeVector* tv = dynamic_cast<TypeVector*>(subs[0]);
-      if(tv->types.size()==0) 
-        return type_error(oi,"'last' takes a set with at least one type");
-      return tv->types[tv->types.size()-1];
-    // UNLIT: same type, but any literal value is discarded
-    } else if(opname=="unlit") { // remove literalness from a type
-      if(subs.size()!=1 || subs[0]->isA("TypeVector"))
-        return type_error(ref,"'unlit' takes a single type: "+ref->to_str());
-      return Deliteralization::deliteralize(subs[0]);
-    // TUPOF: tuple w. a set of types as arguments
-    } else if(opname=="tupof") {
-      if(subs.size()!=1 || !subs[0]->isA("TypeVector"))
-        return type_error(ref,"'tupof' takes a single set: "+ref->to_str());
-      TypeVector* tv = dynamic_cast<TypeVector*>(subs[0]);
-      ProtoTuple* t = new ProtoTuple(true);
-      for(int i=0;i<tv->types.size();i++) t->types.push_back(tv->types[i]);
-      return t;
-    // FT: type of local contained by a field
-    } else if(opname=="ft") {
-      if(subs.size()!=1 || !subs[0]->isA("ProtoField"))
-        return type_error(oi,"'ft' takes a single field: "+v2s(&subs));
-      ProtoField* t = dynamic_cast<ProtoField*>(subs[0]);
-      return t->hoodtype;
-    // FIELDOF: field containing a local
-    } else if(opname=="fieldof") {
-      if(subs.size()!=1 || !subs[0]->isA("ProtoLocal"))
-        return type_error(oi,"'fieldof' takes a single local: "+ref->to_str());
-      return new ProtoField(subs[0]);
-    } else if(opname=="output") {
-      if(subs.size()!=1 || !subs[0]->isA("ProtoLambda"))
-        return type_error(oi,"'output' takes a single lambda: "+ref->to_str());
-      ProtoLambda* t = dynamic_cast<ProtoLambda*>(subs[0]);
-      ProtoType* rtype = NULL;
-      if(t->op->isA("Primitive")) { rtype = t->op->signature->output;
-      } else if(t->op->isA("CompoundOp")) {
-        rtype = ((CompoundOp*)t->op)->output->range;
-      } else {
-        ierror("'output' derivation can't resolve for op: "+t->op->to_str());
-      }
-      return (TypeResolution::acceptable(rtype) ? rtype : NULL);
-    } else if(opname=="inputs") {
-      if(subs.size()!=1 || !subs[0]->isA("ProtoLambda"))
-        return type_error(oi,"'inputs' takes a single lambda: "+ref->to_str());
-      ProtoLambda* t = dynamic_cast<ProtoLambda*>(subs[0]);
-      ProtoType* rtype = NULL;
-      if(t->op->isA("Primitive")) { 
-        rtype = TypeVector::input_types(t->op->signature);
-      } else if(t->op->isA("CompoundOp")) {
-        rtype = TypeVector::input_types(t->op->signature);
-        //ierror("input derivation not yet done for compoundops");
-      } else {
-        ierror("'inputs' derivation can't resolve for op: "+t->op->to_str());
-      }
-      return (TypeResolution::acceptable(rtype) ? rtype : NULL);
-    } // else fall through to fail
-  } // fall throughs fail:
-  ierror(ref,"Can't infer type from: "+ref->to_str()); // temporary, to help test suite
-  return type_error(ref,"Can't infer type from: "+ref->to_str());
-}
-
 /** 
  * Returns type only if all can resolve to concrete; guaranteed to not
  * corrupt the input type.
@@ -1237,10 +1092,7 @@ ProtoType* DerivedType::resolve_type(OperatorInstance* oi, SExpr* ref) {
 ProtoType* resolve_type(OperatorInstance* context, ProtoType* type) {
   if(TypeResolution::acceptable(type)) return type; // already resolved
   // either is a derived type or contains a derived type:
-  if(type->isA("DerivedType")) {
-    DerivedType* t = dynamic_cast<DerivedType*>(type);
-    return t->resolve_type(context);
-  } else if(type->isA("ProtoTuple")) {
+  if(type->isA("ProtoTuple")) {
     ProtoTuple* t = dynamic_cast<ProtoTuple*>(type), *newt;
     if(type->isA("ProtoVector")) {
       newt = new ProtoVector(dynamic_cast<ProtoTuple*>(t));
@@ -1364,16 +1216,14 @@ class TypePropagator : public IRPropagator {
     if(f->producer->op->isA("Parameter")) tmp=f->range;
     if(!tmp) return; // if producer unresolvable, give up
     // GCS against current value
-    if(!f->range->isA("DerivedType")) {
-      ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
-      if(!newtmp) {
-        if(repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) return;
-        type_error(f,"incompatible type and signature "+f->to_str()+": "+
-                   ce2s(tmp)+" vs. "+ce2s(f->range));
-        return;
-      }
-      tmp=newtmp;
+    ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
+    if(!newtmp) {
+      if(repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) return;
+      type_error(f,"incompatible type and signature "+f->to_str()+": "+
+                 ce2s(tmp)+" vs. "+ce2s(f->range));
+      return;
     }
+    tmp=newtmp;
 
     // GCS against consumers
     for_set(Consumer,f->consumers,i)
@@ -1429,19 +1279,6 @@ class TypePropagator : public IRPropagator {
       for( map<string,Attribute*>::const_iterator it = oi->attributes.begin(); it != end; ++it) {
          V4 << "  - " << it->first << endl;
       }
-      if(oi->attributes.count("LETFED-MUX")
-                && oi->output->range->isA("DerivedType")
-         ){
-        // letfed mux resolves from init
-        if(oi->inputs.size()<2)
-          type_error(oi,"Can't resolve letfed type: not enough mux arguments");
-        Field* init = oi->inputs[1]; // true input = init
-        if(!init->range->isA("DerivedType")) {
-          V4 << "Resolving LETFED-MUX from init: " << ce2s(init->range) << endl;
-          maybe_set_range(oi->output,Deliteralization::deliteralize(init->range));
-        }
-      }
-
       // ALSO: find GCS of producer, consumers, & field values
     } else if(oi->op->isA("Parameter")) { // constrain against all calls
       // find LCS of input types
@@ -1460,7 +1297,7 @@ class TypePropagator : public IRPropagator {
       maybe_set_range(oi->output,newtype);
     } else if(oi->op->isA("CompoundOp")) { // constrain against params & output
       ProtoType* rtype = ((CompoundOp*)oi->op)->output->range;
-      if(!rtype->isA("DerivedType")) maybe_set_range(oi->output,rtype);
+      maybe_set_range(oi->output,rtype);
     } else if(oi->op->isA("Literal")) { // ignore: already be fully resolved
       // ignored
     } else {

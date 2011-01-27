@@ -132,21 +132,6 @@ Operator* Env::core_op(string name) {
  *  TYPES                                                                    *
  *****************************************************************************/
 
-// TYPE INTERPRETATION
-bool DerivedType::is_arg_ref(string s) {
-  if(s.size()<4) return false;
-  if(s=="args") return true;
-  if(s=="value") return true;
-  if(s.substr(0,3)=="arg") {
-    string num = s.substr(3,s.size()-3);
-    if(str_is_number(num.c_str())) {
-      int n = atoi(num.c_str());
-      return (n>0 || num=="0");
-    }
-  }
-  return false;
-}
-
 ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
   if(s->isSymbol()) {
     string name = ((SE_Symbol*)s)->name;
@@ -160,8 +145,6 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
     } else if(name=="vector") { return new ProtoVector();
     } else if(name=="lambda" || name=="fun") { return new ProtoLambda();
     } else if(name=="field") { return new ProtoField();
-    } else if(name=="return") {
-      return new DerivedType(s);
     } else { return type_err(s,"Unknown type "+s->to_str());
     }
   } else if(s->isList()) {
@@ -194,8 +177,8 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
       if(sub->isA("ProtoField")) 
         return type_err(s,"Field type must have a local subtype");
       return new ProtoField(sub);
-    } else { // assume it's a derived type
-      return new DerivedType(s);
+    } else {
+      return type_err(s,"Unknown type "+s->to_str());
     }
   } else { // scalars specify ProtoScalar literals
     return new ProtoScalar(((SE_Scalar*)s)->value);
@@ -217,8 +200,6 @@ bool ProtoInterpreter::sexp_is_type(SExpr* s) {
     if(name=="vector") return true;
     if(name=="lambda" || name=="fun") return true;
     if(name=="field") return true;
-    // If still using DerivedType:
-    if(name=="return") return true;
   } else if(s->isList()) {
     SE_List* sl = (SE_List*)s;
     if(!sl->op()->isSymbol()) return false;
@@ -226,8 +207,6 @@ bool ProtoInterpreter::sexp_is_type(SExpr* s) {
     if(name=="tuple" || name=="vector") return true;
     if(name=="lambda" || name=="fun") return true;
     if(name=="field") return true;
-    // If still using DerivedType:
-    return true;
   } else { // scalars specify ProtoScalar literals
     return true;
   }
