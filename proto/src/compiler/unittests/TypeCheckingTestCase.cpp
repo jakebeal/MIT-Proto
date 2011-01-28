@@ -1108,16 +1108,21 @@ void TypeCheckingTestCase::assertRefNth() {
   tca->assert_ref(oi, sexpr, new ProtoScalar(3));
   CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
   CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoScalar"));
+  // arg0 = <Tuple <Scalar 3> <Any>...>
   CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[0]->isA("ProtoScalar"));
   CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[0]->isLiteral());
   CPPUNIT_ASSERT_EQUAL(3, (int)S_VAL(T_TYPE(oi->nth_input(0))->types[0]));
+  CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[1]->isA("ProtoType"));
+  CPPUNIT_ASSERT(!T_TYPE(oi->nth_input(0))->types[1]->isLiteral());
+  CPPUNIT_ASSERT(!T_TYPE(oi->nth_input(0))->bounded);
+  CPPUNIT_ASSERT_EQUAL(2, (int)T_TYPE(oi->nth_input(0))->types.size());
 }
 
 void TypeCheckingTestCase::assertRefNthFillTup() {
   //required_inputs
   vector<ProtoType*> req_input = vector<ProtoType*>();
   req_input.push_back( new ProtoType() );
-  req_input.push_back( new ProtoScalar(3) );
+  req_input.push_back( new ProtoScalar(2) );
   //optional_inputs
   vector<ProtoType*> opt_input = vector<ProtoType*>();
   opt_input.push_back( new ProtoScalar() );
@@ -1138,7 +1143,7 @@ void TypeCheckingTestCase::assertRefNthFillTup() {
   sexpr->add(new SE_Symbol("arg0"));
   sexpr->add(new SE_Symbol("arg1"));
   tca->assert_ref(oi, sexpr, new ProtoScalar(5));
-  // arg0 = <Tuple <Any> <Any> <Scalar 3> <Any>...>
+  // arg0 = <Tuple <Any> <Any> <Scalar 5> <Any>...>
   CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
   CPPUNIT_ASSERT_EQUAL(4, (int)(T_TYPE(oi->nth_input(0))->types.size()));
   CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[0]->isA("ProtoType"));
@@ -1203,6 +1208,7 @@ void TypeCheckingTestCase::assertRefNthReplaceFilledTup() {
   CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoScalar"));
 }
 
+/*Same test as assertRefNth
 void TypeCheckingTestCase::assertRefNthReplaceTup() {
   //required_inputs
   vector<ProtoType*> req_input = vector<ProtoType*>();
@@ -1228,6 +1234,7 @@ void TypeCheckingTestCase::assertRefNthReplaceTup() {
   sexpr->add(new SE_Symbol("arg0"));
   sexpr->add(new SE_Symbol("arg1"));
   tca->assert_ref(oi, sexpr, new ProtoScalar());
+  cout << endl << ce2s(oi->nth_input(0)) << endl;
   CPPUNIT_ASSERT(oi->nth_input(0)->isA("ProtoTuple"));
   CPPUNIT_ASSERT(oi->nth_input(1)->isA("ProtoScalar"));
   //arg0 = <Tuple <Scalar>...>
@@ -1235,6 +1242,7 @@ void TypeCheckingTestCase::assertRefNthReplaceTup() {
   CPPUNIT_ASSERT(T_TYPE(oi->nth_input(0))->types[0]->isA("ProtoScalar"));
   CPPUNIT_ASSERT(!T_TYPE(oi->nth_input(0))->bounded);
 }
+*/
 
 void TypeCheckingTestCase::assertRefNthUnlit() {
   //required_inputs
@@ -1276,8 +1284,8 @@ void TypeCheckingTestCase::supertype() {
 void TypeCheckingTestCase::fillTuple() {
    TypeConstraintApplicator* tca = new TypeConstraintApplicator(NULL);
    ProtoTuple* unbounded = new ProtoTuple();
-   // fill unbounded to 0
-   CPPUNIT_ASSERT( tca->fillTuple(unbounded, 0) );
+   // fill unbounded to 0 (doesn't change)
+   CPPUNIT_ASSERT( !tca->fillTuple(unbounded, 0) );
    // still not bounded
    CPPUNIT_ASSERT( !unbounded->bounded );
    // size = 1
@@ -1285,8 +1293,8 @@ void TypeCheckingTestCase::fillTuple() {
    // type is any
    CPPUNIT_ASSERT( unbounded->types[0]->isA("ProtoType") );
    
-   // fill unbounded to 1
-   CPPUNIT_ASSERT( tca->fillTuple(unbounded, 1) );
+   // fill unbounded to 1 (still doesn't change)
+   CPPUNIT_ASSERT( !tca->fillTuple(unbounded, 1) );
    // still not bounded
    CPPUNIT_ASSERT( !unbounded->bounded );
    // size = 1
@@ -1308,41 +1316,10 @@ void TypeCheckingTestCase::fillTuple() {
    CPPUNIT_ASSERT( unbounded->types[4]->isA("ProtoType") );
 
    ProtoTuple* bounded = new ProtoTuple(true);
-   // empty bounded tuple, fill to 0
-   CPPUNIT_ASSERT( tca->fillTuple(bounded, 0) );
+   // empty bounded tuple, fill to 0 (doesn't change)
+   CPPUNIT_ASSERT( !tca->fillTuple(bounded, 0) );
    // still bounded
    CPPUNIT_ASSERT( bounded->bounded );
    // size = 0
    CPPUNIT_ASSERT_EQUAL( 0, (int)bounded->types.size() );
-   
-   // empty bounded tuple, fill to 1
-   CPPUNIT_ASSERT( tca->fillTuple(bounded, 1) );
-   // still bounded
-   CPPUNIT_ASSERT( bounded->bounded );
-   // size = 1
-   CPPUNIT_ASSERT_EQUAL( 1, (int)bounded->types.size() );
-   // type is any
-   CPPUNIT_ASSERT( bounded->types[0]->isA("ProtoType") );
-   
-   // bounded tuple (size 1), fill to 1
-   CPPUNIT_ASSERT( tca->fillTuple(bounded, 1) );
-   // still bounded
-   CPPUNIT_ASSERT( bounded->bounded );
-   // size = 1
-   CPPUNIT_ASSERT_EQUAL( 1, (int)bounded->types.size() );
-   // type is any
-   CPPUNIT_ASSERT( bounded->types[0]->isA("ProtoType") );
-   
-   // bounded tuple (size 1), fill to 5
-   CPPUNIT_ASSERT( tca->fillTuple(bounded, 5) );
-   // still bounded
-   CPPUNIT_ASSERT( bounded->bounded );
-   // size = 5
-   CPPUNIT_ASSERT_EQUAL( 5, (int)bounded->types.size() );
-   // types are any
-   CPPUNIT_ASSERT( bounded->types[0]->isA("ProtoType") );
-   CPPUNIT_ASSERT( bounded->types[1]->isA("ProtoType") );
-   CPPUNIT_ASSERT( bounded->types[2]->isA("ProtoType") );
-   CPPUNIT_ASSERT( bounded->types[3]->isA("ProtoType") );
-   CPPUNIT_ASSERT( bounded->types[4]->isA("ProtoType") );
 }

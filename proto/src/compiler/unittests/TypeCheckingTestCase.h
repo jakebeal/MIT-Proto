@@ -45,7 +45,6 @@ class TypeCheckingTestCase : public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST( assertRefNth );
   CPPUNIT_TEST( assertRefNthFillTup );
   CPPUNIT_TEST( assertRefNthReplaceFilledTup );
-  CPPUNIT_TEST( assertRefNthReplaceTup );
   CPPUNIT_TEST( assertRefNthUnlit );
   CPPUNIT_TEST( supertype );
   CPPUNIT_TEST( fillTuple );
@@ -92,7 +91,6 @@ protected:
   void assertRefNth();
   void assertRefNthFillTup();
   void assertRefNthReplaceFilledTup();
-  void assertRefNthReplaceTup();
   void assertRefNthUnlit();
   void supertype();
   void fillTuple();

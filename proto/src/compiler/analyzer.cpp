@@ -712,8 +712,6 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
    * Return true if the size changed.
    */
   bool TypeConstraintApplicator::fillTuple(ProtoTuple* tup, int index) {
-    if(tup->types.size() > index)
-       return false;
     bool changed = false;
     for(int i=tup->types.size(); i<index; i++) {
       if(tup->isA("ProtoVector")) {
@@ -735,7 +733,6 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   bool TypeConstraintApplicator::assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
     //1) ---tuple---
-    bool ret = false;
     //ProtoType* tupType = ProtoType::gcs(get_ref(oi,next),new ProtoTuple());
     ProtoType* tupType = get_ref(oi,next);
     // ensure that <Any> get treated as ProtoTuple
@@ -746,7 +743,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
        return false;
     }
     //we can at least say that the first argument is a <Tuple <Any>...>
-    ret = ret || assert_ref(oi,next,T_TYPE(gcsTup)); 
+    bool changedTup = assert_ref(oi,next,T_TYPE(gcsTup)); 
 
     //2) ---scalar---
     SExpr* indexExpr = li->get_next("type");
@@ -755,29 +752,29 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
        ierror("'nth' assertion on a non-scalar type: "+indexExpr->to_str()+" (it's a "+indexType->to_str()+")");
     }
     V4 << " nth assertion found index type: " << ce2s(indexType) << endl;
-    ret = ret || assert_ref(oi,indexExpr,S_TYPE(indexType)); //we can at least say that the second arg is a <Scalar>
+    bool changedScalar = assert_ref(oi,indexExpr,S_TYPE(indexType)); //we can at least say that the second arg is a <Scalar>
 
     //3) ---nth of tup---
     tupType = get_ref(oi,next); // re-get the tuple-ized tuple
     if(!tupType->isA("ProtoTuple"))
        ierror("'nth' assertion failed to coerce a tuple from type: "+next->to_str()
               +" (it's a "+tupType->to_str()+")");
-    ProtoTuple* tup = T_TYPE(tupType);
-    if(indexType->isLiteral() //we know the index & the element already exists
-       && (int)S_VAL(indexType) >= 0
-       && (int)S_VAL(indexType) < tup->types.size()) {
-      ret = ret || maybe_change_type(&tup->types[(int)S_VAL(indexType)],value);
-    } else if(indexType->isLiteral() //we know the index & it's valid
+    bool changedNth = false;
+    if(indexType->isLiteral() //we know the index & it's valid
               && (int)S_VAL(indexType) >= 0) {
-      if(tup->bounded) {
-         ret = ret || (fillTuple(tup,(int)S_VAL(indexType))
-            && maybe_change_type(&tup->types[(int)S_VAL(indexType)-1],value));
+      if(T_TYPE(tupType)->bounded) {
+         if((int)S_VAL(indexType) > (int)T_TYPE(tupType)->types.size())
+           ierror("'nth' assertion index ("+indexType->to_str()+
+                  ") exceeded tuple length of bounded Tuple: "+tupType->to_str());
+         changedNth = maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
       } else {
-         ret = ret || (fillTuple(tup,(int)S_VAL(indexType)+1) //extra 1 for <Any>...
-            && maybe_change_type(&tup->types[(int)S_VAL(indexType)-1],value));
+         //add an extra 1 for an <Any>... at the end of the Tuple
+         int size_of_tup = (int)S_VAL(indexType)+2;
+         changedNth = fillTuple(T_TYPE(tupType),size_of_tup) //extra 1 for <Any>...
+            && maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
       }
     }
-    return ret;
+    return changedTup || changedScalar || changedNth;
   }
   
   /**
