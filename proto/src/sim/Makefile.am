@@ -1,5 +1,6 @@
 noinst_LTLIBRARIES = libsim.la libdefaultplugin.la
 lib_LTLIBRARIES = libprotosimplugin.la
+bin_PROGRAMS = opsim
 
 INCLUDES = \
 	-I$(top_srcdir)/src \
@@ -45,6 +46,22 @@ pkginclude_HEADERS = \
 	radio.h \
 	UniformRandom.h \
 	FixedIntervalTime.h
+
+opsim_SOURCES = opsim.cpp
+
+opsim_LDADD = \
+	../kernel/libkernel.la \
+	../shared/libshared.la \
+	../compiler/libcompiler.la \
+	../motelink/libmotelink.la \
+	../sim/libsim.la \
+	../sim/libprotosimplugin.la \
+	../sim/libdefaultplugin.la \
+	../shared/libshared.la \
+	../kernel/libkernel.la \
+	../compiler/libcompiler.la
+
+opsim_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}
 
 buildregistrydir=$(plugindir)
 buildregistry_SOURCES = \

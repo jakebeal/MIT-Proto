@@ -2,9 +2,9 @@
 SUBDIRS = \
 	shared \
 	compiler \
-	sim \
 	kernel \
 	motelink \
+	sim \
 	tests \
 	.
 

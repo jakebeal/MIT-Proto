@@ -288,7 +288,11 @@ void Population::clear() {
   top=pop_size=0;
 }
 
-void* Population::get(int i) { return store[i]; }
+void* Population::get(int i) { 
+   if(i >= 0 && i < pop_size)
+      return store[i]; 
+   return NULL;
+}
 void Population::init_pop(int cap) {
   store = (void**)calloc(cap,sizeof(void*));
   capacity = cap; top=0; pop_size=0;
