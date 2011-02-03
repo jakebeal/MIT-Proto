@@ -140,7 +140,9 @@ int main (int argc, char *argv[]) {
       CORE_CMD_OPS);
   Args *args = new Args(argc,argv); // set up the arg parser
   // define color palette
+#ifdef WANT_GLUT
   palette = Palette::default_palette;
+#endif //WANT_GLUT
   computer = new SpatialComputer(args,!test_mode); // then the computer
   int len = -1;
   if(args->argc <= 0)
