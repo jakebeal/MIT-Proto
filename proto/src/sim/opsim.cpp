@@ -7,6 +7,7 @@
 #include "visualizer.h"
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 #define DEFAULT_HEADLESS TRUE
 
@@ -43,8 +44,15 @@ vector<string> tokenize_file(string file, int *len) {
    vector<string> tokens;
    ifstream infile(file.c_str());
    string line;
-   if( infile.is_open() && infile.good() )
-      getline(infile,line);
+   while ( infile.is_open() && infile.good() ) {
+      string tmp;
+      getline(infile,tmp);
+      //remove comments
+      if(tmp.find("//") != string::npos)
+         tmp.erase(tmp.find("//"));
+      line += tmp;
+   }
+   line.erase(remove(line.begin(), line.end(), '\n'), line.end());
    char* linechars = const_cast<char*>(line.c_str());
    char* tok = strtok(linechars,",");
    while(tok != NULL) {

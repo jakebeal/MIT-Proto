@@ -400,6 +400,9 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   void determine_relevant(); // figure out which AMs are relevant
   Field* add_literal(ProtoType* val,AM* space,CompilationElement* src);
   Field* add_parameter(CompoundOp* op,string name,int index,AM* space,CE* src);
+
+   private:
+  void dot_print_function(ostream* out,AM* root,Field* output);
 };
 
 /*****************************************************************************

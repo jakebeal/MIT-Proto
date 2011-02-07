@@ -457,43 +457,70 @@ void dfg_print_function(ostream* out,AM* root,Field* output) {
   pp_pop();
 }
 
-static int step=0;
-static string pastSteps = "";
-void dot_print_function(ostream* out,AM* root,Field* output) {
-  stringstream ss, head;
-  step++;
+void indentSS(ostream* ss, int indent) {
+  for(int i=0; i<indent; i++)
+    *ss << "    ";
+}
 
+void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output, int indent=1) {
   OIset nodes; root->all_ois(&nodes);
   for_set(OI*,nodes,oit) {
     OI* oi = (*oit);
     //operator name
-    if(oi->nicename().length() > 0 && oi->op->name.length() > 0)
-      ss << "    " << oi->nicename() << step << "[label=\"" << oi->op->name <<
-         "\" shape=box];" << endl;
+    if(oi->nicename().length() > 0 && oi->op->name.length() > 0) {
+       indentSS(ss,indent);
+       *ss << oi->nicename() << stepn << "[label=\"" << oi->op->name <<
+          "\" shape=box];" << endl;
+    }
     //inputs
     for(int i=0; i<oi->inputs.size(); i++) {
       if(oi->inputs[i]->nicename().length() > 0)
-        ss << "    " << oi->inputs[i]->nicename() << step << " [label=\"" <<
+        indentSS(ss,indent);
+        *ss << oi->inputs[i]->nicename() << stepn << " [label=\"" <<
            oi->inputs[i]->nicename() << "\"];" << endl;
-        ss << "    " << oi->inputs[i]->nicename() << step << " -> " <<
-           oi->nicename() << step << " [label=\"" <<
-           oi->inputs[i]->range->to_str() << "\"];" << endl;
+        indentSS(ss,indent);
+        *ss << oi->inputs[i]->nicename() << stepn << " -> " << oi->nicename()
+           << stepn << " [label=\"" << oi->inputs[i]->range->to_str() << "\"];"
+           << endl;
     }
     //output
     if(oi->op->name.length() > 0) {
-      ss << "    " << oi->nicename() << step << " -> " <<
-         oi->output->nicename() << step << " [label=\"" <<
-         oi->output->range->to_str() << "\"];" << endl;
+      indentSS(ss,indent);
+      *ss << oi->nicename() << stepn << " -> " << oi->output->nicename() <<
+         stepn << " [label=\"" << oi->output->range->to_str() << "\"];" <<
+         endl;
       if(oi->output==output) { //mark as OUTPUT
-        ss << "    " << oi->output->nicename() << step << " [label=\"" << oi->nicename() <<
-           "\" shape=doubleoctagon];" << endl;
+        indentSS(ss,indent);
+        *ss << oi->output->nicename() << stepn << " [label=\"" <<
+           oi->output->nicename() << "\" shape=doubleoctagon];" << endl;
       } else {
-        ss << "    " << oi->output->nicename() << step << " [label=\"" << oi->nicename() <<
-           "\"];" << endl;
+        indentSS(ss,indent);
+        *ss << oi->output->nicename() << stepn << " [label=\"" <<
+           oi->output->nicename() << "\"];" << endl;
       }
     }
   }
+}
+
+static int step=0;
+static string pastSteps = "";
+void DFG::dot_print_function(ostream* out,AM* root,Field* output) {
+  stringstream ss, head;
+  step++;
   
+  for_set(AM*,relevant,i) {
+    CompoundOp* op = (*i)->bodyOf;
+    if(op) {
+       ss << "    subgraph cluster_fn_" << op->name << step << " {\n";
+       ss << "        color=green;\n";
+       ss << "        label=\"Function: " << op->name << "\";\n";
+       dot_print_AM(&ss, step, *i, op->output, 2);
+       ss << "    }\n";
+    }
+  }
+
+  dot_print_AM(&ss, step, root, output);
+
   *out << "digraph dfg {" << endl;
   if( ss.str().length() > 0 ) {
     ss << "  }\n";
@@ -506,6 +533,7 @@ void dot_print_function(ostream* out,AM* root,Field* output) {
   *out << pastSteps;
   *out << "}" << endl;
 }
+
 
 Field* DFG::add_literal(ProtoType* val,AM* space,CompilationElement* src)
 { return (new OI(src,new Literal(src,val),space))->output; }
