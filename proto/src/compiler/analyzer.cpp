@@ -627,11 +627,6 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     }
     */
     return assert_ref(oi,ref,lambda);
-    /*
-    if(!value->isA("ProtoLambda"))
-       ierror("'inputs' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+value->to_str()+")");
-    return assert_ref(oi,ref,L_TYPE(value));
-    */
   }
   
   /**

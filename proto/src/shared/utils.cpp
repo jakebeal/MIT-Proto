@@ -289,8 +289,9 @@ void Population::clear() {
 }
 
 void* Population::get(int i) { 
-   if(i >= 0 && i < pop_size)
-      return store[i]; 
+   if(i >= 0 && i < top)
+      return store[i];
+   uerror("Attempted to access out of bounds member of Population!");
    return NULL;
 }
 void Population::init_pop(int cap) {

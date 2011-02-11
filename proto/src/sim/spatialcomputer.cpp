@@ -630,7 +630,7 @@ BOOL SpatialComputer::evolve(SECONDS limit) {
   // evolve other layers
   for(int i=0;i<dynamics.max_id();i++) {
     Layer* d = (Layer*)dynamics.get(i);
-    d->evolve(dt);
+    if(d) d->evolve(dt);
   }
   // evolve devices
   Event e; scheduler->set_bound(limit);

@@ -60,6 +60,7 @@ void split(const string &s, const string &token, vector<string> &segments) {
 }
 
 bool ProtoPluginManager::parse_registry(istream &reg,string overridename) {
+  bool parseok = true;
   while (!reg.eof()) {
     string line; getline(reg, line, '\n'); // get next line of registry
     // Ignore comment lines and empty lines.
@@ -71,8 +72,10 @@ bool ProtoPluginManager::parse_registry(istream &reg,string overridename) {
       registry[segments[0]][segments[1]] = libname;
     } else {
       cerr << "Unable to interpret registry line '" << line << "'" << endl;
+      parseok = false;
     }
   }
+  return parseok;
 }
 
 bool ProtoPluginManager::read_dll(string libfile) {
