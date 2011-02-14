@@ -81,12 +81,12 @@ working	constant folding (via math functions)
 working	delete unused implicit parameters
 working	delete unused parameters, except when required by 1st class fns
 done	eliminate Env::OPNAME kludge
-	inlining of subexpressions
+done	inlining of subexpressions
 done	one-op functions are inlined
 done	no-content wrapper expressions are inlined (e.g. command-line = funcall)
 	common sub-expression elimination
 	tuple decompose & recompose -> nop
-	legality check (e.g. make sure fields contain only locals)
+done	legality check (e.g. make sure fields contain only locals)
 done	allow markup (e.g. biobrick description) of core primitives
 
 
@@ -128,11 +128,11 @@ done	tuple->vector promoter
 done	check for basic type match
 done	check for derived type match
 working	resolve inputs/outputs derived type -> problem of apply
-	mark functions as pointwise vs. space/time
+done	mark functions as pointwise vs. space/time
 	make special case type resolution for lambda fields?
 	subroutine type resolution on a "per-instance" basis?
 	does unlit for tuples go to same-size or top tuple?
-working promotion of pointwise fields/ops to nbrhood functions
+done	promotion of pointwise fields/ops to nbrhood functions
 	vector->longer vector w. zeros promoter
 	type reasoning will probably need more leniency sometimes... when you
 	  can't yet prove it's *not* the type you want.

@@ -2923,8 +2923,6 @@ void PaleoCompiler::setDefops(string defops) {
   
 
 /***** COMPILER WRAPPER CLASS *****/
-extern list<string>* read_enum(istream* in, ostream* out=NULL);
-
 PaleoCompiler::PaleoCompiler(Args* args) : Compiler(args) {
   SE_Symbol::case_insensitive = true;
   

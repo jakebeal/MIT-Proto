@@ -17,8 +17,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 bool SExpr::isKeyword() { return (isSymbol() && ((SE_Symbol*)this)->name[0]==':'); }
 
-list<string>* read_enum(string in);
-
 bool SExpr::NO_LINE_BREAKS=true;
 
 ostream *cpout=&cout, *cperr=&cerr, *cplog=&clog; // Compiler output streams
@@ -114,11 +112,6 @@ void test_compiler_utils() {
 
   out = read_sexpr("cmdline","this|is|bar|separated");
   if(out) *cpout << out->to_str() << endl; else *cpout << "Parse failed!\n";
-
-  list<string>* strs = read_enum("typedef enum { /* comment */ DIE_OP = CORE_CMD_OPS, MAX_CMD_OPS } PLATFORM_OPCODES;");
-  if(strs) *cpout << "Found " << strs->size() << endl; else *cpout << "Enum parse failed!\n";
-  strs = read_enum("typedef enum { /* comment */ DIE_OP = CORE_CMD_OPS, } PLATFORM_OPNDES;");
-  if(strs) *cpout << "Found " << strs->size() << endl; else *cpout << "Enum parse failed!\n";
 
   *cpout << flush;
   exit(0);
