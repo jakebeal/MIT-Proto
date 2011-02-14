@@ -13,7 +13,6 @@ libcompiler_la_SOURCES = \
 	reader.cpp \
 	compiler-utils.cpp \
 	lexer.cpp \
-	enumlexer.cpp \
 	paleocompiler.cpp \
 	prototypes.cpp \
 	ir.cpp \
