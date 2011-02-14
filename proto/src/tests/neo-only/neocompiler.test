@@ -20,9 +20,6 @@ is 13 _ Parse failed!
 // unrecognized character shows up differently on different platforms
 is 15 _ Parse failed!
 is 16 _ (all this | is | bar | separated)
-is 17 _ Found 1
-is 18 _ Platform description file is not a parsable 'single enum' file: wrong location of '}' .
-is 19 _ Enum parse failed!
 
 
 test: $(P2B) --internal-tests
