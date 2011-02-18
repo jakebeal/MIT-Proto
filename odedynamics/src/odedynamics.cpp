@@ -177,7 +177,7 @@ ODEDynamics::ODEDynamics(Args* args, SpatialComputer* p, int n)
 //  	  dCreatePlane(space,0,0,1,-body_radius);
 //   }
    if(is_hard_floor){
-	   dCreatePlane(space,0,0,1,-20);
+	   dCreatePlane(space,0,0,1,0);
    }
   make_walls();
   //TODO I don't think this should be called from here
@@ -285,11 +285,11 @@ void ODEDynamics::visualize() {
     	  for(int i = 0; i<=subdivision; i++){
     	    float stepsize = width/((float) (subdivision));
 
-    	    glVertex3f(-width/2 + i*stepsize,width/2,-20);
-    	    glVertex3f(-width/2 + i*stepsize,-width/2,-20);
+    	    glVertex3f(-width/2 + i*stepsize,width/2, 0);
+    	    glVertex3f(-width/2 + i*stepsize,-width/2, 0);
 
-    	    glVertex3f(width/2,-width/2 + i*stepsize,-20);
-    	    glVertex3f(-width/2,-width/2 + i*stepsize,-20);
+    	    glVertex3f(width/2,-width/2 + i*stepsize, 0);
+    	    glVertex3f(-width/2,-width/2 + i*stepsize, 0);
 
     	  }
 
