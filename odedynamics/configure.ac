@@ -27,12 +27,7 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
 ## options for the user
-PROTO_WITH_ODE
 PROTO_WITH_GLUT
-
-if test x"$WANT_ODE" = xfalse; then
-   AC_MSG_ERROR([odedyanamics cannot be built without ODE support.])
-fi
 
 ## directories
 
