@@ -33,6 +33,9 @@ PROTO_WITH_GLUT
 
 PROTO_PROTOLIBDIR
 
+## Check for Xerces library and its location
+
+PKG_CHECK_MODULES([XERCES], [xerces-c >= 3])
 
 ## Checks for header files.
 

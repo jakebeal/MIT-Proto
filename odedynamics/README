@@ -9,7 +9,8 @@ DEPENDENCIES:
 
 * MIT Proto (v. 1.5 or later)
 * ODE (v. 0.11)
-* xercesc (C++ XML parser)
+* xercesc3 (C++ XML parser, v.3.0 or later)
+* pkg-config
 
 INSTALLATION NOTES:
 
@@ -26,7 +27,7 @@ option "--with-apple-opengl-framework" when you run "./configure":
   "./configure --with-apple-opengl-framework"
 
 Test the plugin by running:
-  proto -L ode "(mov (* -1 (coord)))"
+  proto -L odedynamics -m "(mov (* -1 (coord)))"
 This should result in a collection of devices, represented by boxes,
 moving toward the center of the screen and colliding.
 
