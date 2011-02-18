@@ -27,7 +27,8 @@ option "--with-apple-opengl-framework" when you run "./configure":
   "./configure --with-apple-opengl-framework"
 
 Test the plugin by running:
-  proto -L odedynamics -m "(mov (* -1 (coord)))"
+  proto -L odedynamics -m "(mov (* -0.01 (coord)))" -n 10
 This should result in a collection of devices, represented by boxes,
-moving toward the center of the screen and colliding.
+moving toward the center of the screen and colliding.  Initially, they
+are blue, but when they touch they turn green instead.
 
