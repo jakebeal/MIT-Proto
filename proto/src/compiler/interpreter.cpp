@@ -67,8 +67,8 @@ void populate_specials() {
   special_tokens.insert("def"); 
   special_tokens.insert("primitive"); special_tokens.insert("macro");
   special_tokens.insert("let"); special_tokens.insert("let*"); 
-  special_tokens.insert("letfed");  
-  special_tokens.insert("restrict"); 
+  special_tokens.insert("letfed");
+  special_tokens.insert("restrict");
   special_tokens.insert("all");
   special_tokens.insert("include"); special_tokens.insert("tup");
   special_tokens.insert("true"); special_tokens.insert("false");

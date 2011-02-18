@@ -5,11 +5,9 @@
 (primitive delay (local) local :time :type-constraints ((= arg0 value)))
 (primitive dchange () boolean :space :time)
 (primitive not (scalar) boolean) ;; permissive boolean input
-;(primitive tup (&rest any) (tupof arg0))
 (primitive tup (&rest any) tuple 
   :type-constraints ((= value arg0))) ; tuplization implicit in rest
 (primitive elt (tuple i|scalar) any
   :type-constraints ((= value (nth arg0 i))))
-;(primitive local (local) (fieldof arg0) :space :time) ; usually left implicit
 (primitive local (local) field :space :time ; usually left implicit
   :type-constraints ((= value (fieldof arg0))))

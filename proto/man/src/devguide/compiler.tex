@@ -245,6 +245,54 @@ expression evaluation.
 - lexical operators
 - macro handling
 
+Neighborhood operations (mostly) don't need any special handling.
+
+\paragraph{Restriction Operations}
+
+\begin{figure}
+\centering
+\includegraphics{figures/restriction.pdf}
+\caption{}
+\label{f:restrict}
+\end{figure}
+
+The {\tt restrict} evaluates its expression in a subdomain, as per
+Figure~\ref{f:restrict}.
+
+\subsection{Neighborhood Operations} 
+
+\subsection{Feedback Operations}
+
+Feedback operations have a problem: when there is a nbr operation inside
+of the update, the nbr exports not the value computed from the current state,
+but the value computed from the delayed state during the update.
+
+This is currently made less observable by a paleocompiler/kernel bug: the
+paleocompiler generates VM code that runs the update function every time ---
+even the first time when only the init code should be running.  As a result, 
+the first export happens without delay, though all subsequent ones are delayed.
+
+We will not fix this double-bug until the paleocompiler is deprecated, so that
+bug-for-bug compatibility can be preserved across the transition.
+
+When we do fix it, however, the change will actually be to the global semantics,
+because that's the portion that's broken.  The most likely fix is to take the
+nbr portion of the computation and do it before the delay, so that it gets
+exported in the same round.  For many statements, this can be done in a simple
+way by the following procedure:
+\begin{enumerate}
+\item Create two copies of the update expression, one taking delayed
+feedback values, one taking non-delayed feedback values.
+\item Connect the non-delayed update expression to the feedback mux.
+\item Switch the consumers of each nbr in the delayed to its equivalent in the
+non-delayed.
+\item Allow dead-code elimination to simplify the two branches.
+\end{enumerate}
+The only problem with this is if there are nbr statements wrapped inside of
+compound ops.  Likewise, it is not entirely clear how it should interact
+with dt or with nested letfeds.  Thus, this needs more careful thought before we
+decide exactly how to proceed.
+
 \section{Analyzer}
 - Propagators
 - Two passes: pre and post localizer
@@ -254,9 +302,24 @@ expression evaluation.
 - Optimizations
 
 \section{Localizer}
-- neighbor ops
-- restriction / branches
-- feedback
+
+The localizer carries out a key Proto-specific action: it transforms programs
+that act over regions of space across periods of time into equivalent programs
+that act at a particular point of space at a particular point in time.  
+
+Proto has four space-time families of operations:
+\begin{itemize}
+  \item Pointwise operations, like {\tt +} and {\tt sqrt}, which involve neither
+  space nor time, and therefore transform trivially.
+  \item Restriction operations, which reduce the region where a computation is
+  executed.  These transform simply into branches, but interact with feedback
+  and neighborhood operations.
+  \item Feedback operations, which evolve state over time.  These transform into
+  storage and recall of state.
+  \item Neighborhood operations, which compute over nearby state.  The
+  computation over neighbors transforms into a per-neighbor operation, but the
+  summary operation remains untouched until the emission stage.
+\end{itemize}
 
 \section{ProtoKernel Emitter}
 - specifying opcodes

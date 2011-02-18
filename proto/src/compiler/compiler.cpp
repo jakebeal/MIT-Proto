@@ -127,7 +127,7 @@ void NeoCompiler::init_standalone(Args* args) {
   compiler_test_mode = args->extract_switch("--test-mode");
   is_dump_code |= args->extract_switch("-D");
   bool dump_to_stdout = true;
-  char *dump_dir = "dumps", *dump_stem = "dump";
+  char *dump_dir = (char*)"dumps", *dump_stem = (char*)"dump";
   if(args->extract_switch("-dump-dir"))
     { dump_dir = args->pop_next(); dump_to_stdout=false; }
   if(args->extract_switch("-dump-stem"))

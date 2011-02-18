@@ -1,5 +1,4 @@
 ;;(macro par all) ; No more par: specials like all can't be renamed w. macros
-;(primitive apply (fn|lambda &rest (inputs arg0)) (output arg0))
 (primitive apply (fn|lambda &rest any) any 
   :type-constraints((= value (output fn))
                     (= arg1 (inputs fn))))
@@ -214,7 +213,7 @@
                     (= arg2 (unlit (nth (inputs arg1) 0)))))
 
 ;; Time
-(primitive dt () scalar)
+(primitive dt () scalar :time)
 (primitive set-dt (scalar) scalar :side-effect
   :type-constraints ((= arg0 value)))
 (primitive nbr-lag () (field scalar) :space :time)
