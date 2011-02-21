@@ -238,7 +238,9 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     }
     ProtoTuple* tup = dynamic_cast<ProtoTuple*>(nextType);
     //get index
-    ProtoType* indexType = get_ref(oi,li->get_next("type"));
+    ProtoType* indexType;
+    if(li->peek_next()->isScalar()) indexType = new ProtoScalar(li->get_num());
+    else indexType = get_ref(oi,li->get_next("type"));
     /* Don't necessarily need this to be a Scalar
     if(!indexType->isA("ProtoScalar")) {
       ierror(ref,"Expected ProtoScalar, but got "+ce2s(indexType)); // temporary, to help test suite
@@ -742,7 +744,11 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
 
     //2) ---scalar---
     SExpr* indexExpr = li->get_next("type");
-    ProtoType* indexType = ProtoType::gcs(get_ref(oi,indexExpr),new ProtoScalar());
+    ProtoType* indexType;
+    if(indexExpr->isScalar())
+      indexType = new ProtoScalar(((SE_Scalar*)indexExpr)->value);
+    else 
+      indexType = ProtoType::gcs(get_ref(oi,indexExpr),new ProtoScalar());
     if(indexType == NULL || !indexType->isA("ProtoScalar")) {
        ierror("'nth' assertion on a non-scalar type: "+indexExpr->to_str()+" (it's a "+indexType->to_str()+")");
     }
@@ -887,6 +893,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
         V4 << "Repair changing op" << ce2s(oi->op);
         oi->op = fo;
         V4 << " to " << ce2s(oi->op) << endl;
+        return true;
       }
     }
     if(!oi->output->range->isA("ProtoField")) {
@@ -894,7 +901,9 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       V4 << "Repair changing output " << ce2s(oi->output->range);
       oi->output->range = new ProtoField(oi->output->range);
       V4 << " to " << ce2s(oi->output->range) << endl;
+      return true;
     }
+    return false;
   }
 
 // TODO: this code and the other field repair code ought to be merged, somehow
@@ -927,7 +936,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
         if(verbosity > 4)
           parentRoot->root->printdot(cpout);
         if(!repair_constraint_failure(oi,a,b))
-          ierror("Equality constraint failed, but don't know how to handle yet.");
+          type_err(oi,"Type constraint "+ce2s(constraint)+" violated: \n  "
+                   +a->to_str()+" vs. "+b->to_str()+" at "+ce2s(oi));
       } else { // if GCS succeeded, assert onto referred locations
         V3<<"  apply_constraint: joint="<<ce2s(joint)<< endl;
         bool ret = assert_ref(oi,aref,joint) | assert_ref(oi,bref,joint);
@@ -962,7 +972,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
 
 class TypePropagator : public IRPropagator {
  public:
-  TypePropagator(DFGTransformer* parent, Args* args) : IRPropagator(true,true) {
+  TypePropagator(DFGTransformer* parent, Args* args)
+    : IRPropagator(true,true,true) {
     verbosity = args->extract_switch("--type-propagator-verbosity") ? 
       args->pop_int() : parent->verbosity;
   }
@@ -1161,6 +1172,16 @@ class TypePropagator : public IRPropagator {
       // ignored
     } else {
       ierror("Don't know how to do type inference on undefined operators");
+    }
+  }
+
+  // AMs that are the body of a CompoundOp may affect their signature
+  void act(AmorphousMedium* am) {
+    CompoundOp* f = am->bodyOf; if(f==NULL) return; // only CompoundOp ams
+    if(!ProtoType::equal(f->signature->output,f->output->range)) {
+      V2<<"  Changing signature output of "<<ce2s(f)<<" to "<<ce2s(f->output->range)<<endl;
+      f->signature->output = f->output->range;
+      note_change(am);
     }
   }
 };
@@ -1724,6 +1745,66 @@ public:
   }
 };
 
+// Changes restrict/mux complexes to branches
+// Mechanism:
+// 1. find complementary AM selector pairs
+// 2. turn each sub-AM into a no-argument function
+// 3.
+
+class RestrictToBranch : public IRPropagator {
+public:
+  RestrictToBranch(GlobalToLocal* parent, Args* args) : IRPropagator(false,true) {
+    verbosity = args->extract_switch("--restrict-to-branch-verbosity") ?
+      args->pop_int() : parent->verbosity;
+  }
+  virtual void print(ostream* out=0) { *out << "RestrictToBranch"; }
+
+  CompoundOp* am_to_lambda(AM* space,Field *out) {
+    // gather the producers of fields in the space, and all its children
+    OIset elts; space->all_ois(&elts);
+    // restrict functions, however, should be discarded & rewired
+    for_set(OI*,elts,i) {
+      if((*i)->op==Env::core_op("restrict"))
+        ierror("am_to_lambda not handling restrictions yet\n");
+    }
+    vector<Field*> ins; // no inputs
+    return root->derive_op(&elts,space,&ins,out);
+  }
+
+  void act(OperatorInstance* oi) {
+    // properly formed muxes are candidates for if patterns
+    if(oi->op==Env::core_op("mux") && oi->inputs.size()==3) {
+      V3 << "  Considering If->Branch candidate:\n   "<<oi->to_str()<<endl;
+      OI *join; Field *test, *testnot; AM *trueAM, *falseAM; AM* space;
+      // fill in blanks
+      join = oi; space = oi->output->domain; test = oi->inputs[0];
+      trueAM = oi->inputs[1]->domain; falseAM = oi->inputs[2]->domain;
+      testnot = falseAM->selector;
+      // check for validity
+      V4 << "   Checking not operator\n";
+      if(!testnot) return;
+      if(!(testnot->producer->op==Env::core_op("not") 
+           && testnot->consumers.size()==0 && testnot->selectors.size()==1 
+           && testnot->producer->inputs[0]==test)) return;
+      V4 << "   Checking true-expression space\n";
+      if(!(trueAM->selector==test && trueAM->parent==space)) return;
+      V4 << "   Checking false-expression space\n";
+      if(!(falseAM->selector==testnot && falseAM->parent==space)) return;
+      // Swap the mux for a branch:
+      V3 << "  Transforming to branch\n";
+      OI* branch = new OperatorInstance(oi,Env::core_op("branch"),space);
+      CompoundOp *tf = am_to_lambda(trueAM,oi->inputs[1]);
+      CompoundOp *ff = am_to_lambda(falseAM,oi->inputs[2]);
+      tf->body->mark("branch-fn"); ff->body->mark("branch-fn");
+      branch->add_input(test);
+      branch->add_input(root->add_literal(new ProtoLambda(tf),space,tf));
+      branch->add_input(root->add_literal(new ProtoLambda(ff),space,ff));
+      root->relocate_consumers(oi->output,branch->output); note_change(oi);
+      root->delete_node(oi);
+    }
+  }
+};
+
 GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   verbosity=args->extract_switch("--localizer-verbosity") ? 
     args->pop_int() : parent->verbosity;
@@ -1731,6 +1812,7 @@ GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   paranoid = args->extract_switch("--localizer-paranoid")|parent->paranoid;
   // set up rule collection
   rules.push_back(new HoodToFolder(this,args));
+  rules.push_back(new RestrictToBranch(this,args));
   rules.push_back(new DeadCodeEliminator(this,args));
 }
 

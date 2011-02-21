@@ -63,6 +63,10 @@ void chain_insert(Instruction* after, Instruction* insert) {
   if(after->next) after->next->prev=chain_end(insert);
   chain_end(insert)->next=after->next; insert->prev=after; after->next=insert;
 }
+void chain_delete(Instruction* start,Instruction* end) {
+  if(end->next) end->next->prev=start->prev;
+  if(start->prev) start->prev->next=end->next;
+}
 
 string wrap_print(ostream* out, string accumulated, string newblock, int len) {
   if(len==-1 || accumulated.size()+newblock.size()<=len) {
@@ -89,6 +93,18 @@ void print_chain(Instruction* chain, ostream* out, int compactness=0) {
   *out << line << endl << "uint16_t script_len = " << code_len << ";" << endl;
 }
 
+
+// NoInstruction is a placeholder for deleted bits
+struct NoInstruction : public Instruction { 
+  reflection_sub(NoInstruction,Instruction);
+  NoInstruction() : Instruction(-1) {}
+  virtual void print(ostream* out=0) { *out << "<No Instruction>"; }
+  virtual int size() { return 0; }
+  virtual bool resolved() { return location>=0; }
+  virtual void output(uint8_t* buf) {
+    if(next) next->output(buf);
+  }
+};
 
 struct Global : public Instruction { reflection_sub(Global,Instruction);
   int index;
@@ -179,6 +195,24 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
       } else if(o < 256) { op = REF_OP; padd(o);
       } else ierror("Environment reference too large: "+i2s(o));
     }
+  }
+};
+
+// IF_OP, IF_16_OP, JMP_OP, JMP_16_OP
+struct Branch : public Instruction { reflection_sub(Branch,Instruction);
+  Instruction* after_this;
+  int offset; bool jmp_op;
+  Branch(Instruction* after_this,bool jmp_op=false) : Instruction(IF_OP) {
+    this->after_this = after_this; this->jmp_op=jmp_op; offset=-1;
+    if(jmp_op) { op=JMP_OP; }
+  }
+  bool resolved() { return offset>=0 && Instruction::resolved(); }
+  void set_offset(int o) {
+    offset = o;
+    parameters.clear();
+    if(o < 256) { op = (jmp_op?JMP_OP:IF_OP); padd(o);
+    } else if(o < 65536) { op = (jmp_op?JMP_16_OP:IF_16_OP); padd16(o);
+    } else ierror("Branch reference too large: "+i2s(o));
   }
 };
 
@@ -352,6 +386,19 @@ public:
   }
 };
 
+class DeleteNulls : public InstructionPropagator {
+public:
+  DeleteNulls(ProtoKernelEmitter* parent,Args* args) 
+  { verbosity = parent->verbosity; }
+  void print(ostream* out=0) { *out<<"DeleteNulls"; }
+  void act(Instruction* i) {
+    if(i->isA("NoInstruction")) {
+      V2 << " Deleting NoInstruction placeholder\n";
+      chain_delete(i,i);
+    }
+  }
+};
+
 class ResolveISizes : public InstructionPropagator {
 public:
   ResolveISizes(ProtoKernelEmitter* parent,Args* args) 
@@ -388,6 +435,16 @@ public:
           ((Global*)r->store)->index << endl;
         r->set_offset(((Global*)r->store)->index);
         note_change(i);
+      }
+    } 
+    if(i->isA("Branch")) {
+      Branch* b = (Branch*)i; Instruction* target = b->after_this->next;
+      if(b->location>=0 && target->location>=0) {
+        int diff = target->location - b->location - b->size();
+        if(diff!=b->offset) {
+          V2<<" Branch offset to "<<ce2s(target)<<" is "<<diff<<endl;
+          b->set_offset(diff); note_change(i);
+        }
       }
     }
   }
@@ -512,7 +569,8 @@ class CheckEmittableType : public IRPropagator {
  *****************************************************************************/
 
 typedef union { flo val; uint8_t bytes[4]; } FLO_BYTES;
-Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l) {
+Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l,
+                                                        OI* context) {
   if(l->isA("ProtoScalar")) {
     float val = dynamic_cast<ProtoScalar*>(l)->value;
     if(val == (int)val) { // try to use integer
@@ -536,15 +594,23 @@ Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l) {
     // declare a global tup initialized to the right values
     Instruction* deftup=NULL;
     for(int i=0;i<t->types.size();i++) 
-      chain_i(&deftup,literal_to_instruction(t->types[i]));
+      chain_i(&deftup,literal_to_instruction(t->types[i],context));
     chain_i(&deftup,new iDEF_TUP(t->types.size(),true));
     chain_i(&end,chain_start(deftup)); // add to global program
     // make a global reference to it
     return new Reference(deftup);
     //return new Reference();
-  } else {
-    ierror("Don't know how to emit literal: "+l->to_str());
+  } else if(l->isA("ProtoLambda")) {
+    // Branch lambdas are handled with a special case on the branch primitive:
+    bool is_branch = true;
+    for_set(Consumer,context->output->consumers,i)
+      if(i->first->op!=Env::core_op("branch")) { is_branch=false; break; }
+    if(is_branch) return new NoInstruction();
+    // Otherwise, ensure the function is defined and get a reference
+    // NOT YET IMPLEMENTED
   }
+  // Catch-all fall-through case:
+  ierror("Don't know how to emit literal: "+l->to_str());
 }
 
 // adds a tuple to the global declarations, then references it in vector op i
@@ -593,9 +659,28 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
     Instruction* i = new Reference(TUP_OP,vec_op_store(otype)); 
     i->stack_delta = 1-oi->inputs.size(); i->padd(oi->inputs.size());
     return i;
-  } else {
-    ierror("Don't know how to convert op to instruction: "+p->to_str());
+  } else if(p==Env::core_op("branch")) {
+    Instruction *chain=NULL;
+    // dump lambdas into branches
+    Instruction *t_br, *f_br;
+    t_br = dfg2instructions(((CompoundOp*)L_VAL(oi->inputs[1]->range))->body);
+    f_br = dfg2instructions(((CompoundOp*)L_VAL(oi->inputs[2]->range))->body);
+    // trim off DEF & RETURN
+    t_br = t_br->next; f_br = f_br->next;
+    chain_delete(chain_start(t_br),chain_start(t_br));
+    chain_delete(chain_end(t_br),chain_end(t_br));
+    chain_delete(chain_start(f_br),chain_start(f_br));
+    chain_delete(chain_end(f_br),chain_end(f_br));
+    // string them together into a branch
+    Instruction* jmp = new Branch(chain_end(t_br),true);
+    chain_i(&chain,new Branch(jmp));
+    chain_i(&chain,f_br);
+    chain_i(&chain,jmp);
+    chain_i(&chain,t_br);
+    return chain_start(chain);
   }
+  // fall-through error case
+  ierror("Don't know how to convert op to instruction: "+p->to_str());
 }
 
 
@@ -650,6 +735,7 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
   // load operation definitions
   string name = "core.ops"; load_ops(name,parent); terminate_on_error();
   // setup rule collection
+  rules.push_back(new DeleteNulls(this,args));
   rules.push_back(new InsertLetPops(this,args));
   rules.push_back(new ResolveISizes(this,args));
   rules.push_back(new ResolveLocations(this,args));
@@ -673,7 +759,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   if(oi->op->isA("Primitive")) {
     chain_i(&chain,primitive_to_instruction(oi));
   } else if(oi->op->isA("Literal")) { 
-    chain_i(&chain,literal_to_instruction(((Literal*)oi->op)->value)); 
+    chain_i(&chain,literal_to_instruction(((Literal*)oi->op)->value,oi));
   } else { // also CompoundOp, Parameter
     ierror("Don't know how to emit instruction for "+oi->op->to_str());
   }
@@ -715,7 +801,8 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   V1<<"Linearizing DFG to instructions...\n";
   start = end = new iDEF_VM(); // start of every script
   for_set(AM*,g->relevant,i) // translate each function
-    if((*i)!=g->output->domain) chain_i(&end,dfg2instructions(*i));
+    if((*i)!=g->output->domain && !(*i)->marked("branch-fn"))
+      chain_i(&end,dfg2instructions(*i));
   chain_i(&end,dfg2instructions(g->output->domain)); // next the main
   chain_i(&end,new Instruction(EXIT_OP)); // add the end op
   if(verbosity>=2) print_chain(start,cpout,2);

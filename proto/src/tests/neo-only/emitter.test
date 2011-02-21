@@ -201,6 +201,40 @@ is 8 _ uint16_t script_len = 52;
 = 20 3 3
 = 21 3 2
 
+// Challenges for branches:
+// Basic test:
+test: $(PROTO) "(if (mid) 3 4)"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0,
+is 1 _   DEF_FUN_OP, 8, MID_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 1, LIT_3_OP, 
+is 2 _   RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 20;
+= 5 3 4
+= 8 3 3
+
+// Nested branches:
+test: $(PROTO) "(if (mid) (if (> (mid) 3) 5 6) (if (speed) 7 9))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0,
+is 1 _   DEF_FUN_OP, 26, MID_OP, IF_OP, 11, SPEED_OP, IF_OP, 4, LIT8_OP, 9,
+is 2 _   JMP_OP, 2, LIT8_OP, 7, JMP_OP, 11, MID_OP, LIT_3_OP, GT_OP, 
+is 3 _   IF_OP, 4, LIT8_OP, 6, JMP_OP, 2, LIT8_OP, 5, RET_OP, EXIT_OP };
+is 4 _ uint16_t script_len = 38;
+= 6 3 9
+= 8 3 6
+= 11 3 5
+
+// Handling of side effects and pruning of old material
+// test: $(PROTO) "(if (mid) (all (set-dt 2) 3) 4)"
+// is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, 
+// is 1 _   DEF_FUN_OP, 12, MID_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 5,
+// is 2 _   LIT_2_OP, SET_DT_OP, LIT_3_OP, ALL_OP, 2, RET_OP, EXIT_OP };
+// is 3 _ uint16_t script_len = 24;
+// = 5 3 4
+// = 8 3 3
+
+// Branch out-references through restriction:
+// test: $(P2B) "(let ((x (speed))) (if (mid) (+ x 3) 4))"
+// test: $(P2B) "(let ((x (speed)) (y (> (mid) 2))) (+ y (if (mid) (* x 3) (+ x y))))
+
 // Challenges for nbrs:
 // "(min-hood (+ (nbr 3) (nbr 4)))"
 // (min-hood+ (* (+ (mid) 1) (nbr (mid))))
@@ -209,3 +243,7 @@ is 8 _ uint16_t script_len = 52;
 // (min-hood (nbr-range))
 // (max-hood (tup (tup (nbr (mid)) 2) 3))
 // (fold-hood + 0 (mid))
+
+// Branch/nbr interaction:
+// (if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)
+// (any-hood (if (nbr (mid)) 1 0))

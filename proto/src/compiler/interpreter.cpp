@@ -123,7 +123,7 @@ void Env::record_core_ops(Env* toplevel) {
     if(i->second->isA("Operator")) core_ops[i->first]=(Operator*)i->second;
 }
 Operator* Env::core_op(string name) {
-  if(!core_ops.count(name))ierror("Compiler missing core operators '"+name+"'");
+  if(!core_ops.count(name))ierror("Compiler missing core operator '"+name+"'");
   return core_ops[name];
 }
 
@@ -698,6 +698,8 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
     }
     // if we didn't return yet, it's an ordinary composite expression
     Operator *op = sexp_to_op(sl->op(),env);
+    if(op->marked(":protected"))
+      compile_warn(op,"operator '"+op->name+"' not intended for direct use.");
     OperatorInstance *oi = new OperatorInstance(s,op,space);
     for(vector<SExpr*>::iterator it=sl->args(); it!=sl->children.end(); it++) {
       Field* sub = sexp_to_graph(*it,space,env);

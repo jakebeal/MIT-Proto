@@ -1,13 +1,17 @@
 (primitive restrict (test|scalar base|any) any ;; permissive boolean input
-  :space :type-constraints ((= value base)))
+  :space :protected :type-constraints ((= value base)))
+(primitive branch (test|scalar truefn|lambda falsefn|lambda) any
+  :space :protected
+  :type-constraints ((= value (lcs (output truefn) (output falsefn)))))
 (primitive mux (test|scalar true-expr|any false-expr|any) any ;; permissive boolean input
   :type-constraints ((= value (lcs true-expr false-expr))))
-(primitive delay (local) local :time :type-constraints ((= arg0 value)))
-(primitive dchange () boolean :space :time)
+(primitive delay (local) local :time :protected
+  :type-constraints ((= arg0 value)))
+(primitive dchange () boolean :space :time :protected)
 (primitive not (scalar) boolean) ;; permissive boolean input
 (primitive tup (&rest any) tuple 
   :type-constraints ((= value arg0))) ; tuplization implicit in rest
 (primitive elt (tuple i|scalar) any
   :type-constraints ((= value (nth arg0 i))))
-(primitive local (local) field :space :time ; usually left implicit
+(primitive local (local) field :space :time :protected ; usually left implicit
   :type-constraints ((= value (fieldof arg0))))

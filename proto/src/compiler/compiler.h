@@ -156,7 +156,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   void load_ops(string name, NeoCompiler* parent);
   Instruction* tree2instructions(Field* f);
   Instruction* primitive_to_instruction(OperatorInstance* oi);
-  Instruction* literal_to_instruction(ProtoType* l);
+  Instruction* literal_to_instruction(ProtoType* l, OperatorInstance* context);
   Instruction* dfg2instructions(AM* g);
 
   /// allocates globals for vector ops

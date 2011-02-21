@@ -184,7 +184,7 @@
 ;  :space :time
 ;  :type-constraints
 (primitive fold-hood (lambda local local) local :space :time
-  :type-constraints ((= (inputs arg0) (tupof local local))
+  :type-constraints ((= (inputs arg0) (tupof arg1 arg2))
                      (= (output arg0) (unlit (inputs arg0)))
                      (= arg1 (unlit (nth (inputs arg0) 0)))
                      (= arg2 (unlit (nth (inputs arg0) 1)))
@@ -195,7 +195,7 @@
 ;  (unlit (nth (inputs arg0) 0)) :space :time)
 
 (primitive fold-hood* (lambda local local) local :space :time
-  :type-constraints ((= (inputs arg0) (tupof local local))
+  :type-constraints ((= (inputs arg0) (tupof arg1 arg2))
                      (= (output arg0) (unlit (inputs arg0)))
                      (= arg1 (unlit (nth (inputs arg0) 0)))
                      (= arg2 (unlit (nth (inputs arg0) 1)))
@@ -206,9 +206,9 @@
 ;  (unlit (output arg1)) :space :time)
 (primitive fold-hood-plus (lambda lambda local) local :space :time
   :type-constraints ((= value (unlit (output arg1)))
-                    (= (inputs arg0) (tupof local local))
+                    (= (inputs arg0) (tupof (output arg1) (output arg1)))
                     (= (output arg0) (unlit (inputs arg0)))
-                    (= (inputs arg1) (tupof local))
+                    (= (inputs arg1) (tupof arg2))
                     (= (output arg1) (unlit (nth (inputs arg0) 1)))
                     (= arg2 (unlit (nth (inputs arg1) 0)))))
 

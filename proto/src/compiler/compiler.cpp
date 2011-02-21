@@ -98,7 +98,7 @@ NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
   paranoid = args->extract_switch("--paranoid");
   infile = (args->extract_switch("--infile"))?args->pop_next():"";
   verbosity = (args->extract_switch("--verbosity")?args->pop_int():0);
-
+  
   // Set up paths
   // srcdir is an undocumented option used for uninstalled execution
   string srcdir = (args->extract_switch("--srcdir"))?args->pop_next():"";

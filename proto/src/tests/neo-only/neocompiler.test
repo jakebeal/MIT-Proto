@@ -461,7 +461,7 @@ is 26 _   Mike: Kilo --> <Scalar 3>
 is 27 _ Operator Instances:
 is 28 _   Mike<Scalar 3> --> [Fun: fooloop] --> Lima<Any> OUTPUT
 is 29 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
-is 30 _ Function: fooloop [Signature: <Any> --> <Any>] called 2 times
+is 30 _ Function: fooloop [Signature: <Any> --> <Number>] called 2 times
 
 test: $(P2B) -CDall "(let ((x 3) (x 4)) x)"
 is 0 _ Error during interpretation:
@@ -564,7 +564,7 @@ is 29 _ Stopping before localization
 
 // Make sure that extra function calls are ignored by "relevant" count
 test: $(P2B) "(def foo () (mid)) (def bar () (* (foo) (foo))) (foo)" -CDanalyzed --function-inlining-threshold 0
-is 0 _ Function: foo [Signature:  --> <Any>] called 1 times
+is 0 _ Function: foo [Signature:  --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1187,14 +1187,14 @@ is 5 _   [Lit: <Boolean false>] --> Bravo<Boolean false> OUTPUT
 
 // funcall usage tracking:
 test: $(P2B) -CDanalyzed "(def foo () (mid)) (def bar (x) (+ 3 x)) (nbr (tup foo bar (tup foo)))"
-is 0 _ Function: foo [Signature:  --> <Any>] called 1 times
+is 0 _ Function: foo [Signature:  --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
 is 4 _     Bravo: Alfa --> <Scalar> OUTPUT
 is 5 _   Operator Instances:
 is 6 _     [mid] --> Bravo<Scalar> OUTPUT
-is 7 _ Function: bar [Signature: <Any> --> <Any>] called 1 times
+is 7 _ Function: bar [Signature: <Any> --> <number>] called 1 times
 is 8 _   Amorphous Mediums:
 is 9 _     [Medium: Charlie = root]
 is 10 _   Fields:
@@ -1252,7 +1252,7 @@ is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 
 // Testing propagation in & out of funcall
 test: $(P2B) -CDanalyzed "((lambda (x) (set-dt x)) 5)" --function-inlining-threshold 0
-is 0 _ Function: lambda~4 [Signature: <Any> --> <Any>] called 1 times
+is 0 _ Function: lambda~4 [Signature: <Any> --> <Scalar 5>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1272,7 +1272,7 @@ is 16 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
 // should end up with 1 timer call
 test: $(P2B) -CDanalyzed "(all (timer) (timer))" --function-inlining-threshold 0
-is 0 _  Function: timer [Signature:  --> <Any>] called 1 times
+is 0 _  Function: timer [Signature:  --> <Scalar>] called 1 times
 is 21 _ Amorphous Mediums:
 is 22 _   [Medium: Kilo = root]
 is 23 _ Fields:
