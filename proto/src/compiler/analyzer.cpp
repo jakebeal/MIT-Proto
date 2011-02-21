@@ -893,7 +893,6 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
         V4 << "Repair changing op" << ce2s(oi->op);
         oi->op = fo;
         V4 << " to " << ce2s(oi->op) << endl;
-        return true;
       }
     }
     if(!oi->output->range->isA("ProtoField")) {
@@ -901,9 +900,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       V4 << "Repair changing output " << ce2s(oi->output->range);
       oi->output->range = new ProtoField(oi->output->range);
       V4 << " to " << ce2s(oi->output->range) << endl;
-      return true;
     }
-    return false;
+    return true;
   }
 
 // TODO: this code and the other field repair code ought to be merged, somehow
@@ -915,6 +913,10 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     } else if(ctype->isA("ProtoField") && ftype->isA("ProtoLocal")) {
       return repair_field_constraint(oi, F_TYPE(ctype), ftype);
     }
+    if(oi->op==Env::core_op("local") && ftype->isA("ProtoField")) {
+      return true; // defer repair to later
+    }
+    return false;
   }
   
   /********** External Interface **********/
