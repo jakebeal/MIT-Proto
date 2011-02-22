@@ -223,13 +223,14 @@ is 4 _ uint16_t script_len = 38;
 = 11 3 5
 
 // Handling of side effects and pruning of old material
-// test: $(PROTO) "(if (mid) (all (set-dt 2) 3) 4)"
-// is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, 
-// is 1 _   DEF_FUN_OP, 12, MID_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 5,
-// is 2 _   LIT_2_OP, SET_DT_OP, LIT_3_OP, ALL_OP, 2, RET_OP, EXIT_OP };
-// is 3 _ uint16_t script_len = 24;
-// = 5 3 4
-// = 8 3 3
+test: $(PROTO) "(if (mid) (all (set-dt 2) 3) (probe 4 1))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, 
+is 1 _   DEF_FUN_OP, 14, MID_OP, IF_OP, 5, LIT_4_OP, LIT_1_OP, PROBE_OP,
+is 2 _   JMP_OP, 5, LIT_2_OP, SET_DT_OP, LIT_3_OP, ALL_OP, 2, RET_OP, EXIT_OP
+is 3 _ };
+is 4 _ uint16_t script_len = 26;
+= 6 3 4
+= 9 3 3
 
 // Branch out-references through restriction:
 // test: $(P2B) "(let ((x (speed))) (if (mid) (+ x 3) 4))"
@@ -247,3 +248,11 @@ is 4 _ uint16_t script_len = 38;
 // Branch/nbr interaction:
 // (if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)
 // (any-hood (if (nbr (mid)) 1 0))
+
+// Branch/feedback interaction:
+// (if (> (timer) 5) (+ 3 (timer)) 0)
+// (rep x 0 (if 
+
+// All-ways interaction:
+// (rep x 1 (if (> (timer) 5) (max-hood (nbr (mid))) 8))
+// [and need many more]

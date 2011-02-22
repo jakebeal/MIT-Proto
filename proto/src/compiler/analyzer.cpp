@@ -1801,8 +1801,13 @@ public:
       branch->add_input(test);
       branch->add_input(root->add_literal(new ProtoLambda(tf),space,tf));
       branch->add_input(root->add_literal(new ProtoLambda(ff),space,ff));
-      root->relocate_consumers(oi->output,branch->output); note_change(oi);
+      root->relocate_consumers(oi->output,branch->output); note_change(branch);
+      // delete old elements
       root->delete_node(oi);
+      OIset elts; trueAM->all_ois(&elts); falseAM->all_ois(&elts); 
+      for_set(OI*,elts,i) { root->delete_node(*i); }
+      root->delete_space(trueAM); root->delete_space(falseAM);
+      root->delete_node(testnot->producer);
     }
   }
 };

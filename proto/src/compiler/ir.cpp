@@ -607,7 +607,7 @@ void DFG::delete_node(OperatorInstance* oi) {
   delete_op_references(oi);
   // discard the elements
   nodes.erase(oi); edges.erase(oi->output);
-  delete oi->output; delete oi; // finally, release our memory
+  //delete oi->output; delete oi; // finally, release our memory
 }
 
 void DFG::delete_space(AM* am) {
@@ -618,7 +618,7 @@ void DFG::delete_space(AM* am) {
   for_set(AM*,am->children,i) (*i)->parent=NULL;
   for_set(Field*,am->fields,i) (*i)->domain=NULL;
   // discard the element & release memory
-  relevant.erase(am); spaces.erase(am); delete am;
+  relevant.erase(am); spaces.erase(am); //delete am;
 }
 
 // move contents of medium src into medium target, then destroy src
@@ -801,7 +801,6 @@ bool IRPropagator::propagate(DFG* g) {
       Field* f = *worklist_f.begin(); worklist_f.erase(f); 
       if(root->edges.count(f)) // ignore deleted elements
         { act(f); steps_remaining--; }
-        
     }
     if(!worklist_o.empty()) {
       OperatorInstance* oi = *worklist_o.begin(); worklist_o.erase(oi);
