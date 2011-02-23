@@ -54,7 +54,6 @@ public:
 	 * @return a new ODEBody if possible, null if factory is out of bodies to make
 	 */
 	ODEBody* next_body(ODEDynamics* parent, Device* d);
-	ODEBody* next_body2(ODEDynamics* parent, Device* d);
 	void create_joints();
 	bool empty();
 	int numBodies();

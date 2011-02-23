@@ -347,6 +347,7 @@ ODEBox::ODEBox(ODEDynamics* parent, Device* container, flo x, flo y, flo z, flo 
   dBodySetPosition(body, x, y, z);
   dQuaternion Q; dQFromAxisAndAngle (Q,0,0,1,0);
   dBodySetQuaternion (body,Q);
+  //dBodySetRotation(body,Q);
   // set up back-pointer
   dBodySetData(body,(void*)this);
   dGeomSetData(geom,(void*)this);

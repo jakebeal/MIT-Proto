@@ -42,13 +42,13 @@ public:
 	 * @param bod1 First ODEBody the joint is attached too
 	 * @param bod2 Other ODEBody the joint is attached too
 	 */
-	virtual void createJoint(dWorldID world, ODEBody *bod1, ODEBody *bod2);
+	virtual void createJoint(dWorldID world, dBodyID bod1, dBodyID bod2);
 };
 
 class XmlFixedJoint: public XmlJoint {
 public:
 	XmlFixedJoint(XERCES_CPP_NAMESPACE::DOMElement* element);
-	void createJoint(dWorldID world, ODEBody *bod1, ODEBody *bod2);
+	void createJoint(dWorldID world,dBodyID bod1, dBodyID bod2);
 };
 
 class XmlHingedJoint: public XmlJoint {
@@ -58,7 +58,7 @@ public:
 	dReal loStop;
 	dReal hiStop;
 	XmlHingedJoint(XERCES_CPP_NAMESPACE::DOMElement* element, const double* transform);
-	void createJoint(dWorldID world, ODEBody *bod1, ODEBody *bod2);
+	void createJoint(dWorldID world,dBodyID bod1, dBodyID bod2);
 };
 
 class XmlBody {

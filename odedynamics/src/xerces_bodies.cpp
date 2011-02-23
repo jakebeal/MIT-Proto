@@ -16,6 +16,95 @@ using namespace xercesc;
 #define HI_STOP_TAG "hiStop"
 #define LOW_STOP_TAG "loStop"
 
+/**
+ *  Returns a child element with the given name
+ *  @param element parent element
+ *  @param name name of child element to retrieve
+ *  @return the child element with the given name or NULL if there are 0 or >1 elements with the given name
+ */
+DOMNode* getElement(DOMElement* element,const char* name) {
+	if (element == NULL)
+		return NULL;
+
+	DOMNodeList* elementList = element->getElementsByTagName(
+			XMLString::transcode(name));
+	if (elementList == NULL || elementList->getLength() != 1)
+		return NULL;
+
+	return elementList->item(0);
+}
+
+/**
+ *  Returns the value of a names child element
+ *  @param element parent element
+ *  @param name name of child element value is stored in
+ *  @return the value of the child element with the given name or NULL if there are 0 or >1 elements with the given name
+ */
+char* getChildValue(DOMElement* element,const char* name) {
+	DOMNode* child = getElement(element, name);
+	if (child == NULL)
+		return NULL;
+
+	DOMNodeList* contentList = child->getChildNodes();
+	if (contentList->getLength() != 1)
+		return NULL;
+
+	DOMNode* firstContent = contentList->item(0);
+	if (firstContent == NULL)
+		return NULL;
+
+	return XMLString::transcode(firstContent->getNodeValue());
+}
+
+/**
+ *  Retrieve the value of an attribute
+ *  @param node the DOMNode we are extracting an attribute from
+ *  @param name the name of the attribute we want
+ *  @return the value of the attribute or NULL if no such attribute is found
+ */
+char* getAttribute(DOMNode* node, const char* name) {
+	if (node == NULL)
+		return NULL;
+
+	DOMNamedNodeMap* map = node->getAttributes();
+	if (map == NULL)
+		return NULL;
+
+	DOMNode* attribute = map->getNamedItem(XMLString::transcode(name));
+	if (attribute == NULL)
+		return NULL;
+
+	return XMLString::transcode(attribute->getNodeValue());
+}
+
+void createMyTransformMatrix(double* pos, double* rot, double* t) {
+	double sx = sin(rot[0]);
+	double sy = sin(rot[1]);
+	double sz = sin(rot[2]);
+
+	double cx = cos(rot[0]);
+	double cy = cos(rot[1]);
+	double cz = cos(rot[2]);
+
+	t[0] = cy * cz;
+	t[1] = -cx * sz + sx * sy * cz;
+	t[2] = sx * sz + cx * cy * cz;
+	t[3] = pos[0];
+	t[4] = cy * sz;
+	t[5] = cx * cz + sx * sy * sz;
+	t[6] = -sx * cz + cx * sy * sz;
+	t[7] = pos[1];
+	t[8] = -sy;
+	t[9] = sx * cy;
+	t[10] = cx * cy;
+	t[11] = pos[2];
+	t[12] = 0;
+	t[13] = 0;
+	t[14] = 0;
+	t[15] = 1;
+
+}
+
 /********************************************************
  ********************  Joints ***************************
  ********************************************************/
@@ -24,26 +113,20 @@ using namespace xercesc;
  * XmlJoint implementation
  ***************************************************/
 XmlJoint::XmlJoint(DOMElement* element) {
-	DOMNodeList* id1List = element->getElementsByTagName(XMLString::transcode(
-			"a"));
-	if (id1List->getLength() != 1) {
-		cout << "no a" << endl;
-		throw "no a";
-	}
-	id1 = string(XMLString::transcode(
-			id1List->item(0)->getFirstChild()->getNodeValue()));
 
-	DOMNodeList* id2List = element->getElementsByTagName(XMLString::transcode(
-			"b"));
-	if (id2List->getLength() != 1) {
-		cout << "no b" << endl;
-		throw "no b";
+	DOMNode* id1element = getElement(element, "a");
+	DOMNode* id2element = getElement(element, "b");
+	if (id1element == NULL || id2element == NULL) {
+		cout << "Joint improperly defined.";
+		throw exception();
 	}
-	id2 = string(XMLString::transcode(
-			id2List->item(0)->getFirstChild()->getNodeValue()));
+
+	id1 = string(getChildValue(element, "a"));
+	id2 = string(getChildValue(element, "b"));
 }
 
-void XmlJoint::createJoint(dWorldID world, ODEBody *bod1, ODEBody *bod2) {
+//TODO this should be a pure virtual function
+void XmlJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	cout << "Unsupported argument" << endl;
 }
 
@@ -54,9 +137,9 @@ XmlFixedJoint::XmlFixedJoint(DOMElement* element) :
 	XmlJoint(element) {
 }
 
-void XmlFixedJoint::createJoint(dWorldID world, ODEBody *bod1, ODEBody *bod2) {
+void XmlFixedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	dJointID joint = dJointCreateFixed(world, 0);
-	dJointAttach(joint, bod1->body, bod2->body);
+	dJointAttach(joint, bod1, bod2);
 	dJointSetFixed(joint);
 }
 
@@ -69,62 +152,62 @@ XmlHingedJoint::XmlHingedJoint(XERCES_CPP_NAMESPACE::DOMElement* element,
 	anchor = new double[3];
 	axis = new double[3];
 
-	//extract anchor position
-	DOMNodeList* anchorList = element->getElementsByTagName(
-			XMLString::transcode(ANCHOR_TAG));
-	if (anchorList->getLength() != 1) {
+	/******************
+	 * extract anchor *
+	 ******************/
+	DOMNode* anchorNode = getElement(element, ANCHOR_TAG);
+	if (anchorNode == NULL) {
+		cout << "Hinged joint anchor not specified correctly." << endl;
 		throw exception();
 	}
-	DOMNode* anchorAtt[3];
-	anchorAtt[0] = anchorList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("x"));
-	anchorAtt[1] = anchorList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("y"));
-	anchorAtt[2] = anchorList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("z"));
+
+	char* anchorAtt[3];
+	anchorAtt[0] = getAttribute(anchorNode, "x");
+	anchorAtt[1] = getAttribute(anchorNode, "y");
+	anchorAtt[2] = getAttribute(anchorNode, "z");
+
 	for (int i = 0; i < 3; i++) {
-		anchor[i] = atof(XMLString::transcode(anchorAtt[i]->getNodeValue()));
+		if (anchorAtt[i] == NULL) {
+			cout << "Hinged joint anchor not specified correctly." << endl;
+			throw exception();
+		}
+		anchor[i] = atof(anchorAtt[0]);
 	}
 
-	//extract position
-	DOMNodeList* axisList = element->getElementsByTagName(XMLString::transcode(
-			AXIS_TAG));
-	if (axisList->getLength() != 1) {
-		throw exception();
-	}
-	DOMNode* axisAtt[3];
-	axisAtt[0] = axisList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("x"));
-	axisAtt[1] = axisList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("y"));
-	axisAtt[2] = axisList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("z"));
+	/********************
+	 * extract position *
+	 ********************/
+	DOMNode* axisNode = getElement(element, AXIS_TAG);
+	char* axisAtt[3];
+	axisAtt[0] = getAttribute(axisNode, "x");
+	axisAtt[1] = getAttribute(axisNode, "y");
+	axisAtt[2] = getAttribute(axisNode, "z");
 	for (int i = 0; i < 3; i++) {
-		axis[i] = atof(XMLString::transcode(axisAtt[i]->getNodeValue()));
+		if (axisAtt[i] == NULL) {
+			cout << "Hinged joint axis not specified correctly." << endl;
+			throw exception();
+		}
+		axis[i] = atof(axisAtt[i]);
 	}
 
-	//extract high stop
-	DOMNodeList* hiStopList = element->getElementsByTagName(
-			XMLString::transcode(HI_STOP_TAG));
-	if (hiStopList->getLength() == 0) {
+	/*********************
+	 * extract high stop *
+	 *********************/
+	char* hiStopChar = getChildValue(element, HI_STOP_TAG);
+	//if high stop is not specified we assume there isn't one
+	if (hiStopChar == NULL) {
 		hiStop = -dInfinity;
-	} else if (hiStopList->getLength() == 1) {
-		hiStop = atof(XMLString::transcode(
-				hiStopList->item(0)->getFirstChild()->getNodeValue()));
 	} else {
-		throw "bad high stop";
+		hiStop = atof(hiStopChar);
 	}
 
 	//extract low stop
-	DOMNodeList* lowStopList = element->getElementsByTagName(
-			XMLString::transcode(LOW_STOP_TAG));
-	if (lowStopList->getLength() == 0) {
+	char* loStopChar = getChildValue(element, LOW_STOP_TAG);
+	//if low stop is not specified we assume there isn't one
+	if (loStopChar == NULL) {
 		loStop = dInfinity;
-	} else if (lowStopList->getLength() == 1) {
-		loStop = atof(XMLString::transcode(
-				lowStopList->item(0)->getFirstChild()->getNodeValue()));
 	} else {
-		throw "bad low stop";
+		loStop = atof(loStopChar);
 	}
 
 	/**
@@ -135,16 +218,15 @@ XmlHingedJoint::XmlHingedJoint(XERCES_CPP_NAMESPACE::DOMElement* element,
 	anchor[2] += transform[2];
 
 }
-void XmlHingedJoint::createJoint(dWorldID world, ODEBody *bod1, ODEBody *bod2) {
+void XmlHingedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	dJointID joint = dJointCreateHinge(world, 0);
-	dJointAttach(joint, bod1->body, bod2->body);
+	dJointAttach(joint, bod1, bod2);
 	dJointSetHingeAnchor(joint, anchor[0], anchor[1], anchor[2]);
 	dJointSetHingeAxis(joint, axis[0], axis[1], axis[2]);
 	dJointSetHingeParam(joint, dParamLoStop, loStop);
 	dJointSetHingeParam(joint, dParamHiStop, hiStop);
 	cout << "Created Hinged joint " << endl;
 }
-
 
 /********************************************************
  ********************  Bodies ***************************
@@ -158,62 +240,44 @@ XmlBody::XmlBody(DOMElement* element, const double* transform) {
 	quaternion = new double[4];
 
 	//Extract id
-	DOMNodeList* idList = element->getElementsByTagName(XMLString::transcode(
-			ID_TAG));
-	if (idList->getLength() != 1) {
+	char* idChar = getChildValue(element, ID_TAG);
+	if (idChar == NULL)
 		throw exception();
-	}
-	id = string(XMLString::transcode(
-			idList->item(0)->getFirstChild()->getNodeValue()));
+	id = string(idChar);
 
 	//extract position
-	DOMNodeList* posList = element->getElementsByTagName(XMLString::transcode(
-			POS_TAG));
-	if (posList->getLength() != 1) {
+	DOMNode* posNode = getElement(element, POS_TAG);
+	if (posNode == NULL)
 		throw exception();
-	}
-	DOMNode* posAtt[3];
-	posAtt[0] = posList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("x"));
-	posAtt[1] = posList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("y"));
-	posAtt[2] = posList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("z"));
+
+	char* posAtt[3];
+	posAtt[0] = getAttribute(posNode, "x");
+	posAtt[1] = getAttribute(posNode, "y");
+	posAtt[2] = getAttribute(posNode, "z");
 	for (int i = 0; i < 3; i++) {
-		pos[i] = atof(XMLString::transcode(posAtt[i]->getNodeValue()));
+		if (posAtt[i] == NULL)
+			throw exception();
+		pos[i] = atof(posAtt[i]);
 	}
 
 	//extract orientation
-	DOMNodeList* quatList = element->getElementsByTagName(XMLString::transcode(
-			QUAT_TAG));
-	if (quatList->getLength() != 0) {
-		if (quatList->getLength() != 1) {
-			throw exception();
-		}
-		DOMNode* quatAtt[4];
-		quatAtt[0] = quatList->item(0)->getAttributes()->getNamedItem(
-				XMLString::transcode("q1"));
-		quatAtt[1] = quatList->item(0)->getAttributes()->getNamedItem(
-				XMLString::transcode("q2"));
-		quatAtt[2] = quatList->item(0)->getAttributes()->getNamedItem(
-				XMLString::transcode("q3"));
-		quatAtt[3] = quatList->item(0)->getAttributes()->getNamedItem(
-				XMLString::transcode("q4"));
+	DOMNode* quatNode = getElement(element, QUAT_TAG);
+	if (quatNode != NULL) {
+		char* quatAtt[4];
+		quatAtt[0] = getAttribute(quatNode, "q1");
+		quatAtt[1] = getAttribute(quatNode, "q2");
+		quatAtt[2] = getAttribute(quatNode, "q3");
+		quatAtt[3] = getAttribute(quatNode, "q4");
 		for (int i = 0; i < 4; i++) {
-			quaternion[i] = atof(XMLString::transcode(
-					quatAtt[i]->getNodeValue()));
+			if (quatAtt[i] == NULL)
+				throw exception();
+			quaternion[i] = atof(quatAtt[i]);
 		}
 	}
-
 	//extract mass
-	DOMNodeList* massList = element->getElementsByTagName(XMLString::transcode(
-			MASS_TAG));
-	if (massList->getLength() != 1) {
-		throw exception();
-	}
-	//TODO fix mass assignment
-	mass = atof(XMLString::transcode(
-			idList->item(0)->getFirstChild()->getNodeValue()));
+	char* massChar = getChildValue(element, MASS_TAG);
+	if (massChar == NULL) throw exception();
+	mass = atof(massChar);
 
 	/**
 	 * Apply transform
@@ -228,7 +292,6 @@ ODEBody* XmlBody::getODEBody(ODEDynamics* parent, Device* d) {
 	cout << "unimplemented method" << endl;
 }
 
-
 /***************************************************
  * XmlBox implementation
  ***************************************************/
@@ -237,20 +300,17 @@ XmlBox::XmlBox(DOMElement* element, const double* transform) :
 	dim = new double[3];
 
 	//extract position
-	DOMNodeList* dimList = element->getElementsByTagName(XMLString::transcode(
-			DIM_TAG));
-	if (dimList->getLength() != 1) {
-		throw exception();
-	}
-	DOMNode* dimAtt[3];
-	dimAtt[0] = dimList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("w"));
-	dimAtt[1] = dimList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("b"));
-	dimAtt[2] = dimList->item(0)->getAttributes()->getNamedItem(
-			XMLString::transcode("h"));
+	DOMNode* dimNode = getElement(element, DIM_TAG);
+	if(dimNode == NULL) throw exception();
+
+	char* dimAtt[3];
+	dimAtt[0] = getAttribute(dimNode, "w");
+	dimAtt[1] = getAttribute(dimNode, "b");
+	dimAtt[2] = getAttribute(dimNode, "h");
+
 	for (int i = 0; i < 3; i++) {
-		dim[i] = atof(XMLString::transcode(dimAtt[i]->getNodeValue()));
+		if(dimAtt[i] == NULL) throw exception();
+		dim[i] = atof(dimAtt[i]);
 	}
 }
 
@@ -273,19 +333,15 @@ ODEBody* XmlBox::getODEBody(ODEDynamics* parent, Device* d) {
 XmlSphere::XmlSphere(DOMElement* element, const double* transform) :
 	XmlBody(element, transform) {
 	//extract radius
-	DOMNodeList* radiusList = element->getElementsByTagName(
-			XMLString::transcode("radius"));
-	if (radiusList->getLength() != 1) {
-		throw exception();
-	}
-	radius = atof(XMLString::transcode(
-			radiusList->item(0)->getFirstChild()->getNodeValue()));
+	char* radiusChar = getChildValue(element, "radius");
+	if( radiusChar == NULL) throw exception();
+
+	radius = atof(radiusChar);
 }
 
 ODEBody* XmlSphere::getODEBody(ODEDynamics* parent, Device* d) {
 	return new ODESphere(parent, d, pos, quaternion, radius, mass);
 }
-
 
 /***************************************************
  * XmlCylinder implementation
@@ -293,23 +349,14 @@ ODEBody* XmlSphere::getODEBody(ODEDynamics* parent, Device* d) {
 XmlCylinder::XmlCylinder(DOMElement* element, const double* transform) :
 	XmlBody(element, transform) {
 	//extract radius
-	DOMNodeList* radiusList = element->getElementsByTagName(
-			XMLString::transcode("radius"));
-	if (radiusList->getLength() != 1) {
-		throw exception();
-	}
-	radius = atof(XMLString::transcode(
-			radiusList->item(0)->getFirstChild()->getNodeValue()));
+	char* radiusChar = getChildValue(element, "radius");
+	if( radiusChar == NULL) throw exception();
+	radius = atof(radiusChar);
 
 	//extract height
-	DOMNodeList* heightList = element->getElementsByTagName(
-			XMLString::transcode("height"));
-	if (heightList->getLength() != 1) {
-		throw exception();
-	}
-	height = atof(XMLString::transcode(
-			heightList->item(0)->getFirstChild()->getNodeValue()));
-
+	char* heightChar = getChildValue(element, "height");
+	if( heightChar == NULL) throw exception();
+	height = atof(heightChar);
 }
 
 ODEBody* XmlCylinder::getODEBody(ODEDynamics* parent, Device* d) {
@@ -333,27 +380,23 @@ void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
 		DOMElement* node = (DOMElement*) tw->getCurrentNode();
 
 		/* Process body */
-		if (XMLString::equals(XMLString::transcode("body"), node->getNodeName())){
+		if (XMLString::equals(XMLString::transcode("body"), node->getNodeName())) {
 			addBody(node, pos);
-		}else
-		 /* Process joint */
+		} else
+		/* Process joint */
 		if (XMLString::equals(XMLString::transcode("joint"),
-				node->getNodeName())){
+				node->getNodeName())) {
 			addJoint(node, pos);
-		}else
+		} else
 		/* Process a transform */
 		if (XMLString::equals(XMLString::transcode("transform"),
 				node->getNodeName())) {
 			double trans[3];
-			char* x_c = XMLString::transcode(
-					((DOMElement*) tw->getCurrentNode())->getAttribute(
-							XMLString::transcode("x")));
-			char* y_c = XMLString::transcode(
-					((DOMElement*) tw->getCurrentNode())->getAttribute(
-							XMLString::transcode("y")));
-			char* z_c = XMLString::transcode(
-					((DOMElement*) tw->getCurrentNode())->getAttribute(
-							XMLString::transcode("z")));
+			char* x_c = getAttribute(node, "x");
+			char* y_c = getAttribute(node, "y");
+			char* z_c = getAttribute(node, "z");
+
+			if(x_c == NULL || y_c == NULL || z_c == NULL) throw exception();
 
 			trans[0] = pos[0] + atof(x_c);
 			trans[1] = pos[1] + atof(y_c);
@@ -362,8 +405,8 @@ void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
 			if (tw->firstChild() != NULL) {
 				processNode(tw, trans);
 			}
-		}else if (tw->firstChild() != NULL) {
-				processNode(tw, pos);
+		} else if (tw->firstChild() != NULL) {
+			processNode(tw, pos);
 		}
 
 	} while (tw->nextSibling() != NULL);
@@ -372,7 +415,6 @@ void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
 
 	return;
 }
-
 
 void XmlWorldParser::addJoint(DOMElement* node, const double* pos) {
 	string jointType = string(XMLString::transcode(node->getAttribute(
@@ -388,7 +430,7 @@ void XmlWorldParser::addJoint(DOMElement* node, const double* pos) {
 			throw "Unsupported joint type.";
 		}
 		jointList.push_back(joint);
-		cout<<"Joint: "<<joint->id1<<" + "<<joint->id2<<endl;
+		cout << "Joint: " << joint->id1 << " + " << joint->id2 << endl;
 	} catch (exception& e) {
 		cout << "Poorly formed XML joint" << endl;
 	}
@@ -411,7 +453,7 @@ void XmlWorldParser::addBody(DOMElement* node, const double* pos) {
 			throw "Unknown body type.";
 		}
 		bodyList.push_back(xBody);
-		cout<<"Body ID: "<<xBody->id<<endl;
+		cout << "Body ID: " << xBody->id << endl;
 	} catch (exception& e) {
 		cout << "Poorly formed XML body " << endl;
 	}
@@ -458,11 +500,8 @@ bool XmlWorldParser::process_xml(const char* xmlFile) {
 	 * Walk through the document, adding bodies and joints in their relative frames
 	 */
 	DOMDocument* doc = parser->getDocument();
-	DOMTreeWalker* walker = doc->createTreeWalker(
-										doc->getDocumentElement(),
-										DOMNodeFilter::SHOW_ELEMENT,
-										new BodiesInWorld(),
-										true);
+	DOMTreeWalker* walker = doc->createTreeWalker(doc->getDocumentElement(),
+			DOMNodeFilter::SHOW_ELEMENT, new BodiesInWorld(), true);
 	/** Initial world frame */
 	double transform[3] = { 0, 0, 0 };
 	processNode(walker, transform);
@@ -481,8 +520,8 @@ bool XmlWorldParser::process_xml(const char* xmlFile) {
 DOMNodeFilter::FilterAction BodiesInWorld::acceptNode(const DOMNode* node) const {
 	if (node->getNodeType() == 1) {
 
-		string name = string(XMLString::transcode( node->getNodeName()));
-		cout<<"NODE NAME:"<<name<<endl;
+		string name = string(XMLString::transcode(node->getNodeName()));
+		cout << "NODE NAME:" << name << endl;
 		if (name.compare("body") == 0)
 			return FILTER_ACCEPT;
 
@@ -490,16 +529,16 @@ DOMNodeFilter::FilterAction BodiesInWorld::acceptNode(const DOMNode* node) const
 			return FILTER_ACCEPT;
 
 		if (name.compare("transform") == 0)
-					return FILTER_ACCEPT;
+			return FILTER_ACCEPT;
 
 		if (name.compare("root") == 0)
-							return FILTER_SKIP;
+			return FILTER_SKIP;
 		if (name.compare("bodies") == 0)
-							return FILTER_SKIP;
+			return FILTER_SKIP;
 		if (name.compare("joints") == 0)
-							return FILTER_SKIP;
+			return FILTER_SKIP;
 
 	}
 
-	  return FILTER_REJECT;
+	return FILTER_REJECT;
 }
