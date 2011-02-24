@@ -29,7 +29,7 @@ string pp_indent()
 { return string(pp_depth(),' '); }
 
 void ierror(string msg) {
-  *cperr << "COMPILER INTERNAL ERROR:" << msg << endl;
+  *cperr << "COMPILER INTERNAL ERROR: " << msg << endl;
   exit(1);
 }
 

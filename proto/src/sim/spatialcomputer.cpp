@@ -430,7 +430,7 @@ vector<HardwareFunction> getUnpatchedFuncs(SpatialComputer& sc) {
   return unpatchedFuncs;
 }
 
-int SpatialComputer::addLayer(char* layer,Args* args,int n) {
+int SpatialComputer::addLayer(const char* layer,Args* args,int n) {
   HardwarePatch* old_mov = hardware.patch_table[MOV_FN]; 
   Layer* l = (Layer*)plugins.get_sim_plugin(LAYER_PLUGIN,layer,args,this,n);
   if(l==NULL) uerror("Could not obtain simulator layer '%s'",layer);
@@ -441,6 +441,12 @@ int SpatialComputer::addLayer(char* layer,Args* args,int n) {
     return addLayer(l);
   }
 }
+
+// String constants for default layers:
+const char* DebugLayerID = "DebugLayer";
+const char* PerfectLocalizerID = "PerfectLocalizer";
+const char* SimpleDynamicsID = "SimpleDynamics";
+const char* UnitDiscRadioID = "UnitDiscRadio";
 
 void SpatialComputer::initialize_plugins(Args* args, int n) {
   DefaultsPlugin::register_defaults(); // make sure defaults exist
@@ -468,21 +474,21 @@ void SpatialComputer::initialize_plugins(Args* args, int n) {
     addLayer(layer,args,n); layers.insert(layer);
   }
   // simulator always uses DebugLayer:
-  if(!layers.count("DebugLayer")) { addLayer("DebugLayer",args,n); }
+  if(!layers.count(DebugLayerID)) { addLayer(DebugLayerID,args,n); }
   
   // Find unpatched universal sensing & actuation ops, add defaults
   vector<HardwareFunction> unpatchedFuncs = getUnpatchedFuncs(*this);
   
   vector<HardwareFunction> plfuncs = PerfectLocalizer::getImplementedHardwareFunctions();
   bool implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, plfuncs);
-  if(implementsUnpatchedFunctions) { addLayer("PerfectLocalizer",args,n); }
+  if(implementsUnpatchedFunctions) { addLayer(PerfectLocalizerID,args,n); }
 
-  if(!physics) addLayer("SimpleDynamics",args,n);
+  if(!physics) addLayer(SimpleDynamicsID,args,n);
   //if(!physics) physics = new SimpleDynamics(args,this,n);
 
   vector<HardwareFunction> udrfuncs = UnitDiscRadio::getImplementedHardwareFunctions();
   implementsUnpatchedFunctions = checkIfLayerImplementsUnpatchedFunctions(unpatchedFuncs, udrfuncs);
-  if(implementsUnpatchedFunctions) { addLayer("UnitDiscRadio",args,n); }
+  if(implementsUnpatchedFunctions) { addLayer(UnitDiscRadioID,args,n); }
 
   unpatchedFuncs = getUnpatchedFuncs(*this);
   //if(unpatchedFuncs.size()) 

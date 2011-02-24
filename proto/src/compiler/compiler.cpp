@@ -32,9 +32,11 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // len is filled in w. output length... eventually
 uint8_t* NeoCompiler::compile(const char *str, int* len) {
   last_script=str;
+  V1 << "Parsing expression...\n";
   compile_phase = "parsing"; // PHASE: text-> sexpr
   SExpr* sexpr = read_sexpr("command-line",str);
   compiler_error|=!sexpr; terminate_on_error();
+  V1 << "Interpreting parsed expression into DFG...\n";
   compile_phase = "interpretation"; // PHASE: sexpr -> IR
   interpreter->interpret(sexpr); // terminates on error internally
   if(interpreter->dfg->output==NULL)
@@ -47,6 +49,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   if(is_early_terminate==3) 
     { *cperr << "Stopping before analysis" << endl; exit(0); }
   
+  V1 << "Analyzing and optimizing DFG...\n";
   compile_phase = "analysis"; // PHASE: IR manipulation
   analyzer->transform(interpreter->dfg); // terminates on error internally
   if(is_dump_analyzed) {
@@ -60,6 +63,8 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   compile_phase = "legality check"; // PHASE: legality check
   IRPropagator *p = new CheckTypeConcreteness();
   p->propagate(interpreter->dfg);
+  
+  V1 << "Global-to-local transformation of DFG...\n";
   compile_phase = "localization"; // PHASE: Global-to-local transformation
   localizer->transform(interpreter->dfg); // terminates on error internally
   if(is_dump_raw_localized) {
@@ -67,6 +72,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
     if(verbosity>4)
       interpreter->dfg->printdot(cpout);
   }
+  V1 << "Analyzing and optimizing localized DFG\n";
   compile_phase = "local analysis"; // PHASE: IR manipulation
   analyzer->transform(interpreter->dfg); // terminates on error internally
   if(is_dump_localized) {
@@ -77,6 +83,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   if(is_early_terminate==1) 
     { *cperr << "Stopping before emission" << endl; exit(0); }
   
+  V1 << "Emitting DFG to executable form...\n";
   compile_phase = "emission"; // PHASE: code emission
   return emitter->emit_from(interpreter->dfg, len);
 }

@@ -59,6 +59,7 @@ class ProtoInterpreter {
   AM* allspace;
   DFG* dfg;
   NeoCompiler* parent;
+  int verbosity;
 
   ProtoInterpreter(NeoCompiler* parent, Args* args);
   ~ProtoInterpreter();

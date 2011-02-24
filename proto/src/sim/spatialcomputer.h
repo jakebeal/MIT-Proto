@@ -222,7 +222,7 @@ class SpatialComputer : public EventConsumer {
   void initialize_plugins(Args* args, int n);
   void get_volume(Args* args, int n); // shared dist constructor
   int addLayer(Layer* layer); // add a layer to dynamics & set callback vars
-  int addLayer(char* layer,Args* args,int n);// get layer from plugin, then add
+  int addLayer(const char* layer,Args* args,int n);// add layer from plugin
 };
 
 // global variable set to the spatial computer during visualize(),

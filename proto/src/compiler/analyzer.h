@@ -41,8 +41,6 @@ class TypeConstraintApplicator {
   ProtoType* get_op_return(Operator* op);
   ProtoTuple* get_all_args(OperatorInstance* oi);
   ProtoType* get_nth_arg(OperatorInstance* oi, int n);
-  int is_arg_ref(string s);
-  ProtoType* get_ref_symbol(OperatorInstance* oi, SExpr* ref);
   ProtoType* get_ref_last(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_lcs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_nth(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
@@ -70,7 +68,6 @@ class TypeConstraintApplicator {
   bool assert_on_nth(OperatorInstance* oi, SExpr* next, ProtoType* value, SE_List_iter* li);
   bool assert_on_unlit(OperatorInstance* oi, SExpr* next, ProtoType* value);
   bool isRestElement(OperatorInstance* oi, SExpr* ref);
-  bool assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value);
   bool assert_ref_list(OperatorInstance* oi, SExpr* ref, ProtoType* value);
   bool assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value);
   bool fillTuple(ProtoTuple* tup, int index);

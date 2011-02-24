@@ -140,43 +140,6 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     return type_err(oi,"Can't find input "+i2s(n)+" in "+ce2s(oi));
   }
 
-  /** 
-   * Returns -1 if s is not an argument; otherwise, returns the number of the
-   * arg.
-   * For example: is_arg_ref("arg1") = 1
-   * Another example: is_arg_ref("asdf") = -1
-   * @DEPRECATED
-   */
-  int TypeConstraintApplicator::is_arg_ref(string s) {
-    if(s.size()<4) return -1;
-    if(s.substr(0,3)=="arg") {
-      string num = s.substr(3,s.size()-3);
-      if(str_is_number(num.c_str()))
-        return atoi(num.c_str());
-    }
-    return -1;
-  }
-
-  /**
-   * Gets a reference of type symbol (e.g., arg0, args, value, etc.).
-   */
-  ProtoType* TypeConstraintApplicator::get_ref_symbol(OperatorInstance* oi, SExpr* ref) {
-    DEBUG_FUNCTION(__FUNCTION__);
-    // These will be removed, and replaced with references to named variables
-    // "arg0", "arg1", ...: the type of the kth argument (0-based)
-    int n = is_arg_ref(((SE_Symbol*)ref)->name);
-    if(n>=0) return get_nth_arg(oi,n);
-    // "args": a tuple of argument types
-    if(*ref=="args") return get_all_args(oi);
-    // value: the output of a function
-    if(*ref=="value") {
-       V4 << "get_ref (value=" << ce2s(oi->output->range) << ")" << endl;
-       return oi->output->range;
-    }
-    // return: the value of a compound operator's output field
-    if(*ref=="return") return get_op_return(oi->op);
-  }
-  
   /**
    * Gets a reference for 'last'.  Expects a tuple.
    * For example: (last <3-Tuple<Scalar 0>,<Scalar 1>,<Scalar 2>>) = <Scalar 2>
@@ -791,35 +754,11 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
    * Returns true iff type is a Tuple derived from a &rest element.
    */
   bool TypeConstraintApplicator::isRestElement(OperatorInstance* oi, SExpr* ref) {
-    //TODO: is this the right way to tell if it's a real Tuple or a &rest
-    //      element?
-    return oi->op->signature->rest_input 
-       && is_arg_ref(((SE_Symbol*)ref)->name)==oi->op->signature->n_fixed();
+    if(!ref->isSymbol()) return false;
+    Signature* s = oi->op->signature;
+    return s->rest_input && (s->parameter_id((SE_Symbol*)ref)==s->n_fixed());
   }
 
-  /**
-   * Asserts value onto a symbol (ref) from oi.
-   */
-  bool TypeConstraintApplicator::assert_ref_symbol(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
-    DEBUG_FUNCTION(__FUNCTION__);
-    // These will be removed, and replaced with references to named variables
-    // "arg0", "arg1", ...: the type of the kth argument (0-based)
-    int n = is_arg_ref(((SE_Symbol*)ref)->name);
-    if(n>=0) {
-       V4<<"  ["<<n<<"]th arg="<<ce2s(value)<<endl;
-       return assert_nth_arg(oi,n,value);
-    }
-    // "args": a tuple of argument types
-    if(*ref=="args") return assert_all_args(oi,value);
-    // value: the output of a function
-    if(*ref=="value") {
-       V4<<"  value="<<ce2s(value)<<endl;
-       return maybe_change_type(&oi->output->range,value);
-    }
-    // return: the value of a compound operator's output field
-    if(*ref=="return") return assert_op_return(oi->op,value);
-  }
-  
   /**
    * Asserts value onto a list (ref) from oi.
    */
@@ -1762,13 +1701,20 @@ public:
   virtual void print(ostream* out=0) { *out << "RestrictToBranch"; }
 
   CompoundOp* am_to_lambda(AM* space,Field *out) {
-    // gather the producers of fields in the space, and all its children
-    OIset elts; space->all_ois(&elts);
-    // restrict functions, however, should be discarded & rewired
-    for_set(OI*,elts,i) {
-      if((*i)->op==Env::core_op("restrict"))
-        ierror("am_to_lambda not handling restrictions yet\n");
+    // discard immediate-child restrict functions:
+    V4 << "   Discarding 'restrict' operators\n";
+    Fset fields; fields = space->fields; // delete invalidates original iterator
+    for_set(Field*,fields,i) {
+      if((*i)->producer->op==Env::core_op("restrict")) {
+        V4 << "   Discarding: "+ce2s((*i)->producer)+"\n";
+        root->relocate_consumers((*i)->producer->output,
+                                 (*i)->producer->inputs[0]);
+        root->delete_node((*i)->producer);
+      }
     }
+    // make fn from all operators in the space, and all its children
+    V4 << "   Deriving operators from space "+ce2s(space)+"\n";
+    OIset elts; space->all_ois(&elts);
     vector<Field*> ins; // no inputs
     return root->derive_op(&elts,space,&ins,out);
   }

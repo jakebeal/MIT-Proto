@@ -201,6 +201,10 @@ is 8 _ uint16_t script_len = 52;
 = 20 3 3
 = 21 3 2
 
+// Challenges for functions:
+// function with references to outside variables:
+//"(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --no-inlining
+
 // Challenges for branches:
 // Basic test:
 test: $(PROTO) "(if (mid) 3 4)"
@@ -233,8 +237,11 @@ is 4 _ uint16_t script_len = 26;
 = 9 3 3
 
 // Branch out-references through restriction:
-// test: $(P2B) "(let ((x (speed))) (if (mid) (+ x 3) 4))"
-// test: $(P2B) "(let ((x (speed)) (y (> (mid) 2))) (+ y (if (mid) (* x 3) (+ x y))))
+//test: $(PROTO) "(let ((x (speed))) (if (mid) (+ x 3) 4))"
+//test: $(PROTO) "(let ((x (speed)) (y (> (mid) 2))) (+ y (if (mid) (* x 3) (+ x y))))
+// Nested restriction references
+//test: $(PROTO) "(let ((x (probe (+ (speed) 3) 0))) (if (> (mid) 2) (let ((y (bearing))) (if (> (mid) 4) (+ x y 7) 8)) 9))"
+//Test should check probe value as well as output value
 
 // Challenges for nbrs:
 // "(min-hood (+ (nbr 3) (nbr 4)))"

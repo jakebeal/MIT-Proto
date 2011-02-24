@@ -224,9 +224,6 @@ struct Signature : public CompilationElement { reflection_sub(Signature,CE);
 
   /// English description of number of allowed types
   string num_arg_str();
-
-  /// returns the number of argument based on s
-  int is_arg_ref(string s);
 };
 
 // OPERATORS are functions mapping from fields to fields

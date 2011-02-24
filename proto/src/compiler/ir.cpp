@@ -152,25 +152,11 @@ void Signature::set_nth_type(int n,ProtoType* val) {
   }
 }
 
-int Signature::is_arg_ref(string s) {
-  if("value"==s) return -1;
-  if(s.size()<4) return -2;
-  if(s.substr(0,3)=="arg") {
-    string num = s.substr(3,s.size()-3);
-    if(str_is_number(num.c_str()))
-      return atoi(num.c_str());
-  }
-  return -2;
-}
-
 int Signature::parameter_id(SE_Symbol* p, bool err) {
-  //for backward compatibility (arg0, arg1, value, etc.)
-  int n = is_arg_ref(p->name);
-  if(!names.count(p->name) && n < -1) {
+  if(!names.count(p->name)) {
     if(err) compile_error(p,"No parameter named "+ce2s(p)+" in "+ce2s(this));
     return -2;
   }
-  if(n>=-1) return n;
   if(names[p->name]>=-1) return names[p->name];
   ierror("Bad parameter #:"+i2s(names[p->name])+" in "+ce2s(this));
 }
