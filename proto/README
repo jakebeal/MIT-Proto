@@ -139,7 +139,7 @@ B. Windows
 * Cygwin doesn't install gcc, g++, make, OpenGL, or GLUT by default.
   You will need the following packages (under Devel):
    automake, libtool, flex, gcc, g++, libglut-devel, openGL, make, 
-   cppunit, lixXmu6, libXi6
+   lixXmu6, libXi6
 * You may need to start X Windows manually by running startxwin.bat
 * USING ODE: The easiest way is to get use the "Autotools" method with
   Cygwin (as described in ODE's install notes). You will need to tell
