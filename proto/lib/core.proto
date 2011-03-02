@@ -6,7 +6,7 @@
 ;; Boolean operations
 (macro if (test true-expr false-expr)
   (let ((?x ,test))
-    (mux ?x (restrict ?x ,true-expr) (restrict (not ?x) ,false-expr))))
+    (mux ?x (restrict ,true-expr ?x) (restrict ,false-expr (not ?x)))))
 (macro and (x y) (if ,x ,y 0))
 (macro or (x y) (let ((?tmp ,x)) (if ?tmp ?tmp ,y)))
 (def xor (x y) (mux x (not y) y))

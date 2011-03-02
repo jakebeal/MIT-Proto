@@ -7,7 +7,7 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
-#include "ir.h"
+#include "compiler.h"
 #include "nicenames.h"
 
 extern SE_Symbol* make_gensym(string root); // from interpreter
@@ -46,7 +46,6 @@ void AM::all_ois(OIset *out) {
 }
 
 bool AM::child_of(AM* am) { 
-  if(am->parent==NULL) return true;
   if(am==parent) return true;
   if(parent) return parent->child_of(am); else return false;
 }
@@ -204,8 +203,8 @@ CompoundOp::CompoundOp(CompoundOp* src) : Operator(src) {
   OIset ois; src->body->all_ois(&ois);
   CEmap(AM*,AM*) amap; CEmap(OI*,OI*) omap; CEmap(Field*,Field*) fmap; 
   // Copy over contents:
-  for_set(AM*,spaces,ai) {
-    amap[*ai] = new AM(*ai,(*ai)->container); // copy AM
+  for_set(AM*,spaces,ai) { // copy AMs
+    amap[*ai] = new AM(*ai,(*ai)->container);
     for_set(Field*,(*ai)->fields,fi) { // copy ops & fields
       OperatorInstance *oi = (*fi)->producer;
       omap[oi] = new OperatorInstance(oi,oi->op,amap[*ai]);
@@ -217,16 +216,20 @@ CompoundOp::CompoundOp(CompoundOp* src) : Operator(src) {
     if(ai->first->parent) {
       ai->second->parent = amap[ai->first->parent];
       ai->second->parent->children.insert(ai->second);
-      ai->second->selector = fmap[ai->first->selector];
+      ai->second->selector = fmap[ai->first->selector]; // always in AM/child
       ai->second->selector->selectors.insert(ai->second);
     }
   }
   for_map(OI*,OI*,omap,oi)
-    for(int i=0; i<oi->first->inputs.size(); i++)
-      oi->second->add_input(fmap[oi->first->inputs[i]]);
+    for(int i=0; i<oi->first->inputs.size(); i++) {
+      if(amap.count(oi->first->inputs[i]->domain)) 
+        oi->second->add_input(fmap[oi->first->inputs[i]]);
+      else // external reference
+        oi->second->add_input(oi->first->inputs[i]);
+    }
   // Link to op:
   body = amap[src->body]; body->bodyOf=this;
-  output = fmap[src->output];
+  output = fmap[src->output]; // always in root AM
 }
 
 // looks through to see if any of its children has a side-effect
@@ -630,9 +633,18 @@ void DFG::make_op_inline(OperatorInstance* target) {
   if(nop->signature->rest_input!=NULL || nop->signature->optional_inputs.size())
     ierror("Inlining doesn't know how to handle variable argument fns yet");
   for_set(OI*,body_ois,i) {
+    // Note: the bodyOf backpointer is not valid, so output is changed manually.
     if((*i)->op->isA("Parameter")) {
+      // Parameters are rewired to connect to inputs
       Field* newsrc = target->inputs[((Parameter*)(*i)->op)->index];
+      if((*i)->output==nop->output) nop->output = newsrc;
       relocate_consumers((*i)->output,newsrc); delete_node(*i);
+    } else if((*i)->op==Env::core_op("restrict") && (*i)->inputs.size()==1) {
+      if((*i)->inputs[0]->domain != target->output->domain)
+        ierror("Inlining doesn't know how to handle third-party refs yet");
+      // External variables are accessed directly
+      if((*i)->output==nop->output) nop->output = (*i)->inputs[0];
+      relocate_consumers((*i)->output,(*i)->inputs[0]); delete_node(*i);
     }
   }
   relocate_consumers(target->output,nop->output);
@@ -672,18 +684,21 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
     if(ai->first!=space) {
       ai->second->parent = amap[ai->first->parent];
       ai->second->parent->children.insert(ai->second);
-      ai->second->selector = (Field*)fmap[ai->first->selector];
+      ai->second->selector = fmap[ai->first->selector]; // always in AM/child
       ai->second->selector->selectors.insert(ai->second);
     }
     // fields handled by OI construction; children handled by parent relations
   }
   for_map(OI*,OI*,omap,oi) {
     for(int i=0; i<oi->first->inputs.size(); i++) {
-      oi->second->add_input(fmap[oi->first->inputs[i]]);
+      if(amap.count(oi->first->inputs[i]->domain)) 
+        oi->second->add_input(fmap[oi->first->inputs[i]]);
+      else
+        oi->second->add_input(oi->first->inputs[i]);
     }
   }
   // complete!
-  cop->output = fmap[out];
+  cop->output = fmap[out]; // always in root AM
   return cop;
 }
 

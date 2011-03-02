@@ -203,7 +203,33 @@ is 8 _ uint16_t script_len = 52;
 
 // Challenges for functions:
 // function with references to outside variables:
-//"(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --no-inlining
+//test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --function-inlining-threshold 0
+
+//test: $(PROTO) "(let ((x (mid))) (apply (fun () x)))" --function-inlining-threshold 0
+
+// returning a bare reference
+test: $(PROTO) "(let ((x (mid))) (apply (fun () x)))" 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, DEF_FUN_2_OP, 
+is 1 _   MID_OP, RET_OP, EXIT_OP };
+is 2 _ uint16_t script_len = 13;
+= 4 3 0
+= 8 3 4
+
+test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, DEF_FUN_4_OP, 
+is 1 _   LIT_3_OP, MID_OP, ADD_OP, RET_OP, EXIT_OP };
+is 2 _ uint16_t script_len = 15;
+= 4 3 3
+= 8 3 7
+
+// returning a bare parameter
+test: $(PROTO) "(apply (fun (y) y) 2)"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, DEF_FUN_2_OP, 
+is 1 _   LIT_2_OP, RET_OP, EXIT_OP };
+is 2 _ uint16_t script_len = 13;
+= 4 3 2
+= 8 3 2
+
 
 // Challenges for branches:
 // Basic test:
@@ -237,11 +263,51 @@ is 4 _ uint16_t script_len = 26;
 = 9 3 3
 
 // Branch out-references through restriction:
-//test: $(PROTO) "(let ((x (speed))) (if (mid) (+ x 3) 4))"
+//test: $(PROTO) "(let ((x (probe (+ 2 (speed)) 0))) (if (mid) (+ x 3) 4))"
+//is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 1, 
+//is 1 _   DEF_FUN_OP, 13, LIT_2_OP SPEED_OP, ADD_OP, LIT_0_OP, PROBE_OP, 
+//is 2 _   LET_1_OP, MID_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 3, REF_0_OP, 
+//is 3 _   LIT_3_OP, ADD_OP, POP_LET_1_OP, RET_OP, EXIT_OP };
+//is 4 _ uint16_t script_len = 29;
+//= 6 3 4
+//= 7 3 5
+
 //test: $(PROTO) "(let ((x (speed)) (y (> (mid) 2))) (+ y (if (mid) (* x 3) (+ x y))))
+// Selector reference inside function:
+// "(let ((m (mid))) (apply (fun (x) (if m x 4)) 3))" --function-inlining-threshold 0
+
+// Selector reference inside inlined function:
+test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (if m x 4)) 3))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, 
+is 1 _   DEF_FUN_OP, 8, MID_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 1, LIT_3_OP, 
+is 2 _   RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 20;
+= 5 3 4
+= 6 3 3
+
+// Shared selector references:
+//test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (if m m 4)) 3))"
+//is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 1, 
+//is 1 _   DEF_FUN_OP, 8, MID_OP, LET_1_OP, REF_0_OP, IF_OP, 3, LIT_4_OP, 
+//is 2 _   JMP_OP, 1, REF_0_OP, POP_LET_1_OP, RET_OP, EXIT_OP };
+//is 3 _ uint16_t script_len = 23;
+//= 5 3 4
+//= 6 3 1
+//= 7 3 2
+
+test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (if m 2 m)) 3))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 1, 
+is 1 _   DEF_FUN_OP, 8, MID_OP, LET_1_OP, REF_0_OP, IF_OP, 3, REF_0_OP, 
+is 2 _   JMP_OP, 1, LIT_2_OP, POP_LET_1_OP, RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 23;
+= 5 3 0
+= 6 3 2
+= 8 3 2
+
 // Nested restriction references
 //test: $(PROTO) "(let ((x (probe (+ (speed) 3) 0))) (if (> (mid) 2) (let ((y (bearing))) (if (> (mid) 4) (+ x y 7) 8)) 9))"
 //Test should check probe value as well as output value
+
 
 // Challenges for nbrs:
 // "(min-hood (+ (nbr 3) (nbr 4)))"

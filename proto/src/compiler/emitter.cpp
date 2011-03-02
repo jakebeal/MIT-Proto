@@ -678,6 +678,8 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
     chain_i(&chain,jmp);
     chain_i(&chain,t_br);
     return chain_start(chain);
+  } else if(p==Env::core_op("restrict")) { // TODO: change to 'reference'
+    return new NoInstruction(); // reference already created by input
   }
   // fall-through error case
   ierror("Don't know how to convert op to instruction: "+p->to_str());
@@ -745,6 +747,22 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
   start=end=NULL;
 }
 
+// A Field needs a let if it has:
+// 1. More than one consumer in the same function
+// 2. A consumer inside a different relevant function
+bool needs_let(Field* f) {
+  int consumer_count = 0;
+  for_set(Consumer,f->consumers,c) {
+    if(c->first->output->domain == f->domain) { // same function consumer
+      consumer_count++;
+      if(consumer_count > 1) return true; // 2+ => let needed
+    } else if(f->container->relevant.count(c->first->output->domain)) {
+      return true; // found a function reference
+    }
+  }
+  return false;
+}
+
 /* this walks a DFG in order as follows: 
    - producer before consumers
    - consumers in order
@@ -766,18 +784,31 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   // finally, put the result in the appropriate locations
   if(f->selectors.size())
     ierror("Restrictions not all compiled out for: "+f->to_str());
-  if(f->consumers.size()>=2) { // need a let to contain this
+  if(needs_let(f)) { // need a let to contain this
     memory[f] = chain_i(&chain, new iLET());
     chain_i(&chain,new Reference(memory[f])); // and we got here by a ref...
   }
   return chain_start(chain);
 }
 
+bool has_relevant_consumer(Field* f) {
+  for_set(Consumer,f->consumers,c) {
+    if(c->first->output->domain == f->domain) { // same function consumer
+      return true;
+    } else if(f->container->relevant.count(c->first->output->domain)) {
+      return true; // found a function reference
+    }
+  }
+  return false;
+}
+
 Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   Fset minima, f; root->all_fields(&f);
-  for_set(Field*,f,i) if(!(*i)->consumers.size()) minima.insert(*i);
+  for_set(Field*,f,i) if(!has_relevant_consumer(*i)) minima.insert(*i);
   
-  //cout << "Minima identified: " << v2s(&minima) << endl;
+  V3 << "  " << i2s(minima.size()) << " minima identified: ";
+  for_set(Field*,minima,i) { if(!(i==minima.begin())) V3<<","; V3<<ce2s(*i); }
+  V3 << endl;
   iDEF_FUN *fnstart = new iDEF_FUN(); Instruction *chain=fnstart;
   for_set(Field*,minima,i) chain_i(&chain, tree2instructions(*i));
   if(minima.size()>1) { // needs an all

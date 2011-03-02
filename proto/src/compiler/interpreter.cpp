@@ -588,9 +588,9 @@ Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env) {
 Field* ProtoInterpreter::restrict_to_graph(SE_List* s, AM* space, Env *env){
   if(s->len()!=3) 
     return field_err(s,space,"Malformed restrict statement: "+s->to_str());
-  AM* child = new AM(s,space,sexp_to_graph((*s)[1],space,env));
+  AM* child = new AM(s,space,sexp_to_graph((*s)[2],space,env));
   V4 << "  Restricting interpretation to " << ce2s(child) << endl;
-  return sexp_to_graph((*s)[2],child,env);
+  return sexp_to_graph((*s)[1],child,env);
 }
 
 // Returns an instance of the literal if it exists, or else NULL
@@ -633,12 +633,13 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       V4 << "  Found field: " << ce2s(elt) << endl;
       Field* f = (Field*)elt;
       if(f->domain==space) { return f;
-      } else if(space->child_of(f->domain)) { // implicit restriction
+      } if(f->domain->child_of(space)) {
+        ierror(s,"Direct reference to child space in parent:"+ce2s(s));
+      } else { // implicit restriction
         OI *oi = new OperatorInstance(s,Env::core_op("restrict"),space);
-        oi->add_input(space->selector); oi->add_input(f);
+        oi->add_input(f);
+        if(space->selector) oi->add_input(space->selector); 
         return oi->output;
-      } else {
-        ierror("Field "+f->to_str()+"'s domain not parent of "+space->to_str());
       }
     } else if(elt->isA("Operator")) {
       V4 << "  Lambda literal: " << ce2s(elt) << endl;

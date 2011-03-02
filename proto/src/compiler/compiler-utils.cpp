@@ -44,11 +44,6 @@ string b2s(bool b) { return b ? "true" : "false"; }
 // f2s and i2s are wrappers that change a char* into a string
 string f2s(float num, int precision) { return flo2str(num,precision); }
 string i2s(int num) { return int2str(num); }
-string V2S(vector<CompilationElement*> *v) {
-  string out = "<";
-  for(int i=0;i<v->size();i++) { if(i) out+=","; out+=(*v)[i]->to_str(); }
-  return out + ">";
-}
 
 // graceful error reporting
 string compile_phase = "initialization";

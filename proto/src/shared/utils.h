@@ -17,6 +17,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
 using namespace std;
 /*****************************************************************************
  *  NUMBERS AND DIMENSIONS                                                   *
@@ -74,6 +75,9 @@ typedef int BOOL;
 extern void  *MALLOC(size_t size);
 #endif
 extern void  FREE(void *ptr);
+
+#define for_set(t,x,i) for(set<t>::iterator i=(x).begin();i!=(x).end();i++)
+#define for_map(t1,t2,x,i) for(map<t1,t2>::iterator i=(x).begin();i!=(x).end();i++)
 
 // LISP-like null
 //#define NULL ((void*)0)

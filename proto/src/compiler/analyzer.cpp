@@ -1702,14 +1702,13 @@ public:
 
   CompoundOp* am_to_lambda(AM* space,Field *out) {
     // discard immediate-child restrict functions:
-    V4 << "   Discarding 'restrict' operators\n";
+    V4 << "   Discarding selectors on 'restrict' operators\n";
     Fset fields; fields = space->fields; // delete invalidates original iterator
     for_set(Field*,fields,i) {
-      if((*i)->producer->op==Env::core_op("restrict")) {
-        V4 << "   Discarding: "+ce2s((*i)->producer)+"\n";
-        root->relocate_consumers((*i)->producer->output,
-                                 (*i)->producer->inputs[0]);
-        root->delete_node((*i)->producer);
+      if((*i)->producer->op==Env::core_op("restrict") &&
+         (*i)->producer->inputs.size()==2) {
+        V4 << "   Discarding selector of: "+ce2s((*i)->producer)+"\n";
+        (*i)->producer->remove_input(1);
       }
     }
     // make fn from all operators in the space, and all its children
@@ -1731,9 +1730,11 @@ public:
       // check for validity
       V4 << "   Checking not operator\n";
       if(!testnot) return;
-      if(!(testnot->producer->op==Env::core_op("not") 
-           && testnot->consumers.size()==0 && testnot->selectors.size()==1 
+      if(!(testnot->producer->op==Env::core_op("not")
+           && testnot->selectors.size()==1
            && testnot->producer->inputs[0]==test)) return;
+      for_set(Consumer,testnot->consumers,i) // only restricts can consume
+        if(!(i->first->op==Env::core_op("restrict") && i->second==1)) return;
       V4 << "   Checking true-expression space\n";
       if(!(trueAM->selector==test && trueAM->parent==space)) return;
       V4 << "   Checking false-expression space\n";

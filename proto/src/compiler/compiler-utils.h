@@ -40,9 +40,6 @@ string pp_indent();
 string b2s(bool b);
 string f2s(float num, int precision=2);
 string i2s(int num);
-string V2S(vector<CompilationElement*> *v);
-#define v2s(x) (V2S((vector<CompilationElement*>*)(x)))
-#define ce2s(t) ((t)?(t)->to_str():"NULL")
 
 /********** ERROR REPORTING & VERBOSITY **********/
 /*
@@ -210,6 +207,7 @@ struct CompilationElement_cmp {
 };
 #define CEset(x) set<x,CompilationElement_cmp>
 #define CEmap(x,y) map<x,y,CompilationElement_cmp>
+#define ce2s(t) ((t)?(t)->to_str():"NULL")
 
 /**
  * used for some indices

@@ -1,4 +1,4 @@
-(primitive restrict (test|scalar base|any) any ;; permissive boolean input
+(primitive restrict (base|any &optional test|scalar) any ;; permissive boolean input
   :space :protected :type-constraints ((= value base)))
 (primitive branch (test|scalar truefn|lambda falsefn|lambda) any
   :space :protected

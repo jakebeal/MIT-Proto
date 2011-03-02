@@ -32,8 +32,6 @@ struct OperatorInstance; struct Field; struct AmorphousMedium;
 #define AMset CEset(AM*)
 #define Fset CEset(Field*)
 #define OIset CEset(OI*)
-#define for_set(t,x,i) for(set<t>::iterator i=(x).begin();i!=(x).end();i++)
-#define for_map(t1,t2,x,i) for(map<t1,t2>::iterator i=(x).begin();i!=(x).end();i++)
 
 /*****************************************************************************
  *  TYPES                                                                    *
