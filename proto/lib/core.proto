@@ -1,3 +1,22 @@
+;; This file contains all of the standard language operators of Proto
+;; Some are primitives; some are macros; some are small defined functions
+
+(primitive elt (tuple i|scalar) any
+  :type-constraints ((= value (nth arg0 i))))
+(primitive local (local) field :space :time :protected ; usually left implicit
+  :type-constraints ((= value (fieldof arg0))))
+
+;; Operators only used in localized code:
+;; Branch selectively executes a function; it's a localized if
+(primitive branch (test|scalar truefn|lambda falsefn|lambda) any
+  :protected
+  :type-constraints ((= value (lcs (output truefn) (output falsefn)))))
+;; Reference accesses an externally defined variable; it's a localized restrict
+(primitive reference (any) any
+  :protected
+  :type-constraints ((= value arg0)))
+
+
 ;;(macro par all) ; No more par: specials like all can't be renamed w. macros
 (primitive apply (fn|lambda &rest any) any 
   :type-constraints((= value (output fn))

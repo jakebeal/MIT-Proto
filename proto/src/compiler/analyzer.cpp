@@ -1690,7 +1690,7 @@ public:
 // Mechanism:
 // 1. find complementary AM selector pairs
 // 2. turn each sub-AM into a no-argument function
-// 3.
+// 3. hook these functions into a branch operator and delete the old
 
 class RestrictToBranch : public IRPropagator {
 public:
@@ -1702,13 +1702,14 @@ public:
 
   CompoundOp* am_to_lambda(AM* space,Field *out) {
     // discard immediate-child restrict functions:
-    V4 << "   Discarding selectors on 'restrict' operators\n";
+    V4 << "   Converting 2-input 'restrict' operators to references\n";
     Fset fields; fields = space->fields; // delete invalidates original iterator
     for_set(Field*,fields,i) {
       if((*i)->producer->op==Env::core_op("restrict") &&
          (*i)->producer->inputs.size()==2) {
-        V4 << "   Discarding selector of: "+ce2s((*i)->producer)+"\n";
+        V4 << "   Converting to reference: "+ce2s((*i)->producer)+"\n";
         (*i)->producer->remove_input(1);
+        (*i)->producer->op = Env::core_op("reference");
       }
     }
     // make fn from all operators in the space, and all its children
@@ -1748,13 +1749,33 @@ public:
       branch->add_input(test);
       branch->add_input(root->add_literal(new ProtoLambda(tf),space,tf));
       branch->add_input(root->add_literal(new ProtoLambda(ff),space,ff));
-      root->relocate_consumers(oi->output,branch->output); note_change(branch);
+      root->relocate_consumers(oi->output,branch->output); 
       // delete old elements
       root->delete_node(oi);
       OIset elts; trueAM->all_ois(&elts); falseAM->all_ois(&elts); 
       for_set(OI*,elts,i) { root->delete_node(*i); }
       root->delete_space(trueAM); root->delete_space(falseAM);
       root->delete_node(testnot->producer);
+      // note all changes
+      note_change(branch);
+      OIset br_ops; tf->body->all_ois(&br_ops); ff->body->all_ois(&br_ops);
+      for_set(OI*,br_ops,i) note_change(*i);
+    }
+  }
+};
+
+class RestrictToReference : public IRPropagator {
+public:
+  RestrictToReference(GlobalToLocal* parent, Args* args) : IRPropagator(false,true) {
+    verbosity = args->extract_switch("--restrict-to-reference-verbosity") ?
+      args->pop_int() : parent->verbosity;
+  }
+  virtual void print(ostream* out=0) { *out << "RestrictToReference"; }
+
+  void act(OperatorInstance* oi) {
+    if(oi->op==Env::core_op("restrict") && oi->inputs.size()==1) {
+      V3 << "   Converting restrict to reference: "+ce2s(oi)+"\n";
+      oi->op = Env::core_op("reference"); note_change(oi);
     }
   }
 };
@@ -1767,6 +1788,7 @@ GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   // set up rule collection
   rules.push_back(new HoodToFolder(this,args));
   rules.push_back(new RestrictToBranch(this,args));
+  rules.push_back(new RestrictToReference(this,args));
   rules.push_back(new DeadCodeEliminator(this,args));
 }
 

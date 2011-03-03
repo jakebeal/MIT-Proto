@@ -777,7 +777,7 @@ ProtoInterpreter::ProtoInterpreter(NeoCompiler* parent, Args* args) {
   V1 << "Loading bootstrap Proto operators...\n";
   interpret_file("bootstrap.proto"); Env::record_core_ops(toplevel);
   // load rest of operators
-  populate_specials(); // make sure the key operators can't be shadowed
+  populate_specials(); // can't shadow operators w. special syntactic handling
   V1 << "Loading core Proto operators...\n";
   interpret_file("core.proto"); Env::record_core_ops(toplevel);
 

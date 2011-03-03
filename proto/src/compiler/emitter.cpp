@@ -678,7 +678,7 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
     chain_i(&chain,jmp);
     chain_i(&chain,t_br);
     return chain_start(chain);
-  } else if(p==Env::core_op("restrict")) { // TODO: change to 'reference'
+  } else if(p==Env::core_op("reference")) { // TODO: change to 'reference'
     return new NoInstruction(); // reference already created by input
   }
   // fall-through error case

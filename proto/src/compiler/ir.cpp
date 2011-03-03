@@ -757,6 +757,13 @@ void IRPropagator::queue_nbrs(OperatorInstance* oi, int marks) {
   queue_nbrs(oi->output,marks);
   for(int i=0;i<oi->inputs.size();i++) queue_nbrs(oi->inputs[i],marks);
   // if it's a compound op, queue the parameters & output
+  if(oi->op->isA("CompoundOp")) {
+    CompoundOp* cop = (CompoundOp*)oi->op;
+    queue_nbrs(cop->body);
+    queue_nbrs(cop->output,marks);
+    for_set(Field*,cop->body->fields,i)
+      if((*i)->producer->isA("Parameter")) queue_nbrs((*i)->producer);
+  }
 }
 void IRPropagator::queue_nbrs(AM* am, int marks) {
   if(marks&A_MARK || queued.count(am)) return;   queued.insert(am);
