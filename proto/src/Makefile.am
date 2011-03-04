@@ -50,3 +50,6 @@ p2b_LDADD = \
 
 p2b_LDFLAGS = \
 	-export-dynamic
+
+pkginclude_HEADERS = \
+	proto_version.h

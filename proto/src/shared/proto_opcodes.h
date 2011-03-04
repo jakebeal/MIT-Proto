@@ -13,8 +13,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 extern "C" {
 #endif
 
-#define PROTO_VERSION 402
-
 #define MAX_GLO_REF_OPS     4
 #define MAX_REF_OPS         4
 #define MAX_LET_OPS         4

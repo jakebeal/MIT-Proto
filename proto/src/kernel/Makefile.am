@@ -9,5 +9,6 @@ libkernel_la_SOURCES = \
 	proto.c
 
 pkginclude_HEADERS = \
+	kernel_version.h \
 	proto.h \
 	proto_vm.h

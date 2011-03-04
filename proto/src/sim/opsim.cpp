@@ -1,4 +1,5 @@
 #include "config.h"
+#include "proto_version.h"
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math
 #include "plugin_manager.h"
@@ -142,10 +143,10 @@ void idle () {
 }
 
 int main (int argc, char *argv[]) {
-  printf("PROTO v%d%s (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
+  printf("PROTO v%s%s (Kernel %s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
       PROTO_VERSION,
       "[opsim]",
-      CORE_CMD_OPS);
+      KERNEL_VERSION);
   Args *args = new Args(argc,argv); // set up the arg parser
   // define color palette
 #ifdef WANT_GLUT

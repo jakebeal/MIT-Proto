@@ -7,6 +7,7 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
+#include "proto_version.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
@@ -21,14 +22,14 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 void run_test_suite(); // testing kludge
 
 int main (int argc, char *argv[]) {
-  post("PROTO v%d%s (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
+  post("PROTO v%s%s (Kernel %s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
 		  PROTO_VERSION,
 #if __USE_NEOCOMPILER__
 		  "[neo]",
 #else
 		  "[paleo]",
 #endif
-		  CORE_CMD_OPS);
+		  KERNEL_VERSION);
   Args *args = new Args(argc,argv); // set up the arg parser
   plugins.ensure_initialized(args);
   

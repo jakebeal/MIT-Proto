@@ -13,7 +13,6 @@ Autotoolsification, general package structure:
  - ODE support untested
  - config detection is not used within the source
    - use the information configure so kindly found for us
- - release version == PROTO_VERSION??
  - build and install manpages
 
 Kernel:
@@ -103,7 +102,6 @@ polygon selection (w. modal mouse)
 voronoi visualizer
 mouse sensor 
 what is the proper scaling for disperse?
-How do we want to update PROTO_VERSION?
 what model is reinitHardware() dealing with?
 import mote code
 import swarm code

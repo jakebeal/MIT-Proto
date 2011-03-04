@@ -24,6 +24,7 @@ extern "C" {
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include "kernel_version.h"
 
 #ifndef INFINITY 
 	#define INFINITY HUGE_VAL
@@ -293,8 +294,6 @@ extern void post_data_to (char *str, DATA *d);
 extern void post_data (DATA *d);
 
 extern void MEM_GROW (MACHINE *m);
-
-#define PROTO_VERSION 402
 
 #ifdef __cplusplus
 }

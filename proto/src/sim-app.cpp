@@ -10,6 +10,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // the evolution of time, and dispatch events.
 
 #include "config.h"
+#include "proto_version.h"
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math
 #include "plugin_manager.h"
@@ -460,14 +461,14 @@ void process_app_args(Args *args) {
 }
 
 int main (int argc, char *argv[]) {
-  post("PROTO v%d%s (%d OPS) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
+  post("PROTO v%s%s (Kernel %s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
       PROTO_VERSION,
 #if __USE_NEOCOMPILER__
       "[neo]",
 #else
       "[paleo]",
 #endif
-      CORE_CMD_OPS);
+      KERNEL_VERSION);
   Args *args = new Args(argc,argv); // set up the arg parser
 
   // initialize randomness  [JAH: fmod added for OS X bug]
