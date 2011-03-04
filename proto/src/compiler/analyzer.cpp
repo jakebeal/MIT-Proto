@@ -195,28 +195,23 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     DEBUG_FUNCTION(__FUNCTION__);
     //get tuple
     ProtoType* nextType = get_ref(oi,li->get_next("type"));
-    if(!nextType->isA("ProtoTuple")) {
-      ierror(ref,"Expected ProtoTuple, but got "+ce2s(nextType)); // temporary, to help test suite
-      return type_err(ref,"Expected ProtoTuple, but got "+ce2s(nextType));
-    }
-    ProtoTuple* tup = dynamic_cast<ProtoTuple*>(nextType);
+    ProtoTuple* tup = NULL;
+    if(nextType->isA("ProtoTuple"))
+       tup = dynamic_cast<ProtoTuple*>(nextType);
+
     //get index
     ProtoType* indexType;
     if(li->peek_next()->isScalar()) indexType = new ProtoScalar(li->get_num());
     else indexType = get_ref(oi,li->get_next("type"));
-    /* Don't necessarily need this to be a Scalar
-    if(!indexType->isA("ProtoScalar")) {
-      ierror(ref,"Expected ProtoScalar, but got "+ce2s(indexType)); // temporary, to help test suite
-      return type_err(ref,"Expected ProtoScalar, but got "+ce2s(indexType));
-    }
-    */
     ProtoScalar* index = NULL;
     if( indexType->isA("ProtoScalar") )
        index = dynamic_cast<ProtoScalar*>(indexType);
-    if(index != NULL && tup->types.size() > index->value) {
+
+    //get result if possible
+    if(index != NULL && tup != NULL && tup->types.size() > index->value) {
       V4<<" - tup[index] = " << ce2s(tup->types[index->value]) << endl;
       return tup->types[index->value];
-    } else {
+    } else if (tup != NULL) {
       V4<<" - can't get the nth type yet... trying LCS"<< endl;
       ProtoType* ret = NULL;  
       if(tup->types.size() > 0)
@@ -227,7 +222,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       if(ret == NULL)
         return new ProtoType();
       return ret;
-    }
+    } 
+    return new ProtoType();
   }
 
   /**

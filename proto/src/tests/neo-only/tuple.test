@@ -23,6 +23,9 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(3rd
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(elt (tup 0 1 2 3 4) 4)"
 = 1 3 4
 
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(elt (+ (tup 4 5) (tup 3 5)) 1)"
+= 1 3 10
+
 //Len Operator
 // test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(len (nul-tup ))"
 // = 1 3 0
