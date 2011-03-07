@@ -199,6 +199,13 @@ struct CompilationElement : public Nameable { reflection_base(CE);
   }
 };
 
+struct CEAttr : Attribute { reflection_sub(CEAttr,Attribute);
+  CE* value;
+  CEAttr(CE* value) {this->value = value; }
+  void print(ostream *out=cpout){*out<<"CE: "<<(value)?value->to_str():"NULL";}
+};
+
+
 struct CompilationElement_cmp {
   bool operator()(const CompilationElement* ce1, 
                   const CompilationElement* ce2) const {

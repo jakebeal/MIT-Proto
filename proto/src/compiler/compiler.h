@@ -149,6 +149,8 @@ class ProtoKernelEmitter : public CodeEmitter {
 
   /// global & env storage
   map<Field*,CompilationElement*, CompilationElement_cmp> memory;
+  // fragments floating up to find a home
+  map<OI*,CompilationElement*, CompilationElement_cmp> fragments;
 
   /// list of scalar/vector ops
   map<string,pair<int,int> > sv_ops; 

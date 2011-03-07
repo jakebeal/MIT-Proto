@@ -18,8 +18,10 @@ map<string,int> primitive2op;
 map<int,int> op_stackdeltas;
 
 // instructions like SQRT_OP that have no special rules or pointers
+struct Block;
 struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   Instruction *next,*prev; // sequence links
+  Block* container;
   int location; // -1 = unknown
    // instructions "neighboring" this one
   set<Instruction*, CompilationElement_cmp> dependents;
@@ -30,7 +32,7 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   int env_delta; // change in environment size following this instruction
   Instruction(OPCODE op, int ed=0) {
     this->op=op; stack_delta=op_stackdeltas[op]; env_delta=ed; 
-    location=-1; next=prev=NULL;
+    location=-1; next=prev=NULL; container = NULL;
   }
   virtual void print(ostream* out=0) {
     *out << (opnames.count(op) ? opnames[op] : "<UNKNOWN OP>");
@@ -46,9 +48,73 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
     if(next) next->output(buf);
   }
   
+  virtual int start_location() { return location; }
+  virtual int next_location() { 
+    if(location==-1 || size()==-1) return -1;
+    else return location+size();
+  }
+  virtual void set_location(int l) { location = l; } 
+  virtual int net_env_delta() { return env_delta; }
+  virtual int max_env_delta() { return MAX(0,env_delta); }
+  virtual int net_stack_delta() { return stack_delta; }
+  virtual int max_stack_delta() { return MAX(0,stack_delta); }
+
   int padd(uint8_t param) { parameters.push_back(param); }
   int padd16(uint16_t param) { padd(param>>8); padd(param & 0xFF); }
 };
+
+// A block is a sequence of instructions
+struct Block : public Instruction { reflection_sub(Block,Instruction);
+  Instruction* contents;
+  Block(Instruction* chain);
+  virtual void print(ostream* out=0);
+  virtual int size() { 
+    Instruction* ptr = contents; int s=0;
+    while(ptr){ if(ptr->size()==-1){return -1;} s+=ptr->size(); ptr=ptr->next; }
+    return s;
+  }
+  virtual bool resolved() { 
+    Instruction* ptr = contents; 
+    while(ptr) { if(!ptr->resolved()) return false; ptr=ptr->next; }
+    return true;
+  }
+  virtual void output(uint8_t* buf) {
+    Instruction* ptr = contents; while(ptr) { ptr->output(buf); ptr=ptr->next; }
+    if(next) next->output(buf);
+  }
+
+  virtual int net_env_delta() { 
+    env_delta = 0;
+    Instruction* ptr = contents;
+    while(ptr) { env_delta+=ptr->net_env_delta(); ptr=ptr->next; }
+    return env_delta;
+  }
+  virtual int max_env_delta() { 
+    int delta = 0, max_delta = 0;
+    Instruction* ptr = contents;
+    while(ptr) { 
+      max_delta = MAX(max_delta,delta+ptr->max_env_delta());
+      delta+=ptr->net_env_delta(); ptr=ptr->next;
+    }
+    return max_delta;
+  }
+  virtual int net_stack_delta() {
+    stack_delta = 0;
+    Instruction* ptr = contents;
+    while(ptr) { stack_delta+=ptr->net_stack_delta(); ptr=ptr->next; }
+    return stack_delta;
+  }
+  virtual int max_stack_delta() {
+    int delta = 0, max_delta = 0;
+    Instruction* ptr = contents;
+    while(ptr) { 
+      max_delta = MAX(max_delta,delta+ptr->max_stack_delta());
+      delta+=ptr->net_stack_delta(); ptr=ptr->next;
+    }
+    return max_delta;
+  }
+};
+
 
 /* For manipulating instruction chains */
 Instruction* chain_end(Instruction* chain) 
@@ -56,12 +122,28 @@ Instruction* chain_end(Instruction* chain)
 Instruction* chain_start(Instruction* chain) 
 { return (chain->prev==NULL) ? chain : chain_start(chain->prev); } 
 Instruction* chain_i(Instruction** chain, Instruction* newi) {
-  if(*chain) { (*chain)->next=newi; } newi->prev=*chain;
+  if(*chain) { 
+    (*chain)->next=newi;
+    if((*chain)->container) {
+      Instruction* p = newi;
+      while(p) { 
+        p->container = (*chain)->container;
+        (*chain)->container->dependents.insert(p);
+        p = p->next;
+      }
+    }
+  } 
+  newi->prev=*chain;
   return *chain=chain_end(newi);
 }
 void chain_insert(Instruction* after, Instruction* insert) {
   if(after->next) after->next->prev=chain_end(insert);
   chain_end(insert)->next=after->next; insert->prev=after; after->next=insert;
+}
+Instruction* chain_split(Instruction* newstart) {
+  Instruction* prev = newstart->prev;
+  newstart->prev=NULL; if(prev) prev->next=NULL;
+  return prev;
 }
 void chain_delete(Instruction* start,Instruction* end) {
   if(end->next) end->next->prev=start->prev;
@@ -78,29 +160,49 @@ string wrap_print(ostream* out, string accumulated, string newblock, int len) {
   }
 }
 
-// walk through instructions, printing:
-void print_chain(Instruction* chain, ostream* out, int compactness=0) {
-  int code_len=0, line_len = (compactness ? (compactness==1 ? 70 : -1) : 0);
-  string header = "uint8_t script[] = {"; 
-  string line = wrap_print(out,"",header+(compactness ? " " : "\n  "),line_len);
+string print_raw_chain(Instruction* chain, string line, int line_len,
+                       ostream* out, int compactness, bool recursed=false) {
   while(chain) {
-    code_len = (chain->location + chain->size());
-    string block = chain->to_str(); chain = chain->next; 
-    if(chain) block += (compactness ? ", " : ",\n  ");
-    line = wrap_print(out,line,block,line_len);
+    if(chain->isA("Block")) {
+      line = print_raw_chain(((Block*)chain)->contents,line,line_len,
+                             out,compactness,true);
+      chain = chain->next;
+    } else {
+      string block = chain->to_str(); chain = chain->next; 
+      if(chain || recursed) block += (compactness ? ", " : ",\n  ");
+      line = wrap_print(out,line,block,line_len);
+    }
   }
-  line = wrap_print(out,line," };",line_len);
-  *out << line << endl << "uint16_t script_len = " << code_len << ";" << endl;
+  return line;
 }
 
+// walk through instructions, printing:
+// compactness: 0: one instruction/line, 1: 70-char lines, 2: single line
+void print_chain(Instruction* chain, ostream* out, int compactness=0) {
+  int line_len = (compactness ? (compactness==1 ? 70 : -1) : 0);
+  string header = "uint8_t script[] = {"; 
+  string line = wrap_print(out,"",header+(compactness ? " " : "\n  "),line_len);
+  line = print_raw_chain(chain,line,line_len,out,compactness);
+  *out << wrap_print(out,line," };\n",line_len);
+  int code_len = chain_end(chain)->next_location();
+  *out<<"uint16_t script_len = " << code_len << ";" << endl;
+}
+
+Block::Block(Instruction* chain) : Instruction(-1) { 
+  contents = chain_start(chain);
+  Instruction* ptr = chain;
+  while(ptr){ ptr->container=this; dependents.insert(ptr); ptr=ptr->next; }
+}
+void Block::print(ostream* out) 
+{ *out<<"{"<<print_raw_chain(contents,"",-1,out,3)<<"}"; }
 
 // NoInstruction is a placeholder for deleted bits
-struct NoInstruction : public Instruction { 
+struct NoInstruction : public Instruction {
   reflection_sub(NoInstruction,Instruction);
   NoInstruction() : Instruction(-1) {}
   virtual void print(ostream* out=0) { *out << "<No Instruction>"; }
   virtual int size() { return 0; }
-  virtual bool resolved() { return location>=0; }
+  virtual bool resolved() { return start_location()>=0; }
   virtual void output(uint8_t* buf) {
     if(next) next->output(buf);
   }
@@ -164,17 +266,21 @@ struct iLET : public Instruction { reflection_sub(iLET,Instruction);
 
 // REF_OP, REF_k_OP, GLO_REF16_OP, GLO_REF_OP, GLO_REF_k_OP
 struct Reference : public Instruction { reflection_sub(Reference,Instruction);
-  CompilationElement* store; // either an iLET or a Global
+  Instruction* store; // either an iLET or a Global
   int offset; bool vec_op;
-  Reference(CompilationElement* store) : Instruction(GLO_REF_OP) { 
+  Reference(Instruction* store,OI* source) : Instruction(GLO_REF_OP) { 
+    attributes["~Ref~Target"] = new CEAttr(source);
     bool global = store->isA("Global"); // else is a let
-    this->store=store; offset=-1; vec_op=false;
+    this->store=store; store->dependents.insert(this);
+    offset=-1; vec_op=false; 
     if(!global) { op=REF_OP; ((iLET*)store)->usages.insert(this); }
   }
   // vector op form
-  Reference(OPCODE op, CompilationElement* store) : Instruction(op) { 
+  Reference(OPCODE op, Instruction* store,OI* source) : Instruction(op){ 
+    attributes["~Ref~Target"] = new CEAttr(source);
     if(!store->isA("Global")) ierror("Vector reference to non-global");
-    this->store=store; offset=-1; padd(255); vec_op=true;
+    this->store=store; store->dependents.insert(this);
+    offset=-1; padd(255); vec_op=true;
   }
   bool resolved() { return offset>=0 && Instruction::resolved(); }
   int size() { return (offset<0) ? -1 : Instruction::size(); }
@@ -238,6 +344,7 @@ class InstructionPropagator : public CompilationElement {
   // note_change: adds neighbors to the worklist
   void note_change(Instruction* i);
  private:
+  void queue_chain(Instruction* chain);
   void queue_nbrs(Instruction* i, int marks=0);
 };
 
@@ -248,16 +355,24 @@ void InstructionPropagator::note_change(Instruction* i)
 void InstructionPropagator::queue_nbrs(Instruction* i, int marks) {
   if(i->prev) worklist_i.insert(i->prev); // sequence neighbors
   if(i->next) worklist_i.insert(i->next);
+  if(i->container) worklist_i.insert(i->container); // block
   // plus any asking for wakeup...
   for_set(Instruction*,i->dependents,j) worklist_i.insert(*j);
  }
+
+void InstructionPropagator::queue_chain(Instruction* chain) {
+  while(chain) { 
+    worklist_i.insert(chain); 
+    if(chain->isA("Block")) queue_chain(((Block*)chain)->contents);
+    chain=chain->next;
+  }
+}
 
 bool InstructionPropagator::propagate(Instruction* chain) {
   V1<<"Executing analyzer "<<to_str()<<endl;
   any_changes=false; root = chain_start(chain);
   // initialize worklists
-  worklist_i.clear(); 
-  while(chain) { worklist_i.insert(chain); chain=chain->next; }
+  worklist_i.clear(); queue_chain(chain); 
   // walk through worklists until empty
   preprop();
   int steps_remaining = loop_abort*(worklist_i.size());
@@ -277,8 +392,9 @@ bool InstructionPropagator::propagate(Instruction* chain) {
 
 class StackEnvSizer : public InstructionPropagator {
 public:
-  map<Instruction*,int, CompilationElement_cmp> stack_height;
-  map<Instruction*,int, CompilationElement_cmp> env_height;
+  // height = after instruction; maxes = anytime during
+  CEmap(Instruction*,int) stack_height, stack_maxes;
+  CEmap(Instruction*,int) env_height, env_maxes;
   StackEnvSizer(ProtoKernelEmitter* parent,Args* args) 
   { verbosity = parent->verbosity; }
   void print(ostream* out=0) { *out<<"StackEnvSizer"; }
@@ -286,13 +402,32 @@ public:
   void postprop() {
     Instruction* chain=root;
     int max_env=0, max_stack=0;
-    //print_chain(chain,cpout,false);
     string ss=" Stack heights: ", es=" Env heights:   ";
-    while(chain) { 
-      if(!stack_height.count(chain) || !env_height.count(chain))
+    stack<Instruction*> block_nesting;
+    while(true) { 
+      if(chain==NULL) {
+        if(!block_nesting.empty()) {
+          ss+="} "; es+="} ";
+          chain=block_nesting.top()->next; block_nesting.pop(); continue;
+        } else break;
+      } else if(chain->isA("Block")) { // walk through subs
+        ss+="{ ";es+="{ ";
+        block_nesting.push(chain); chain = ((Block*)chain)->contents; continue;
+      } else if(chain->isA("Reference")) { // reference depths in environment:
+        Reference* r = (Reference*)chain;
+        if(r->store->isA("iLET") && env_height.count(r->store) &&
+           env_height.count(r)) {
+          int rh = env_height[r], sh = env_height[r->store];
+          if(r->offset!=(rh-sh)) {
+            V3<<"  Setting let ref offset: "<<rh<<"-"<<sh<<"="<<(rh-sh)<<endl;
+            r->set_offset(rh-sh);
+          }
+        }
+      }
+      if(!stack_maxes.count(chain) || !env_maxes.count(chain))
         return; // wasn't able to entirely resolve
-      max_stack = MAX(max_stack,stack_height[chain]);
-      max_env = MAX(max_env,env_height[chain]);
+      max_stack = MAX(max_stack,stack_maxes[chain]);
+      max_env = MAX(max_env,env_maxes[chain]);
       ss += i2s(stack_height[chain])+" "; es += i2s(env_height[chain])+" ";
       chain=chain->next;
     }
@@ -307,29 +442,38 @@ public:
       any_changes=false;
     }
   }
-  void maybe_set_stack(Instruction* i,int h) {
-    if(!stack_height.count(i) || stack_height[i]!=h)
-      { stack_height[i]=h; note_change(i); }
+  void maybe_set_stack(Instruction* i,int neth,int maxh) {
+    if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh)
+      { stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); }
   }
-  void maybe_set_env(Instruction* i,int h) {
-    if(!env_height.count(i) || env_height[i]!=h) 
-      { env_height[i]=h; note_change(i); }
+  void maybe_set_env(Instruction* i,int neth, int maxh) {
+    if(!env_height.count(i) || env_height[i]!=neth || env_maxes[i]!=maxh) 
+      { env_height[i]=neth; env_maxes[i]=maxh; note_change(i); }
   }
   void act(Instruction* i) {
     // stack heights:
-    if(!i->prev) { maybe_set_stack(i,i->stack_delta);
-    } else if(stack_height.count(i->prev)) {
-      maybe_set_stack(i,stack_height[i->prev] + i->prev->stack_delta);
+    int baseh=-1;
+    if(!i->prev && (!i->container || (i->container && !i->container->prev))) {
+      baseh=0;
+    } else if(!i->prev && stack_height.count(i->container->prev)) { 
+      baseh = stack_height[i->container->prev];
+    } else if(i->prev && stack_height.count(i->prev)) {
+      baseh = stack_height[i->prev];
     }
-    // and also the case for function calls...
+    if(baseh>=0) 
+      maybe_set_stack(i,baseh+i->net_stack_delta(),baseh+i->max_stack_delta());
 
     // env heights:
-    if(!i->prev) { maybe_set_env(i,i->env_delta);
-    } else if(env_height.count(i->prev)) {
-      maybe_set_env(i,env_height[i->prev] + i->prev->env_delta);
+    baseh = -1;
+    if(!i->prev && (!i->container || (i->container && !i->container->prev))) {
+      baseh=0;
+    } else if(!i->prev && env_height.count(i->container->prev)) { 
+      baseh = env_height[i->container->prev];
+    } else if(i->prev && env_height.count(i->prev)) {
+      baseh = env_height[i->prev];
     }
-    // and also the case for function calls...
-
+    if(baseh>=0) 
+      maybe_set_env(i,baseh+i->net_env_delta(),baseh+i->max_env_delta());
   }
 };
 
@@ -346,33 +490,40 @@ public:
       vector<set<Instruction*, CompilationElement_cmp> > usages;
       usages.push_back(l->usages); //1 per src
       Instruction* pointer = l->next;
+      stack<Instruction*> block_nesting;
       while(!usages.empty()) {
-        V2 << ".";
+        V3 << ".";
         while(sources.size()>usages.size()) sources.pop_back(); // cleanup...
-        if(pointer==NULL) ierror("Couldn't find all usages of let");
-        if(pointer->isA("iLET")) { // add subs in
-          V2 << "\n Adding sub LET";
+        if(pointer==NULL) {
+          if(block_nesting.empty()) ierror("Couldn't find all usages of let");
+          V3 << "^";
+          pointer=block_nesting.top()->next; block_nesting.pop(); continue;
+        }
+        if(pointer->isA("Block")) { // search for references in subs
+          V3 << "v";
+          block_nesting.push(pointer); pointer = ((Block*)pointer)->contents;
+          continue;
+        } else if(pointer->isA("iLET")) { // add subs in
+          V3 << "\n Adding sub LET";
           iLET* sub = (iLET*)pointer; sources.push_back(sub);
           usages.push_back(sub->usages);
         } else if(pointer->isA("Reference")) { // it's somebody's reference?
-          V2 << "\n Searching for reference... offset = ";
+          V3 << "\n Found reference...";
           for(int j=0;j<usages.size();j++) {
-            if(usages[j].count(pointer)) {
-              V2 << (sources.size()-1-j) << " ";
-              ((Reference*)pointer)->set_offset(sources.size()-1-j);
-              usages[j].erase(pointer);
+            if(usages[j].count(pointer)) { usages[j].erase(pointer);
               break;
             }
           }
           // trim any empty usages on top of the stack
           while(usages.size() && usages[usages.size()-1].empty()) {
-            V2 << "\n Popping a LET";
+            V3 << "\n Popping a LET";
             usages.pop_back();
           }
         }
         if(!usages.empty()) pointer=pointer->next;
       }
-      V2 << "\n Adding pop of size "<<sources.size()<<"\n";
+      // Now walk through and pop all the sources, clumping by destination
+      V3 << "\n Adding pop of size "<<sources.size()<<"\n";
       if(sources.size()<=MAX_LET_OPS) {
         l->pop=new Instruction(POP_LET_OP+sources.size());
       } else {
@@ -380,8 +531,15 @@ public:
       }
       l->pop->env_delta = -sources.size();
       for(int i=0;i<sources.size();i++) sources[i]->pop = l->pop;
-      V2 << " Completed LET resolution\n";
-      chain_insert(pointer,l->pop);
+      V3 << " Completed LET resolution\n";
+      if(pointer->attributes.count("~Branch~End")) {
+        CE* i = ((CEAttr*)pointer->attributes["~Branch~End"])->value;
+        V3 << "  Placing branch POP_LET after "<<ce2s(i)<<endl;
+        chain_insert((Instruction*)i,l->pop);
+      } else {
+        V3 << "  Inserting POP_LET after "<<ce2s(pointer)<<endl;
+        chain_insert(pointer,l->pop);
+      }
     }
   }
 };
@@ -438,11 +596,12 @@ public:
       }
     } 
     if(i->isA("Branch")) {
-      Branch* b = (Branch*)i; Instruction* target = b->after_this->next;
-      if(b->location>=0 && target->location>=0) {
-        int diff = target->location - b->location - b->size();
+      Branch* b = (Branch*)i; Instruction* target = b->after_this;
+      V5<<"    Sizing branch: "<<ce2s(b)<<" over "<<ce2s(target)<<endl;
+      if(b->start_location()>=0 && target->start_location()>=0) {
+        int diff = target->next_location() - b->next_location();
         if(diff!=b->offset) {
-          V2<<" Branch offset to "<<ce2s(target)<<" is "<<diff<<endl;
+          V2<<" Branch offset to follow "<<ce2s(target)<<" is "<<diff<<endl;
           b->set_offset(diff); note_change(i);
         }
       }
@@ -460,16 +619,25 @@ public:
   { verbosity = parent->verbosity; }
   void print(ostream* out=0) { *out<<"ResolveLocations"; }
   void maybe_set_location(Instruction* i, int l) {
-    if(i->location != l) { i->location=l; note_change(i); }
+    if(i->start_location() != l) { 
+      V4 << "   Setting location of "<<ce2s(i)<<" to "<<l<<endl;
+      i->set_location(l); note_change(i);
+    }
   }
   void maybe_set_index(Instruction* i, int l) {
     g_max = MAX(g_max,l+1);
-    if(((Global*)i)->index != l) { ((Global*)i)->index=l; note_change(i); }
+    if(((Global*)i)->index != l) { 
+      V4 << "   Setting index of "<<ce2s(i)<<" to "<<l<<endl;
+      ((Global*)i)->index=l; note_change(i); 
+    }
   }
   void act(Instruction* i) {
-    if(!i->prev) { maybe_set_location(i,0); }
-    if(i->prev && i->prev->location>=0 && i->prev->size()>=0)
-      { maybe_set_location(i,i->prev->location + i->prev->size()); }
+    // Base case: set to zero or block-start
+    if(!i->prev)
+      maybe_set_location(i,(i->container?i->container->start_location():0));
+    // Otherwise get it from previous instruction
+    if(i->prev && i->prev->next_location()>=0)
+      { maybe_set_location(i,i->prev->next_location()); }
     if(i->isA("Global")) {
       Instruction *ptr = i->prev; // find previous global...
       while(ptr && !ptr->isA("Global")) { ptr = ptr->prev; }
@@ -598,8 +766,7 @@ Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l,
     chain_i(&deftup,new iDEF_TUP(t->types.size(),true));
     chain_i(&end,chain_start(deftup)); // add to global program
     // make a global reference to it
-    return new Reference(deftup);
-    //return new Reference();
+    return new Reference(deftup,context);
   } else if(l->isA("ProtoLambda")) {
     // Branch lambdas are handled with a special case on the branch primitive:
     bool is_branch = true;
@@ -619,12 +786,30 @@ Instruction* ProtoKernelEmitter::vec_op_store(ProtoType* t) {
   return chain_i(&end,new iDEF_TUP(tt->types.size()));
 }
 
+void mark_branch_references(Branch* jmp,Block* branch,AM* source) {
+  Instruction* ptr = branch->contents;
+  while(ptr) {
+    // mark references that aren't already handled by an interior branch
+    if(ptr->isA("Reference")) {
+      OI* target = (OI*)((CEAttr*)ptr->attributes["~Ref~Target"])->value;
+      if(target->output->domain == source) {
+        if(ptr->attributes.count("~Branch~End"))
+          ierror("Tried to duplicate mark reference");
+        ptr->attributes["~Branch~End"]=new CEAttr(jmp->after_this);
+      }
+    } else if(ptr->isA("Block")) {
+      mark_branch_references(jmp,(Block*)ptr,source);
+    }
+    ptr = ptr->next;
+  }
+}
+
 // takes OperatorInstance because sometimes the operator type depends on it
 Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
   Primitive* p = (Primitive*)oi->op;
   ProtoType* otype = oi->output->range; bool tuple = otype->isA("ProtoTuple"); 
   if(primitive2op.count(p->name)) { // plain ops
-    if(tuple) return new Reference(primitive2op[p->name],vec_op_store(otype));
+    if(tuple)return new Reference(primitive2op[p->name],vec_op_store(otype),oi);
     else return new Instruction(primitive2op[p->name]);
   } else if(sv_ops.count(p->name)) { // scalar/vector paired ops
     bool anytuple=tuple; // op switch happens if *any* input is non-scalar
@@ -636,7 +821,7 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
     Instruction *chain = NULL;
     for(int i=0;i<n_copies;i++) {
       if(tuple && !(p->name=="max" || p->name=="min"))
-        chain_i(&chain,new Reference(c,vec_op_store(otype)));
+        chain_i(&chain,new Reference(c,vec_op_store(otype),oi));
       else chain_i(&chain,new Instruction(c));
     }
     return chain_start(chain);
@@ -651,12 +836,12 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
       chain_i(&chain,new Instruction(REF_0_OP));
       chain_i(&chain,new Instruction(DIV_OP));
       chain_i(&chain,new Instruction(REF_1_OP));
-      chain_i(&chain,new Reference(VMUL_OP,vec_op_store(otype)));
+      chain_i(&chain,new Reference(VMUL_OP,vec_op_store(otype),oi));
       chain_i(&chain,new Instruction(POP_LET_2_OP,-2));
     }
     return chain_start(chain);
   } else if(p->name=="tup") {
-    Instruction* i = new Reference(TUP_OP,vec_op_store(otype)); 
+    Instruction* i = new Reference(TUP_OP,vec_op_store(otype),oi); 
     i->stack_delta = 1-oi->inputs.size(); i->padd(oi->inputs.size());
     return i;
   } else if(p==Env::core_op("branch")) {
@@ -671,14 +856,26 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
     chain_delete(chain_end(t_br),chain_end(t_br));
     chain_delete(chain_start(f_br),chain_start(f_br));
     chain_delete(chain_end(f_br),chain_end(f_br));
+    t_br = new Block(t_br); f_br = new Block(f_br);
+    // pull references for branch contents
+    OIset handled_frags;
+    for_map(OI*,CE*,fragments,i) {
+      if(i->first->output->domain==oi->output->domain) {
+        Instruction* ptr = chain_start((Instruction*)i->second);
+        chain_i(&chain,ptr); handled_frags.insert(i->first);
+      }
+    }
+    for_set(OI*,handled_frags,i) fragments.erase(*i);
     // string them together into a branch
-    Instruction* jmp = new Branch(chain_end(t_br),true);
+    Branch* jmp = new Branch(t_br,true);
+    mark_branch_references(jmp,(Block*)t_br,oi->output->domain);
+    mark_branch_references(jmp,(Block*)f_br,oi->output->domain);
     chain_i(&chain,new Branch(jmp));
     chain_i(&chain,f_br);
     chain_i(&chain,jmp);
     chain_i(&chain,t_br);
     return chain_start(chain);
-  } else if(p==Env::core_op("reference")) { // TODO: change to 'reference'
+  } else if(p==Env::core_op("reference")) {
     return new NoInstruction(); // reference already created by input
   }
   // fall-through error case
@@ -768,25 +965,30 @@ bool needs_let(Field* f) {
    - consumers in order
 */
 Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
-  if(memory.count(f)) { return new Reference(memory[f]); }
+  if(memory.count(f))
+    { return new Reference((Instruction*)memory[f],f->producer); }
   OperatorInstance* oi = f->producer; Instruction* chain = NULL;
   // first, get all the inputs
   for(int i=0;i<oi->inputs.size();i++) 
     chain_i(&chain,tree2instructions(oi->inputs[i]));
   // second, add the operation
-  if(oi->op->isA("Primitive")) {
+  if(oi->op==Env::core_op("reference")) {
+    if(oi->inputs.size()!=1) ierror("Bad number of reference inputs");
+    Instruction* frag = chain_split(chain);
+    if(frag) fragments[oi->inputs[0]->producer] = frag;
+  } else if(oi->op->isA("Primitive")) {
     chain_i(&chain,primitive_to_instruction(oi));
   } else if(oi->op->isA("Literal")) { 
     chain_i(&chain,literal_to_instruction(((Literal*)oi->op)->value,oi));
   } else { // also CompoundOp, Parameter
     ierror("Don't know how to emit instruction for "+oi->op->to_str());
   }
-  // finally, put the result in the appropriate locations
+  // finally, put the result in the appropriate location
   if(f->selectors.size())
     ierror("Restrictions not all compiled out for: "+f->to_str());
   if(needs_let(f)) { // need a let to contain this
     memory[f] = chain_i(&chain, new iLET());
-    chain_i(&chain,new Reference(memory[f])); // and we got here by a ref...
+    chain_i(&chain,new Reference((Instruction*)memory[f],oi)); // and we got here by a ref...
   }
   return chain_start(chain);
 }
@@ -837,7 +1039,14 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   chain_i(&end,dfg2instructions(g->output->domain)); // next the main
   chain_i(&end,new Instruction(EXIT_OP)); // add the end op
   if(verbosity>=2) print_chain(start,cpout,2);
-  
+
+  // Check that we were able to linearize everything:
+  if(fragments.size()) {
+    ostringstream s; 
+    print_chain(chain_start((Instruction*)fragments.begin()->second),&s,2);
+    ierror("Unplaced fragment: "+ce2s(fragments.begin()->first)+"\n"+s.str());
+  }
+
   V1<<"Resolving unknowns in instruction sequence...\n";
   for(int i=0;i<max_loops;i++) {
     bool changed=false;
@@ -852,7 +1061,7 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   
   // finally, output
   V1<<"Outputting final instruction sequence...\n";
-  *len= (end->location + end->size());
+  *len= end->next_location();
   uint8_t* buf = (uint8_t*)calloc(*len,sizeof(uint8_t));
   start->output(buf);
   
