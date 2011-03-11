@@ -555,7 +555,7 @@ void prune_hood (MACHINE *dst) {
     uint16_t nbr_timeout = 0;
     if (is_throttling)
       for(x=1;x<=NBR_TIMEOUT;x++)
-	nbr_timeout += timeout_of(MIN(nbr->timeout+x,MAX_NBR_TIMEOUT));
+         nbr_timeout += timeout_of(MIN(nbr->timeout+x,MAX_NBR_TIMEOUT));
     else
       nbr_timeout = NBR_TIMEOUT;
     if ((newest - nbr->stamp) > nbr_timeout) {
@@ -595,9 +595,9 @@ void radio_receive_export
     if (is_debug) POST("M%d<-M%d %d %d IMPORTS ", dst->id, nbr->id, n, dst->n_hood_vals);
     if (are_exports_serialized) {
       for (i = 0; i < n; i++) {
-	bp = data_decode(&nbr->imports[i], bp);
-	if (is_debug) { POST("/%d/", i); post_data(&nbr->imports[i]); POST(" "); }
-	// POST(" %d ", dst->hood_exports[i].tag); post_data(&nbr->imports[i]);
+         bp = data_decode(&nbr->imports[i], bp);
+         if (is_debug) { POST("/%d/", i); post_data(&nbr->imports[i]); POST(" "); }
+         // POST(" %d ", dst->hood_exports[i].tag); post_data(&nbr->imports[i]);
       }
     } else
       nbr->imports = (DATA*)buf;
@@ -619,9 +619,9 @@ void hood_send (MACHINE *m, COM_DATA *buf, int n, COM_DATA *bp) {
       radio_send_export(m->scripts[m->cur_script].version, m->timeout, n, bp-buf, buf);
       memcpy(m->buf, m->next_buf, m->buflen);
       if (is_fresh || !is_throttling)
-	m->timeout = 0;
+         m->timeout = 0;
       else
-	m->timeout = MIN(m->timeout + 1, MAX_NBR_TIMEOUT); 
+         m->timeout = MIN(m->timeout + 1, MAX_NBR_TIMEOUT); 
       m->send_ticks = m->ticks;
     }
   } else {
@@ -706,7 +706,7 @@ void radio_receive_digest(uint8_t version, uint16_t script_len, uint8_t *digest)
   if (version > cur_script->version) {
     if (version > nxt_script->version) {
       if (is_script_debugging(m)) 
-	POST("M%d NEW VERSION %d LEN %d---\n", m->id, version, script_len);
+         POST("M%d NEW VERSION %d LEN %d---\n", m->id, version, script_len);
       clear_pkt_tracker();
       nxt_script->is_complete = FALSE;
       nxt_script->version     = version;
@@ -730,7 +730,8 @@ void radio_receive_script_pkt (uint8_t version, uint16_t n, uint8_t pkt_num, uin
   
   if (is_script_debugging(m))
     POST("M%d RCV PKT %d VER %d LEN %d CUR %d NXT %d DON %d\n", 
-	 m->id, pkt_num, version, n, cur_script->version, nxt_script->version, cur_script->is_complete);
+         m->id, pkt_num, version, n, cur_script->version, nxt_script->version,
+         cur_script->is_complete);
   if (version > cur_script->version || (MAX_SCRIPTS == 1 && !cur_script->is_complete)) {
     if (version == nxt_script->version) {
       if (is_script_debugging(m))
@@ -789,8 +790,8 @@ void export_script (VOID) {
     if (m->pkt_listner[major] & (1 << minor)) {
       
       if (is_script_debugging(m))
-	POST("M%d SND PKT %d VER %d LEN %d\n", 
-	     m->id, i, m->scripts[m->cur_script].version, m->scripts[m->cur_script].len);
+         POST("M%d SND PKT %d VER %d LEN %d\n", 
+              m->id, i, m->scripts[m->cur_script].version, m->scripts[m->cur_script].len);
       radio_send_script_pkt(nxt_script->version, nxt_script->len,
                             i, &nxt_script->bytes[i * MAX_SCRIPT_PKT]);
       return;
@@ -1379,346 +1380,346 @@ DATA *eval(DATA *res, FUN_VAL fun) {
     if(op < CORE_CMD_OPS) {
       switch (op) {
       case DEF_VM_OP: {
-	int export_len  = NXT_OP(m);
-	int n_exports   = NXT_OP(m);
-	int n_globals   = NXT_OP16(m);
-	int n_state     = NXT_OP(m);
-	int n_stack     = NXT_OP16(m);
-	int n_env       = NXT_OP(m);
-	if (is_debugging(m))
-	  POST("M%d MEM SIZE %d\n", m->id, machine_mem_size(m));
-	if (is_debugging(m)) 
-	  POST("EXPORT_LEN %d N_EXPORTS %d N_GLOBALS %d N_STATE %d N_STK %d N_ENV %d\n",
-	       export_len, n_exports, n_globals, n_state, n_stack, n_env);
-	m->n_hood_vals = n_exports;
-	m->max_globals = n_globals;
-	m->n_state = n_state;
-	// m->n_stack = n_stack;
-	m->hood_exports = (DATA*)PMALLOC(n_exports * sizeof(DATA));
-	m->buflen = export_len * sizeof(DATA);
-	m->buf = (COM_DATA*)PMALLOC(m->buflen);
-	memset(m->buf,      0, m->buflen);
-	if (is_throttling) {
-	  m->next_buf = (COM_DATA*)PMALLOC(m->buflen);
-	  memset(m->next_buf, 0, m->buflen);
-	} else
-	  m->next_buf = m->buf;
-	if (are_exports_serialized) {
-	  for (i = 0; i < MAX_HOOD; i++)
-	    m->hood_data[i].imports = (DATA*)PMALLOC(n_exports * sizeof(DATA));
-	}
-	m->state = (STATE*)PMALLOC(n_state * sizeof(STATE));
-	m->globals = (DATA*)PMALLOC(n_globals * sizeof(DATA));
-	m->n_stack = n_stack;
-	m->stack = (DATA*)PMALLOC(n_stack * sizeof(DATA));
-	m->n_env = n_env;
-	m->env = (DATA*)PMALLOC(n_env * sizeof(DATA));
-	if (is_debugging(m))
-	  POST("M%d MEM SIZE %d\n", m->id, machine_mem_size(m));
-	m->sp = m->stack;
-	m->ep = m->env;
-	// m->n_env = n_env;
-	break; }
+   int export_len  = NXT_OP(m);
+   int n_exports   = NXT_OP(m);
+   int n_globals   = NXT_OP16(m);
+   int n_state     = NXT_OP(m);
+   int n_stack     = NXT_OP16(m);
+   int n_env       = NXT_OP(m);
+   if (is_debugging(m))
+      POST("M%d MEM SIZE %d\n", m->id, machine_mem_size(m));
+   if (is_debugging(m)) 
+      POST("EXPORT_LEN %d N_EXPORTS %d N_GLOBALS %d N_STATE %d N_STK %d N_ENV %d\n",
+           export_len, n_exports, n_globals, n_state, n_stack, n_env);
+   m->n_hood_vals = n_exports;
+   m->max_globals = n_globals;
+   m->n_state = n_state;
+   // m->n_stack = n_stack;
+   m->hood_exports = (DATA*)PMALLOC(n_exports * sizeof(DATA));
+   m->buflen = export_len * sizeof(DATA);
+   m->buf = (COM_DATA*)PMALLOC(m->buflen);
+   memset(m->buf,      0, m->buflen);
+   if (is_throttling) {
+      m->next_buf = (COM_DATA*)PMALLOC(m->buflen);
+      memset(m->next_buf, 0, m->buflen);
+   } else
+      m->next_buf = m->buf;
+   if (are_exports_serialized) {
+      for (i = 0; i < MAX_HOOD; i++)
+         m->hood_data[i].imports = (DATA*)PMALLOC(n_exports * sizeof(DATA));
+   }
+   m->state = (STATE*)PMALLOC(n_state * sizeof(STATE));
+   m->globals = (DATA*)PMALLOC(n_globals * sizeof(DATA));
+   m->n_stack = n_stack;
+   m->stack = (DATA*)PMALLOC(n_stack * sizeof(DATA));
+   m->n_env = n_env;
+   m->env = (DATA*)PMALLOC(n_env * sizeof(DATA));
+   if (is_debugging(m))
+      POST("M%d MEM SIZE %d\n", m->id, machine_mem_size(m));
+   m->sp = m->stack;
+   m->ep = m->env;
+   // m->n_env = n_env;
+   break; 
+         }
       case EXIT_OP: 
-	return res; 
+   return res; 
       case INF_OP:
-	NUM_PUSH(INFINITY);
-	break; 
+   NUM_PUSH(INFINITY); break; 
       case LIT8_OP: 
       case LIT_0_OP: case LIT_1_OP: case LIT_2_OP: case LIT_3_OP: case LIT_4_OP: {
-	int n = op == LIT8_OP ? NXT_OP(m) : op - LIT_0_OP;
-	NUM_PUSH(n);
-	break; }
+  int n = op == LIT8_OP ? NXT_OP(m) : op - LIT_0_OP;
+  NUM_PUSH(n);
+  break; }
       case LIT16_OP: {
-	NUM_VAL val = NXT_OP16(m);
-	NUM_PUSH(val);
-	break; }
+   NUM_VAL val = NXT_OP16(m);
+   NUM_PUSH(val);
+   break; }
       case LIT_FLO_OP: {
-	FLO_BYTES fb;
-	fb.bytes[3] = NXT_OP(m); //
-	fb.bytes[2] = NXT_OP(m); // Pack th' float in network
-	fb.bytes[1] = NXT_OP(m); // byte order (big endian).
-	fb.bytes[0] = NXT_OP(m); //
-	fb.fourBytes = ntohl(fb.fourBytes); // Convert float into host byte order.
-	NUM_PUSH(fb.val); // Load onto stack in float form.
-	break; }
+   FLO_BYTES fb;
+   fb.bytes[3] = NXT_OP(m); //
+   fb.bytes[2] = NXT_OP(m); // Pack th' float in network
+   fb.bytes[1] = NXT_OP(m); // byte order (big endian).
+   fb.bytes[0] = NXT_OP(m); //
+   fb.fourBytes = ntohl(fb.fourBytes); // Convert float into host byte order.
+   NUM_PUSH(fb.val); // Load onto stack in float form.
+   break; }
       case DEF_OP: {
-	DATA data;
-	GLO_SET(m->n_globals++, POP(&data));
-	break; }
+   DATA data;
+   GLO_SET(m->n_globals++, POP(&data));
+   break; }
       case DEF_TUP_OP: case FAB_TUP_OP: {
-	VEC_VAL *v;
-	DATA data, num;
-	int n = NXT_OP(m);
-	init_vec(&data, n, n, init_num(&num, 0.0));
-	v = VEC_GET(&data); 
-	for (i = 0; i < n; i++)
-	  DATA_SET(&v->elts[i], PEEK(n-i-1));
-	NPOP(n); 
-	if (op == DEF_TUP_OP) 
-	  GLO_SET(m->n_globals++, &data);
-	else
-	  PUSH(&data);	
-	break; }
+   VEC_VAL *v;
+   DATA data, num;
+   int n = NXT_OP(m);
+   init_vec(&data, n, n, init_num(&num, 0.0));
+   v = VEC_GET(&data); 
+   for (i = 0; i < n; i++)
+     DATA_SET(&v->elts[i], PEEK(n-i-1));
+   NPOP(n); 
+   if (op == DEF_TUP_OP) 
+     GLO_SET(m->n_globals++, &data);
+   else
+     PUSH(&data);	
+   break; }
       case NUL_TUP_OP: 
-	PUSH(&nul_tup_dat);
-	break;
+   PUSH(&nul_tup_dat);
+   break;
       case DEF_NUM_VEC_OP: case DEF_NUM_VEC_1_OP: case DEF_NUM_VEC_2_OP: case DEF_NUM_VEC_3_OP:
       case FAB_NUM_VEC_OP: {
-	DATA data, num;
-	int n = (op == DEF_NUM_VEC_OP || op == FAB_NUM_VEC_OP) ? NXT_OP(m) : op - DEF_NUM_VEC_OP;
-	init_vec(&data, n, n, init_num(&num, 0.0));
-	if (op != FAB_NUM_VEC_OP) 
-	  GLO_SET(m->n_globals++, &data);
-	else
-	  PUSH(&data);	
-	break; }
+   DATA data, num;
+   int n = (op == DEF_NUM_VEC_OP || op == FAB_NUM_VEC_OP) ? NXT_OP(m) : op - DEF_NUM_VEC_OP;
+   init_vec(&data, n, n, init_num(&num, 0.0));
+   if (op != FAB_NUM_VEC_OP) 
+     GLO_SET(m->n_globals++, &data);
+   else
+     PUSH(&data);	
+   break; }
       case DEF_VEC_OP: case FAB_VEC_OP: {
-	VEC_VAL *v;
-	DATA data, arg, num;
-	int n = NXT_OP(m);
-	init_vec(&data, n, n, init_num(&num, 0.0));
-	v = VEC_GET(&data); 
-	POP(&arg);
-	for (i = 1; i < n; i++)
-	  data_copy(&v->elts[i], &arg);
-	if (op == DEF_VEC_OP) 
-	  GLO_SET(m->n_globals++, &data);
-	else
-	  PUSH(&data);	
-	break; }
+   VEC_VAL *v;
+   DATA data, arg, num;
+   int n = NXT_OP(m);
+   init_vec(&data, n, n, init_num(&num, 0.0));
+   v = VEC_GET(&data); 
+   POP(&arg);
+   for (i = 1; i < n; i++)
+     data_copy(&v->elts[i], &arg);
+   if (op == DEF_VEC_OP) 
+     GLO_SET(m->n_globals++, &data);
+   else
+     PUSH(&data);	
+   break; }
       case LET_OP: 
       case LET_1_OP: case LET_2_OP: case LET_3_OP: case LET_4_OP: {
-	int n = op == LET_OP ? NXT_OP(m) : op - LET_OP;
+   int n = op == LET_OP ? NXT_OP(m) : op - LET_OP;
    let_exec(m, n);
-	break; }
+   break; }
       case REF_OP: 
       case REF_0_OP: case REF_1_OP: case REF_2_OP: case REF_3_OP: {
-	int off = op == REF_OP ? NXT_OP(m) : op - REF_0_OP;
-	PUSH(m->ep-off-1);
-	break; }
+   int off = op == REF_OP ? NXT_OP(m) : op - REF_0_OP;
+   PUSH(m->ep-off-1);
+   break; }
       case GLO_REF16_OP: {
-	uint16_t off =  NXT_OP16(m);
-	PUSH(&m->globals[off]);
-	break; }
+   uint16_t off =  NXT_OP16(m);
+   PUSH(&m->globals[off]);
+   break; }
       case GLO_REF_OP: 
       case GLO_REF_0_OP: case GLO_REF_1_OP: case GLO_REF_2_OP: case GLO_REF_3_OP: {
-	int off = op == GLO_REF_OP ? NXT_OP(m) : op - GLO_REF_0_OP;
-	PUSH(&m->globals[off]);
-	break; }
+   int off = op == GLO_REF_OP ? NXT_OP(m) : op - GLO_REF_0_OP;
+   PUSH(&m->globals[off]);
+   break; }
       case POP_LET_OP: 
       case POP_LET_1_OP: case POP_LET_2_OP: case POP_LET_3_OP: case POP_LET_4_OP: {
-	int n = op == POP_LET_OP ? NXT_OP(m) : op - POP_LET_OP;
-	m->ep -= n;
-	break; }
+   int n = op == POP_LET_OP ? NXT_OP(m) : op - POP_LET_OP;
+   m->ep -= n;
+   break; }
       case NO_OP: 
-	break;
+   break;
       case MUX_OP: {
-	DATA *reso = NUM_PEEK(2) ? PEEK(1) : PEEK(0); NPOP(3); PUSH(reso);
-	break; }
+   DATA *reso = NUM_PEEK(2) ? PEEK(1) : PEEK(0); NPOP(3); PUSH(reso);
+   break; }
       case VMUX_OP: {
-	int roff = NXT_OP(m);
-	DATA *res = GLO_GET(roff);
-	if (NUM_PEEK(2))
-	  data_copy(res, PEEK(1));
-	else 
-	  data_copy(res, PEEK(0)); 
-	NPOP(3); PUSH(res);
-	break; }
+   int roff = NXT_OP(m);
+   DATA *res = GLO_GET(roff);
+   if (NUM_PEEK(2))
+     data_copy(res, PEEK(1));
+   else 
+     data_copy(res, PEEK(0)); 
+   NPOP(3); PUSH(res);
+   break; }
       case IF_16_OP: {
-	uint16_t else_off = NXT_OP16(m);
-	NUM_VAL tst  = NUM_POP();
-	if (tst != 0)
-	  m->pc += else_off;
-	break; }
+   uint16_t else_off = NXT_OP16(m);
+   NUM_VAL tst  = NUM_POP();
+   if (tst != 0)
+     m->pc += else_off;
+   break; }
       case IF_OP: {
-	int else_off = NXT_OP(m);
-	NUM_VAL tst  = NUM_POP();
-	if (tst != 0)
-	  m->pc += else_off;
-	break; }
+   int else_off = NXT_OP(m);
+   NUM_VAL tst  = NUM_POP();
+   if (tst != 0)
+     m->pc += else_off;
+   break; }
       case JMP_OP: {
-	int off = NXT_OP(m);
+   int off = NXT_OP(m);
    POST("JUMPING FROM %d TO %d \n", m->pc, m->pc+off);
-	m->pc += off; break; }
+   m->pc += off; break; }
       case JMP_16_OP: {
-	int off = NXT_OP16(m);
-	m->pc += off; break; }
+   int off = NXT_OP16(m);
+   m->pc += off; break; }
       case RET_OP: {
-	POP(res);
-	m->pc = FUN_POP();
-	dump_stack(m);
-	return res; }
+   POP(res);
+   m->pc = FUN_POP();
+   dump_stack(m);
+   return res; }
       case DEF_FUN_2_OP: case DEF_FUN_3_OP: case DEF_FUN_4_OP: 
       case DEF_FUN_5_OP: case DEF_FUN_6_OP: case DEF_FUN_7_OP:
-	def_fun_exec(m, op - DEF_FUN_2_OP + 2); break;
+   def_fun_exec(m, op - DEF_FUN_2_OP + 2); break;
       case DEF_FUN_OP: 
-	def_fun_exec(m, NXT_OP(m)); break;
+   def_fun_exec(m, NXT_OP(m)); break;
       case DEF_FUN16_OP: 
-	def_fun_exec(m, NXT_OP16(m)); break;
+   def_fun_exec(m, NXT_OP16(m)); break;
       case SET_DT_OP:
-	set_dt(NUM_PEEK(0)); break;
+   set_dt(NUM_PEEK(0)); break;
       case DT_OP: 
-	NUM_PUSH(machine->time==0 ? machine->desired_period : machine->time - machine->last_time); break;
+   NUM_PUSH(machine->time==0 ? machine->desired_period : machine->time - machine->last_time); break;
       case PROBE_OP: {
-	DATA *val = PEEK(1);
-	int k     = (int)NUM_PEEK(0);
-	set_probe(val, k);
-	NPOP(2); PUSH(val);
-	break; }
+   DATA *val = PEEK(1);
+   int k     = (int)NUM_PEEK(0);
+   set_probe(val, k);
+   NPOP(2); PUSH(val);
+   break; }
       case INFINITESIMAL_OP: 
-	NUM_PUSH(machine_area(m)); break;
+   NUM_PUSH(machine_area(m)); break;
       case NBR_RANGE_OP: 
-	NUM_PUSH(nbr_range()); break;
+   NUM_PUSH(nbr_range()); break;
       case AREA_OP: 
-	NUM_PUSH(machine_area(m)); break;
+   NUM_PUSH(machine_area(m)); break;
       case NBR_BEARING_OP: 
-	NUM_PUSH(nbr_bearing()); break;
+   NUM_PUSH(nbr_bearing()); break;
       case NBR_LAG_OP: 
-	NUM_PUSH(nbr_lag()); break;
+   NUM_PUSH(nbr_lag()); break;
       case NBR_VEC_OP: {
-	VEC_VAL *vr = VEC_GET(GLO_GET(NXT_OP(m)));
-	ensure_len(vr, 3);
-	NUM_SET(vec_elt(vr, 0), m->nbr_x);
-	NUM_SET(vec_elt(vr, 1), m->nbr_y);
-	NUM_SET(vec_elt(vr, 2), m->nbr_z);
-	VEC_PUSH(vr);
-	break; }
+   VEC_VAL *vr = VEC_GET(GLO_GET(NXT_OP(m)));
+   ensure_len(vr, 3);
+   NUM_SET(vec_elt(vr, 0), m->nbr_x);
+   NUM_SET(vec_elt(vr, 1), m->nbr_y);
+   NUM_SET(vec_elt(vr, 2), m->nbr_z);
+   VEC_PUSH(vr);
+   break; }
       case BEARING_OP: 
-	NUM_PUSH(read_bearing()); break;
+   NUM_PUSH(read_bearing()); break;
       case SPEED_OP: 
-	NUM_PUSH(read_speed()); break;
+   NUM_PUSH(read_speed()); break;
       case MOV_OP: 
-	mov(VEC_PEEK(0)); break;
+   mov(VEC_PEEK(0)); break;
       case RND_OP: { 
-	NUM_VAL val = num_rnd(NUM_PEEK(1), NUM_PEEK(0)); 
-	NPOP(2); NUM_PUSH(val); 
-	break; }
-	//Scalar Comparison Operations
+   NUM_VAL val = num_rnd(NUM_PEEK(1), NUM_PEEK(0)); 
+   NPOP(2); NUM_PUSH(val); 
+   break; }
+   //Scalar Comparison Operations
       case GT_OP: {
-	NUM_VAL val = NUM_PEEK(1) > NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) > NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case GTE_OP: {
-	NUM_VAL val = NUM_PEEK(1) >= NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) >= NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case LT_OP: { 
-	NUM_VAL val = NUM_PEEK(1) < NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) < NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case LTE_OP: {
-	NUM_VAL val = NUM_PEEK(1) <= NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) <= NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case EQ_OP: {
-	NUM_VAL val = NUM_PEEK(1) == NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) == NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case MAX_OP: {
-	NUM_VAL val = MAX(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = MAX(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
       case MIN_OP: {
-	NUM_VAL val = MIN(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
-	//Basic Mathematical Operations
+   NUM_VAL val = MIN(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
+   //Basic Mathematical Operations
       case ADD_OP: {
-	NUM_VAL val = NUM_PEEK(1) + NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) + NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case MOD_OP: {
-	NUM_VAL val = fmod(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = fmod(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
       case DIV_OP: {
-	NUM_VAL val = NUM_PEEK(1) / NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) / NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case MUL_OP: {
-	NUM_VAL val = NUM_PEEK(1) * NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = NUM_PEEK(1) * NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case SUB_OP: {
-	NUM_VAL val = NUM_PEEK(1) - NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
-	//Math Operations
+   NUM_VAL val = NUM_PEEK(1) - NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
+   //Math Operations
       case ABS_OP: 
-	NUM_PUSH(fabs(NUM_POP()));  break; 
+   NUM_PUSH(fabs(NUM_POP()));  break; 
       case POW_OP: {
-	NUM_VAL val = pow(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
+   NUM_VAL val = pow(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
       case LOG_OP: {
-	NUM_PUSH(log(NUM_POP())); break; }
+   NUM_PUSH(log(NUM_POP())); break; }
       case SQRT_OP: {
-	NUM_PUSH(sqrt(NUM_POP())); break; }
+   NUM_PUSH(sqrt(NUM_POP())); break; }
       case SIN_OP: {
-	NUM_PUSH(sin(NUM_POP())); break; }
+   NUM_PUSH(sin(NUM_POP())); break; }
       case COS_OP: {
-	NUM_PUSH(cos(NUM_POP())); break; }
+   NUM_PUSH(cos(NUM_POP())); break; }
       case TAN_OP: {
-	NUM_PUSH(tan(NUM_POP())); break; }
+   NUM_PUSH(tan(NUM_POP())); break; }
       case SINH_OP: {
-	NUM_PUSH(sinh(NUM_POP())); break; }
+   NUM_PUSH(sinh(NUM_POP())); break; }
       case COSH_OP: {
-	NUM_PUSH(cosh(NUM_POP())); break; }
+   NUM_PUSH(cosh(NUM_POP())); break; }
       case TANH_OP: {
-	NUM_PUSH(tanh(NUM_POP())); break; }      
+   NUM_PUSH(tanh(NUM_POP())); break; }      
       case ASIN_OP: {
-	NUM_PUSH(asin(NUM_POP())); break; }      
+   NUM_PUSH(asin(NUM_POP())); break; }      
       case ACOS_OP: {
-	NUM_PUSH(acos(NUM_POP())); break; }      
+   NUM_PUSH(acos(NUM_POP())); break; }      
       case FLOOR_OP: {
-	NUM_PUSH(floor(NUM_POP())); break; }      
+   NUM_PUSH(floor(NUM_POP())); break; }      
       case CEIL_OP: {
-	NUM_PUSH(ceil(NUM_POP())); break; }            
+   NUM_PUSH(ceil(NUM_POP())); break; }            
       case ATAN2_OP: {
-	NUM_VAL val = atan2(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }      
-	
-	//Basic Vector Operations
+   NUM_VAL val = atan2(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }      
+   
+   //Basic Vector Operations
       case VADD_OP: { 
-	vadd_exec(NXT_OP(m)); break; }
+   vadd_exec(NXT_OP(m)); break; }
       case VSUB_OP: {
-	vsub_exec(NXT_OP(m)); break; }
+   vsub_exec(NXT_OP(m)); break; }
       case VMUL_OP: {
-	vmul_exec(NXT_OP(m)); break; }
+   vmul_exec(NXT_OP(m)); break; }
       case VDOT_OP: {
-	vdot_exec(); break; }
+   vdot_exec(); break; }
       case LEN_OP: {
-	len_exec(); break; }
+   len_exec(); break; }
       case VSLICE_OP: {
-	vslice_exec(NXT_OP(m)); break; }
-	
-	//Vector Comparison Operators
+   vslice_exec(NXT_OP(m)); break; }
+   
+   //Vector Comparison Operators
       case VGT_OP: {
-	vgt_exec(); break; }
+   vgt_exec(); break; }
       case VGTE_OP: {
-	vgte_exec(); break; }
+   vgte_exec(); break; }
       case VLT_OP: {
-	vlt_exec(); break; }
+   vlt_exec(); break; }
       case VLTE_OP: {
-	vlte_exec(); break; }
+   vlte_exec(); break; }
       case VEQ_OP: {
-	veq_exec(); break; }
+   veq_exec(); break; }
       case VMIN_OP: { 
-	vmin_exec(); break; }
+   vmin_exec(); break; }
       case VMAX_OP: {
-	vmax_exec(); break; }
-	//Feedback and Neighbor Operations
+   vmax_exec(); break; }
+   //Feedback and Neighbor Operations
       case INIT_FEEDBACK_OP: init_feedback_exec(NXT_OP(m)); break;
       case FEEDBACK_OP: feedback_exec(NXT_OP(m)); break;
       case FOLD_HOOD_OP: {
-	DATA reso; do_fold_hood_exec(&reso, NXT_OP(m)); break; }
+   DATA reso; do_fold_hood_exec(&reso, NXT_OP(m)); break; }
       case VFOLD_HOOD_OP: {
-	int roff = NXT_OP(m);
-	int off = NXT_OP(m);
-	do_fold_hood_exec(GLO_GET(roff), off); break; }
+   int roff = NXT_OP(m);
+   int off = NXT_OP(m);
+   do_fold_hood_exec(GLO_GET(roff), off); break; }
       case FOLD_HOOD_PLUS_OP: {
-	DATA reso; do_fold_hood_plus_exec(&reso, NXT_OP(m)); break; }
+   DATA reso; do_fold_hood_plus_exec(&reso, NXT_OP(m)); break; }
       case VFOLD_HOOD_PLUS_OP: {
-	int roff = NXT_OP(m);
-	int off  = NXT_OP(m);
-	do_fold_hood_plus_exec(GLO_GET(roff), off); break; }
+   int roff = NXT_OP(m);
+   int off  = NXT_OP(m);
+   do_fold_hood_plus_exec(GLO_GET(roff), off); break; }
       case APPLY_OP: 
-	apply_exec(/* NXT_OP(m) */); break;
+   apply_exec(/* NXT_OP(m) */); break;
       case ALL_OP: {
-	int n = NXT_OP(m); DATA val; POP(&val); NPOP(n-1); PUSH(&val); break; }
-	
+   int n = NXT_OP(m); DATA val; POP(&val); NPOP(n-1); PUSH(&val); break; }
+   
       case FOLD_OP: 
-	fold_exec(); break;
+   fold_exec(); break;
       case VFOLD_OP: 
-	vfold_exec(NXT_OP(m)); break;
+   vfold_exec(NXT_OP(m)); break;
       case MAP_OP: 
-	map_exec(NXT_OP(m)); break;
+   map_exec(NXT_OP(m)); break;
       case HOOD_RADIUS_OP: 
-	NUM_PUSH(read_radio_range()); break;
+   NUM_PUSH(read_radio_range()); break;
       case TUP_OP: {
-	int off = NXT_OP(m);
-	int n   = NXT_OP(m);
-	tup_exec(n, off); break; }
+   int off = NXT_OP(m);
+   int n   = NXT_OP(m);
+   tup_exec(n, off); break; }
       case ELT_OP: 
-	elt_exec(); break;
+   elt_exec(); break;
       case MID_OP:
-	NUM_PUSH(m->id); break;
+   NUM_PUSH(m->id); break;
       case FLEX_OP:
-	flex(NUM_PEEK(0)); break;
+   flex(NUM_PEEK(0)); break;
       case FUNCALL_N: case FUNCALL_0: case FUNCALL_1: 
       case FUNCALL_2: case FUNCALL_3: case FUNCALL_4: 
    {
@@ -1737,7 +1738,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
       break;
    }
       default:
-	uerror("UNKNOWN OPCODE %d %d\n", op, CORE_CMD_OPS);
+   uerror("UNKNOWN OPCODE %d %d\n", op, CORE_CMD_OPS);
       }
     } else {
       platform_operation(op); // call out to platform-specific code
@@ -1849,7 +1850,7 @@ void install_script(MACHINE *m, uint8_t *script, uint8_t slot, uint16_t len, uin
   int i;
   if (len > MAX_SCRIPT_LEN)
     uerror("SCRIPT TOO BIG %d > %d -- INCREASE MAX_SCRIPT_LEN\n", 
-	   len, MAX_SCRIPT_LEN);
+      len, MAX_SCRIPT_LEN);
   // post("SIZEOF DATA %d\n", sizeof(DATA));
   memcpy(s->bytes, script, len);
   s->is_complete = TRUE;
