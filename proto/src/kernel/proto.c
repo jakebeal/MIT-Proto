@@ -1333,6 +1333,27 @@ MAYBE_INLINE void def_fun_exec (MACHINE *m, uint16_t skip) {
   GLO_SET(m->n_globals++, &res);
 }
 
+/**
+ * Puts n elements on the stack into the environment.
+ */
+void let_exec(MACHINE* m, int n) {
+   uint8_t i;
+   // if (is_trace) { POST("BEF LET N %d SP %lx ST %lx DELTA %d\n", n, m->sp, m->stack, (m->sp - m->stack)); }
+   for (i = n; i > 0; i--)
+      DATA_SET(m->ep++, (m->sp-i));
+   // if (is_trace) { POST("MID LET N %d EDELTA %d SP %lx ST %lx DELTA %d\n", n, (m->ep - m->env), m->sp, m->stack, (m->sp - m->stack)); }
+   m->sp -= n;
+   // if (is_trace) { POST("AFT LET N %d SP %lx ST %lx DELTA %d\n", n, m->sp, m->stack, (m->sp - m->stack)); }
+}
+
+/**
+ * Remove the last n elements from the environment.
+ */
+void clean_env(MACHINE* m, int n) {
+   m->ep -= n;
+}
+
+
 #define INF 1.0e12
 
 DATA *eval(DATA *res, FUN_VAL fun) {
@@ -1352,7 +1373,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
     // putstring(" PC:"); putnum_ud(m->pc); 
     op = NXT_OP(m);
     if (is_trace) {
-      char *name; lookup_op_by_code (op, &name);
+      const char *name = CORE_OPCODES_STR[op];
       POST("%3d: OP %3d %s\n", m->pc-1, op, name); 
     }
     if(op < CORE_CMD_OPS) {
@@ -1364,9 +1385,9 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 	int n_state     = NXT_OP(m);
 	int n_stack     = NXT_OP16(m);
 	int n_env       = NXT_OP(m);
-	if (debug_id == m->id)
+	if (is_debugging(m))
 	  POST("M%d MEM SIZE %d\n", m->id, machine_mem_size(m));
-	if (debug_id == m->id) 
+	if (is_debugging(m)) 
 	  POST("EXPORT_LEN %d N_EXPORTS %d N_GLOBALS %d N_STATE %d N_STK %d N_ENV %d\n",
 	       export_len, n_exports, n_globals, n_state, n_stack, n_env);
 	m->n_hood_vals = n_exports;
@@ -1392,7 +1413,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 	m->stack = (DATA*)PMALLOC(n_stack * sizeof(DATA));
 	m->n_env = n_env;
 	m->env = (DATA*)PMALLOC(n_env * sizeof(DATA));
-	if (debug_id == m->id)
+	if (is_debugging(m))
 	  POST("M%d MEM SIZE %d\n", m->id, machine_mem_size(m));
 	m->sp = m->stack;
 	m->ep = m->env;
@@ -1469,12 +1490,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
       case LET_OP: 
       case LET_1_OP: case LET_2_OP: case LET_3_OP: case LET_4_OP: {
 	int n = op == LET_OP ? NXT_OP(m) : op - LET_OP;
-	// if (is_trace) { POST("BEF LET N %d SP %lx ST %lx DELTA %d\n", n, m->sp, m->stack, (m->sp - m->stack)); }
-	for (i = n; i > 0; i--)
-	  DATA_SET(m->ep++, (m->sp-i));
-	// if (is_trace) { POST("MID LET N %d EDELTA %d SP %lx ST %lx DELTA %d\n", n, (m->ep - m->env), m->sp, m->stack, (m->sp - m->stack)); }
-	m->sp -= n;
-	// if (is_trace) { POST("AFT LET N %d SP %lx ST %lx DELTA %d\n", n, m->sp, m->stack, (m->sp - m->stack)); }
+   let_exec(m, n);
 	break; }
       case REF_OP: 
       case REF_0_OP: case REF_1_OP: case REF_2_OP: case REF_3_OP: {
@@ -1523,6 +1539,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 	break; }
       case JMP_OP: {
 	int off = NXT_OP(m);
+   POST("JUMPING FROM %d TO %d \n", m->pc, m->pc+off);
 	m->pc += off; break; }
       case JMP_16_OP: {
 	int off = NXT_OP16(m);
@@ -1702,6 +1719,23 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 	NUM_PUSH(m->id); break;
       case FLEX_OP:
 	flex(NUM_PEEK(0)); break;
+      case FUNCALL_N: case FUNCALL_0: case FUNCALL_1: 
+      case FUNCALL_2: case FUNCALL_3: case FUNCALL_4: 
+   {
+      //n = number of arguments
+      int n = (op == FUNCALL_N) ? NXT_OP(m) : op - FUNCALL_0;
+      //pop function off stack
+      FUN_VAL fun = FUN_GET(POP(res));
+      //pop arguments, put them in env
+      let_exec(m, n); //let n where n=num args
+      //exec the function
+      DATA ret = funcall0(fun);
+      //remove n arguments from the env
+      clean_env(m, n);
+      //push ret onto stack
+      PUSH(&ret);
+      break;
+   }
       default:
 	uerror("UNKNOWN OPCODE %d %d\n", op, CORE_CMD_OPS);
       }

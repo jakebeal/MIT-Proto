@@ -29,7 +29,7 @@ typedef enum {
 
 
 
-char const* const core_opcodes_str[] = {
+char const* const CORE_OPCODES_STR[] = {
   #define X(a) #a,
   #include "opcodes.def"
   #undef X
