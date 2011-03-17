@@ -55,7 +55,6 @@ void ODEBodyFactory::create_joints() {
 			}
 		}
 
-		cout << "Joint 1:" << joint->id1 << ", joint 2:" << joint->id2 << endl;
 		joint->createJoint(world, bod1, bod2);
 
 		parser->jointList.pop_back();
@@ -73,12 +72,10 @@ int ODEBodyFactory::numBodies() {
 ODEBody* ODEBodyFactory::next_body(ODEDynamics* parent, Device* d) {
 
 	XmlBody* nextBody = parser->bodyList.back();
-	cout << endl << "about to get body" << endl;
 	if (nextBody == NULL) {
 		cout << "BODY IS NULL" << endl;
 	}
 	//	cout<<nextBody.mass<<endl;
-	cout << "List size:" << parser->bodyList.size() << endl;
 	ODEBody* b = ((XmlBox*) nextBody)->getODEBody(parent, d);
 	pair<map<string, ODEBody*>::iterator, bool> ret = bodyMap.insert(pair<
 			string, ODEBody*> (nextBody->id, b));

@@ -5,6 +5,7 @@
 #include "odedynamics.h"
 #include <map>
 #include <vector>
+//#include "DOMPrintErrorHandler.hpp"
 
 #include <xercesc/dom/DOMErrorHandler.hpp>
 #include <iostream>

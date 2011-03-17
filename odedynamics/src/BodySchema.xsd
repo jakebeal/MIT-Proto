@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema targetNamespace="file://./BodySchema.xsd"
-	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="file://./BodySchema.xsd">
+<xsd:schema targetNamespace="file:///home/jclevela/proto-workspace/odedynamics/src/BodySchema.xsd"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="file:///home/jclevela/proto-workspace/odedynamics/src/BodySchema.xsd">
 
 
 
@@ -48,7 +48,7 @@
 	<!-- Bodies -->
 	<xsd:complexType name="bodyType" abstract="true">
 		<xsd:sequence>
-			<xsd:element name="name" type="xsd:string" />
+			<xsd:element name="id" type="xsd:string" />
 			<xsd:element name="pos" type="positionType" />
 			<xsd:element name="rot" type="rotationType" />
 		</xsd:sequence>

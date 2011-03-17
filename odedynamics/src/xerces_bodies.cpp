@@ -77,31 +77,71 @@ char* getAttribute(DOMNode* node, const char* name) {
 	return XMLString::transcode(attribute->getNodeValue());
 }
 
-void createMyTransformMatrix(double* pos, double* rot, double* t) {
-	double sx = sin(rot[0]);
-	double sy = sin(rot[1]);
-	double sz = sin(rot[2]);
+/**
+ * Creates a rotation matrix from X-Y-Z fixed angles
+ * @param angle contains X-Y-Z, angle[0] = x, angle[1] = y, angle[2] = z
+ * @param matrix 3x3 matrix that become the rotation matrix
+ */
+void xyzFixedToRotMatrix(double* angle, double* matrix){
+	double sg = sin(angle[0]);
+	double sb = sin(angle[1]);
+	double sa = sin(angle[2]);
 
-	double cx = cos(rot[0]);
-	double cy = cos(rot[1]);
-	double cz = cos(rot[2]);
+	double cg = cos(angle[0]);
+	double cb = cos(angle[1]);
+	double ca = cos(angle[2]);
 
-	t[0] = cy * cz;
-	t[1] = -cx * sz + sx * sy * cz;
-	t[2] = sx * sz + cx * cy * cz;
-	t[3] = pos[0];
-	t[4] = cy * sz;
-	t[5] = cx * cz + sx * sy * sz;
-	t[6] = -sx * cz + cx * sy * sz;
-	t[7] = pos[1];
-	t[8] = -sy;
-	t[9] = sx * cy;
-	t[10] = cx * cy;
-	t[11] = pos[2];
-	t[12] = 0;
-	t[13] = 0;
-	t[14] = 0;
-	t[15] = 1;
+	//first row
+	matrix[0] = ca*cb;
+	matrix[1] = ca*sb*sg + sa*cg;
+	matrix[2] = ca*sb*cg +sa*sg;
+
+
+	matrix[3] = sa*cb ;
+	matrix[4] = sa*sb*sg+ca*cg   ;
+	matrix[5] = sa*sb*cg-ca*sg   ;
+
+
+	matrix[6] = -sb  ;
+	matrix[7] = cb*sg  ;
+	matrix[8] =	cb*cg  ;
+
+
+
+}
+
+/**
+ * Creates a standard homogenous transformation matrix based upon a position
+ * displacement and rotation
+ * @param pos The position displacement
+ * @param rotMatrix A 3x3 rotation matrix
+ * @param transMatrix The 4x4 matrix that values are placed into
+ */
+void createMyTransformMatrix(double* pos, double* rotMatrix, double* transMatrix) {
+
+	//row 1
+	transMatrix[0] = rotMatrix[0];
+	transMatrix[1] = rotMatrix[1];
+	transMatrix[2] = rotMatrix[2];
+	transMatrix[3] = pos[0];
+
+	//row 2
+	transMatrix[4] = rotMatrix[3];
+	transMatrix[5] = rotMatrix[4];
+	transMatrix[6] = rotMatrix[5];
+	transMatrix[7] = pos[1];
+
+	//row 3
+	transMatrix[8] = rotMatrix[6];
+	transMatrix[9] = rotMatrix[7];
+	transMatrix[10] = rotMatrix[8];
+	transMatrix[11] = pos[2];
+
+	//row 4
+	transMatrix[12] = 0;
+	transMatrix[13] = 0;
+	transMatrix[14] = 0;
+	transMatrix[15] = 1;
 
 }
 
@@ -225,7 +265,6 @@ void XmlHingedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	dJointSetHingeAxis(joint, axis[0], axis[1], axis[2]);
 	dJointSetHingeParam(joint, dParamLoStop, loStop);
 	dJointSetHingeParam(joint, dParamHiStop, hiStop);
-	cout << "Created Hinged joint " << endl;
 }
 
 /********************************************************
@@ -371,9 +410,6 @@ ODEBody* XmlCylinder::getODEBody(ODEDynamics* parent, Device* d) {
  * XmlWorldParser implementation
  ***************************************************/
 void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
-	cout << "Name:"
-			<< XMLString::transcode(tw->getCurrentNode()->getNodeName())
-			<< endl;
 
 	do {
 
@@ -430,7 +466,6 @@ void XmlWorldParser::addJoint(DOMElement* node, const double* pos) {
 			throw "Unsupported joint type.";
 		}
 		jointList.push_back(joint);
-		cout << "Joint: " << joint->id1 << " + " << joint->id2 << endl;
 	} catch (exception& e) {
 		cout << "Poorly formed XML joint" << endl;
 	}
@@ -453,7 +488,6 @@ void XmlWorldParser::addBody(DOMElement* node, const double* pos) {
 			throw "Unknown body type.";
 		}
 		bodyList.push_back(xBody);
-		cout << "Body ID: " << xBody->id << endl;
 	} catch (exception& e) {
 		cout << "Poorly formed XML body " << endl;
 	}
@@ -478,7 +512,9 @@ bool XmlWorldParser::process_xml(const char* xmlFile) {
 	 * Configure parser error handling
 	 */
 	ErrorHandler* errHandler = (ErrorHandler*) new HandlerBase();
+//	ErrorHandler *errHandler =(ErrorHandler*) new DOMPrintErrorHandler();
 	parser->setErrorHandler(errHandler);
+
 	try {
 		parser->parse(xmlFile);
 	} catch (const XMLException& toCatch) {
@@ -491,8 +527,13 @@ bool XmlWorldParser::process_xml(const char* xmlFile) {
 		cout << "Exception message is: \n" << message << "\n";
 		XMLString::release(&message);
 		return -1;
-	} catch (...) {
-		cout << "Unexpected Exception \n";
+	}catch (const SAXException& toCatch) {
+		char* message = XMLString::transcode( toCatch.getMessage() );
+		cout << "Exception message is: " << message << "\n";
+		XMLString::release(&message);
+		return -1;
+	}  catch (const exception& toCatch) {
+		cout << "Unexpected Exception \n" << toCatch.what() <<endl;
 		return -1;
 	}
 
@@ -521,7 +562,6 @@ DOMNodeFilter::FilterAction BodiesInWorld::acceptNode(const DOMNode* node) const
 	if (node->getNodeType() == 1) {
 
 		string name = string(XMLString::transcode(node->getNodeName()));
-		cout << "NODE NAME:" << name << endl;
 		if (name.compare("body") == 0)
 			return FILTER_ACCEPT;
 
