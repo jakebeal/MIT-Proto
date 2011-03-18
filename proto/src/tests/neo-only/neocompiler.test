@@ -942,43 +942,43 @@ is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
 is 7 _   Foxtrot: Alfa --> <Any>
 is 8 _   Golf: Delta --> <Local>
-is 9 _   Hotel: Alfa --> <Any>
-is 10 _   India: Alfa --> <Scalar 0>
-is 11 _   Juliet: Alfa --> <Any>
-is 12 _   Kilo: Alfa --> <Scalar 1>
-is 13 _   Lima: Delta --> <Any>
-is 14 _   Mike: Delta --> <Scalar 0>
-is 15 _   November: Delta --> <Any>
-is 16 _   Oscar: Delta --> <Scalar 1>
-is 17 _   Papa: Bravo --> <Tuple<Any>...>
-is 18 _   Quebec: Bravo --> <Scalar 7>
-is 19 _   Romeo: Bravo --> <Scalar 8>
-is 20 _   Sierra: Delta --> <Tuple<Any>...>
-is 21 _   Tango: Delta --> <Number>
-is 22 _   Uniform: Delta --> <Scalar 1>
-is 23 _   Victor: Delta --> <Number>
+is 9 _   Hotel: Delta --> <Any>
+is 10 _   India: Delta --> <Scalar 0>
+is 11 _   Juliet: Delta --> <Any>
+is 12 _   Kilo: Delta --> <Scalar 1>
+is 13 _   Lima: Bravo --> <Tuple<Any>...>
+is 14 _   Mike: Bravo --> <Scalar 7>
+is 15 _   November: Bravo --> <Scalar 8>
+is 16 _   Oscar: Delta --> <Tuple<Any>...>
+is 17 _   Papa: Delta --> <Number>
+is 18 _   Quebec: Delta --> <Scalar 1>
+is 19 _   Romeo: Delta --> <Number>
+is 20 _   Sierra: Alfa --> <Any>
+is 21 _   Tango: Alfa --> <Scalar 0>
+is 22 _   Uniform: Alfa --> <Any>
+is 23 _   Victor: Alfa --> <Scalar 1>
 is 24 _   Whiskey: Alfa --> <Scalar> OUTPUT
 is 25 _ Operator Instances:
 is 26 _   [dchange] --> Charlie<Boolean>
 is 27 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 28 _   Charlie<Boolean>, Papa<Tuple<Any>...>, Sierra<Tuple<Any>...> --> [mux] --> Foxtrot<Any>
+is 28 _   Charlie<Boolean>, Lima<Tuple<Any>...>, Oscar<Tuple<Any>...> --> [mux] --> Foxtrot<Any>
 is 29 _   Foxtrot<Any> --> [delay] --> Golf<Local>
-is 30 _   Foxtrot<Any>, India<Scalar 0> --> [elt] --> Hotel<Any>
+is 30 _   Golf<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
 is 31 _   [Lit: <Scalar 0>] --> India<Scalar 0>
-is 32 _   Foxtrot<Any>, Kilo<Scalar 1> --> [elt] --> Juliet<Any>
+is 32 _   Golf<Local>, Kilo<Scalar 1> --> [elt] --> Juliet<Any>
 is 33 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
-is 34 _   Golf<Local>, Mike<Scalar 0> --> [elt] --> Lima<Any>
-is 35 _   [Lit: <Scalar 0>] --> Mike<Scalar 0>
-is 36 _   Golf<Local>, Oscar<Scalar 1> --> [elt] --> November<Any>
-is 37 _   [Lit: <Scalar 1>] --> Oscar<Scalar 1>
-is 38 _   Quebec<Scalar 7>, Romeo<Scalar 8> --> [tup] --> Papa<Tuple<Any>...>
-is 39 _   [Lit: <Scalar 7>] --> Quebec<Scalar 7>
-is 40 _   [Lit: <Scalar 8>] --> Romeo<Scalar 8>
-is 41 _   Tango<Number>, Victor<Number> --> [tup] --> Sierra<Tuple<Any>...>
-is 42 _   Lima<Any>, Uniform<Scalar 1> --> [+] --> Tango<Number>
-is 43 _   [Lit: <Scalar 1>] --> Uniform<Scalar 1>
-is 44 _   November<Any>, Lima<Any> --> [*] --> Victor<Number>
-is 45 _   Hotel<Any>, Juliet<Any> --> [pow] --> Whiskey<Scalar> OUTPUT
+is 34 _   Mike<Scalar 7>, November<Scalar 8> --> [tup] --> Lima<Tuple<Any>...>
+is 35 _   [Lit: <Scalar 7>] --> Mike<Scalar 7>
+is 36 _   [Lit: <Scalar 8>] --> November<Scalar 8>
+is 37 _   Papa<Number>, Romeo<Number> --> [tup] --> Oscar<Tuple<Any>...>
+is 38 _   Hotel<Any>, Quebec<Scalar 1> --> [+] --> Papa<Number>
+is 39 _   [Lit: <Scalar 1>] --> Quebec<Scalar 1>
+is 40 _   Juliet<Any>, Hotel<Any> --> [*] --> Romeo<Number>
+is 41 _   Foxtrot<Any>, Tango<Scalar 0> --> [elt] --> Sierra<Any>
+is 42 _   [Lit: <Scalar 0>] --> Tango<Scalar 0>
+is 43 _   Foxtrot<Any>, Victor<Scalar 1> --> [elt] --> Uniform<Any>
+is 44 _   [Lit: <Scalar 1>] --> Victor<Scalar 1>
+is 45 _   Sierra<Any>, Uniform<Any> --> [pow] --> Whiskey<Scalar> OUTPUT
 
 
 test: $(P2B) -CDall "(letfed (((tup (tup a b) c) (tup (tup 2 3) 4) (tup (tup a c) b))) c)"
@@ -991,57 +991,57 @@ is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
 is 7 _   Foxtrot: Alfa --> <Any>
 is 8 _   Golf: Delta --> <Local>
-is 9 _   Hotel: Alfa --> <Any>
-is 10 _   India: Alfa --> <Scalar 0>
-is 11 _   Juliet: Alfa --> <Any>
-is 12 _   Kilo: Alfa --> <Scalar 0>
-is 13 _   Lima: Alfa --> <Any>
-is 14 _   Mike: Alfa --> <Scalar 1>
-is 15 _   November: Alfa --> <Any> OUTPUT
-is 16 _   Oscar: Alfa --> <Scalar 1>
-is 17 _   Papa: Delta --> <Any>
-is 18 _   Quebec: Delta --> <Scalar 0>
-is 19 _   Romeo: Delta --> <Any>
-is 20 _   Sierra: Delta --> <Scalar 0>
-is 21 _   Tango: Delta --> <Any>
-is 22 _   Uniform: Delta --> <Scalar 1>
-is 23 _   Victor: Delta --> <Any>
-is 24 _   Whiskey: Delta --> <Scalar 1>
-is 25 _   Xray: Bravo --> <Tuple<Any>...>
-is 26 _   Yankee: Bravo --> <Tuple<Any>...>
-is 27 _   Zulu: Bravo --> <Scalar 2>
-is 28 _   Plural: Bravo --> <Scalar 3>
-is 29 _   Beak: Bravo --> <Scalar 4>
-is 30 _   Pronunciation: Delta --> <Tuple<Any>...>
-is 31 _   Sow: Delta --> <Tuple<Any>...>
+is 9 _   Hotel: Delta --> <Any>
+is 10 _   India: Delta --> <Scalar 0>
+is 11 _   Juliet: Delta --> <Any>
+is 12 _   Kilo: Delta --> <Scalar 0>
+is 13 _   Lima: Delta --> <Any>
+is 14 _   Mike: Delta --> <Scalar 1>
+is 15 _   November: Delta --> <Any>
+is 16 _   Oscar: Delta --> <Scalar 1>
+is 17 _   Papa: Bravo --> <Tuple<Any>...>
+is 18 _   Quebec: Bravo --> <Tuple<Any>...>
+is 19 _   Romeo: Bravo --> <Scalar 2>
+is 20 _   Sierra: Bravo --> <Scalar 3>
+is 21 _   Tango: Bravo --> <Scalar 4>
+is 22 _   Uniform: Delta --> <Tuple<Any>...>
+is 23 _   Victor: Delta --> <Tuple<Any>...>
+is 24 _   Whiskey: Alfa --> <Any>
+is 25 _   Xray: Alfa --> <Scalar 0>
+is 26 _   Yankee: Alfa --> <Any>
+is 27 _   Zulu: Alfa --> <Scalar 0>
+is 28 _   Plural: Alfa --> <Any>
+is 29 _   Beak: Alfa --> <Scalar 1>
+is 30 _   Pronunciation: Alfa --> <Any> OUTPUT
+is 31 _   Sow: Alfa --> <Scalar 1>
 is 32 _ Operator Instances:
 is 33 _   [dchange] --> Charlie<Boolean>
 is 34 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 35 _   Charlie<Boolean>, Xray<Tuple<Any>...>, Pronunciation<Tuple<Any>...> --> [mux] --> Foxtrot<Any>
+is 35 _   Charlie<Boolean>, Papa<Tuple<Any>...>, Uniform<Tuple<Any>...> --> [mux] --> Foxtrot<Any>
 is 36 _   Foxtrot<Any> --> [delay] --> Golf<Local>
-is 37 _   Foxtrot<Any>, India<Scalar 0> --> [elt] --> Hotel<Any>
+is 37 _   Golf<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
 is 38 _   [Lit: <Scalar 0>] --> India<Scalar 0>
 is 39 _   Hotel<Any>, Kilo<Scalar 0> --> [elt] --> Juliet<Any>
 is 40 _   [Lit: <Scalar 0>] --> Kilo<Scalar 0>
 is 41 _   Hotel<Any>, Mike<Scalar 1> --> [elt] --> Lima<Any>
 is 42 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
-is 43 _   Foxtrot<Any>, Oscar<Scalar 1> --> [elt] --> November<Any> OUTPUT
+is 43 _   Golf<Local>, Oscar<Scalar 1> --> [elt] --> November<Any>
 is 44 _   [Lit: <Scalar 1>] --> Oscar<Scalar 1>
-is 45 _   Golf<Local>, Quebec<Scalar 0> --> [elt] --> Papa<Any>
-is 46 _   [Lit: <Scalar 0>] --> Quebec<Scalar 0>
-is 47 _   Papa<Any>, Sierra<Scalar 0> --> [elt] --> Romeo<Any>
-is 48 _   [Lit: <Scalar 0>] --> Sierra<Scalar 0>
-is 49 _   Papa<Any>, Uniform<Scalar 1> --> [elt] --> Tango<Any>
-is 50 _   [Lit: <Scalar 1>] --> Uniform<Scalar 1>
-is 51 _   Golf<Local>, Whiskey<Scalar 1> --> [elt] --> Victor<Any>
-is 52 _   [Lit: <Scalar 1>] --> Whiskey<Scalar 1>
-is 53 _   Yankee<Tuple<Any>...>, Beak<Scalar 4> --> [tup] --> Xray<Tuple<Any>...>
-is 54 _   Zulu<Scalar 2>, Plural<Scalar 3> --> [tup] --> Yankee<Tuple<Any>...>
-is 55 _   [Lit: <Scalar 2>] --> Zulu<Scalar 2>
-is 56 _   [Lit: <Scalar 3>] --> Plural<Scalar 3>
-is 57 _   [Lit: <Scalar 4>] --> Beak<Scalar 4>
-is 58 _   Sow<Tuple<Any>...>, Tango<Any> --> [tup] --> Pronunciation<Tuple<Any>...>
-is 59 _   Romeo<Any>, Victor<Any> --> [tup] --> Sow<Tuple<Any>...>
+is 45 _   Quebec<Tuple<Any>...>, Tango<Scalar 4> --> [tup] --> Papa<Tuple<Any>...>
+is 46 _   Romeo<Scalar 2>, Sierra<Scalar 3> --> [tup] --> Quebec<Tuple<Any>...>
+is 47 _   [Lit: <Scalar 2>] --> Romeo<Scalar 2>
+is 48 _   [Lit: <Scalar 3>] --> Sierra<Scalar 3>
+is 49 _   [Lit: <Scalar 4>] --> Tango<Scalar 4>
+is 50 _   Victor<Tuple<Any>...>, Lima<Any> --> [tup] --> Uniform<Tuple<Any>...>
+is 51 _   Juliet<Any>, November<Any> --> [tup] --> Victor<Tuple<Any>...>
+is 52 _   Foxtrot<Any>, Xray<Scalar 0> --> [elt] --> Whiskey<Any>
+is 53 _   [Lit: <Scalar 0>] --> Xray<Scalar 0>
+is 54 _   Whiskey<Any>, Zulu<Scalar 0> --> [elt] --> Yankee<Any>
+is 55 _   [Lit: <Scalar 0>] --> Zulu<Scalar 0>
+is 56 _   Whiskey<Any>, Beak<Scalar 1> --> [elt] --> Plural<Any>
+is 57 _   [Lit: <Scalar 1>] --> Beak<Scalar 1>
+is 58 _   Foxtrot<Any>, Sow<Scalar 1> --> [elt] --> Pronunciation<Any> OUTPUT
+is 59 _   [Lit: <Scalar 1>] --> Sow<Scalar 1>
 
 
 test: $(P2B) -CDanalyzed "(set-dt (restrict (all (probe (all 3) 1)) 2))"

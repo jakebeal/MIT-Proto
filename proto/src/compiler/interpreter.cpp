@@ -67,7 +67,7 @@ void populate_specials() {
   special_tokens.insert("def"); 
   special_tokens.insert("primitive"); special_tokens.insert("macro");
   special_tokens.insert("let"); special_tokens.insert("let*"); 
-  special_tokens.insert("letfed");
+  special_tokens.insert("letfed"); special_tokens.insert("letfed+");
   special_tokens.insert("restrict");
   special_tokens.insert("all");
   special_tokens.insert("include"); special_tokens.insert("tup");
@@ -534,19 +534,25 @@ bool bind_letfed_vars(SExpr* s, Field* val, AM* space, Env* env) {
   return ok; 
 }
 
-Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env) {
+Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env,
+                                         bool no_init) {
   if(s->len()<3 || !s->children[1]->isList())
     return field_err(s,space,"Malformed letfed statement: "+s->to_str());
   Env *child = new Env(env), *delayed = new Env(env);
-  // make the two forks: init and update
-  OI *dchange = new OperatorInstance(s,Env::core_op("dchange"),space);
-  AM* init = new AM(s,space,dchange->output);
-  OI *unchange = new OperatorInstance(s,Env::core_op("not"),space);
-  unchange->add_input(dchange->output);
-  AM* update = new AM(s,space,unchange->output);
-  V4 << "  Created feedback spaces:\n"<<"  Init: "<<ce2s(init)
-     <<"  Update: "<<ce2s(update)<<endl;
-  
+  // unless no_init, make the two forks: init and update
+  OI *dchange; AM *init, *update;
+  if(!no_init) {
+    dchange = new OperatorInstance(s,Env::core_op("dchange"),space);
+    init = new AM(s,space,dchange->output);
+    OI *unchange = new OperatorInstance(s,Env::core_op("not"),space);
+    unchange->add_input(dchange->output);
+    update = new AM(s,space,unchange->output);
+    V4 << "  Created feedback spaces:\n"<<"  Init: "<<ce2s(init)
+       <<"  Update: "<<ce2s(update)<<endl;
+  } else {
+    dchange = NULL;//new OI(s,new Literal(s,new ProtoBoolean(false)),space);
+    init = update = space;
+  }
   // collect & bind let declarations, verify syntax
   vector<SExpr*>::iterator let_exps = s->args();
   SE_List* decls = (SE_List*)*let_exps++;
@@ -556,27 +562,42 @@ Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env) {
       SE_List* d = (SE_List*)(*decls)[i];
       V4 << "  Creating feedback variable "<<ce2s((*d)[0])<<endl;
       // create the variable & bind it
-      OI *varmux = new OperatorInstance(d,Env::core_op("mux"),space);
-      varmux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
-      varmux->add_input(dchange->output);
+      OI *varmux, *delay;
+      if(!no_init) {
+        varmux = new OperatorInstance(d,Env::core_op("mux"),space);
+        varmux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
+        varmux->add_input(dchange->output);
+        // create the delayed version
+        delay = new OperatorInstance(d,Env::core_op("delay"),update);
+        delay->add_input(varmux->output);
+      } else {
+        delay = varmux = new OperatorInstance(d,Env::core_op("delay"),update);
+      }
       vars.push_back(varmux);
-      // create the delayed version
-      OI *delay = new OperatorInstance(d,Env::core_op("delay"),update);
-      delay->add_input(varmux->output);
       // bind the variables
-      Field *curval = varmux->output, *oldval = delay->output;
-      if(!(bind_letfed_vars(d->op(),curval,space,child) &&
-           bind_letfed_vars(d->op(),oldval,update,delayed)))
+      if(!bind_letfed_vars(d->op(),delay->output,update,delayed))
         compile_error(d,"Malformed letfed variable: "+d->op()->to_str());
       // evaluate & connect the init
-      varmux->add_input(sexp_to_graph((*d)[1],init,env));
+      if(!no_init) {
+        varmux->add_input(sexp_to_graph((*d)[1],init,env));
+      } else {
+        delay->output->range = sexp_to_type((*d)[1]);
+        //varmux->add_input(dfg->add_literal(new ProtoBoolean(false),space,s));
+      }
     } else compile_error((*decls)[i],"Malformed letfed statement: "+
                          (*decls)[i]->to_str());
   }
   // second pass to evalute update expressions
   for(int i=0;i<decls->len();i++) {
-    SExpr* up = (*((SE_List*)(*decls)[i]))[2];
-    vars[i]->add_input(sexp_to_graph(up,update,delayed));
+    SE_List* d = (SE_List*)(*decls)[i];
+    Field* up_value = sexp_to_graph((*d)[2],update,delayed);
+    if(!no_init) {
+      bind_letfed_vars(d->op(),vars[i]->output,space,child);
+      vars[i]->add_input(up_value);
+    } else {
+      bind_letfed_vars(d->op(),up_value,space,child);
+      vars[i]->add_input(up_value);
+    }
   }
   // evaluate body in child environment, returning last output
   Field* out=NULL;
@@ -681,8 +702,8 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         Operator* op = sexp_to_op(s,env);
         if(!(opname=="lambda" || opname=="fun")) return NULL;
         return dfg->add_literal(new ProtoLambda(op),space,s);
-      } else if(opname=="letfed") {
-        return letfed_to_graph(sl,space,env);
+      } else if(opname=="letfed" || opname=="letfed+") {
+        return letfed_to_graph(sl,space,env,opname=="letfed+");
       } else if(opname=="macro") {
         V4 << "  Defining macro\n";
         sexp_to_macro(sl,env);

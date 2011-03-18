@@ -240,6 +240,8 @@
 
 (macro rep (var init update)
   (letfed ((,var ,init ,update)) ,var))
+(macro rep+ (var type update)
+  (letfed+ ((,var ,type ,update)) ,var))
 
 (macro fold-time (f i x) (letfed ((?r ,i (,f ?r ,x))) ?r))
 (macro all-time (v) (fold-time and true v))
