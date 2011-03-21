@@ -716,6 +716,7 @@ void DFG::print(ostream* out) {
 }
 
 void DFG::printdot(ostream* out) {
+  pastSteps = "";
   dot_print_function(out,output->domain->root(),output);
 }
 

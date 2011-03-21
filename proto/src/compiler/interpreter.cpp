@@ -64,8 +64,8 @@ bool specials_populated = false;
 void populate_specials() {
   if(specials_populated) return;
   special_tokens.insert("lambda"); special_tokens.insert("fun");
-  special_tokens.insert("def"); 
-  special_tokens.insert("primitive"); special_tokens.insert("macro");
+  special_tokens.insert("def"); special_tokens.insert("macro");
+  special_tokens.insert("primitive"); special_tokens.insert("annotate");
   special_tokens.insert("let"); special_tokens.insert("let*"); 
   special_tokens.insert("letfed"); special_tokens.insert("letfed+");
   special_tokens.insert("restrict");
@@ -90,6 +90,8 @@ void Env::bind(string name, CompilationElement* value) {
 void Env::force_bind(string name, CompilationElement* value) {
   if(special_tokens.count(name)) 
     compile_error(value,"Cannot bind '"+name+"': symbol is reserved");
+  else if(core_ops.count(name))
+    compile_warn(value,"shadowing core operator '"+name+"'");
   bindings[name]=value;
 }
 
@@ -123,7 +125,7 @@ void Env::record_core_ops(Env* toplevel) {
     if(i->second->isA("Operator")) core_ops[i->first]=(Operator*)i->second;
 }
 Operator* Env::core_op(string name) {
-  if(!core_ops.count(name))ierror("Compiler missing core operator '"+name+"'");
+  if(!core_ops.count(name)) ierror("Compiler missing core operator '"+name+"'");
   return core_ops[name];
 }
 
@@ -410,6 +412,22 @@ Signature* ProtoInterpreter::sexp_to_sig(SExpr* s, Env* bindloc, CompoundOp* op,
   return sig;
 }
 
+// Parse the extra arguments of a primitive into attributes
+void parse_primitive_attributes(SE_List_iter* li,Primitive* p) {
+  while(li->has_next()) {
+    SExpr* v = li->get_next();
+    if(!v->isKeyword()) {compile_error(v,v->to_str()+" not a keyword"); return;}
+    if(p->attributes.count(((SE_Symbol*)v)->name))
+      compile_warn("Primitive "+p->name+" overriding duplicate '"
+                   +((SE_Symbol*)v)->name+"' attribute");
+    if(li->has_next() && !li->peek_next()->isKeyword()) {
+      p->attributes[((SE_Symbol*)v)->name]=new SExprAttribute(li->get_next());
+    } else {
+      p->attributes[((SE_Symbol*)v)->name]=new MarkerAttribute(true);
+    }
+  }
+}
+
 Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
   if(s->isSymbol()) {
     return (Operator*)env->lookup((SE_Symbol*)s,"Operator");
@@ -446,19 +464,7 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
       Signature* sig = sexp_to_sig(li.get_next());
       sig->output = parse_argument(&li,-1,sig).second;
       Operator* p  = new Primitive(s,pname,sig);
-      // add in attributes
-      while(li.has_next()) {
-        SExpr* v = li.get_next();
-        if(!v->isKeyword()) return op_err(v,v->to_str()+" not a keyword");
-        if(p->attributes.count(((SE_Symbol*)v)->name))
-          compile_warn("Primitive "+pname+" overriding duplicate '"
-                       +((SE_Symbol*)v)->name+"' attribute");
-        if(li.has_next() && !li.peek_next()->isKeyword()) {
-          p->attributes[((SE_Symbol*)v)->name]=new SExprAttribute(li.get_next());
-        } else {
-          p->attributes[((SE_Symbol*)v)->name]=new MarkerAttribute(true);
-        }
-      }
+      parse_primitive_attributes(&li,(Primitive*)p); // add in attributes
       env->force_bind(pname,p); return p;
     } else {
       // check if it's a macro
@@ -702,6 +708,18 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         Operator* op = sexp_to_op(s,env);
         if(!(opname=="lambda" || opname=="fun")) return NULL;
         return dfg->add_literal(new ProtoLambda(op),space,s);
+      } else if(opname=="annotate") {
+        SE_List_iter li(sl); li.get_next(); // make iterator, discard op
+        string name = li.get_token("operator name");
+        CE* p = env->lookup(name);
+        if(p==NULL) {
+          compile_error(sl,"Can't find primitve '"+name+"' to annotate");
+        } else if(!p->isA("Primitive")) {
+          compile_error(sl,"Can't annotate '"+name+"': not a primitive");
+        } else {
+          parse_primitive_attributes(&li,(Primitive*)p); // add in attributes
+        }
+        return NULL; // annotations are like primitives: nothing returned
       } else if(opname=="letfed" || opname=="letfed+") {
         return letfed_to_graph(sl,space,env,opname=="letfed+");
       } else if(opname=="macro") {

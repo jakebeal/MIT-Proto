@@ -191,7 +191,8 @@ class NeoCompiler : public Compiler {
  public:
   Path proto_path;
   bool is_dump_code, is_dump_all, is_dump_analyzed, is_dump_interpreted,
-    is_dump_raw_localized, is_dump_localized; 
+    is_dump_raw_localized, is_dump_localized, is_dump_dotfiles; 
+  string dotstem;
   int is_early_terminate;
   bool paranoid; int verbosity;
   string infile;

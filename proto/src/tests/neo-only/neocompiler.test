@@ -221,6 +221,34 @@ is 1 _ command-line:1 Error: Function parameters must be named: tuple
 is 2 _ command-line:1 Error: Function has no content
 is 3 _ Compilation failed.
 
+// Operator annotation:
+// With side-effect annotation, sin call is preserved; without, is optimized out
+test: $(P2B) "(annotate sin :side-effect) (all (sin (mid)) 3)" -CDanalyzed
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar>
+is 4 _   Charlie: Alfa --> <Scalar>
+is 5 _   Delta: Alfa --> <Scalar 3> OUTPUT
+is 6 _ Operator Instances:
+is 7 _   Charlie<Scalar> --> [sin] --> Bravo<Scalar>
+is 8 _   [mid] --> Charlie<Scalar>
+is 9 _   [Lit: <Scalar 3>] --> Delta<Scalar 3> OUTPUT
+
+test: $(P2B) "(all (sin (mid)) 3)" -CDanalyzed
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar 3> OUTPUT
+is 4 _ Operator Instances:
+is 5 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3> OUTPUT
+
+test: $(P2B) "(annotate or :foo) (or 1 2)"
+is 0 _ Error during interpretation:
+is 1 _ command-line:1 Error: Can't annotate 'or': not a primitive
+is 2 _ Compilation failed.
+
+
 test: $(P2B) -CDall "(+ 1 (+ (+ 2 3) (+ 4)) 5)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -531,36 +559,25 @@ is 20 _ Operator Instances:
 is 21 _   [Lit: <Scalar nan>] --> Hotel<Scalar nan> OUTPUT
 
 test: $(P2B) -CDall "(xor true false)"
-is 0 _ Function: xor [Signature: <Any> <Any> --> <Any>] called 1 times
-is 1 _   Amorphous Mediums:
-is 2 _     [Medium: Alfa = root]
-is 3 _   Fields:
-is 4 _     Bravo: Alfa --> <Any>
-is 5 _     Charlie: Alfa --> <Any>
-is 6 _     Delta: Alfa --> <Any> OUTPUT
-is 7 _     Echo: Alfa --> <Boolean>
-is 8 _   Operator Instances:
-is 9 _     [Parameter 0: x] --> Bravo<Any>
-is 10 _     [Parameter 1: y] --> Charlie<Any>
-is 11 _     Bravo<Any>, Echo<Boolean>, Charlie<Any> --> [mux] --> Delta<Any> OUTPUT
-is 12 _     Charlie<Any> --> [not] --> Echo<Boolean>
-is 13 _ Amorphous Mediums:
-is 14 _   [Medium: Foxtrot = root]
-is 15 _ Fields:
-is 16 _   Golf: Foxtrot --> <Any> OUTPUT
-is 17 _   Hotel: Foxtrot --> <Boolean true>
-is 18 _   India: Foxtrot --> <Boolean false>
-is 19 _ Operator Instances:
-is 20 _   Hotel<Boolean true>, India<Boolean false> --> [Fun: xor] --> Golf<Any> OUTPUT
-is 21 _   [Lit: <Boolean true>] --> Hotel<Boolean true>
-is 22 _   [Lit: <Boolean false>] --> India<Boolean false>
-is 23 _ Amorphous Mediums:
-is 24 _   [Medium: Foxtrot = root]
-is 25 _ Fields:
-is 26 _   Juliet: Foxtrot --> <Boolean true> OUTPUT
-is 27 _ Operator Instances:
-is 28 _   [Lit: <Boolean true>] --> Juliet<Boolean true> OUTPUT
-is 29 _ Stopping before localization
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Boolean false>
+is 4 _   Charlie: Alfa --> <Any> OUTPUT
+is 5 _   Delta: Alfa --> <Boolean true>
+is 6 _   Echo: Alfa --> <Boolean>
+is 7 _ Operator Instances:
+is 8 _   [Lit: <Boolean false>] --> Bravo<Boolean false>
+is 9 _   Delta<Boolean true>, Echo<Boolean>, Bravo<Boolean false> --> [mux] --> Charlie<Any> OUTPUT
+is 10 _   [Lit: <Boolean true>] --> Delta<Boolean true>
+is 11 _   Bravo<Boolean false> --> [not] --> Echo<Boolean>
+is 12 _ Amorphous Mediums:
+is 13 _   [Medium: Alfa = root]
+is 14 _ Fields:
+is 15 _   Foxtrot: Alfa --> <Boolean true> OUTPUT
+is 16 _ Operator Instances:
+is 17 _   [Lit: <Boolean true>] --> Foxtrot<Boolean true> OUTPUT
+is 18 _ Stopping before localization
 
 // Make sure that extra function calls are ignored by "relevant" count
 test: $(P2B) "(def foo () (mid)) (def bar () (* (foo) (foo))) (foo)" -CDanalyzed --function-inlining-threshold 0

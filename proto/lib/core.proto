@@ -28,7 +28,7 @@
     (mux ?x (restrict ,true-expr ?x) (restrict ,false-expr (not ?x)))))
 (macro and (x y) (if ,x ,y 0))
 (macro or (x y) (let ((?tmp ,x)) (if ?tmp ?tmp ,y)))
-(def xor (x y) (mux x (not y) y))
+(macro xor (x y) (let ((?tmp ,y)) (mux ,x (not ?tmp) ?tmp)))
 
 (def muxand (x y) (mux x y false))
 (def muxor (x y) (mux x x y))
