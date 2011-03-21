@@ -1662,3 +1662,11 @@ is 19 _   [Lit: <2-Vector<Scalar 1.33333>,<Scalar 2>>] --> Golf<2-Vector<Scalar 
 // For later:
 // Get "(rep x 3 (elt (tup x 7) 0))" to realize that it's got a constant output of 3
 // test: $(P2B) -CDall "(def addz (a b &optional (c 3)) (+ a b c)) (addz 1 2)"
+
+
+// test: (def bar (z) (let ((x (* (mid) z))) (def foo () (+ x z)) (+ (foo) x (let ((y (speed))) (+ (foo) y y))))) (* (bar 3) (bar 4))
+// I expect this to return:   | It's actually returning:
+//    mid=0 -> 48             |     mid=0 -> 48
+//    mid=1 -> 300            |     mid=1 -> 300
+//    mid=2 -> 960            |     mid=2 -> 768
+//    mid=3 -> 1716           |     mid=3 -> 1452
