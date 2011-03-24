@@ -1,1 +1,1 @@
-#define PROTO_VERSION "372"
+#define PROTO_VERSION "374"
