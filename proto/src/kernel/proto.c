@@ -1540,7 +1540,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
    break; }
       case JMP_OP: {
    int off = NXT_OP(m);
-   POST("JUMPING FROM %d TO %d \n", m->pc, m->pc+off);
+   //POST("JUMPING FROM %d TO %d \n", m->pc, m->pc+off);
    m->pc += off; break; }
       case JMP_16_OP: {
    int off = NXT_OP16(m);
