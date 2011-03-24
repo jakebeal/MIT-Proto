@@ -1,3 +1,16 @@
+Release 6:
+- "Thinking in Proto" has a detailed explanation of fields.
+- Plugin is included for ODE physics simulation, including 
+  XML scripting to creating a model of body and joints
+- uninstalled plugins can be used with --DLL argument
+- default command-line arguments are read from ./.proto and ~/.proto
+  standalone compiler reads from ./.p2b and ~/.p2b
+- proto mode for vim; emacs proto mode improved
+- build is possible on cygwin again; plugins not yet working on cygwin
+- fixed a build problem that affected Fedora and some other Linuxes
+- partial documentation of the Proto internal API can be built with doxygen
+- various small bugfixes
+
 Release 5:
 - "Thinking In Proto" tutorial added to manuals
 - Ubuntu build problems fixed

@@ -1,6 +1,7 @@
 Before making a public release, please go down this checklist:
+- run ./prepare-release.sh to set the KERNEL_VERSION and PROTO_VERSION
 - Check that all regression tests are passing
 - Make sure all configure.ac files have the right release number in AC_INIT
 - Make sure all recent authors are credited in proto/AUTHORS and 
-  proto/man/src/creditx.tex
+  proto/man/src/credits.tex (and any other AUTHOR lists)
 - Make sure all significant changes are listed in proto/NEWS
