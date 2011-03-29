@@ -259,7 +259,7 @@ struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
 // LET_OP, LET_k_OP
 struct iLET : public Instruction { reflection_sub(iLET,Instruction);
   Instruction* pop;
-  set<Instruction*, CompilationElement_cmp> usages;
+  CEset(Instruction*) usages;
   iLET() : Instruction(LET_1_OP,1) { pop=NULL; }
   bool resolved() { return pop!=NULL && Instruction::resolved(); }
 };
@@ -482,6 +482,48 @@ public:
   InsertLetPops(ProtoKernelEmitter* parent,Args* args) 
   { verbosity = parent->verbosity; }
   void print(ostream* out=0) { *out<<"InsertLetPops"; }
+
+  void insert_pop_set(vector<iLET*> sources,Instruction* pointer) {
+    // First, cluster the pops into branch-specific sets
+    CEmap(Instruction*,CEset(iLET*)) dest_sets;
+    for(int i=0;i<sources.size();i++) {
+      // find the last reference to this source
+      Instruction* last = NULL;
+      for_set(Instruction*,sources[i]->usages,j) {
+        if((*j)->marked("~Last~Reference")) { last = *j; break; }
+      }
+      if(last==NULL)ierror("Trying to pop a let without its last usage marked");
+      // is it marked as being in a branch?
+      V5 << "  Considering last reference: "<<ce2s(last)<<endl;
+      if(last->marked("~Branch~End")) {
+        CE* inst = ((CEAttr*)last->attributes["~Branch~End"])->value;
+        V5 << "   Branch end ref: "<<ce2s(inst)<<endl;
+        dest_sets[(Instruction*)inst].insert(sources[i]);
+      } else {
+        V5 << "   Default location: "<<ce2s(pointer)<<endl;
+        dest_sets[pointer].insert(sources[i]);
+      }
+    }
+    
+    // Next, place each set
+    for_map(Instruction*, CEset(iLET*), dest_sets, i) {
+      // create the pop instruction
+      Instruction* pop;
+      if(i->second.size()<=MAX_LET_OPS) {
+        pop = new Instruction(POP_LET_OP+(i->second.size()));
+      } else {
+        pop = new Instruction(POP_LET_OP); pop->padd(i->second.size());
+      }
+      pop->env_delta = -i->second.size();
+      // tag it onto the lets in the set
+      for_set(iLET*,i->second,j) (*j)->pop = pop;
+      // and place the pop at the destination
+      string type = (i->first==pointer)?"standard":"branch";
+      V3 << "  Inserting "+type+" POP_LET after "<<ce2s(i->first)<<endl;
+      chain_insert(i->first,pop);
+    }
+  }
+  
   void act(Instruction* i) {
     if(i->isA("iLET")) { iLET* l = (iLET*)i;
       if(l->pop!=NULL) return; // don't do it when pops are resolved
@@ -510,7 +552,10 @@ public:
         } else if(pointer->isA("Reference")) { // it's somebody's reference?
           V3 << "\n Found reference...";
           for(int j=0;j<usages.size();j++) {
-            if(usages[j].count(pointer)) { usages[j].erase(pointer);
+            if(usages[j].count(pointer)) { 
+              usages[j].erase(pointer);
+              // mark last references for later use in pop insertion
+              if(!usages[j].size()) pointer->mark("~Last~Reference");
               break;
             }
           }
@@ -523,23 +568,9 @@ public:
         if(!usages.empty()) pointer=pointer->next;
       }
       // Now walk through and pop all the sources, clumping by destination
-      V3 << "\n Adding pop of size "<<sources.size()<<"\n";
-      if(sources.size()<=MAX_LET_OPS) {
-        l->pop=new Instruction(POP_LET_OP+sources.size());
-      } else {
-        l->pop=new Instruction(POP_LET_OP); l->pop->padd(sources.size());
-      }
-      l->pop->env_delta = -sources.size();
-      for(int i=0;i<sources.size();i++) sources[i]->pop = l->pop;
+      V3 << "\n Adding set of pops, size: "<<sources.size()<<"\n";
+      insert_pop_set(sources,pointer);
       V3 << " Completed LET resolution\n";
-      if(pointer->attributes.count("~Branch~End")) {
-        CE* i = ((CEAttr*)pointer->attributes["~Branch~End"])->value;
-        V3 << "  Placing branch POP_LET after "<<ce2s(i)<<endl;
-        chain_insert((Instruction*)i,l->pop);
-      } else {
-        V3 << "  Inserting POP_LET after "<<ce2s(pointer)<<endl;
-        chain_insert(pointer,l->pop);
-      }
     }
   }
 };
@@ -795,6 +826,8 @@ void mark_branch_references(Branch* jmp,Block* branch,AM* source) {
       if(target->output->domain == source) {
         if(ptr->attributes.count("~Branch~End"))
           ierror("Tried to duplicate mark reference");
+        //cout << "  Marking reference for "<<ce2s(source)<<endl;
+        //cout << "    "<<ce2s(jmp->after_this)<<endl;
         ptr->attributes["~Branch~End"]=new CEAttr(jmp->after_this);
       }
     } else if(ptr->isA("Block")) {
@@ -1008,7 +1041,7 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   Fset minima, f; root->all_fields(&f);
   for_set(Field*,f,i) if(!has_relevant_consumer(*i)) minima.insert(*i);
   
-  V3 << "  " << i2s(minima.size()) << " minima identified: ";
+  V3 << "  "+ce2s(root)+":" << i2s(minima.size()) << " minima identified: ";
   for_set(Field*,minima,i) { if(!(i==minima.begin())) V3<<","; V3<<ce2s(*i); }
   V3 << endl;
   iDEF_FUN *fnstart = new iDEF_FUN(); Instruction *chain=fnstart;

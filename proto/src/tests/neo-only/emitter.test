@@ -327,16 +327,16 @@ is 3 _ uint16_t script_len = 23;
 
 // Nested restriction references
 test: $(PROTO) "(let ((x (probe (+ (speed) 3) 0))) (if (> (mid) 2) (let ((y (hood-radius))) (if (> (mid) 4) (+ x y 7) 8)) 9))"
-// is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 4, 2, 
-// is 1 _   DEF_FUN_OP, 35, MID_OP, LIT_2_OP, GT_OP, SPEED_OP, LIT_3_OP, 
-// is 2 _   ADD_OP, LIT_0_OP, PROBE_OP, LET_1_OP, IF_OP, 4, LIT8_OP, 9, 
-// is 3 _   JMP_OP, 19, MID_OP, LIT_4_OP, GT_OP, HOOD_RADIUS_OP, LET_1_OP, 
-// is 4 _   IF_OP, 4, LIT8_OP, 8, JMP_OP, 6, REF_1_OP, REF_0_OP, LIT8_OP, 7, 
-// is 5 _   ADD_OP, ADD_OP, POP_LET_1_OP, POP_LET_1_OP, RET_OP, EXIT_OP };
-// is 6 _ uint16_t script_len = 47;
-// = 8 3 9
-// = 11 3 8
-// = 13 3 25
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 4, 2, 
+is 1 _   DEF_FUN_OP, 35, MID_OP, LIT_2_OP, GT_OP, SPEED_OP, LIT_3_OP, 
+is 2 _   ADD_OP, LIT_0_OP, PROBE_OP, LET_1_OP, IF_OP, 4, LIT8_OP, 9, 
+is 3 _   JMP_OP, 18, MID_OP, LIT_4_OP, GT_OP, HOOD_RADIUS_OP, LET_1_OP, 
+is 4 _   IF_OP, 4, LIT8_OP, 8, JMP_OP, 6, REF_1_OP, REF_0_OP, LIT8_OP, 7, 
+is 5 _   ADD_OP, ADD_OP, POP_LET_1_OP, POP_LET_1_OP, RET_OP, EXIT_OP };
+is 6 _ uint16_t script_len = 47;
+= 8 3 9
+= 11 3 8
+= 13 3 25
 
 test: $(PROTO) "(let ((x (mid))) (if (> (mid) 2) (+ x 3) x))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 1, 
