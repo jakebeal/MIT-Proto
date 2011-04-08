@@ -1,5 +1,3 @@
-(Last Revision: $Date: 2010-01-03 10:40:50 -0500 (Sun, 03 Jan 2010) $)
-
 This project contains a simple example of how to build a plugin for
 MIT Proto.  This is intended to serve as a template, aiding you in
 developing your own plugins, so it is released in the public domain.
@@ -18,12 +16,15 @@ the dots will jump up and down (foo-layer)
 
 
 Key files in this directory:
-  Makefile.am		Declaration of the project
-  ExamplePlugin.h	Declaration of the plugin and its name
-  			The name must match Makefile.am
-  ExamplePlugin.cpp	Code implementing the plugin
-  autogen.sh		Processes Makefile.am, configuring project for building
-  configure.ac		Project description used by autogen.sh
+  Makefile.am			Declaration of the project
+  ExampleDistribution.h/.cpp	Example of a distribution for scattering devices
+  ExampleTimeModel.h/.cpp	Example of a clock implementation
+  ExampleLayer.h/.cpp		Example of a simulator & kernel extension
+  ExamplePlugin.h/.cpp		Plugin containing names and glue code for
+  				using the distribution, clock, and extension
+  autogen.sh			Processes Makefile.am, setting up project 
+  				to be ready for building
+  configure.ac			Project description used by autogen.sh
 
 Note that building the project will create a large number of
 automatically generated or copied files.  Most of these should not be
