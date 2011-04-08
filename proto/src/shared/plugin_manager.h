@@ -13,34 +13,42 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h"
 #include "proto_plugin.h"
 
+/// PluginTypeInventory is a map from plugin name -> containing library name
+typedef map<string,string> PluginTypeInventory;
+/// PluginInventory is a map from plugin type -> type inventory
+typedef map<string, PluginTypeInventory> PluginInventory;
+/// LibraryCollcetion is a map from open library name -> object
+typedef map<string, ProtoPluginLibrary*> LibraryCollection;
+
 class ProtoPluginManager {
  public:
   ProtoPluginManager();
   
   // Getters return null if they fail, and as a side effect print failure msgs
+  // MUST CHECK FOR NULL ON RETURN
   // Used to get simulator Layers, Distributions, and TimeModels
   void* get_sim_plugin(string type, string name, Args* args, 
                        SpatialComputer* cpu, int n);
   // Used to get compiler extensions, or just the opcode part of a sim plugin
   void* get_compiler_plugin(string type, string name, Args* args, Compiler* c);
   
-  // Accessor for get_plugin_inventory: DO NOT USE THIS TO MODIFY IT!
-  map<string, map<string,string> >* get_plugin_inventory() 
-    { ensure_initialized(NULL); return &registry; }
+  // Accessor for get_plugin_inventory
+  const PluginInventory* get_plugin_inventory();
 
-  static string PLUGIN_DIR; // Where DLLs go
-  static string REGISTRY_FILE_NAME; // Where the registry goes
-  static string PLATFORM_DIR; // Where .proto extension files go
-  static string PLATFORM_OPFILE; // The default .proto file for a platform
+  static string const PLUGIN_DIR; // Where DLLs go
+  static string const REGISTRY_FILE_NAME; // Where the registry goes
+  static string const PLATFORM_DIR; // Where .proto extension files go
+  static string const PLATFORM_OPFILE; // The default .proto file for a platform
 
-  void register_lib(string type,string name,string key,ProtoPluginLibrary* lib)
-  { registry[type][name] = key; open_libs[key] = lib; }
+  void register_lib(string type,string name,string key,ProtoPluginLibrary* lib);
   void ensure_initialized(Args* args);
 
  private:
   bool initialized;
-  map<string, map<string,string> > registry; // type -> name -> library
-  map<string, ProtoPluginLibrary*> open_libs; // open library name -> object
+  // TODO: typdef these maps
+  // e.g. to "RegistryEntry" or something and document it with autodoc
+  PluginInventory registry;
+  LibraryCollection open_libs;
   ProtoPluginLibrary* get_plugin_lib(string type, string name,Args* args);
   bool read_dll(string libfile);
   bool read_registry_file();

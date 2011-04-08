@@ -5,6 +5,7 @@ SUBDIRS = \
 	kernel \
 	motelink \
 	sim \
+	core_plugins \
 	tests \
 	.
 
@@ -53,3 +54,22 @@ p2b_LDFLAGS = \
 
 pkginclude_HEADERS = \
 	proto_version.h
+
+# registry builder:
+buildregistrydir=$(plugindir)
+buildregistry_SOURCES = \
+	createRegistry.cpp
+buildregistry_LDADD = \
+	shared/libshared.la \
+	compiler/libcompiler.la \
+	sim/libsim.la \
+	sim/libprotosimplugin.la \
+	shared/libshared.la \
+	compiler/libcompiler.la
+buildregistry_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}
+buildregistry_PROGRAMS = \
+	buildregistry
+
+# run the registry builder once everything's installed
+install-data-hook:
+	$(buildregistrydir)/buildregistry

@@ -415,12 +415,12 @@ void process_app_args(Args *args) {
   // Should we just display the plugin inventory and exit?
   if(args->extract_switch("--plugins")) {
     DefaultsPlugin::register_defaults();
-    map<string, map<string,string> > *pm = plugins.get_plugin_inventory();
+    const PluginInventory *pm = plugins.get_plugin_inventory();
     cout << "Displaying available plugins (by type):\n";
-    map<string, map<string,string> >::iterator i = pm->begin();
+    PluginInventory::const_iterator i = pm->begin();
     for(; i!=pm->end(); i++) {
       cout << "  " << i->first << ": ";
-      map<string,string>::iterator j = i->second.begin();
+      PluginTypeInventory::const_iterator j = i->second.begin();
       if(j!=i->second.end()) { cout << j->first; j++; }
       for(; j!=i->second.end(); j++) { cout << ", " << j->first; }
       cout << endl;

@@ -20,15 +20,17 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 class SpatialComputer; // compiler plugins may not know the content of SCs.
 
+// TODO: document this
 class ProtoPluginLibrary {
  public:
-  // Used to get simulator Layers, Distributions, and TimeModels
+  /// Used to get simulator Layers, Distributions, and TimeModels
   virtual void* get_sim_plugin(string type, string name, Args* args, 
                                SpatialComputer* cpu, int n) { return NULL; }
-  // Used to get compiler extensions
+  /// Used to get compiler extensions
   virtual void* get_compiler_plugin(string type, string name, Args* args,
                                     Compiler* c) 
     {return NULL; }
+  /// This defines the format that is required for registry entries
   static string registry_entry(string type,string name,string dll)
     { return type+" "+name+" = "+dll+"\n"; }
 };

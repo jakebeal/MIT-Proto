@@ -14,15 +14,26 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "plugin_manager.h"
 
 // Registry location:
-string ProtoPluginManager::PLUGIN_DIR = string(PLUGINDIR);
-string ProtoPluginManager::REGISTRY_FILE_NAME = "registry.txt";
-string ProtoPluginManager::PLATFORM_DIR = string(PROTOPLATDIR);
-string ProtoPluginManager::PLATFORM_OPFILE = "platform_ops.proto";
+const string ProtoPluginManager::PLUGIN_DIR = string(PLUGINDIR);
+const string ProtoPluginManager::REGISTRY_FILE_NAME = "registry.txt";
+const string ProtoPluginManager::PLATFORM_DIR = string(PROTOPLATDIR);
+const string ProtoPluginManager::PLATFORM_OPFILE = "platform_ops.proto";
 
 ProtoPluginManager plugins; // global manager, initializes on first use
 
 ProtoPluginManager::ProtoPluginManager() {
   initialized = false;
+}
+
+const PluginInventory* ProtoPluginManager::get_plugin_inventory() { 
+  ensure_initialized(NULL);
+  return &registry;
+}
+
+void ProtoPluginManager::register_lib(string type,string name,string key,
+                                      ProtoPluginLibrary* lib) {
+  registry[type][name] = key;
+  open_libs[key] = lib;
 }
 
 void ProtoPluginManager::ensure_initialized(Args* args) {
@@ -114,7 +125,8 @@ bool ProtoPluginManager::read_registry_file() {
   return true;
 }
 
-ProtoPluginLibrary* ProtoPluginManager::get_plugin_lib(string type,string name,Args* args){
+ProtoPluginLibrary* ProtoPluginManager::get_plugin_lib(string type, string name,
+                                                       Args* args) {
   ensure_initialized(args);
   
   bool known = registry[type].count(name);

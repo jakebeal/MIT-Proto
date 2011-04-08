@@ -79,6 +79,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/compiler/Makefile
                  src/compiler/unittests/Makefile
+                 src/core_plugins/Makefile
                  src/kernel/Makefile
                  src/motelink/Makefile
                  src/shared/Makefile
