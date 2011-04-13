@@ -170,10 +170,11 @@ identifier again.  Definitions in subdirectories can be accessed with
 identifiers of the form {\tt $dir$/$name$}.
 
 % Note: not necessarily global scope: there can be purely local fn defs
-\syntactic{(def .name (.arg ...) ,@body)}{A}{Define a function \var{name}
+\syntactic{(def .name (.arg ...) ,@body)}{\lambda}{Define a function \var{name}
   in the current scope, with as many arguments as there are \var{arg}
   identifiers.  The body is evaluated within an extended scope where
-  the \var{arg} identifiers are bound to arguments to the function.}
+  the \var{arg} identifiers are bound to arguments to the function. Returns
+  the lambda that is defined.}
 
 \todo{Should defs in subdirectories default to include the subdirectory name?}
 
