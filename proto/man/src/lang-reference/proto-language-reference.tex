@@ -1,11 +1,12 @@
 \documentclass{article}
+\usepackage{../proto-docs}
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{../svn-multi}
 
 \title{Proto Language Reference}
 \author{By the authors of MIT Proto}
-\date{Last Updated: \today}
+\date{\releasetag}
 
 \newcommand\todo[1]{\immediate\write16{TODO: #1}}
 \newcommand\broken{{\em Not working!}}
@@ -50,7 +51,7 @@ functions and compiler pattern rewriting, and yet others are written
 in Proto as part of the core library ({\tt lib/core/}).  This document
 does not distinguish between these implementation decisions.
 
-\input{../credits.tex}
+\credits{}
 
 
 \section{Notation}
