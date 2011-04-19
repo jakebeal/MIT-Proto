@@ -729,7 +729,10 @@ void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
   if(is_own_dump_file) { // manage the file ourselves
     char buf[1000];
     // ensure that the directory exists
-    snprintf(buf, 1000, "mkdir -p %s", dump_dir); system(buf);
+    snprintf(buf, 1000, "mkdir -p %s", dump_dir); 
+    if(!system(buf)) {
+       // dump_dir already exists - ignore
+    }
     // open the file
     if(time_in_name)
       sprintf(buf,"%s/%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);

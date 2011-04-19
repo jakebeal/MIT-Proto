@@ -2969,7 +2969,9 @@ void PaleoCompiler::init_standalone(Args* args) {
     char buf[1000];
     // ensure that the directory exists
     snprintf(buf, 1000, "mkdir -p %s", dump_dir);
-    (void)system(buf);
+    if(!system(buf)) {
+       // dump_dir already exists - ignore
+    }
     sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
     
     dump_target=fopen(buf,"w");

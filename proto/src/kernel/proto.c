@@ -1321,6 +1321,34 @@ INLINE void dump_stack (MACHINE *m) {
   }
 }
 
+/** 
+ * PROTO-delft-style stack dump
+ */
+/*
+INLINE void dump_stack (MACHINE *m) {
+  if (is_tracing(m)) {
+    int i;
+    int max_dump = 6; // 99
+    if( MAX(m->sp - m->stack, m->ep - m->env) == 0 )
+       return;
+    POST("-------------------\n");
+    POST("pos \t stack \t env\n");
+    POST("--- \t ----- \t ---\n");
+    for( i=MAX(MAX(m->sp - m->stack, m->ep - m->env),max_dump)-1; i >= 0; i-- ) {
+       POST( " %d \t ", i);
+       if(m->sp - m->stack >= i) 
+          post_data(PEEK(i));
+       POST("  \t ");
+       if(m->ep - m->env   >= i) 
+          post_data(ENV_PEEK(i));
+       POST("  \t ");
+       POST("\n");
+    }
+    POST("-------------------\n");
+  }
+}
+*/
+
 typedef union {
   flo val;
   uint8_t bytes[4];
@@ -1720,11 +1748,11 @@ DATA *eval(DATA *res, FUN_VAL fun) {
    NUM_PUSH(m->id); break;
       case FLEX_OP:
    flex(NUM_PEEK(0)); break;
-      case FUNCALL_N: case FUNCALL_0: case FUNCALL_1: 
-      case FUNCALL_2: case FUNCALL_3: case FUNCALL_4: 
+      case FUNCALL_OP: case FUNCALL_0_OP: case FUNCALL_1_OP: 
+      case FUNCALL_2_OP: case FUNCALL_3_OP: case FUNCALL_4_OP: 
    {
       //n = number of arguments
-      int n = (op == FUNCALL_N) ? NXT_OP(m) : op - FUNCALL_0;
+      int n = (op == FUNCALL_OP) ? NXT_OP(m) : op - FUNCALL_0_OP;
       //pop function off stack
       FUN_VAL fun = FUN_GET(POP(res));
       //pop arguments, put them in env

@@ -17,7 +17,7 @@ map<int,string> opnames;
 map<string,int> primitive2op;
 map<int,int> op_stackdeltas;
 
-// instructions like SQRT_OP that have no special rules or pointers
+/// instructions like SQRT_OP that have no special rules or pointers
 struct Block;
 struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   Instruction *next,*prev; // sequence links
@@ -36,6 +36,7 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   }
   virtual void print(ostream* out=0) {
     *out << (opnames.count(op) ? opnames[op] : "<UNKNOWN OP>");
+    //*out << "[" << location << "]";
     for(int i=0;i<parameters.size();i++) { *out << ", " << i2s(parameters[i]); }
   }
   
@@ -63,7 +64,7 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   int padd16(uint16_t param) { padd(param>>8); padd(param & 0xFF); }
 };
 
-// A block is a sequence of instructions
+/// A block is a sequence of instructions
 struct Block : public Instruction { reflection_sub(Block,Instruction);
   Instruction* contents;
   Block(Instruction* chain);
@@ -176,8 +177,10 @@ string print_raw_chain(Instruction* chain, string line, int line_len,
   return line;
 }
 
-// walk through instructions, printing:
-// compactness: 0: one instruction/line, 1: 70-char lines, 2: single line
+/** 
+ * walk through instructions, printing:
+ * compactness: 0: one instruction/line, 1: 70-char lines, 2: single line
+ */
 void print_chain(Instruction* chain, ostream* out, int compactness=0) {
   int line_len = (compactness ? (compactness==1 ? 70 : -1) : 0);
   string header = "uint8_t script[] = {"; 
@@ -213,6 +216,7 @@ struct Global : public Instruction { reflection_sub(Global,Instruction);
   Global(OPCODE op) : Instruction(op) { index = -1; }
 };
 
+/// DEF_VM
 struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
   int export_len, n_exports, n_globals, n_states, max_stack, max_env;
   iDEF_VM() : Instruction(DEF_VM_OP) 
@@ -226,10 +230,22 @@ struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
     padd16(max_stack+1); padd(max_env); // +1 for enclosing function call
     Instruction::output(buf);
   }
+  /*
+  virtual void print(ostream* out=0) {
+     *out << "VM Definition "
+          << "[ export_len:" << export_len
+          << ", n_exports:"  << n_exports
+          << ", n_globals:"  << n_globals
+          << ", n_states:"   << n_states
+          << ", max_stack:"  << max_stack
+          << ", max_env:"    << max_env
+          << " ]";
+  }
+  */
   int size() { return 9; }
 };
 
- // DEF_FUN_k_OP, DEF_FUN_OP, DEF_FUN16_OP
+/// DEF_FUN_k_OP, DEF_FUN_OP, DEF_FUN16_OP
 struct iDEF_FUN : public Global { reflection_sub(iDEF_FUN,Global);
   Instruction* ret;
   int fun_size;
@@ -238,7 +254,7 @@ struct iDEF_FUN : public Global { reflection_sub(iDEF_FUN,Global);
   int size() { return (fun_size<0) ? -1 : Instruction::size(); }
 };
 
-// DEF_TUP_OP, DEF_VEC_OP, DEF_NUM_VEC_OP, DEV_NUM_VEC_k_OP
+/// DEF_TUP_OP, DEF_VEC_OP, DEF_NUM_VEC_OP, DEV_NUM_VEC_k_OP
 struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
   int size;
   iDEF_TUP(int size,bool literal=false) : Global(DEF_TUP_OP) { 
@@ -256,7 +272,7 @@ struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
   }
 };
 
-// LET_OP, LET_k_OP
+/// LET_OP, LET_k_OP
 struct iLET : public Instruction { reflection_sub(iLET,Instruction);
   Instruction* pop;
   CEset(Instruction*) usages;
@@ -264,7 +280,7 @@ struct iLET : public Instruction { reflection_sub(iLET,Instruction);
   bool resolved() { return pop!=NULL && Instruction::resolved(); }
 };
 
-// REF_OP, REF_k_OP, GLO_REF16_OP, GLO_REF_OP, GLO_REF_k_OP
+/// REF_OP, REF_k_OP, GLO_REF16_OP, GLO_REF_OP, GLO_REF_k_OP
 struct Reference : public Instruction { reflection_sub(Reference,Instruction);
   Instruction* store; // either an iLET or a Global
   int offset; bool vec_op;
@@ -304,7 +320,7 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
   }
 };
 
-// IF_OP, IF_16_OP, JMP_OP, JMP_16_OP
+/// IF_OP, IF_16_OP, JMP_OP, JMP_16_OP
 struct Branch : public Instruction { reflection_sub(Branch,Instruction);
   Instruction* after_this;
   int offset; bool jmp_op;
@@ -320,6 +336,49 @@ struct Branch : public Instruction { reflection_sub(Branch,Instruction);
     } else if(o < 65536) { op = (jmp_op?JMP_16_OP:IF_16_OP); padd16(o);
     } else ierror("Branch reference too large: "+i2s(o));
   }
+};
+
+/** 
+ * Class for handling instructions to call functions
+ * (e.g., FUNCALL_0_OP, FUNCALL_1_OP, FUNCALL_OP, etc.)
+ */
+struct FunctionCall : public Instruction { reflection_sub(FunctionCall,Instruction);
+   public:
+      CompoundOp* compoundOp;
+
+      /**
+       * Creates a new function call instruction.
+       */
+      FunctionCall(CompoundOp* compoundOpParam)
+         : Instruction(FUNCALL_0_OP) {
+         compoundOp = compoundOpParam;
+         env_delta = getNumParams(compoundOp);
+         op = newFunCallInstr(env_delta)->op;
+         stack_delta = newFunCallInstr(env_delta)->stack_delta;
+      }
+   private:
+      /**
+       * @returns the number of parameters of this function call
+       * @TODO: this needs to be smarter about how it handles &rest elements.
+       */
+      static int getNumParams(CompoundOp* compoundOp) {
+         if(!compoundOp->signature->optional_inputs.empty() ||
+            compoundOp->signature->rest_input != NULL)
+            ierror("Don't know how to handle variable parameter length functions, as in " + ce2s(compoundOp));
+         return compoundOp->signature->n_fixed();
+      }
+
+      /**
+       * Creates a new FUNCALL instruction where index is the number of input
+       * parameters to the function.
+       */
+      static Instruction* newFunCallInstr(int index) {
+         Instruction* ret = NULL;
+         if(index < 5) ret = new Instruction(FUNCALL_0_OP + index, index);
+         else if(index < 256) {ret = new Instruction(FUNCALL_OP, index); ret->padd(index);}
+         else ierror("Number of function parameters too large: "+i2s(index));
+         return ret;
+      }
 };
 
 /*****************************************************************************
@@ -423,7 +482,7 @@ public:
             r->set_offset(rh-sh);
           }
         }
-      }
+      } 
       if(!stack_maxes.count(chain) || !env_maxes.count(chain))
         return; // wasn't able to entirely resolve
       max_stack = MAX(max_stack,stack_maxes[chain]);
@@ -433,7 +492,10 @@ public:
     }
     V2 << ss << endl << es << endl;
     int final = stack_height[chain_end(root)];
-    if(final) ierror("Stack resolves to non-zero height: "+i2s(final));
+    if(final) {
+       print_chain(chain_start(root), cpout);
+       ierror("Stack resolves to non-zero height: "+i2s(final));
+    }
     iDEF_VM* dv = (iDEF_VM*)root;
     if(dv->max_stack!=max_stack || dv->max_env!=max_env) {
       dv->max_stack=max_stack; dv->max_env=max_env;
@@ -443,8 +505,12 @@ public:
     }
   }
   void maybe_set_stack(Instruction* i,int neth,int maxh) {
-    if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh)
-      { stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); }
+     V4 << "    Trying to set stack for " << ce2s(i) 
+        << " to (" << neth << ", " << maxh << ")" << endl;
+     if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh) { 
+        stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); 
+        V4 << "    `-Set stack." << endl;
+     }
   }
   void maybe_set_env(Instruction* i,int neth, int maxh) {
     if(!env_height.count(i) || env_height[i]!=neth || env_maxes[i]!=maxh) 
@@ -453,15 +519,26 @@ public:
   void act(Instruction* i) {
     // stack heights:
     int baseh=-1;
+    // base case: i is first instruction.
     if(!i->prev && (!i->container || (i->container && !i->container->prev))) {
       baseh=0;
-    } else if(!i->prev && stack_height.count(i->container->prev)) { 
+    }
+    // i is the first instruction of a block and inst prior to block has been
+    // resolved
+    else if(!i->prev && stack_height.count(i->container->prev)) { 
       baseh = stack_height[i->container->prev];
-    } else if(i->prev && stack_height.count(i->prev)) {
+    }
+    // i has a previous instruction whose value has been resolved
+    else if(i->prev && stack_height.count(i->prev)) {
       baseh = stack_height[i->prev];
     }
+    // if the instruction whose value i depends on has been resolved, then
+    // resolve i's value
     if(baseh>=0) 
       maybe_set_stack(i,baseh+i->net_stack_delta(),baseh+i->max_stack_delta());
+    else
+      V4 << "Instruction " << ce2s(i) << " could not be resolved yet." << endl;
+
 
     // env heights:
     baseh = -1;
@@ -646,8 +723,11 @@ public:
   // to end up in an infinite loop when location is being nudged
   // such that reference lengths change, which could change op size
   // and therefore location...
-  ResolveLocations(ProtoKernelEmitter* parent,Args* args) 
-  { verbosity = parent->verbosity; }
+  ProtoKernelEmitter* emitter;
+  ResolveLocations(ProtoKernelEmitter* parent,Args* args) { 
+     verbosity = parent->verbosity; 
+     emitter = parent;
+  }
   void print(ostream* out=0) { *out<<"ResolveLocations"; }
   void maybe_set_location(Instruction* i, int l) {
     if(i->start_location() != l) { 
@@ -659,7 +739,7 @@ public:
     g_max = MAX(g_max,l+1);
     if(((Global*)i)->index != l) { 
       V4 << "   Setting index of "<<ce2s(i)<<" to "<<l<<endl;
-      ((Global*)i)->index=l; note_change(i); 
+      ((Global*)i)->index=l; note_change(i);
     }
   }
   void act(Instruction* i) {
@@ -677,6 +757,20 @@ public:
         ptr->dependents.insert(i); // make sure we'll get triggered when it sets
         if(g_prev->index!=-1) maybe_set_index(i,g_prev->index+1); 
       } else { maybe_set_index(i,0); }
+    }
+    //if we can resolve the function call to its global index
+    if(i->isA("FunctionCall")) {
+       if(emitter->globalNameMap.count(((FunctionCall*)i)->compoundOp)) {
+          CompoundOp* compoundOp = ((FunctionCall*)i)->compoundOp;
+          CompilationElement* ce = emitter->globalNameMap[compoundOp];
+          int index = -1;
+          if(ce && ce->isA("Global"))
+             index = ((Global*)ce)->index;
+          if(index >= 0 && i->prev && i->prev->isA("Reference")) {
+             ((Reference*)i->prev)->set_offset(index);
+             note_change(i);
+          }
+       }
     }
   }
   int g_max; // highest global index seen
@@ -711,7 +805,10 @@ public:
   CheckResolution(ProtoKernelEmitter* parent) { verbosity = parent->verbosity; }
   void print(ostream* out=0) { *out<<"CheckResolution"; }
   void act(Instruction* i) { 
-    if(!i->resolved()) ierror("Instruction resolution failed for "+i->to_str());
+    if(!i->resolved()) {
+       print_chain(chain_start(i), cpout);
+       ierror("Instruction resolution failed for "+i->to_str());
+    }
   }
 };
 
@@ -809,6 +906,22 @@ Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l,
   }
   // Catch-all fall-through case:
   ierror("Don't know how to emit literal: "+l->to_str());
+}
+
+/**
+ * Helper function to create the proper REF_OP
+ * (e.g., REF_0_OP, REF_OP 12, etc.)
+ */
+Instruction* newRefInstr(int index) {
+   Instruction* ret = NULL;
+   if(index < MAX_REF_OPS) ret = new Instruction(REF_0_OP + index);
+   else if(index < 256) {ret = new Instruction(REF_OP); ret->padd(index);}
+   else ierror("Environment reference too large: "+i2s(index));
+   return ret;
+}
+
+Instruction* ProtoKernelEmitter::parameter_to_instruction(Parameter* p) {
+   return newRefInstr(p->index);
 }
 
 // adds a tuple to the global declarations, then references it in vector op i
@@ -1006,13 +1119,27 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     chain_i(&chain,tree2instructions(oi->inputs[i]));
   // second, add the operation
   if(oi->op==Env::core_op("reference")) {
+    V4 << "    Reference is: " << ce2s(oi->op) << endl;
     if(oi->inputs.size()!=1) ierror("Bad number of reference inputs");
     Instruction* frag = chain_split(chain);
     if(frag) fragments[oi->inputs[0]->producer] = frag;
   } else if(oi->op->isA("Primitive")) {
+    V4 << "    Primitive is: " << ce2s(oi->op) << endl;
     chain_i(&chain,primitive_to_instruction(oi));
   } else if(oi->op->isA("Literal")) { 
+    V4 << "    Literal is: " << ce2s(oi->op) << endl;
     chain_i(&chain,literal_to_instruction(((Literal*)oi->op)->value,oi));
+  } else if(oi->op->isA("Parameter")) { 
+    V4 << "    Parameter is: " << ce2s(oi->op) << endl;
+    chain_i(&chain,parameter_to_instruction((Parameter*)oi->op));
+  } else if(oi->op->isA("CompoundOp")) { 
+    V4 << "    Compound OP is: " << ce2s(oi->op) << endl;
+    CompoundOp* cop = ((CompoundOp*)oi->op);
+    Global* def_fun_instr = ((Global*)globalNameMap[cop]);
+    Reference* glo_ref = new Reference(def_fun_instr,oi);
+    chain_i(&chain,glo_ref); //needs offset to resolve
+    Instruction* fun_call = new FunctionCall(cop);
+    chain_i(&chain,fun_call);
   } else { // also CompoundOp, Parameter
     ierror("Don't know how to emit instruction for "+oi->op->to_str());
   }
@@ -1053,6 +1180,10 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
     chain_i(&chain, all);
   }
   chain_i(&chain, fnstart->ret = new Instruction(RET_OP));
+  if(root->bodyOf!=NULL) {
+     V3 << "  Adding fn:" << root->bodyOf->name << " to globalNameMap" << endl;
+     globalNameMap[root->bodyOf] = fnstart;
+  }
   return fnstart;
 }
 

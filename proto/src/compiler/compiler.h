@@ -135,6 +135,7 @@ class CodeEmitter {
 };
 
 class InstructionPropagator; class Instruction;
+
 class ProtoKernelEmitter : public CodeEmitter {
  public:
   bool is_dump_hex, paranoid;
@@ -144,12 +145,15 @@ class ProtoKernelEmitter : public CodeEmitter {
   ProtoKernelEmitter(NeoCompiler* parent, Args* args);
   uint8_t* emit_from(DFG* g, int* len);
 
+  /// map of compound ops -> instructions (in global mem)
+  map<CompoundOp*,CompilationElement*> globalNameMap;
+
  private:
   vector<InstructionPropagator*> rules;
 
   /// global & env storage
   map<Field*,CompilationElement*, CompilationElement_cmp> memory;
-  // fragments floating up to find a home
+  /// fragments floating up to find a home
   map<OI*,CompilationElement*, CompilationElement_cmp> fragments;
 
   /// list of scalar/vector ops
@@ -160,6 +164,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction* tree2instructions(Field* f);
   Instruction* primitive_to_instruction(OperatorInstance* oi);
   Instruction* literal_to_instruction(ProtoType* l, OperatorInstance* context);
+  Instruction* parameter_to_instruction(Parameter* param);
   Instruction* dfg2instructions(AM* g);
 
   /// allocates globals for vector ops
