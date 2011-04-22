@@ -42,6 +42,7 @@ struct ProtoType : public CompilationElement {
   virtual void print(ostream* out=0) { *out << "<Any>"; }
   // default means of testing for supertype-ness
   virtual bool supertype_of(ProtoType* sub){ return sub->isA(this->type_of()); }
+  static ProtoType* clone(ProtoType* t); // copy the type and its attributes
   static bool equal(ProtoType* a, ProtoType* b)
   { return a->supertype_of(b) && b->supertype_of(a); }
   static ProtoType* lcs(ProtoType* a, ProtoType* b); // Least Common Supertype
@@ -426,7 +427,7 @@ class IRPropagator : public CompilationElement {
   // note_change: adds neighbors to the worklist
   void note_change(AM* am); void note_change(Field* f); 
   void note_change(OperatorInstance* oi);
-  void maybe_set_range(Field* f,ProtoType* range); // change & note if different
+  bool maybe_set_range(Field* f,ProtoType* range); // change & note if different
  private:
   void queue_nbrs(AM* am, int marks=0); void queue_nbrs(Field* f, int marks=0);
   void queue_nbrs(OperatorInstance* oi, int marks=0);

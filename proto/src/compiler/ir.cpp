@@ -785,10 +785,13 @@ void IRPropagator::note_change(Field* f)
 void IRPropagator::note_change(OperatorInstance* oi) 
 { queued.clear(); any_changes=true; src=oi; queue_nbrs(oi); }
 
-void IRPropagator::maybe_set_range(Field* f,ProtoType* range) {
+bool IRPropagator::maybe_set_range(Field* f,ProtoType* range) {
   if(!ProtoType::equal(f->range,range)) { 
-    V2<<"  Changing type of "<<ce2s(f)<<" to "<<ce2s(range)<<endl;
-    f->range=range; note_change(f);
+    V2<<"Changing type of "<<ce2s(f)<<" to "<<ce2s(range)<<endl;
+    f->range=range; note_change(f); return true;
+  } else {
+    V3<<"NOT changing type of "<<ce2s(f)<<" to "<<ce2s(range)<<endl;
+    return false;
   }
 }
 
@@ -822,7 +825,8 @@ bool IRPropagator::propagate(DFG* g) {
         { act(am); steps_remaining--; }
     }
   }
-  if(steps_remaining<=0) ierror("Aborting due to apparent infinite loop.");
+  if(steps_remaining<=0) 
+    ierror("Aborting "+ce2s(this)+" due to apparent infinite loop.");
   postprop();
   return any_changes;
 }

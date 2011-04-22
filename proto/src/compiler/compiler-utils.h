@@ -62,10 +62,10 @@ void terminate_on_error();
 
 // Standard levels for verbosity:
 #define V1 if(verbosity>=1) *cpout // Major stages
-#define V2 if(verbosity>=2) *cpout // Actions
-#define V3 if(verbosity>=3) *cpout // Fine detail
-#define V4 if(verbosity>=4) *cpout
-#define V5 if(verbosity>=5) *cpout
+#define V2 if(verbosity>=2) *cpout << " "  // Actions
+#define V3 if(verbosity>=3) *cpout << "  " // Fine detail
+#define V4 if(verbosity>=4) *cpout << "   "
+#define V5 if(verbosity>=5) *cpout << "    "
 
 /****** REFLECTION ******/
 

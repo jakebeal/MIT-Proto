@@ -11,10 +11,56 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "nicenames.h"
 
 /*****************************************************************************
+ *  CLONING                                                                  *
+ *****************************************************************************/
+
+ProtoType* ProtoType::clone(ProtoType* t) {
+  if(t->type_of()=="ProtoType") {
+    ProtoType* newt = new ProtoType();
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoLocal") {
+    ProtoLocal* newt = new ProtoLocal();
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoTuple") { 
+    ProtoTuple* newt = new ProtoTuple(T_TYPE(t));
+    return newt; // inheritance handled in constructor
+  } else if(t->type_of()=="ProtoSymbol") {
+    ProtoSymbol* oldt = (ProtoSymbol*)t;
+    ProtoSymbol* newt = 
+      (oldt->constant? new ProtoSymbol(oldt->value) : new ProtoSymbol());
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoNumber") {
+    ProtoNumber* newt = new ProtoNumber();
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoScalar") {
+    ProtoScalar* oldt = S_TYPE(t);
+    ProtoScalar* newt = 
+      (oldt->constant? new ProtoScalar(oldt->value) : new ProtoScalar());
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoBoolean") {
+    ProtoScalar* oldt = S_TYPE(t);
+    ProtoBoolean* newt = 
+      (oldt->constant? new ProtoBoolean(oldt->value) : new ProtoBoolean());
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoVector") {
+    ProtoTuple* newt = new ProtoVector(T_TYPE(t));
+    return newt; // inheritance handled in constructor
+  } else if(t->type_of()=="ProtoLambda") {
+    ProtoLambda* newt = new ProtoLambda(L_VAL(t));
+    newt->inherit_attributes(t); return newt;
+  } else if(t->type_of()=="ProtoField") {
+    ProtoField* newt = new ProtoField(F_VAL(t));
+    newt->inherit_attributes(t); return newt;
+  }
+  ierror("Don't know how to clone ProtoType "+t->type_of());
+}
+
+/*****************************************************************************
  *  SUPERTYPE RELATIONS                                                      *
  *****************************************************************************/
 
 bool ProtoTuple::supertype_of(ProtoType* sub) { 
+  if(sub==NULL || this==NULL) ierror("supertype_of called on NULL type.");
   if(!sub->isA(type_of())) return false; // not supertype of non-tuples
   ProtoTuple *tsub = dynamic_cast<ProtoTuple*>(sub);
   // I'm bounded but sub is not 
@@ -244,6 +290,7 @@ ProtoType* ProtoField::gcs(ProtoType* t) {
  *  PRINTING                                                                 *
  *****************************************************************************/
 void ProtoTuple::print(ostream* out) { 
+  //*out<<"[ID="<<elmt_id<<"]";
   *out << "<"; if(bounded) *out << types.size() << "-"; *out << "Tuple";
   for(int i=0;i<types.size();i++) { if(i) *out<<","; types[i]->print(out); }
   if(!bounded) *out<<"...";

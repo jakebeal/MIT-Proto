@@ -223,13 +223,15 @@
 ;	   		   (lambda (local) (unlit (nth (inputs arg0) 1)))
 ;			   (unlit (nth (inputs arg1) 0)))
 ;  (unlit (output arg1)) :space :time)
-(primitive fold-hood-plus (lambda lambda local) local :space :time
-  :type-constraints ((= value (unlit (output arg1)))
-                    (= (inputs arg0) (tupof (output arg1) (output arg1)))
-                    (= (output arg0) (unlit (inputs arg0)))
-                    (= (inputs arg1) (tupof arg2))
-                    (= (output arg1) (unlit (nth (inputs arg0) 1)))
-                    (= arg2 (unlit (nth (inputs arg1) 0)))))
+(primitive fold-hood-plus (folder|lambda processor|lambda export|local) local
+  :space :time
+  :type-constraints ((= value (unlit (output processor)))
+                     (= (inputs folder) 
+                        (tupof (unlit (output processor)) 
+                               (unlit (output processor))))
+                     (= (output folder) (unlit (nth (inputs folder) 0)))
+                     (= (inputs processor) (tupof export))
+                     (= (output processor) (unlit (nth (inputs folder) 1)))))
 
 ;; Time
 (primitive dt () scalar :time)

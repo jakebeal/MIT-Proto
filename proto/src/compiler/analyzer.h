@@ -32,12 +32,12 @@ class TypeConstraintApplicator {
   int verbosity;
   TypeConstraintApplicator(IRPropagator* parent) {
     (parent)?verbosity=parent->verbosity:verbosity=0;
-    parentRoot = parent;
+    this->parent = parent;
   }
   bool apply_constraint(OperatorInstance* oi, SExpr* constraint);
   bool apply_constraints(OperatorInstance* oi, SExpr* constraints);
  private:
-  IRPropagator* parentRoot;
+  IRPropagator* parent;
   ProtoType* get_op_return(Operator* op);
   ProtoTuple* get_all_args(OperatorInstance* oi);
   ProtoType* get_nth_arg(OperatorInstance* oi, int n);
@@ -53,7 +53,7 @@ class TypeConstraintApplicator {
   ProtoType* get_ref_output(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_list(OperatorInstance* oi, SExpr* ref);
   ProtoType* get_ref(OperatorInstance* oi, SExpr* ref);
-  bool maybe_change_type(ProtoType** type,ProtoType* value);
+  bool assert_range(Field*,ProtoType* range);
   bool assert_nth_arg(OperatorInstance* oi, int n, ProtoType* value);
   bool assert_all_args(OperatorInstance* oi, ProtoType* value);
   bool assert_op_return(Operator* f, ProtoType* value);

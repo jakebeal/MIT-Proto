@@ -1219,7 +1219,7 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
     }
     if(!changed) break;
     if(i==(max_loops-1))
-      compile_warn("Analyzer giving up after "+i2s(max_loops)+" loops");
+      compile_warn("Emitter analyzer giving up after "+i2s(max_loops)+" loops");
   }
   CheckResolution rchecker(this); rchecker.propagate(start);
   

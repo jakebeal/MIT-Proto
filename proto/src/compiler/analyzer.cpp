@@ -209,10 +209,10 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
 
     //get result if possible
     if(index != NULL && tup != NULL && tup->types.size() > index->value) {
-      V4<<" - tup[index] = " << ce2s(tup->types[index->value]) << endl;
+      V4<<"- tup[index] = " << ce2s(tup->types[index->value]) << endl;
       return tup->types[index->value];
     } else if (tup != NULL) {
-      V4<<" - can't get the nth type yet... trying LCS"<< endl;
+      V4<<"- can't get the nth type yet... trying LCS"<< endl;
       ProtoType* ret = NULL;  
       if(tup->types.size() > 0)
         ret = tup->types[0];
@@ -344,10 +344,13 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     // we only know the length of the inputs if there's no &rest
     ProtoTuple* ret = new ProtoTuple(!sig->rest_input);
     for(int i=0; i<sig->n_fixed(); i++) {
-      ret->add(sig->nth_type(i));
+      ProtoType* elt = ProtoType::clone(sig->nth_type(i));
+      ret->add(elt);
+      elt->mark("no-type-assertion");
     }
     if(sig->rest_input!=NULL) // rest is unbounded end to tuple
       ret->add(sig->rest_input);
+    ret->mark("no-type-assertion");
     return ret;
   }
 
@@ -409,8 +412,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   ProtoType* TypeConstraintApplicator::get_ref(OperatorInstance* oi, SExpr* ref) {
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
-    V4<<" get_ref on " << ce2s(ref) << " from " << ce2s(oi) << endl;
-    V4<<"    Getting type reference for "<<ce2s(ref)<<endl;
+    V4<<"get_ref on " << ce2s(ref) << " from " << ce2s(oi) << endl;
+    V4<<"Getting type reference for "<<ce2s(ref)<<endl;
     if(ref->isSymbol()) {
       // Named input/output argument:
       int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
@@ -422,23 +425,19 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       if(*ref=="return") return get_op_return(oi->op);
     } else if(ref->isList()) {
       ProtoType* ret = get_ref_list(oi,ref);
-      V4<<" get_ref returns: " << ce2s(ret) << endl;
+      V4<<"get_ref returns: " << ce2s(ret) << endl;
       return ret;
     }
     ierror(ref,"Unknown type reference: "+ce2s(ref)); // temporary, to help test suite
     return type_err(ref,"Unknown type reference: "+ce2s(ref));
   }
 
-  /********** TYPE ASSERTION **********/
-  bool TypeConstraintApplicator::maybe_change_type(ProtoType** type,ProtoType* value) {
-    DEBUG_FUNCTION(__FUNCTION__);
-    if((*type)->supertype_of(value) && !value->supertype_of(*type)) {
-      V2<<"  Changing type "<<ce2s(*type)<<" to "<<ce2s(value)<<endl;
-      *type = value; return true;
-    }
-    V4<<"  NOT Changing type "<<ce2s(*type)<<" to "<<ce2s(value)<<endl;
-    return false;
-  }
+/********** TYPE ASSERTION **********/
+bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
+  // Assertion only narrows types, it does not widen them:
+  if(f->range->supertype_of(range)) { return parent->maybe_set_range(f,range); }
+  else { return false; }
+}
 
   /**
    * Returns true if n is the &rest element of oi
@@ -459,7 +458,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
         for(int i=oi->op->signature->n_fixed(); i<oi->inputs.size(); i++) {
           inputTup->add(oi->inputs[i]->range);
         }
-        V4<<"   assert_nth_arg (rest): oi["<<n<<"]= "<<ce2s(inputTup)<<", val="<<ce2s(value)<<endl;
+        V4<<"assert_nth_arg (rest): oi["<<n<<"]= "<<ce2s(inputTup)<<", val="<<ce2s(value)<<endl;
         // for all the inputs, change their type if necessary
         ProtoTuple* valueTup = T_TYPE(value);
         bool retVal = true;
@@ -471,15 +470,14 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
            } else {
              valType = valueTup->types[i];
            }
-           retVal =
-              maybe_change_type(&oi->inputs[i+oi->op->signature->n_fixed()]->range,
-                                valType);
+           int which_input = i+oi->op->signature->n_fixed();
+           retVal = assert_range(oi->inputs[which_input],valType);
         }
         return retVal;
       }
-      V4<<"   assert_nth_arg: oi["<<n<<"]= "<<ce2s(oi->inputs[n]->range)<<", val="<<ce2s(value)<<endl;
+      V4<<"assert_nth_arg: oi["<<n<<"]= "<<ce2s(oi->inputs[n]->range)<<", val="<<ce2s(value)<<endl;
       if(n<oi->inputs.size())
-        return maybe_change_type(&oi->inputs[n]->range,value);
+        return assert_range(oi->inputs[n],value);
     }
     ierror("Could not find argument "+i2s(n)+" of "+ce2s(oi));
   }
@@ -533,8 +531,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   bool TypeConstraintApplicator::assert_on_ft(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!value->isA("ProtoField")) {
-      if(value->isA("ProtoNumber")) {
-        V4 << "coercing a ProtoNumber into a ProtoField" << endl;
+      if(value->isA("ProtoLocal")) {
+        V4 << "coercing a ProtoLocal into a ProtoField" << endl;
         return assert_ref(oi,ref,new ProtoField(value));
       }
       ierror("'ft' assertion on non-field type: "+ref->to_str());
@@ -597,21 +595,20 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   bool TypeConstraintApplicator::assert_on_last(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* argtype = get_ref(oi, ref);
+    ProtoTuple* tup = NULL;
     if(!argtype->isA("ProtoTuple")) {
-      ProtoTuple* tup = new ProtoTuple();
-      tup->add(value);
-      return assert_ref(oi,ref,tup);
+      V3<<"Coercing "<<ce2s(argtype)<<" to ProtoTuple"<<endl;
+      tup = new ProtoTuple(); tup->add(value);
     } else {
-      ProtoTuple* tup = T_TYPE(argtype);
+      // clone and replace last element
+      tup = new ProtoTuple(T_TYPE(argtype));
       if(tup->bounded) {
-         //last element is value
-         return maybe_change_type(&tup->types[tup->types.size()-1], value);
+        tup->types[tup->types.size()-1] = value;
       } else {
-         //unbounded... add a type
-         tup->types.push_back(value);
+        // can't establish the last value of an unbounded tuple
       }
     }
-    return true;
+    return assert_ref(oi,ref,tup);
   }
 
   /**
@@ -648,8 +645,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     DEBUG_FUNCTION(__FUNCTION__);
     SExpr* next = NULL;
     // get the first arg to LCS
-    V4 << " assert LCS ref:   " << ce2s(ref) << endl;
-    V4 << " assert LCS value: " << ce2s(value) << endl;
+    V4 << "assert LCS ref:   " << ce2s(ref) << endl;
+    V4 << "assert LCS value: " << ce2s(value) << endl;
     ProtoType* compound = getLCS(value,NULL,isRestElement(oi,ref));
     bool ret = assert_ref(oi,ref,compound);
     // get the remaining args to LCS
@@ -657,24 +654,23 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       next = li->get_next("type");
       compound = getLCS(value,compound,isRestElement(oi,next));
       ret = assert_ref(oi,next,compound);
-      V4 << " assert LCS ref:   " << ce2s(next) << endl;
-      V4 << " assert LCS value: " << ce2s(value) << endl;
+      V4 << "assert LCS ref:   " << ce2s(next) << endl;
+      V4 << "assert LCS value: " << ce2s(value) << endl;
     }
     return ret;
   }
 
   /**
-   * Adds items to 'tup' to ensure that it has at least 'index' elements.
-   * Return true if the size changed.
+   * Adds items to an unbounded 'tup' to ensure that it has at least
+   * 'n' elements.  Return true if the size changed.
    */
-  bool TypeConstraintApplicator::fillTuple(ProtoTuple* tup, int index) {
+  bool TypeConstraintApplicator::fillTuple(ProtoTuple* tup, int n) {
+    if(tup->bounded) ierror("Cannot fill a bounded ProtoTuple: "+ce2s(tup));
     bool changed = false;
-    for(int i=tup->types.size(); i<index; i++) {
-      if(tup->isA("ProtoVector")) {
-        tup->add(new ProtoScalar());
-      } else {
-        tup->add(new ProtoType());
-      }
+    for(int i=tup->types.size()-1; i<n; i++) {
+      ProtoType* elt = ProtoType::clone(tup->types[i]); // copy rest element
+      elt->inherit_attributes(tup->types[i]); // pass marks on new non-rest elt
+      tup->add(elt); // add to end of tuple
       changed = true;
     }
     return changed;
@@ -704,36 +700,44 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     //2) ---scalar---
     SExpr* indexExpr = li->get_next("type");
     ProtoType* indexType;
-    if(indexExpr->isScalar())
+    bool changedScalar = false;
+    if(indexExpr->isScalar()) {
       indexType = new ProtoScalar(((SE_Scalar*)indexExpr)->value);
-    else 
+      V4 << "nth assertion found constant index: " << ce2s(indexType) << endl;
+    } else {
       indexType = ProtoType::gcs(get_ref(oi,indexExpr),new ProtoScalar());
+      V4 << "nth assertion found var index type: " << ce2s(indexType) << endl;
+      //we can at least say that the second arg is a <Scalar>
+      changedScalar = assert_ref(oi,indexExpr,S_TYPE(indexType));
+    }
     if(indexType == NULL || !indexType->isA("ProtoScalar")) {
        ierror("'nth' assertion on a non-scalar type: "+indexExpr->to_str()+" (it's a "+indexType->to_str()+")");
     }
-    V4 << " nth assertion found index type: " << ce2s(indexType) << endl;
-    bool changedScalar = assert_ref(oi,indexExpr,S_TYPE(indexType)); //we can at least say that the second arg is a <Scalar>
-
+    
     //3) ---nth of tup---
     tupType = get_ref(oi,next); // re-get the tuple-ized tuple
+    V4 << "asserting nth element "<<ce2s(indexType)<<" as "<<ce2s(value)
+       <<" on "<<ce2s(tupType)<<endl;
+    ProtoTuple* newt = new ProtoTuple(T_TYPE(tupType));
     if(!tupType->isA("ProtoTuple"))
        ierror("'nth' assertion failed to coerce a tuple from type: "+next->to_str()
               +" (it's a "+tupType->to_str()+")");
     bool changedNth = false;
     if(indexType->isLiteral() //we know the index & it's valid
               && (int)S_VAL(indexType) >= 0) {
-      if(T_TYPE(tupType)->bounded) {
-         if((int)S_VAL(indexType) > (int)T_TYPE(tupType)->types.size())
+      int i = S_VAL(indexType);
+      if(newt->bounded) {
+        if(i >= newt->types.size())
            ierror("'nth' assertion index ("+indexType->to_str()+
-                  ") exceeded tuple length of bounded Tuple: "+tupType->to_str());
-         changedNth = maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
+                  ") exceeded tuple length of bounded Tuple: "+ce2s(tupType));
+        newt->types[i] = value;
       } else {
-         //add an extra 1 for an <Any>... at the end of the Tuple
-         int size_of_tup = (int)S_VAL(indexType)+2;
-         changedNth = fillTuple(T_TYPE(tupType),size_of_tup) //extra 1 for <Any>...
-            && maybe_change_type(&T_TYPE(tupType)->types[(int)S_VAL(indexType)],value);
+        int min_size_of_tup = i+1;
+        fillTuple(newt,min_size_of_tup);
+        newt->types[i] = value;
       }
     }
+    changedNth = assert_ref(oi,next,newt);
     return changedTup || changedScalar || changedNth;
   }
   
@@ -797,13 +801,13 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   bool TypeConstraintApplicator::assert_ref(OperatorInstance* oi, SExpr* ref, ProtoType* value) {
     V4<<"=========================="<< endl;
     DEBUG_FUNCTION(__FUNCTION__);
-    V2<<" assert_ref "<< ce2s(ref) << " as " << ce2s(value) << endl;
-    V4<<"    Asserting type "<<ce2s(value)<<" for reference "<<ce2s(ref)<<endl;
+    V2<<"assert_ref "<< ce2s(ref) << " as " << ce2s(value) << endl;
+    V4<<"Asserting type "<<ce2s(value)<<" for reference "<<ce2s(ref)<<endl;
     if(ref->isSymbol()) {
       // Named input/output argument:
       int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
       if(n>=0) return assert_nth_arg(oi,n,value);
-      if(n==-1) return maybe_change_type(&oi->output->range,value);
+      if(n==-1) return assert_range(oi->output,value);
       // "args": a tuple of argument types
       if(*ref=="args") return assert_all_args(oi,value);
       // return: the value of a compound operator's output field
@@ -861,26 +865,26 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     if(!li.has_next())
       { compile_error(constraint,"Empty type constraint"); return false; }
     if(li.on_token("=")) { // types should be identical
-      V4<<"  type constraint: "+ce2s(li.peek_next())<<endl;
+      V4<<"type constraint: "+ce2s(li.peek_next())<<endl;
       SExpr *aref = li.get_next("type reference");
       SExpr *bref=li.get_next("type reference");
       ProtoType *a = get_ref(oi,aref), *b = get_ref(oi,bref);
-      V3<<"  apply_constraint: aref("<<ce2s(aref)<<")="<<ce2s(a)
+      V3<<"apply_constraint: aref("<<ce2s(aref)<<")="<<ce2s(a)
          <<", bref("<<ce2s(bref)<<")="<<ce2s(b) << endl;
       // first, take the GCS
       ProtoType *joint = ProtoType::gcs(a,b);
       if(joint==NULL) { // if GCS shows conflict, attempt to correct
         if(verbosity > 4)
-          parentRoot->root->printdot(cpout);
+          parent->root->printdot(cpout);
         if(!repair_constraint_failure(oi,a,b))
           type_err(oi,"Type constraint "+ce2s(constraint)+" violated: \n  "
                    +a->to_str()+" vs. "+b->to_str()+" at "+ce2s(oi));
       } else { // if GCS succeeded, assert onto referred locations
-        V3<<"  apply_constraint: joint="<<ce2s(joint)<< endl;
+        V3<<"apply_constraint: joint="<<ce2s(joint)<< endl;
         bool ret = assert_ref(oi,aref,joint) | assert_ref(oi,bref,joint);
-        V4<<"  apply_constraint: done"<< endl;
+        V4<<"apply_constraint: done"<< endl;
         if(verbosity > 4)
-          parentRoot->root->printdot(cpout);
+          parent->root->printdot(cpout);
         return ret;
       }
       // if it's OK, then push back:  maybe_set_ref(oi,constraint[i]);
@@ -939,12 +943,12 @@ class TypePropagator : public IRPropagator {
       if(ProtoType::gcs(ftype,ft->hoodtype)) {
         Operator* fo = FieldOp::get_field_op(f->producer);
         if(f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
-          V2<<"  Fieldify pointwise: "<<ce2s(f->producer)<<endl;
+          V2<<"Fieldify pointwise: "<<ce2s(f->producer)<<endl;
           OI* foi = new OperatorInstance(f->producer,fo,f->domain);
           root->relocate_source(c.first,c.second,foi->output);
           note_change(foi); return true; // let constraint retry later...
         } else {
-          V2<<"  Inserting 'local' at "<<ce2s(f)<<endl;
+          V2<<"Inserting 'local' at "<<ce2s(f)<<endl;
           OI* local = new OI(f->producer,Env::core_op("local"),f->domain);
           local->add_input(f);
           root->relocate_source(c.first,c.second,local->output);
@@ -957,7 +961,7 @@ class TypePropagator : public IRPropagator {
     if(ftype->isA("ProtoField") && c.first&&c.first->op==Env::core_op("local")){
       V4<<"repair field->local"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
-      V2<<"  Deleting 'local' at "<<ce2s(f)<<endl;
+      V2<<"Deleting 'local' at "<<ce2s(f)<<endl;
       root->relocate_consumers(c.first->output,f);
       return true;
     }
@@ -968,12 +972,12 @@ class TypePropagator : public IRPropagator {
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       ProtoField* ft = dynamic_cast<ProtoField*>(ftype);
       int pw = c.first->pointwise();
-      V4<<" pointwise? "<< pw << endl;
+      V4<<"pointwise? "<< pw << endl;
       if(pw!=0 && ProtoType::gcs(ctype,ft->hoodtype)) {
         Operator* fo = FieldOp::get_field_op(c.first); // might be upgradable
-        V4<<" fieldop = "<< ce2s(fo) << endl;
+        V4<<"fieldop = "<< ce2s(fo) << endl;
         if(fo) {
-          V2<<"  Fieldify pointwise: "<<ce2s(c.first->op->signature)<<" to "<<ce2s(fo->signature)<<endl;
+          V2<<"Fieldify pointwise: "<<ce2s(c.first->op->signature)<<" to "<<ce2s(fo->signature)<<endl;
           c.first->op = fo; 
           note_change(c.first);
         }
@@ -989,9 +993,10 @@ class TypePropagator : public IRPropagator {
   bool back_constraint(ProtoType** tmp,Field* f,pair<OperatorInstance*,int> c) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* ct = c.first->op->signature->nth_type(c.second);
-    ProtoType* newtype = ProtoType::gcs(*tmp,ct);
-    V3<<"   Back constraint on: "<<ce2s(c.first)<<
+    V3<<"Back constraint on: "<<ce2s(c.first)<<", input "<<i2s(c.second)<<
       "\n    "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"...";
+    // Attempt to narrow the type:
+    ProtoType* newtype = ProtoType::gcs(*tmp,ct);
     if(newtype) { V3<<" ok\n"; *tmp = newtype; return true; }
     else V3<<" FAIL\n";
 
@@ -1003,7 +1008,7 @@ class TypePropagator : public IRPropagator {
   }
 
   void act(Field* f) {
-    V3 << " Considering field "<<ce2s(f)<<endl;
+    V3 << "Considering field "<<ce2s(f)<<endl;
     // Ignore old type (it may change) [except Parameter]; use producer type
     ProtoType* tmp = f->producer->op->signature->output;
     if(f->producer->op->isA("Parameter")) tmp=f->range;
@@ -1043,7 +1048,7 @@ class TypePropagator : public IRPropagator {
   // Resolve shouldn't care about the current type!
 
   void act(OperatorInstance* oi) {
-    V3 << " Considering op instance "<<ce2s(oi)<<endl;
+    V3 << "Considering op instance "<<ce2s(oi)<<endl;
      //check if number of inputs is legal
     if(!oi->op->signature->legal_length(oi->inputs.size())) {
       compile_error(oi,oi->to_str()+" has "+i2s(oi->inputs.size())+" argumen"+
@@ -1062,15 +1067,15 @@ class TypePropagator : public IRPropagator {
       V4 << "Attributes of " << ce2s(oi) << ": " << endl;
       map<string,Attribute*>::const_iterator end = oi->attributes.end();
       for( map<string,Attribute*>::const_iterator it = oi->attributes.begin(); it != end; ++it) {
-         V4 << "  - " << it->first << endl;
+         V4 << "- " << it->first << endl;
       }
       if(oi->attributes.count("LETFED-MUX")) {
-        V4 << " LETFED-MUX in oi: " << ce2s(oi) << endl;
-        V4 << "  output is: " << ce2s(oi->output->range) 
+        V4 << "LETFED-MUX in oi: " << ce2s(oi) << endl;
+        V4 << "output is: " << ce2s(oi->output->range) 
            << ((oi->output->range->isA("DerivedType"))?"(Derived)":"(non-derived)") 
            << ((oi->output->range->isLiteral())?"(Literal)":"(non-literal)") 
            << endl;
-        V4 << "  init is: " << ce2s(oi->inputs[1]->range) 
+        V4 << "init is: " << ce2s(oi->inputs[1]->range) 
            << ((oi->inputs[1]->range->isA("DerivedType"))?"(Derived)":"(non-derived)") 
            << ((oi->inputs[1]->range->isLiteral())?"(Literal)":"(non-literal)") 
            << endl;
@@ -1088,15 +1093,18 @@ class TypePropagator : public IRPropagator {
         }
       }
       // ALSO: find GCS of producer, consumers, & field values
-    } else if(oi->op->isA("Parameter")) { // constrain against all calls
+    } else if(oi->op->isA("Parameter")) { // constrain vs all calls, signature
       // find LCS of input types
+      Parameter* p = (Parameter*)oi->op;
+      OIset *srcs = &root->funcalls[p->container];
       ProtoType* inputs = NULL;
-      OIset *srcs = &root->funcalls[((Parameter*)oi->op)->container];
       for_set(OI*,*srcs,i) {
         if((*i)->op->isA("Literal")) return; // can't work with lambdas
-        ProtoType* ti = (*i)->nth_input(((Parameter*)oi->op)->index);
+        ProtoType* ti = (*i)->nth_input(p->index);
         inputs = inputs? ProtoType::lcs(inputs,ti) : ti;
       }
+      ProtoType* sig_type = p->container->signature->nth_type(p->index);
+      inputs = inputs ? ProtoType::gcs(inputs,sig_type) : sig_type;
       if(!inputs) return;
       // then take GCS of that against current field value
       ProtoType* newtype = ProtoType::gcs(oi->output->range,inputs);
@@ -1116,7 +1124,7 @@ class TypePropagator : public IRPropagator {
   void act(AmorphousMedium* am) {
     CompoundOp* f = am->bodyOf; if(f==NULL) return; // only CompoundOp ams
     if(!ProtoType::equal(f->signature->output,f->output->range)) {
-      V2<<"  Changing signature output of "<<ce2s(f)<<" to "<<ce2s(f->output->range)<<endl;
+      V2<<"Changing signature output of "<<ce2s(f)<<" to "<<ce2s(f->output->range)<<endl;
       f->signature->output = f->output->range;
       note_change(am);
     }
@@ -1375,7 +1383,7 @@ class Literalizer : public IRPropagator {
     if(f->range->isLiteral()) {
       OI *oldoi = f->producer;
       OI *newoi = root->add_literal(f->range,f->domain,oldoi)->producer;
-      V2<<" Literalizing:\n  "<<ce2s(oldoi)<<" \n  into "<<ce2s(newoi)<<endl;
+      V2<<"Literalizing:\n  "<<ce2s(oldoi)<<" \n  into "<<ce2s(newoi)<<endl;
       root->relocate_consumers(f,newoi->output); note_change(f);
       root->delete_node(oldoi); // kill old op
     }
@@ -1391,7 +1399,7 @@ class Literalizer : public IRPropagator {
         OI* newoi=new OI(oi,L_VAL(oi->inputs[0]->range),oi->output->domain);
         for(int i=1;i<oi->inputs.size();i++) 
           newoi->add_input(oi->inputs[i]);
-        V2<<" Literalizing:\n  "<<ce2s(oi)<<" \n  into "<<ce2s(newoi)<<endl;
+        V2<<"Literalizing:\n  "<<ce2s(oi)<<" \n  into "<<ce2s(newoi)<<endl;
         root->relocate_consumers(oi->output,newoi->output); note_change(oi);
         root->delete_node(oi); // kill old op
       }
@@ -1433,12 +1441,12 @@ class DeadCodeEliminator : public IRPropagator {
     any_changes = !kill_f.empty() || !kill_a.empty();
     while(!kill_f.empty()) {
       Field* f = *kill_f.begin(); kill_f.erase(f);
-      V2<<" Deleting field "<<ce2s(f)<<endl;
+      V2<<"Deleting field "<<ce2s(f)<<endl;
       root->delete_node(f->producer);
     }
     while(!kill_a.empty()) {
       AM* am = *kill_a.begin(); kill_a.erase(am);
-      V2<<" Deleting AM "<<ce2s(am)<<endl;
+      V2<<"Deleting AM "<<ce2s(am)<<endl;
       root->delete_space(am);
     }
   }
@@ -1495,7 +1503,7 @@ class FunctionInlining : public IRPropagator {
     if(threshold!=-1 && bodysize>threshold && containersize>threshold) return;
     
     // actually carry out the inlining
-    V2<<" Inlining function "<<ce2s(oi)<<endl;
+    V2<<"Inlining function "<<ce2s(oi)<<endl;
     note_change(oi); root->make_op_inline(oi);
   }
 };
@@ -1554,7 +1562,7 @@ public:
   
   CEmap(Operator*,CompoundOp*) localization_cache;
   Operator* localize_operator(Operator* op) {
-    V4<<"    Localizing operator: "<<ce2s(op)<<endl;
+    V4<<"Localizing operator: "<<ce2s(op)<<endl;
     if(op->isA("Literal")) {
       if(((Literal*)op)->value->isA("ProtoField"))
         return new Literal(op,F_VAL(((Literal*)op)->value)); // strip field
@@ -1563,20 +1571,20 @@ public:
       Operator* local = LocalFieldOp::get_local_op(op);
       return (local!=NULL) ? local : op;
     } else if(op->isA("CompoundOp")) {
-      V5<<"     Checking localization cache\n";
+      V5<<"Checking localization cache\n";
       if(localization_cache.count(op)) return localization_cache[op];
       // if it's already pointwise, just return
-      V5<<"     Checking whether op is already pointwise\n";
+      V5<<"Checking whether op is already pointwise\n";
       Fset fields; ((CompoundOp*)op)->body->all_fields(&fields);
       bool local=true;
       for_set(Field*,fields,i) {
-        V5<<"      Considering field "<<ce2s(*i)<<endl;
+        V5<<"Considering field "<<ce2s(*i)<<endl;
         if((*i)->range->isA("ProtoField")) 
           local=false;
       }
       if(local) return op;
       // Walk through ops: local & nbr ops are flattened, others are localized
-      V5<<"     Transforming op to local\n";
+      V5<<"Transforming op to local\n";
       CompoundOp* newop = new CompoundOp((CompoundOp*)op);
       OIset ois; newop->body->all_ois(&ois);
       for_set(OI*,ois,i) {
@@ -1598,7 +1606,7 @@ public:
   }
   
   CompoundOp* make_nbr_subroutine(OperatorInstance* oi, Field** exportf) {
-    V3<<"   Creating subroutine for: "<<ce2s(oi)<<endl;
+    V3<<"Creating subroutine for: "<<ce2s(oi)<<endl;
     // First, find all field-valued ops feeding this summary operator
     OIset elts; vector<Field*> exports; OIset q; q.insert(oi);
     while(q.size()) {
@@ -1615,8 +1623,8 @@ public:
           { elts.insert(f->producer); q.insert(f->producer); }
       }
     }
-    V3<<"    Found "<<elts.size()<<" elements"<<endl;
-    V3<<"    Found "<<exports.size()<<" exports"<<endl;
+    V3<<"Found "<<elts.size()<<" elements"<<endl;
+    V3<<"Found "<<exports.size()<<" exports"<<endl;
     // create the compound op
     CompoundOp* cop=root->derive_op(&elts,oi->domain(),&exports,oi->inputs[0]);
     cop = (CompoundOp*)localize_operator(cop);
@@ -1636,7 +1644,7 @@ public:
     
     // add multiplier if needed
     if(oi->op->name=="int-hood") {
-      V3<<"   Adding int-hood multiplier\n";
+      V3<<"Adding int-hood multiplier\n";
       OI *oin=new OperatorInstance(oi,Env::core_op("infinitesimal"),cop->body);
       OI *tin=new OperatorInstance(oi,Env::core_op("*"),cop->body);
       tin->add_input(oin->output); tin->add_input(cop->output);
@@ -1647,7 +1655,7 @@ public:
 
   Operator* nbr_op_to_folder(OperatorInstance* oi) {
     string name = oi->op->name;
-    V3<<"   Selecting folder for: "<<name<<endl;
+    V3<<"Selecting folder for: "<<name<<endl;
     if(name=="min-hood") { return Env::core_op("min");
     } else if(name=="max-hood") { return Env::core_op("max");
     } else if(name=="any-hood") { return Env::core_op("max");
@@ -1663,19 +1671,19 @@ public:
     // conversions begin at summaries (field-to-local ops)
     if(oi->inputs.size()==1 && oi->inputs[0]->range->isA("ProtoField") &&
        oi->output->range->isA("ProtoLocal")) {
-      V2<<"  Changing to fold-hood: "<<ce2s(oi)<<endl;
+      V2<<"Changing to fold-hood: "<<ce2s(oi)<<endl;
       // (fold-hood-plus folder fn input)
       AM* space = oi->output->domain; Field* exportf;
       CompoundOp* nbrop = make_nbr_subroutine(oi,&exportf);
       Operator* folder = nbr_op_to_folder(oi);
       OI* noi = new OperatorInstance(oi,Env::core_op("fold-hood-plus"),space);
       // hook the inputs up to the fold-hood
-      V3<<"   Connecting inputs to foldhood\n";
+      V3<<"Connecting inputs to foldhood\n";
       noi->add_input(root->add_literal(new ProtoLambda(folder),space,oi));
       noi->add_input(root->add_literal(new ProtoLambda(nbrop),space,oi));
       noi->add_input(exportf);
       // switch consumers and quit
-      V3<<"   Changing over consumers\n";
+      V3<<"Changing over consumers\n";
       root->relocate_consumers(oi->output,noi->output); note_change(oi);
       root->delete_node(oi);
     }
@@ -1698,18 +1706,18 @@ public:
 
   CompoundOp* am_to_lambda(AM* space,Field *out) {
     // discard immediate-child restrict functions:
-    V4 << "   Converting 2-input 'restrict' operators to references\n";
+    V4 << "Converting 2-input 'restrict' operators to references\n";
     Fset fields; fields = space->fields; // delete invalidates original iterator
     for_set(Field*,fields,i) {
       if((*i)->producer->op==Env::core_op("restrict") &&
          (*i)->producer->inputs.size()==2) {
-        V4 << "   Converting to reference: "+ce2s((*i)->producer)+"\n";
+        V4 << "Converting to reference: "+ce2s((*i)->producer)+"\n";
         (*i)->producer->remove_input(1);
         (*i)->producer->op = Env::core_op("reference");
       }
     }
     // make fn from all operators in the space, and all its children
-    V4 << "   Deriving operators from space "+ce2s(space)+"\n";
+    V4 << "Deriving operators from space "+ce2s(space)+"\n";
     OIset elts; space->all_ois(&elts);
     vector<Field*> ins; // no inputs
     return root->derive_op(&elts,space,&ins,out);
@@ -1718,26 +1726,26 @@ public:
   void act(OperatorInstance* oi) {
     // properly formed muxes are candidates for if patterns
     if(oi->op==Env::core_op("mux") && oi->inputs.size()==3) {
-      V3 << "  Considering If->Branch candidate:\n   "<<oi->to_str()<<endl;
+      V3 << "Considering If->Branch candidate:\n   "<<oi->to_str()<<endl;
       OI *join; Field *test, *testnot; AM *trueAM, *falseAM; AM* space;
       // fill in blanks
       join = oi; space = oi->output->domain; test = oi->inputs[0];
       trueAM = oi->inputs[1]->domain; falseAM = oi->inputs[2]->domain;
       testnot = falseAM->selector;
       // check for validity
-      V4 << "   Checking not operator\n";
+      V4 << "Checking not operator\n";
       if(!testnot) return;
       if(!(testnot->producer->op==Env::core_op("not")
            && testnot->selectors.size()==1
            && testnot->producer->inputs[0]==test)) return;
       for_set(Consumer,testnot->consumers,i) // only restricts can consume
         if(!(i->first->op==Env::core_op("restrict") && i->second==1)) return;
-      V4 << "   Checking true-expression space\n";
+      V4 << "Checking true-expression space\n";
       if(!(trueAM->selector==test && trueAM->parent==space)) return;
-      V4 << "   Checking false-expression space\n";
+      V4 << "Checking false-expression space\n";
       if(!(falseAM->selector==testnot && falseAM->parent==space)) return;
       // Swap the mux for a branch:
-      V3 << "  Transforming to branch\n";
+      V3 << "Transforming to branch\n";
       OI* branch = new OperatorInstance(oi,Env::core_op("branch"),space);
       CompoundOp *tf = am_to_lambda(trueAM,oi->inputs[1]);
       CompoundOp *ff = am_to_lambda(falseAM,oi->inputs[2]);
@@ -1770,7 +1778,7 @@ public:
 
   void act(OperatorInstance* oi) {
     if(oi->op==Env::core_op("restrict") && oi->inputs.size()==1) {
-      V3 << "   Converting restrict to reference: "+ce2s(oi)+"\n";
+      V3 << "Converting restrict to reference: "+ce2s(oi)+"\n";
       oi->op = Env::core_op("reference"); note_change(oi);
     }
   }

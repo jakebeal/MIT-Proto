@@ -1315,7 +1315,6 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Field <Scalar 0.14112>>] --> Bravo<Field <Scalar 0.14112>> OUTPUT
 is 6 _ Stopping before localization
 
-// Test is broken because new type-propagator system is incomplete
 test: $(P2B) -CDanalyzed "(min-hood (sin (nbr 3)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1662,6 +1661,8 @@ is 19 _   [Lit: <2-Vector<Scalar 1.33333>,<Scalar 2>>] --> Golf<2-Vector<Scalar 
 // For later:
 // Get "(rep x 3 (elt (tup x 7) 0))" to realize that it's got a constant output of 3
 // test: $(P2B) -CDall "(def addz (a b &optional (c 3)) (+ a b c)) (addz 1 2)"
+
+// test: $(P2B) -CDanalyzed "(def foo (&rest x) (apply + x)) (+ (foo (mid) 3 4) (foo 1 5))" --function-inlining-threshold 0
 
 
 // test: (def bar (z) (let ((x (* (mid) z))) (def foo () (+ x z)) (+ (foo) x (let ((y (speed))) (+ (foo) y y))))) (* (bar 3) (bar 4))
