@@ -254,7 +254,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
    */
   ProtoType* TypeConstraintApplicator::get_ref_tupof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li) {
     DEBUG_FUNCTION(__FUNCTION__);
-    V4 << "get_ref tupof ";
+    string tupstr = "get_ref tupof ";
     ProtoType* reftype = NULL;
     vector<ProtoType*> types;
     while( li->has_next() ) {
@@ -263,15 +263,15 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       if(isRestElement(oi,expr) && reftype->isA("ProtoTuple")) {
         ProtoTuple* tup = T_TYPE(reftype);
         for(int i=0; i<tup->types.size(); i++) {
-          V4 << ce2s(tup->types[i]) << ", ";
+          tupstr += ce2s(tup->types[i]) + ", ";
           types.push_back(tup->types[i]);
         }
       } else {
-        V4 << ce2s(reftype) << ", ";
+        tupstr += ce2s(reftype) + ", ";
         types.push_back(reftype);
       }
     }
-    V4 << endl;
+    V4 << tupstr << endl;
     return tupleOrVector(types);
   }
   
@@ -346,11 +346,9 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     for(int i=0; i<sig->n_fixed(); i++) {
       ProtoType* elt = ProtoType::clone(sig->nth_type(i));
       ret->add(elt);
-      elt->mark("no-type-assertion");
     }
     if(sig->rest_input!=NULL) // rest is unbounded end to tuple
       ret->add(sig->rest_input);
-    ret->mark("no-type-assertion");
     return ret;
   }
 
@@ -461,7 +459,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
         V4<<"assert_nth_arg (rest): oi["<<n<<"]= "<<ce2s(inputTup)<<", val="<<ce2s(value)<<endl;
         // for all the inputs, change their type if necessary
         ProtoTuple* valueTup = T_TYPE(value);
-        bool retVal = true;
+        bool retVal = false;
         for(int i=0; i<inputTup->types.size(); i++) {
            ProtoType* valType = NULL;
            // if valueTup is unbounded, use the last element for all remaining
@@ -471,7 +469,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
              valType = valueTup->types[i];
            }
            int which_input = i+oi->op->signature->n_fixed();
-           retVal = assert_range(oi->inputs[which_input],valType);
+           retVal |= assert_range(oi->inputs[which_input],valType);
         }
         return retVal;
       }
@@ -552,11 +550,6 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(lambda_arg);
     //Signature* sig = lambda->op->signature;
     return assert_ref(oi,ref,lambda);
-    /*
-    if(!value->isA("ProtoLambda"))
-       ierror("'output' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+value->to_str()+")");
-    return assert_ref(oi,ref,L_TYPE(value));
-    */
   }
   
   /**
@@ -653,7 +646,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     while(li->has_next()) {
       next = li->get_next("type");
       compound = getLCS(value,compound,isRestElement(oi,next));
-      ret = assert_ref(oi,next,compound);
+      ret |= assert_ref(oi,next,compound);
       V4 << "assert LCS ref:   " << ce2s(next) << endl;
       V4 << "assert LCS value: " << ce2s(value) << endl;
     }
@@ -669,7 +662,6 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     bool changed = false;
     for(int i=tup->types.size()-1; i<n; i++) {
       ProtoType* elt = ProtoType::clone(tup->types[i]); // copy rest element
-      elt->inherit_attributes(tup->types[i]); // pass marks on new non-rest elt
       tup->add(elt); // add to end of tuple
       changed = true;
     }
@@ -722,7 +714,6 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     if(!tupType->isA("ProtoTuple"))
        ierror("'nth' assertion failed to coerce a tuple from type: "+next->to_str()
               +" (it's a "+tupType->to_str()+")");
-    bool changedNth = false;
     if(indexType->isLiteral() //we know the index & it's valid
               && (int)S_VAL(indexType) >= 0) {
       int i = S_VAL(indexType);
@@ -737,7 +728,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
         newt->types[i] = value;
       }
     }
-    changedNth = assert_ref(oi,next,newt);
+    bool changedNth = assert_ref(oi,next,newt);
     return changedTup || changedScalar || changedNth;
   }
   
@@ -822,23 +813,23 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
   bool TypeConstraintApplicator::repair_field_constraint(OI* oi, 
                                                          ProtoField* field,
                                                          ProtoType* local) {
-    V4 << "Repair changing " << ce2s(local);
-    local = ProtoType::gcs(field,new ProtoField(local));
-    V4 << " to " << ce2s(local) << endl;
+    ProtoType* newt = ProtoType::gcs(field,new ProtoField(local));
+    V4 << "Repair changing " << ce2s(local) << " to " << ce2s(newt) << endl;
+    local = newt;
     if(oi->pointwise()==1) {
       //Fieldify
       Operator* fo = FieldOp::get_field_op(oi);
       if(fo) {
-        V4 << "Repair changing op" << ce2s(oi->op);
+        V4 << "Repair changing op"<<ce2s(oi->op)<<" to "<<ce2s(fo)<<endl;
         oi->op = fo;
-        V4 << " to " << ce2s(oi->op) << endl;
       }
     }
     if(!oi->output->range->isA("ProtoField")) {
       //Change output
-      V4 << "Repair changing output " << ce2s(oi->output->range);
-      oi->output->range = new ProtoField(oi->output->range);
-      V4 << " to " << ce2s(oi->output->range) << endl;
+      ProtoType* newt = new ProtoField(oi->output->range);
+      V4 << "Repair changing output " << ce2s(oi->output->range) 
+         << " to " << ce2s(newt) << endl;
+      oi->output->range = newt;
     }
     return true;
   }
@@ -993,12 +984,12 @@ class TypePropagator : public IRPropagator {
   bool back_constraint(ProtoType** tmp,Field* f,pair<OperatorInstance*,int> c) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* ct = c.first->op->signature->nth_type(c.second);
-    V3<<"Back constraint on: "<<ce2s(c.first)<<", input "<<i2s(c.second)<<
-      "\n    "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"...";
+    V3<<"Back constraint on: "<<ce2s(c.first)<<", input "<<i2s(c.second);
+    V3<<"- back type: "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"...";
     // Attempt to narrow the type:
     ProtoType* newtype = ProtoType::gcs(*tmp,ct);
-    if(newtype) { V3<<" ok\n"; *tmp = newtype; return true; }
-    else V3<<" FAIL\n";
+    if(newtype) { V3<<"- ok\n"; *tmp = newtype; return true; }
+    else V3<<"- FAIL\n";
 
     // On merge failure, attempt to repair conflict
     if(repair_conflict(f,c,*tmp,ct)) return false;

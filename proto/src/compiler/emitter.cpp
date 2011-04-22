@@ -478,7 +478,7 @@ public:
            env_height.count(r)) {
           int rh = env_height[r], sh = env_height[r->store];
           if(r->offset!=(rh-sh)) {
-            V3<<"  Setting let ref offset: "<<rh<<"-"<<sh<<"="<<(rh-sh)<<endl;
+            V3<<"Setting let ref offset: "<<rh<<"-"<<sh<<"="<<(rh-sh)<<endl;
             r->set_offset(rh-sh);
           }
         }
@@ -490,7 +490,7 @@ public:
       ss += i2s(stack_height[chain])+" "; es += i2s(env_height[chain])+" ";
       chain=chain->next;
     }
-    V2 << ss << endl << es << endl;
+    V2 << ss << endl; V2 << es << endl;
     int final = stack_height[chain_end(root)];
     if(final) {
        print_chain(chain_start(root), cpout);
@@ -505,11 +505,11 @@ public:
     }
   }
   void maybe_set_stack(Instruction* i,int neth,int maxh) {
-     V4 << "    Trying to set stack for " << ce2s(i) 
+     V4 << "Trying to set stack for " << ce2s(i) 
         << " to (" << neth << ", " << maxh << ")" << endl;
      if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh) { 
         stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); 
-        V4 << "    `-Set stack." << endl;
+        V4 << "- Set stack." << endl;
      }
   }
   void maybe_set_env(Instruction* i,int neth, int maxh) {
@@ -571,13 +571,13 @@ public:
       }
       if(last==NULL)ierror("Trying to pop a let without its last usage marked");
       // is it marked as being in a branch?
-      V5 << "  Considering last reference: "<<ce2s(last)<<endl;
+      V5 << "Considering last reference: "<<ce2s(last)<<endl;
       if(last->marked("~Branch~End")) {
         CE* inst = ((CEAttr*)last->attributes["~Branch~End"])->value;
-        V5 << "   Branch end ref: "<<ce2s(inst)<<endl;
+        V5 << "Branch end ref: "<<ce2s(inst)<<endl;
         dest_sets[(Instruction*)inst].insert(sources[i]);
       } else {
-        V5 << "   Default location: "<<ce2s(pointer)<<endl;
+        V5 << "Default location: "<<ce2s(pointer)<<endl;
         dest_sets[pointer].insert(sources[i]);
       }
     }
@@ -596,7 +596,7 @@ public:
       for_set(iLET*,i->second,j) (*j)->pop = pop;
       // and place the pop at the destination
       string type = (i->first==pointer)?"standard":"branch";
-      V3 << "  Inserting "+type+" POP_LET after "<<ce2s(i->first)<<endl;
+      V3 << "Inserting "+type+" POP_LET after "<<ce2s(i->first)<<endl;
       chain_insert(i->first,pop);
     }
   }
@@ -647,7 +647,7 @@ public:
       // Now walk through and pop all the sources, clumping by destination
       V3 << "\n Adding set of pops, size: "<<sources.size()<<"\n";
       insert_pop_set(sources,pointer);
-      V3 << " Completed LET resolution\n";
+      V3 << "Completed LET resolution\n";
     }
   }
 };
@@ -659,7 +659,7 @@ public:
   void print(ostream* out=0) { *out<<"DeleteNulls"; }
   void act(Instruction* i) {
     if(i->isA("NoInstruction")) {
-      V2 << " Deleting NoInstruction placeholder\n";
+      V2 << "Deleting NoInstruction placeholder\n";
       chain_delete(i,i);
     }
   }
@@ -680,7 +680,7 @@ public:
         j=j->next;  if(!j) ierror("DEF_FUN_OP can't find matching RET_OP");
       }
       if(size>0 && df->fun_size != size) {
-        V2 << " Fun size is " << size << endl;
+        V2 << "Fun size is " << size << endl;
         df->fun_size=size; df->parameters.clear();
         // now adjust the op
         if(df->fun_size>1 && df->fun_size<=MAX_DEF_FUN_OPS) 
@@ -697,7 +697,7 @@ public:
       Reference* r = (Reference*)i;
       if(r->offset==-1 && r->store->isA("Global") && 
          ((Global*)r->store)->index >= 0) {
-        V2<<" Global index to "<<ce2s(r->store)<<" is "<<
+        V2<<"Global index to "<<ce2s(r->store)<<" is "<<
           ((Global*)r->store)->index << endl;
         r->set_offset(((Global*)r->store)->index);
         note_change(i);
@@ -705,11 +705,11 @@ public:
     } 
     if(i->isA("Branch")) {
       Branch* b = (Branch*)i; Instruction* target = b->after_this;
-      V5<<"    Sizing branch: "<<ce2s(b)<<" over "<<ce2s(target)<<endl;
+      V5<<"Sizing branch: "<<ce2s(b)<<" over "<<ce2s(target)<<endl;
       if(b->start_location()>=0 && target->start_location()>=0) {
         int diff = target->next_location() - b->next_location();
         if(diff!=b->offset) {
-          V2<<" Branch offset to follow "<<ce2s(target)<<" is "<<diff<<endl;
+          V2<<"Branch offset to follow "<<ce2s(target)<<" is "<<diff<<endl;
           b->set_offset(diff); note_change(i);
         }
       }
@@ -731,14 +731,14 @@ public:
   void print(ostream* out=0) { *out<<"ResolveLocations"; }
   void maybe_set_location(Instruction* i, int l) {
     if(i->start_location() != l) { 
-      V4 << "   Setting location of "<<ce2s(i)<<" to "<<l<<endl;
+      V4 << "Setting location of "<<ce2s(i)<<" to "<<l<<endl;
       i->set_location(l); note_change(i);
     }
   }
   void maybe_set_index(Instruction* i, int l) {
     g_max = MAX(g_max,l+1);
     if(((Global*)i)->index != l) { 
-      V4 << "   Setting index of "<<ce2s(i)<<" to "<<l<<endl;
+      V4 << "Setting index of "<<ce2s(i)<<" to "<<l<<endl;
       ((Global*)i)->index=l; note_change(i);
     }
   }
@@ -1119,21 +1119,21 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     chain_i(&chain,tree2instructions(oi->inputs[i]));
   // second, add the operation
   if(oi->op==Env::core_op("reference")) {
-    V4 << "    Reference is: " << ce2s(oi->op) << endl;
+    V4 << "Reference is: " << ce2s(oi->op) << endl;
     if(oi->inputs.size()!=1) ierror("Bad number of reference inputs");
     Instruction* frag = chain_split(chain);
     if(frag) fragments[oi->inputs[0]->producer] = frag;
   } else if(oi->op->isA("Primitive")) {
-    V4 << "    Primitive is: " << ce2s(oi->op) << endl;
+    V4 << "Primitive is: " << ce2s(oi->op) << endl;
     chain_i(&chain,primitive_to_instruction(oi));
   } else if(oi->op->isA("Literal")) { 
-    V4 << "    Literal is: " << ce2s(oi->op) << endl;
+    V4 << "Literal is: " << ce2s(oi->op) << endl;
     chain_i(&chain,literal_to_instruction(((Literal*)oi->op)->value,oi));
   } else if(oi->op->isA("Parameter")) { 
-    V4 << "    Parameter is: " << ce2s(oi->op) << endl;
+    V4 << "Parameter is: " << ce2s(oi->op) << endl;
     chain_i(&chain,parameter_to_instruction((Parameter*)oi->op));
   } else if(oi->op->isA("CompoundOp")) { 
-    V4 << "    Compound OP is: " << ce2s(oi->op) << endl;
+    V4 << "Compound OP is: " << ce2s(oi->op) << endl;
     CompoundOp* cop = ((CompoundOp*)oi->op);
     Global* def_fun_instr = ((Global*)globalNameMap[cop]);
     Reference* glo_ref = new Reference(def_fun_instr,oi);
@@ -1168,9 +1168,9 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   Fset minima, f; root->all_fields(&f);
   for_set(Field*,f,i) if(!has_relevant_consumer(*i)) minima.insert(*i);
   
-  V3 << "  "+ce2s(root)+":" << i2s(minima.size()) << " minima identified: ";
-  for_set(Field*,minima,i) { if(!(i==minima.begin())) V3<<","; V3<<ce2s(*i); }
-  V3 << endl;
+  string s=ce2s(root)+":"+i2s(minima.size())+" minima identified: ";
+  for_set(Field*,minima,i) { if(!(i==minima.begin())) s+=","; s+=ce2s(*i); }
+  V3 << s << endl;
   iDEF_FUN *fnstart = new iDEF_FUN(); Instruction *chain=fnstart;
   for_set(Field*,minima,i) chain_i(&chain, tree2instructions(*i));
   if(minima.size()>1) { // needs an all
@@ -1181,7 +1181,7 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   }
   chain_i(&chain, fnstart->ret = new Instruction(RET_OP));
   if(root->bodyOf!=NULL) {
-     V3 << "  Adding fn:" << root->bodyOf->name << " to globalNameMap" << endl;
+     V3 << "Adding fn:" << root->bodyOf->name << " to globalNameMap" << endl;
      globalNameMap[root->bodyOf] = fnstart;
   }
   return fnstart;

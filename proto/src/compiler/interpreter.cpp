@@ -447,7 +447,7 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
       Env* inner = new Env(env);
       op->signature = sexp_to_sig(li.get_next("signature"),inner,op,op->body);
       op->signature->output = new ProtoType();
-      V4 << "  Creating function "<<op->name<<", body: "<<ce2s(op->body)<<endl;
+      V4 << "Creating function "<<op->name<<", body: "<<ce2s(op->body)<<endl;
       // make body sexpr
       SE_List bodylist; bodylist.add(new SE_Symbol("all"));
       while(li.has_next()) bodylist.add(li.get_next());
@@ -460,7 +460,7 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
     } else if(opdef=="primitive") { // constructs & binds operator w/o DFG
       // (primitive name sig out &optional :side-effect)
       string pname = li.get_token("primitive name");
-      V4 << "  Creating new primitive "<<pname<<endl;
+      V4 << "Creating new primitive "<<pname<<endl;
       Signature* sig = sexp_to_sig(li.get_next());
       sig->output = parse_argument(&li,-1,sig).second;
       Operator* p  = new Primitive(s,pname,sig);
@@ -470,7 +470,7 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
       // check if it's a macro
       CompilationElement* ce = env->lookup(opdef);
       if(ce && ce->isA("Macro")) {
-        V4 << "  Expanding macro "<<ce2s(ce)<<endl;
+        V4 << "Expanding macro "<<ce2s(ce)<<endl;
         SExpr* new_expr;
         if(ce->isA("MacroOperator")) {
           new_expr = expand_macro((MacroOperator*)ce,(SE_List*)s);
@@ -500,7 +500,7 @@ Field* ProtoInterpreter::let_to_graph(SE_List* s, AM* space, Env *env,
     if((*decls)[i]->isList()) {
       SE_List* d = (SE_List*)(*decls)[i];
       if(d->len()==2 && (*d)[0]->isSymbol()) {
-        V4 << "  Creating let variable "<<ce2s((*d)[0])<<endl;
+        V4 << "Creating let variable "<<ce2s((*d)[0])<<endl;
         Field* f = sexp_to_graph((*d)[1],space,(incremental?child:env));
         child->bind(((SE_Symbol*)(*d)[0])->name,f);
       } else compile_error(d,"Malformed let statement: "+d->to_str());
@@ -553,8 +553,8 @@ Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env,
     OI *unchange = new OperatorInstance(s,Env::core_op("not"),space);
     unchange->add_input(dchange->output);
     update = new AM(s,space,unchange->output);
-    V4 << "  Created feedback spaces:\n"<<"  Init: "<<ce2s(init)
-       <<"  Update: "<<ce2s(update)<<endl;
+    V4 << "Created feedback spaces:\n";
+    V4 <<"- Init: "<<ce2s(init) <<" Update: "<<ce2s(update)<<endl;
   } else {
     dchange = NULL;//new OI(s,new Literal(s,new ProtoBoolean(false)),space);
     init = update = space;
@@ -566,7 +566,7 @@ Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env,
   for(int i=0;i<decls->len();i++) {
     if((*decls)[i]->isList() && ((SE_List*)(*decls)[i])->len()==3) {
       SE_List* d = (SE_List*)(*decls)[i];
-      V4 << "  Creating feedback variable "<<ce2s((*d)[0])<<endl;
+      V4 << "Creating feedback variable "<<ce2s((*d)[0])<<endl;
       // create the variable & bind it
       OI *varmux, *delay;
       if(!no_init) {
@@ -616,7 +616,7 @@ Field* ProtoInterpreter::restrict_to_graph(SE_List* s, AM* space, Env *env){
   if(s->len()!=3) 
     return field_err(s,space,"Malformed restrict statement: "+s->to_str());
   AM* child = new AM(s,space,sexp_to_graph((*s)[2],space,env));
-  V4 << "  Restricting interpretation to " << ce2s(child) << endl;
+  V4 << "Restricting interpretation to " << ce2s(child) << endl;
   return sexp_to_graph((*s)[1],child,env);
 }
 
@@ -647,17 +647,17 @@ ProtoLocal* quote_to_literal_type(SExpr* s) {
 
 // returns the output field
 Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
-  V3 << " Interpret: " << ce2s(s) << " in " << ce2s(space) << endl;
+  V3 << "Interpret: " << ce2s(s) << " in " << ce2s(space) << endl;
   if(s->isSymbol()) {
     // All other symbols are looked up in the environment
     CompilationElement* elt = env->lookup(((SE_Symbol*)s)->name);
     if(elt==NULL) { 
-      V4 << "  Symbolic literal? ";
+      V4 << "Symbolic literal?\n";
       ProtoType* val = symbolic_literal(((SE_Symbol*)s)->name);
-      if(val) { V4 << "Yes\n"; return dfg->add_literal(val,space,s); }
+      if(val) { V4 << "- Yes\n"; return dfg->add_literal(val,space,s); }
       return field_err(s,space,"Couldn't find definition of "+s->to_str());
     } else if(elt->isA("Field")) { 
-      V4 << "  Found field: " << ce2s(elt) << endl;
+      V4 << "Found field: " << ce2s(elt) << endl;
       Field* f = (Field*)elt;
       if(f->domain==space) { return f;
       } if(f->domain->child_of(space)) {
@@ -669,15 +669,15 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         return oi->output;
       }
     } else if(elt->isA("Operator")) {
-      V4 << "  Lambda literal: " << ce2s(elt) << endl;
+      V4 << "Lambda literal: " << ce2s(elt) << endl;
       return dfg->add_literal(new ProtoLambda((Operator*)elt),space,s);
     } else if(elt->isA("MacroSymbol")) {
-      V4 << "  Macro: " << ce2s(elt) << endl;
+      V4 << "Macro: " << ce2s(elt) << endl;
       return sexp_to_graph(((MacroSymbol*)elt)->pattern,space,env);
     } else return field_err(s,space,"Can't interpret "+elt->type_of()+" "+
                             s->to_str()+" as field");
   } else if(s->isScalar()) { // Numbers are literals
-    V4 << "  Numeric literal.\n";
+    V4 << "Numeric literal.\n";
     return dfg->add_literal(new ProtoScalar(((SE_Scalar*)s)->value),space,s);
   } else { // it must be a list
     // Lists are special forms or function applicatios
@@ -690,7 +690,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       } else if(opname=="let*") { return let_to_graph(sl,space,env,true);
       } else if(opname=="all") { // evaluate children, returning last field
         Field* last=NULL;
-        V4 << "  Found 'all' construct\n";
+        V4 << "Found 'all' construct\n";
         for(int j=1;j<sl->len();j++) last = sexp_to_graph((*sl)[j],space,env);
         return last;
       } else if(opname=="restrict"){ 
@@ -701,7 +701,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
           return field_err(sl,space,"def name not a symbol: "+def->to_str());
         Field* f = sexp_to_graph(exp,space,env);
         env->force_bind(((SE_Symbol*)def)->name,f);
-        V4 << "  Defined variable: " << ce2s(f) << endl;
+        V4 << "Defined variable: " << ce2s(f) << endl;
         return f;
       } else if(opname=="def" || opname=="primitive" || 
                 opname=="lambda" || opname=="fun") {
@@ -723,13 +723,13 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       } else if(opname=="letfed" || opname=="letfed+") {
         return letfed_to_graph(sl,space,env,opname=="letfed+");
       } else if(opname=="macro") {
-        V4 << "  Defining macro\n";
+        V4 << "Defining macro\n";
         sexp_to_macro(sl,env);
         return NULL;
       } else if(opname=="include") {
         for(int j=1;j<sl->len();j++) {
           SExpr *ex = (*sl)[j];
-          V4 << "  Including file: "<<ce2s(ex)<<endl;
+          V4 << "Including file: "<<ce2s(ex)<<endl;
           if(ex->isSymbol()) interpret_file(((SE_Symbol*)ex)->name);
           else compile_error(ex,"File name "+ex->to_str()+" is not a symbol");
         }
@@ -737,7 +737,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       } else if(opname=="quote") {
         if(sl->len()!=2) 
           return field_err(sl,space,"Quote requires an argument: "+s->to_str());
-        V4 << "  Creating quote literal\n";
+        V4 << "Creating quote literal\n";
         return dfg->add_literal(quote_to_literal_type((*sl)[1]),space,s);
       } else if(opname=="quasiquote") {
         return field_err(sl,space,"Quasiquote only allowed in macros: "+sl->to_str());
@@ -745,7 +745,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       // check if it's a macro
       CompilationElement* ce = env->lookup(opname);
       if(ce && ce->isA("Macro")) {
-        V4 << "  Applying macro\n";
+        V4 << "Applying macro\n";
         SExpr* new_expr;
         if(ce->isA("MacroOperator")) {
           new_expr = expand_macro((MacroOperator*)ce,sl);
@@ -772,7 +772,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       compile_error(s,"Called "+ce2s(op)+" with "+i2s(oi->inputs.size())+
                     " arguments; it requires "+op->signature->num_arg_str());
     }
-    V4 << "  Added operator "<<ce2s(oi)<<endl;
+    V4 << "Added operator "<<ce2s(oi)<<endl;
     return oi->output;
   }
   ierror("Fell through sexp_to_graph w/o returning for: "+s->to_str());
