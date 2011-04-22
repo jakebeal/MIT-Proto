@@ -202,6 +202,15 @@ is 8 _ uint16_t script_len = 52;
 = 21 3 2
 
 // Challenges for functions:
+// function defined in-line
+test: $(PROTO) "((lambda (x) (set-dt x)) 5)" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 3, 1, DEF_FUN_4_OP, 
+is 1 _   LIT8_OP, 5, SET_DT_OP, RET_OP, DEF_FUN_5_OP, LIT8_OP, 5,
+is 2 _   GLO_REF_0_OP, FUNCALL_1_OP, RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 21;
+= 5 3 5
+= 8 3 5
+
 // function with references to outside variables:
 //test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --function-inlining-threshold 0
 
@@ -416,16 +425,16 @@ is 7 _ uint16_t script_len = 53;
 
 //Testing function emission:
 test: $(PROTO) "(def kfoo (x y) (- x y)) (kfoo (mid) (speed))" --function-inlining-threshold 0
-is 1 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, DEF_FUN_4_OP, 
-is 2 _  REF_0_OP, REF_1_OP, SUB_OP, RET_OP, DEF_FUN_5_OP, MID_OP, SPEED_OP, 
-is 3 _  GLO_REF_0_OP, FUNCALL_2_OP, RET_OP, EXIT_OP };
-is 4 _ uint16_t script_len = 21;
-= 6 3 0
-= 7 3 -1
-= 8 3 -2
-= 9 3 -3
-= 10 3 -4
-= 11 3 -5
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, DEF_FUN_4_OP, 
+is 1 _  REF_0_OP, REF_1_OP, SUB_OP, RET_OP, DEF_FUN_5_OP, MID_OP, SPEED_OP, 
+is 2 _  GLO_REF_0_OP, FUNCALL_2_OP, RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 21;
+= 5 3 0
+= 6 3 -1
+= 7 3 -2
+= 8 3 -3
+= 9 3 -4
+= 10 3 -5
 
 
 // Challenges for nbrs:

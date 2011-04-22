@@ -796,7 +796,7 @@ bool IRPropagator::maybe_set_range(Field* f,ProtoType* range) {
 }
 
 bool IRPropagator::propagate(DFG* g) {
-  V1 << "Executing analyzer " << to_str() << endl;
+  V1 << "Executing analyzer " << to_str(); V2 << endl;
   any_changes=false; root=g;
   // initialize worklists
   if(act_fields) queue_all_fields(g,this); else worklist_f.clear();
@@ -828,6 +828,8 @@ bool IRPropagator::propagate(DFG* g) {
   if(steps_remaining<=0) 
     ierror("Aborting "+ce2s(this)+" due to apparent infinite loop.");
   postprop();
+  V2 << "Finished analyzer " << to_str();
+  V1 << " changes = " << b2s(any_changes) << endl;
   return any_changes;
 }
 

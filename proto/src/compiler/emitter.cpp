@@ -428,7 +428,7 @@ void InstructionPropagator::queue_chain(Instruction* chain) {
 }
 
 bool InstructionPropagator::propagate(Instruction* chain) {
-  V1<<"Executing analyzer "<<to_str()<<endl;
+  V1 << "Executing analyzer " << to_str() << ":"; V2 << endl;
   any_changes=false; root = chain_start(chain);
   // initialize worklists
   worklist_i.clear(); queue_chain(chain); 
@@ -444,6 +444,8 @@ bool InstructionPropagator::propagate(Instruction* chain) {
   }
   if(steps_remaining<=0) ierror("Aborting due to apparent infinite loop.");
   postprop();
+  V2 << "Finished analyzer " << to_str() << ":";
+  V1 << " changes = " << b2s(any_changes) << endl;
   return any_changes;
 }
 
@@ -461,7 +463,7 @@ public:
   void postprop() {
     Instruction* chain=root;
     int max_env=0, max_stack=0;
-    string ss=" Stack heights: ", es=" Env heights:   ";
+    string ss="Stack heights: ", es="Env heights:   ";
     stack<Instruction*> block_nesting;
     while(true) { 
       if(chain==NULL) {
@@ -498,23 +500,30 @@ public:
     }
     iDEF_VM* dv = (iDEF_VM*)root;
     if(dv->max_stack!=max_stack || dv->max_env!=max_env) {
+      V2 << "Changed: Stack: " << dv->max_stack << " -> " << max_stack
+         << " Env: " << dv->max_env << " -> " << max_env << endl;
       dv->max_stack=max_stack; dv->max_env=max_env;
       any_changes=true;
     } else {
+      V2 << "No change to stack or env maximum size"<<endl;
       any_changes=false;
     }
   }
   void maybe_set_stack(Instruction* i,int neth,int maxh) {
-     V4 << "Trying to set stack for " << ce2s(i) 
-        << " to (" << neth << ", " << maxh << ")" << endl;
-     if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh) { 
-        stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); 
-        V4 << "- Set stack." << endl;
-     }
+    V4 << "Trying to set stack for " << ce2s(i) 
+       << " to (" << neth << ", " << maxh << ")" << endl;
+    if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh){
+      stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); 
+      V4 << "- Set stack." << endl;
+    }
   }
   void maybe_set_env(Instruction* i,int neth, int maxh) {
-    if(!env_height.count(i) || env_height[i]!=neth || env_maxes[i]!=maxh) 
-      { env_height[i]=neth; env_maxes[i]=maxh; note_change(i); }
+    V4 << "Trying to set env for " << ce2s(i) 
+       << " to (" << neth << ", " << maxh << ")" << endl;
+    if(!env_height.count(i) || env_height[i]!=neth || env_maxes[i]!=maxh) {
+      env_height[i]=neth; env_maxes[i]=maxh; note_change(i);
+      V4 << "- Set stack." << endl;
+    }
   }
   void act(Instruction* i) {
     // stack heights:
@@ -742,6 +751,12 @@ public:
       ((Global*)i)->index=l; note_change(i);
     }
   }
+  void maybe_set_reference(Reference* i,int index) {
+    if(i->offset!=index) { 
+      V4 << "Setting reference offset "<<ce2s(i)<<" to "<<index<<endl;
+      i->set_offset(index); note_change(i);
+    }
+  }
   void act(Instruction* i) {
     // Base case: set to zero or block-start
     if(!i->prev)
@@ -766,10 +781,8 @@ public:
           int index = -1;
           if(ce && ce->isA("Global"))
              index = ((Global*)ce)->index;
-          if(index >= 0 && i->prev && i->prev->isA("Reference")) {
-             ((Reference*)i->prev)->set_offset(index);
-             note_change(i);
-          }
+          if(index >= 0 && i->prev && i->prev->isA("Reference"))
+            maybe_set_reference((Reference*)i->prev,index);
        }
     }
   }
@@ -777,7 +790,10 @@ public:
   void preprop() { g_max = 0; }
   void postprop() {
     iDEF_VM* dv = (iDEF_VM*)root;
-    if(dv->n_globals!=g_max) { dv->n_globals=g_max; any_changes|=true; }
+    if(dv->n_globals!=g_max) { 
+      V3 << "Setting global max from "<<dv->n_globals<<" to "<<g_max<<endl;
+      dv->n_globals=g_max; any_changes|=true;
+    }
   }
 };
 
