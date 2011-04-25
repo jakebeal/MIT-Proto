@@ -1006,12 +1006,16 @@ class TypePropagator : public IRPropagator {
     // GCS against current value
     ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
     if(!newtmp) {
-      if(repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) return;
-      type_err(f,"incompatible type and signature "+f->to_str()+": "+
+      V3 << "Attempting to repair conflict with producer "<<ce2s(tmp)<<endl;
+      if(!repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) {
+        type_err(f,"incompatible type and signature "+f->to_str()+": "+
                  ce2s(tmp)+" vs. "+ce2s(f->range));
-      return;
+        return;
+      }
+      // go on after repair
+    } else {
+      tmp=newtmp;
     }
-    tmp=newtmp;
 
     // GCS against consumers
     for_set(Consumer,f->consumers,i)
@@ -1054,7 +1058,7 @@ class TypePropagator : public IRPropagator {
         if(tca.apply_constraints(oi,get_sexp(oi->op,":type-constraints")))
           note_change(oi);
       }
-
+      
       V4 << "Attributes of " << ce2s(oi) << ": " << endl;
       map<string,Attribute*>::const_iterator end = oi->attributes.end();
       for( map<string,Attribute*>::const_iterator it = oi->attributes.begin(); it != end; ++it) {
@@ -1617,16 +1621,25 @@ public:
     V3<<"Found "<<elts.size()<<" elements"<<endl;
     V3<<"Found "<<exports.size()<<" exports"<<endl;
     // create the compound op
+    V4<<"Creating compound operator from elements"<<endl;
     CompoundOp* cop=root->derive_op(&elts,oi->domain(),&exports,oi->inputs[0]);
+    V5<<"Localizing new compound operator "<<ce2s(cop)<<endl;
     cop = (CompoundOp*)localize_operator(cop);
     //cop = tuplize_inputs(cop);
     
     // construct input structure
     if(exports.size()==0) {
-      *exportf = root->add_literal(new ProtoScalar(0),oi->domain(),oi);
+      V4 << "Zero exports: adding a scratch export"<<endl;
+      // add a scratch input
+      ProtoType* scratch = new ProtoScalar(0);
+      *exportf = root->add_literal(scratch,oi->domain(),oi);
+      cop->signature->required_inputs.push_back(scratch);
+      cop->signature->names["arg0"] = 0;
     } else if(exports.size()==1) {
+      V4 << "One exports: using "<<ce2s(exports[0])<<" directly"<<endl;
       *exportf = exports[0];
     } else {
+      V4 << "Multiple exports: binding into a tuple"<<endl;
       OI* tup=new OperatorInstance(oi,Env::core_op("tup"),oi->domain());
       for(int i=0;i<exports.size();i++) tup->add_input(exports[i]);
       *exportf = tup->output;

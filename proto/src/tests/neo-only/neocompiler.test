@@ -1324,55 +1324,8 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 0.14112>] --> Bravo<Scalar 0.14112> OUTPUT
 is 6 _ Stopping before localization
 
-// insertion of "local" ops
-test: $(P2B) -CDanalyzed "(int-hood 1)"
-is 0 _ Amorphous Mediums:
-is 1 _   [Medium: Alfa = root]
-is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
-is 4 _   Charlie: Alfa --> <Field <Scalar 1>>
-is 5 _ Operator Instances:
-is 6 _   Charlie<Field <Scalar 1>> --> [int-hood] --> Bravo<Scalar> OUTPUT
-is 7 _   [Lit: <Field <Scalar 1>>] --> Charlie<Field <Scalar 1>>
-is 8 _ Stopping before localization
-
-test: $(P2B) -CDanalyzed "(min-hood (+ (nbr-range) (nbr (mid))))"
-is 0 _ Amorphous Mediums:
-is 1 _   [Medium: Alfa = root]
-is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
-is 4 _   Charlie: Alfa --> <Field <Scalar>>
-is 5 _   Delta: Alfa --> <Field <Scalar>>
-is 6 _   Echo: Alfa --> <Field <Scalar>>
-is 7 _   Foxtrot: Alfa --> <Scalar>
-is 8 _ Operator Instances:
-is 9 _   Charlie<Field <Scalar>> --> [min-hood] --> Bravo<Scalar> OUTPUT
-is 10 _   Delta<Field <Scalar>>, Echo<Field <Scalar>> --> [Field~~+] --> Charlie<Field <Scalar>>
-is 11 _   [nbr-range] --> Delta<Field <Scalar>>
-is 12 _   Foxtrot<Scalar> --> [nbr] --> Echo<Field <Scalar>>
-is 13 _   [mid] --> Foxtrot<Scalar>
-is 14 _ Stopping before localization
-
-test: $(P2B) -CDanalyzed "(max-hood (* (mid) (+ (nbr (speed)) 1)))"
-is 0 _ Amorphous Mediums:
-is 1 _   [Medium: Alfa = root]
-is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
-is 4 _   Charlie: Alfa --> <Field <Scalar>>
-is 5 _   Delta: Alfa --> <Field <Scalar>>
-is 6 _   Echo: Alfa --> <Field <Scalar>>
-is 7 _   Foxtrot: Alfa --> <Scalar>
-is 8 _   Golf: Alfa --> <Field <Scalar>>
-is 9 _   Hotel: Alfa --> <Field <Scalar 1>>
-is 10 _ Operator Instances:
-is 11 _   Charlie<Field <Scalar>> --> [max-hood] --> Bravo<Scalar> OUTPUT
-is 12 _   Golf<Field <Scalar>>, Delta<Field <Scalar>> --> [Field~~*] --> Charlie<Field <Scalar>>
-is 13 _   Echo<Field <Scalar>>, Hotel<Field <Scalar 1>> --> [Field~~+] --> Delta<Field <Scalar>>
-is 14 _   Foxtrot<Scalar> --> [nbr] --> Echo<Field <Scalar>>
-is 15 _   [speed] --> Foxtrot<Scalar>
-is 16 _   [Field~~mid] --> Golf<Field <Scalar>>
-is 17 _   [Lit: <Field <Scalar 1>>] --> Hotel<Field <Scalar 1>>
-is 18 _ Stopping before localization
+// Do localization, but not emission
+$(P2B_ARGS) = --no-emission
 
 // Test inlining
 test: $(P2B) -CDanalyzed "(def foo (x) (+ 1 x)) (def bar (x y) (* x y)) (bar (foo (foo (mid))) (bar (foo (mid)) (foo 3)))" --function-inlining-threshold -1
@@ -1454,24 +1407,6 @@ is 22 _   Charlie<Scalar>, Lima<Scalar>, Mike<Scalar 3> --> [mux] --> Kilo<Scala
 is 23 _   Foxtrot<Scalar>, Charlie<Scalar> --> [restrict] --> Lima<Scalar>
 is 24 _   Charlie<Scalar> --> [not] --> Echo<Boolean>
 is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
-
-// NEIGHORHOOD OPERATIONS
-// Simple neighborhood:
-test: $(P2B) -CDanalyzed "(max-hood (nbr (= (mid) 0)))"
-is 0 _ Amorphous Mediums:
-is 1 _   [Medium: Alfa = root]
-is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <Boolean> OUTPUT
-is 4 _   Charlie: Alfa --> <Field <Boolean>>
-is 5 _   Delta: Alfa --> <Boolean>
-is 6 _   Echo: Alfa --> <Scalar>
-is 7 _   Foxtrot: Alfa --> <Scalar 0>
-is 8 _ Operator Instances:
-is 9 _   Charlie<Field <Boolean>> --> [max-hood] --> Bravo<Boolean> OUTPUT
-is 10 _   Delta<Boolean> --> [nbr] --> Charlie<Field <Boolean>>
-is 11 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
-is 12 _   [mid] --> Echo<Scalar>
-is 13 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
 
 // references in lambdas to external variables
 test: $(P2B) -CDinterpreted -CDanalyzed "(let ((x (+ (mid) 1))) ((lambda (y) (* x y)) 3))"
@@ -1649,14 +1584,245 @@ is 17 _   Golf: Alfa --> <2-Vector<Scalar 1.33333>,<Scalar 2>> OUTPUT
 is 18 _ Operator Instances:
 is 19 _   [Lit: <2-Vector<Scalar 1.33333>,<Scalar 2>>] --> Golf<2-Vector<Scalar 1.33333>,<Scalar 2>> OUTPUT
 
+// NEIGHORHOOD OPERATIONS
+// Simple neighborhood:
+test: $(P2B) -CDanalyzed -CDlocalized "(max-hood (nbr (= (mid) 0)))"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Boolean> OUTPUT
+is 4 _   Charlie: Alfa --> <Field <Boolean>>
+is 5 _   Delta: Alfa --> <Boolean>
+is 6 _   Echo: Alfa --> <Scalar>
+is 7 _   Foxtrot: Alfa --> <Scalar 0>
+is 8 _ Operator Instances:
+is 9 _   Charlie<Field <Boolean>> --> [max-hood] --> Bravo<Boolean> OUTPUT
+is 10 _   Delta<Boolean> --> [nbr] --> Charlie<Field <Boolean>>
+is 11 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
+is 12 _   [mid] --> Echo<Scalar>
+is 13 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
+is 14 _ Function: lambda~6 [Signature: <Boolean> --> <Boolean>] called 1 times
+is 15 _   Amorphous Mediums:
+is 16 _     [Medium: Golf = root]
+is 17 _   Fields:
+is 18 _     Hotel: Golf --> <Boolean> OUTPUT
+is 19 _   Operator Instances:
+is 20 _     [Parameter 0: arg~5] --> Hotel<Boolean> OUTPUT
+is 21 _ Amorphous Mediums:
+is 22 _   [Medium: Alfa = root]
+is 23 _ Fields:
+is 24 _   Delta: Alfa --> <Boolean>
+is 25 _   Echo: Alfa --> <Scalar>
+is 26 _   Foxtrot: Alfa --> <Scalar 0>
+is 27 _   India: Alfa --> <Boolean> OUTPUT
+is 28 _   Juliet: Alfa --> <Lambda [max]>
+is 29 _   Kilo: Alfa --> <Lambda [Fun: lambda~6]>
+is 30 _ Operator Instances:
+is 31 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
+is 32 _   [mid] --> Echo<Scalar>
+is 33 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
+is 34 _   Juliet<Lambda [max]>, Kilo<Lambda [Fun: lambda~6]>, Delta<Boolean> --> [fold-hood-plus] --> India<Boolean> OUTPUT
+is 35 _   [Lit: <Lambda [max]>] --> Juliet<Lambda [max]>
+is 36 _   [Lit: <Lambda [Fun: lambda~6]>] --> Kilo<Lambda [Fun: lambda~6]>
+is 37 _ Stopping before emission
 
-// Neighborhood variables: "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
-// Neighborhood variables: -CDanalyzed -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
+test: $(P2B) -CDlocalized "(any-hood (sin (nbr (mid))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Test zero exports:
+test: $(P2B) -CDlocalized "(int-hood (nbr-range))"
+//is 0 _ TEST NOT DEFINED YET
+
+// insertion of "local" ops
+test: $(P2B) -CDanalyzed -CDlocalized "(int-hood 1)"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
+is 4 _   Charlie: Alfa --> <Field <Scalar 1>>
+is 5 _ Operator Instances:
+is 6 _   Charlie<Field <Scalar 1>> --> [int-hood] --> Bravo<Scalar> OUTPUT
+is 7 _   [Lit: <Field <Scalar 1>>] --> Charlie<Field <Scalar 1>>
+is 8 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
+is 9 _   Amorphous Mediums:
+is 10 _     [Medium: Delta = root]
+is 11 _   Fields:
+is 12 _     Echo: Delta --> <Scalar 1>
+is 13 _     Foxtrot: Delta --> <Scalar>
+is 14 _     Golf: Delta --> <Scalar> OUTPUT
+is 15 _   Operator Instances:
+is 16 _     [Lit: <Scalar 1>] --> Echo<Scalar 1>
+is 17 _     [infinitesimal] --> Foxtrot<Scalar>
+is 18 _     Foxtrot<Scalar>, Echo<Scalar 1> --> [*] --> Golf<Scalar> OUTPUT
+is 19 _ Amorphous Mediums:
+is 20 _   [Medium: Alfa = root]
+is 21 _ Fields:
+is 22 _   Hotel: Alfa --> <Scalar 0>
+is 23 _   India: Alfa --> <Scalar> OUTPUT
+is 24 _   Juliet: Alfa --> <Lambda [+]>
+is 25 _   Kilo: Alfa --> <Lambda [Fun: lambda~5]>
+is 26 _ Operator Instances:
+is 27 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
+is 28 _   Juliet<Lambda [+]>, Kilo<Lambda [Fun: lambda~5]>, Hotel<Scalar 0> --> [fold-hood-plus] --> India<Scalar> OUTPUT
+is 29 _   [Lit: <Lambda [+]>] --> Juliet<Lambda [+]>
+is 30 _   [Lit: <Lambda [Fun: lambda~5]>] --> Kilo<Lambda [Fun: lambda~5]>
+is 31 _ Stopping before emission
+
+test: $(P2B) -CDanalyzed -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
+is 4 _   Charlie: Alfa --> <Field <Scalar>>
+is 5 _   Delta: Alfa --> <Field <Scalar>>
+is 6 _   Echo: Alfa --> <Field <Scalar>>
+is 7 _   Foxtrot: Alfa --> <Scalar>
+is 8 _ Operator Instances:
+is 9 _   Charlie<Field <Scalar>> --> [min-hood] --> Bravo<Scalar> OUTPUT
+is 10 _   Delta<Field <Scalar>>, Echo<Field <Scalar>> --> [Field~~+] --> Charlie<Field <Scalar>>
+is 11 _   [nbr-range] --> Delta<Field <Scalar>>
+is 12 _   Foxtrot<Scalar> --> [nbr] --> Echo<Field <Scalar>>
+is 13 _   [mid] --> Foxtrot<Scalar>
+is 14 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 15 _   Amorphous Mediums:
+is 16 _     [Medium: Golf = root]
+is 17 _   Fields:
+is 18 _     Hotel: Golf --> <Scalar>
+is 19 _     India: Golf --> <Scalar> OUTPUT
+is 20 _     Juliet: Golf --> <Scalar>
+is 21 _   Operator Instances:
+is 22 _     [Parameter 0: arg~5] --> Hotel<Scalar>
+is 23 _     Juliet<Scalar>, Hotel<Scalar> --> [+] --> India<Scalar> OUTPUT
+is 24 _     [Local~~nbr-range] --> Juliet<Scalar>
+is 25 _ Amorphous Mediums:
+is 26 _   [Medium: Alfa = root]
+is 27 _ Fields:
+is 28 _   Foxtrot: Alfa --> <Scalar>
+is 29 _   Kilo: Alfa --> <Scalar> OUTPUT
+is 30 _   Lima: Alfa --> <Lambda [min]>
+is 31 _   Mike: Alfa --> <Lambda [Fun: lambda~6]>
+is 32 _ Operator Instances:
+is 33 _   [mid] --> Foxtrot<Scalar>
+is 34 _   Lima<Lambda [min]>, Mike<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
+is 35 _   [Lit: <Lambda [min]>] --> Lima<Lambda [min]>
+is 36 _   [Lit: <Lambda [Fun: lambda~6]>] --> Mike<Lambda [Fun: lambda~6]>
+is 37 _ Stopping before emission
+
+test: $(P2B) -CDanalyzed -CDlocalized "(max-hood (* (mid) (+ (nbr (speed)) 1)))"
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
+is 4 _   Charlie: Alfa --> <Field <Scalar>>
+is 5 _   Delta: Alfa --> <Field <Scalar>>
+is 6 _   Echo: Alfa --> <Field <Scalar>>
+is 7 _   Foxtrot: Alfa --> <Scalar>
+is 8 _   Golf: Alfa --> <Field <Scalar>>
+is 9 _   Hotel: Alfa --> <Field <Scalar 1>>
+is 10 _ Operator Instances:
+is 11 _   Charlie<Field <Scalar>> --> [max-hood] --> Bravo<Scalar> OUTPUT
+is 12 _   Golf<Field <Scalar>>, Delta<Field <Scalar>> --> [Field~~*] --> Charlie<Field <Scalar>>
+is 13 _   Echo<Field <Scalar>>, Hotel<Field <Scalar 1>> --> [Field~~+] --> Delta<Field <Scalar>>
+is 14 _   Foxtrot<Scalar> --> [nbr] --> Echo<Field <Scalar>>
+is 15 _   [speed] --> Foxtrot<Scalar>
+is 16 _   [Field~~mid] --> Golf<Field <Scalar>>
+is 17 _   [Lit: <Field <Scalar 1>>] --> Hotel<Field <Scalar 1>>
+is 18 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 19 _   Amorphous Mediums:
+is 20 _     [Medium: India = root]
+is 21 _   Fields:
+is 22 _     Juliet: India --> <Scalar>
+is 23 _     Kilo: India --> <Scalar> OUTPUT
+is 24 _     Lima: India --> <Scalar>
+is 25 _     Mike: India --> <Scalar>
+is 26 _     November: India --> <Scalar 1>
+is 27 _   Operator Instances:
+is 28 _     [Parameter 0: arg~5] --> Juliet<Scalar>
+is 29 _     Mike<Scalar>, Lima<Scalar> --> [*] --> Kilo<Scalar> OUTPUT
+is 30 _     Juliet<Scalar>, November<Scalar 1> --> [+] --> Lima<Scalar>
+is 31 _     [mid] --> Mike<Scalar>
+is 32 _     [Lit: <Scalar 1>] --> November<Scalar 1>
+is 33 _ Amorphous Mediums:
+is 34 _   [Medium: Alfa = root]
+is 35 _ Fields:
+is 36 _   Foxtrot: Alfa --> <Scalar>
+is 37 _   Oscar: Alfa --> <Scalar> OUTPUT
+is 38 _   Papa: Alfa --> <Lambda [max]>
+is 39 _   Quebec: Alfa --> <Lambda [Fun: lambda~6]>
+is 40 _ Operator Instances:
+is 41 _   [speed] --> Foxtrot<Scalar>
+is 42 _   Papa<Lambda [max]>, Quebec<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Oscar<Scalar> OUTPUT
+is 43 _   [Lit: <Lambda [max]>] --> Papa<Lambda [max]>
+is 44 _   [Lit: <Lambda [Fun: lambda~6]>] --> Quebec<Lambda [Fun: lambda~6]>
+is 45 _ Stopping before emission
+
+// Test multi-use fields:
+test: $(P2B) -CDlocalized "(let ((x (+ 2 (nbr (mid))))) (+ (min-hood (+ x x)) (max-hood x)))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Multiple exports (turned into a tuple)
+test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Test multi-use exports, tuplized exports
+test: $(P2B) -CDlocalized "(let ((x (nbr (mid))) (y (speed))) (any-hood (+ x x (nbr y) (nbr y))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Neighborhood variables:
+test: $(P2B) -CDlocalized "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Neighborhood variables: 
+test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Test handling of AMs within hood expression
+test: $(P2B) -CDlocalized "(sum-hood (if (mid) 5 7))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Basic test:
+test: $(P2B) -CDlocalized "(all-hood (+ 2 (nbr (mid))))"
+//is 0 _ TEST NOT DEFINED YET
+test: $(P2B) -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Test locals
+test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Mixing local and exported
+test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Test localization cache:
+test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
+//is 0 _ TEST NOT DEFINED YET
+
+// Local variables and a common-subexpression export:
+test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Tuple operations within a neighborhood
+test: $(P2B) -CDlocalized "(max-hood (tup (tup (nbr (mid)) 2) 3))"
+//is 0 _ TEST NOT DEFINED YET
+
+// Using fold-hood directly:
+test: $(P2B) -CDlocalized "(fold-hood + 0 (mid))"
+//is 0 _ TEST NOT DEFINED YET
+
+// How to handle nbr references	within subfunctions?
+test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (mid)))" --function-inlining-threshold 0
+//is 0 _ TEST NOT DEFINED YET
+
+test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (nbr (mid))))" --function-inlining-threshold 0
+//is 0 _ TEST NOT DEFINED YET
+
+
+
 
 // check pointwise computation allowing raising of compound op to field
 // demonstrate that space, time ops can't be raised to field ops
 // test scalar/vector-1 conversion
-
 
 // For later:
 // Get "(rep x 3 (elt (tup x 7) 0))" to realize that it's got a constant output of 3

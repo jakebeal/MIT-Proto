@@ -213,6 +213,11 @@ is 3 _ uint16_t script_len = 21;
 
 // function with references to outside variables:
 //test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --function-inlining-threshold 0
+//is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, DEF_FUN_4_OP, 
+//is 1 _   LIT_3_OP, MID_OP, ADD_OP, RET_OP, EXIT_OP };
+//is 2 _ uint16_t script_len = 15;
+//= 4 3 3
+//= 8 3 7
 
 test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, DEF_FUN_4_OP, 
