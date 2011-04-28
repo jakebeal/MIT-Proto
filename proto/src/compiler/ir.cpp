@@ -453,14 +453,34 @@ void indentSS(ostream* ss, int indent) {
 
 void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output, int indent=1) {
   OIset nodes; root->all_ois(&nodes);
-  for_set(OI*,nodes,oit) {
-    OI* oi = (*oit);
+  for_set(AM*,root->children,ait) {
+    AM* am = *ait;
+    string sub = "NO_FIELDS";
+    if(am->fields.size()) sub = (*am->fields.begin())->nicename();
+    string cname = "cluster_fn_" + am->nicename();
+    indentSS(ss,indent);
+    *ss << "subgraph " << cname << stepn << " {\n";
+    indentSS(ss,indent+1);
+    *ss << "color=green;\n";
+    indentSS(ss,indent+1);
+    *ss << "label=\"AM: " << am->nicename() << "\";\n";
+    dot_print_AM(ss,stepn,am,output,indent+1);
+    indentSS(ss,indent+1);
+    *ss << "}\n";
+    indentSS(ss,indent);
+    *ss << am->selector->nicename() << stepn << " -> " << sub
+        << stepn << " [label=\"" << am->selector->range->to_str() << "\", lhead="<<cname<<stepn<<"];"
+        << endl;
+  }
+  for_set(Field*,root->fields,f) {
+    OI* oi = (*f)->producer;
     //operator name
-    if(oi->nicename().length() > 0 && oi->op->name.length() > 0) {
-       indentSS(ss,indent);
-       *ss << oi->nicename() << stepn << "[label=\"" << oi->op->name <<
-          "\" shape=box];" << endl;
-    }
+    string fname = (*f)->nicename(), oname = "OI_"+fname;
+    string name = "UNKNOWN: ERROR";
+    if(oi->op->name.length()>0) name = oi->op->name;
+    else if(oi->op->isA("Literal")) name = ce2s(((Literal*)oi->op)->value);
+    indentSS(ss,indent);
+    *ss << oname<<stepn <<"[label=\""<<name<<"\" shape=box];" << endl;
     //inputs
     for(int i=0; i<oi->inputs.size(); i++) {
       if(oi->inputs[i]->nicename().length() > 0)
@@ -468,25 +488,21 @@ void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output, int indent=1)
         *ss << oi->inputs[i]->nicename() << stepn << " [label=\"" <<
            oi->inputs[i]->nicename() << "\"];" << endl;
         indentSS(ss,indent);
-        *ss << oi->inputs[i]->nicename() << stepn << " -> " << oi->nicename()
+        *ss << oi->inputs[i]->nicename() << stepn << " -> " << oname
            << stepn << " [label=\"" << oi->inputs[i]->range->to_str() << "\"];"
            << endl;
     }
     //output
-    if(oi->op->name.length() > 0) {
+    indentSS(ss,indent);
+    *ss << oname << stepn << " -> " << fname <<
+      stepn << " [label=\"" << oi->output->range->to_str() << "\"];" <<
+      endl;
+    if(oi->output==output) { //mark as OUTPUT
       indentSS(ss,indent);
-      *ss << oi->nicename() << stepn << " -> " << oi->output->nicename() <<
-         stepn << " [label=\"" << oi->output->range->to_str() << "\"];" <<
-         endl;
-      if(oi->output==output) { //mark as OUTPUT
-        indentSS(ss,indent);
-        *ss << oi->output->nicename() << stepn << " [label=\"" <<
-           oi->output->nicename() << "\" shape=doubleoctagon];" << endl;
-      } else {
-        indentSS(ss,indent);
-        *ss << oi->output->nicename() << stepn << " [label=\"" <<
-           oi->output->nicename() << "\"];" << endl;
-      }
+      *ss << fname<<stepn <<" [label=\""<<fname<<"\" shape=doubleoctagon];\n";
+    } else {
+      indentSS(ss,indent);
+      *ss << fname<<stepn << " [label=\"" << fname << "\"];" << endl;
     }
   }
 }
@@ -508,9 +524,14 @@ void DFG::dot_print_function(ostream* out,AM* root,Field* output) {
     }
   }
 
-  dot_print_AM(&ss, step, root, output);
+  ss << "    subgraph cluster_base_fn" << step << " {\n";
+  ss << "        color=green;\n";
+  ss << "        label=\"main expression\";\n";
+  dot_print_AM(&ss, step, root, output, 2);
+  ss << "    }\n";
 
   *out << "digraph dfg {" << endl;
+  *out << "  compound = true;" << endl; // allow edges to AM clusters
   if( ss.str().length() > 0 ) {
     ss << "  }\n";
     head << "  subgraph cluster" << step << " {\n";

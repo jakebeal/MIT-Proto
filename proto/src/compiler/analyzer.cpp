@@ -1636,7 +1636,7 @@ public:
       cop->signature->required_inputs.push_back(scratch);
       cop->signature->names["arg0"] = 0;
     } else if(exports.size()==1) {
-      V4 << "One exports: using "<<ce2s(exports[0])<<" directly"<<endl;
+      V4 << "One export: using "<<ce2s(exports[0])<<" directly"<<endl;
       *exportf = exports[0];
     } else {
       V4 << "Multiple exports: binding into a tuple"<<endl;
@@ -1656,7 +1656,7 @@ public:
     }
     return cop;
   }
-
+  
   Operator* nbr_op_to_folder(OperatorInstance* oi) {
     string name = oi->op->name;
     V3<<"Selecting folder for: "<<name<<endl;
