@@ -732,6 +732,7 @@ void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
     snprintf(buf, 1000, "mkdir -p %s", dump_dir); 
     if(!system(buf)) {
        // dump_dir already exists - ignore
+       // this prevents a stupid compiler warning
     }
     // open the file
     if(time_in_name)

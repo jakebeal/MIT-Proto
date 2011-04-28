@@ -2971,6 +2971,7 @@ void PaleoCompiler::init_standalone(Args* args) {
     snprintf(buf, 1000, "mkdir -p %s", dump_dir);
     if(!system(buf)) {
        // dump_dir already exists - ignore
+       // this prevents a stupid compiler warning
     }
     sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
     

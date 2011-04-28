@@ -138,7 +138,8 @@ class InstructionPropagator; class Instruction;
 
 class ProtoKernelEmitter : public CodeEmitter {
  public:
-  bool is_dump_hex, paranoid;
+  bool is_dump_hex, paranoid; 
+  static bool op_debug;
   int max_loops, verbosity, print_compact;
   NeoCompiler* parent;
 
@@ -146,7 +147,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   uint8_t* emit_from(DFG* g, int* len);
 
   /// map of compound ops -> instructions (in global mem)
-  map<CompoundOp*,CompilationElement*> globalNameMap;
+  map<CompoundOp*,Instruction*> globalNameMap;
 
  private:
   vector<InstructionPropagator*> rules;

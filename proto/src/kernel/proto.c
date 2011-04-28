@@ -1307,47 +1307,51 @@ INLINE void check_env (MACHINE *m) {
 }
 
 INLINE void dump_stack (MACHINE *m) {
-  if (is_tracing(m)) {
-    int i;
-    int max_dump = 6; // 99
-    POST("---\n");
-    // POST("S[%d]E[%d]\n", max_stack_size, max_env_size);
-    for (i = 0; i < MIN(m->sp - m->stack, max_dump); i++) {
+   ///@TODO: add a way to call delft_dump_stack conditionally
+   if (is_tracing(m)) {
+      proto_dump_stack(m);
+   }
+}
+
+/** 
+ * Original PROTO-style stack dump: default
+ */
+void proto_dump_stack (MACHINE *m) {
+   int i;
+   int max_dump = 6; // 99
+   POST("---\n");
+   // POST("S[%d]E[%d]\n", max_stack_size, max_env_size);
+   for (i = 0; i < MIN(m->sp - m->stack, max_dump); i++) {
       POST("->S[%d] ", i); post_data(PEEK(i)); POST("\n");
-    }
-    for (i = 0; i < MIN(m->ep - m->env, max_dump); i++) {
+   }
+   for (i = 0; i < MIN(m->ep - m->env, max_dump); i++) {
       POST("->E[%d] ", i); post_data(ENV_PEEK(i)); POST("\n");
-    }
-  }
+   }
 }
 
 /** 
  * PROTO-delft-style stack dump
  */
-/*
-INLINE void dump_stack (MACHINE *m) {
-  if (is_tracing(m)) {
-    int i;
-    int max_dump = 6; // 99
-    if( MAX(m->sp - m->stack, m->ep - m->env) == 0 )
-       return;
-    POST("-------------------\n");
-    POST("pos \t stack \t env\n");
-    POST("--- \t ----- \t ---\n");
-    for( i=MAX(MAX(m->sp - m->stack, m->ep - m->env),max_dump)-1; i >= 0; i-- ) {
-       POST( " %d \t ", i);
-       if(m->sp - m->stack >= i) 
-          post_data(PEEK(i));
-       POST("  \t ");
-       if(m->ep - m->env   >= i) 
-          post_data(ENV_PEEK(i));
-       POST("  \t ");
-       POST("\n");
-    }
-    POST("-------------------\n");
-  }
+void delft_dump_stack (MACHINE *m) {
+   int i;
+   int max_dump = 6; // 99
+   if( MAX(m->sp - m->stack, m->ep - m->env) == 0 )
+      return;
+   POST("-------------------\n");
+   POST("pos \t stack \t env\n");
+   POST("--- \t ----- \t ---\n");
+   for( i=MAX(MAX(m->sp - m->stack, m->ep - m->env),max_dump)-1; i >= 0; i-- ) {
+      POST( " %d \t ", i);
+      if(m->sp - m->stack >= i) 
+         post_data(PEEK(i));
+      POST("  \t ");
+      if(m->ep - m->env   >= i) 
+         post_data(ENV_PEEK(i));
+      POST("  \t ");
+      POST("\n");
+   }
+   POST("-------------------\n");
 }
-*/
 
 typedef union {
   flo val;

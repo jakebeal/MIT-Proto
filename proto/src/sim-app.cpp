@@ -456,6 +456,7 @@ void process_app_args(Args *args) {
     snprintf(dump_name, 1000, "mkdir -p %s", dump_dir);
     if(!system(dump_name)) {
        //dump_dir already exists
+       // this prevents a stupid compiler warning
     }
     sprintf(dump_name,"%s/%s.log",dump_dir,dump_stem);
     cperr = cpout = new ofstream(dump_name); // begin by making compiler output

@@ -17,26 +17,36 @@ map<int,string> opnames;
 map<string,int> primitive2op;
 map<int,int> op_stackdeltas;
 
-/// instructions like SQRT_OP that have no special rules or pointers
+// forward declaration for Block
 struct Block;
+
+/// instructions like SQRT_OP that have no special rules or pointers
 struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
-  Instruction *next,*prev; // sequence links
+  /// sequence links
+  Instruction *next,*prev; 
+  /// code block containing this instruction
   Block* container;
-  int location; // -1 = unknown
-   // instructions "neighboring" this one
+  /// index in opcode chain, unknown=-1
+  int location; 
+  /// instructions "neighboring" this one
   set<Instruction*, CompilationElement_cmp> dependents;
-  
+  /// instruction's opcode
   OPCODE op;
-  vector<uint8_t> parameters; // values consumed after op
-  int stack_delta; // change in stack size following this instruction
-  int env_delta; // change in environment size following this instruction
+  /// values consumed after op
+  vector<uint8_t> parameters; 
+  /// change in stack size following this instruction
+  int stack_delta; 
+  /// change in environment size following this instruction
+  int env_delta; 
+
   Instruction(OPCODE op, int ed=0) {
     this->op=op; stack_delta=op_stackdeltas[op]; env_delta=ed; 
     location=-1; next=prev=NULL; container = NULL;
   }
   virtual void print(ostream* out=0) {
     *out << (opnames.count(op) ? opnames[op] : "<UNKNOWN OP>");
-    //*out << "[" << location << "]";
+    if(ProtoKernelEmitter::op_debug)
+      *out << "[" << location << "]";
     for(int i=0;i<parameters.size();i++) { *out << ", " << i2s(parameters[i]); }
   }
   
@@ -230,18 +240,19 @@ struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
     padd16(max_stack+1); padd(max_env); // +1 for enclosing function call
     Instruction::output(buf);
   }
-  /*
   virtual void print(ostream* out=0) {
-     *out << "VM Definition "
-          << "[ export_len:" << export_len
-          << ", n_exports:"  << n_exports
-          << ", n_globals:"  << n_globals
-          << ", n_states:"   << n_states
-          << ", max_stack:"  << max_stack
-          << ", max_env:"    << max_env
-          << " ]";
+     if(ProtoKernelEmitter::op_debug)
+        *out << "VM Definition "
+           << "[ export_len:" << export_len
+           << ", n_exports:"  << n_exports
+           << ", n_globals:"  << n_globals
+           << ", n_states:"   << n_states
+           << ", max_stack:"  << max_stack
+           << ", max_env:"    << max_env
+           << " ]";
+     else
+        Instruction::print(out);
   }
-  */
   int size() { return 9; }
 };
 
@@ -352,32 +363,20 @@ struct FunctionCall : public Instruction { reflection_sub(FunctionCall,Instructi
       FunctionCall(CompoundOp* compoundOpParam)
          : Instruction(FUNCALL_0_OP) {
          compoundOp = compoundOpParam;
+         // dynamically compute op, env_delta, & stack_delta
          env_delta = getNumParams(compoundOp);
-         op = newFunCallInstr(env_delta)->op;
-         stack_delta = newFunCallInstr(env_delta)->stack_delta;
+         op = FUNCALL_0_OP+env_delta;
+         stack_delta = -env_delta;
       }
    private:
       /**
        * @returns the number of parameters of this function call
-       * @TODO: this needs to be smarter about how it handles &rest elements.
        */
       static int getNumParams(CompoundOp* compoundOp) {
-         if(!compoundOp->signature->optional_inputs.empty() ||
-            compoundOp->signature->rest_input != NULL)
-            ierror("Don't know how to handle variable parameter length functions, as in " + ce2s(compoundOp));
-         return compoundOp->signature->n_fixed();
-      }
-
-      /**
-       * Creates a new FUNCALL instruction where index is the number of input
-       * parameters to the function.
-       */
-      static Instruction* newFunCallInstr(int index) {
-         Instruction* ret = NULL;
-         if(index < 5) ret = new Instruction(FUNCALL_0_OP + index, index);
-         else if(index < 256) {ret = new Instruction(FUNCALL_OP, index); ret->padd(index);}
-         else ierror("Number of function parameters too large: "+i2s(index));
-         return ret;
+         // n_fixed = required + optional parameters
+         // rest_input = single tuple of remaining parameters
+         return compoundOp->signature->n_fixed() +
+            (compoundOp->signature->rest_input!=NULL);
       }
 };
 
@@ -924,20 +923,9 @@ Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l,
   ierror("Don't know how to emit literal: "+l->to_str());
 }
 
-/**
- * Helper function to create the proper REF_OP
- * (e.g., REF_0_OP, REF_OP 12, etc.)
- */
-Instruction* newRefInstr(int index) {
-   Instruction* ret = NULL;
-   if(index < MAX_REF_OPS) ret = new Instruction(REF_0_OP + index);
-   else if(index < 256) {ret = new Instruction(REF_OP); ret->padd(index);}
-   else ierror("Environment reference too large: "+i2s(index));
-   return ret;
-}
-
 Instruction* ProtoKernelEmitter::parameter_to_instruction(Parameter* p) {
-   return newRefInstr(p->index);
+   Instruction* ret = new Instruction(REF_0_OP+p->index);
+   return ret;
 }
 
 // adds a tuple to the global declarations, then references it in vector op i
@@ -1083,6 +1071,9 @@ void ProtoKernelEmitter::load_ops(string name, NeoCompiler* parent) {
   sv_ops["mux"] = make_pair(MUX_OP,VMUX_OP);
 }
 
+// small hack for getting op debugging into low-level print functions
+bool ProtoKernelEmitter::op_debug = false;
+
 ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
   // set global variables
   this->parent=parent;
@@ -1093,6 +1084,7 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
     args->pop_int() : parent->verbosity;
   max_loops=args->extract_switch("--emitter-max-loops")?args->pop_int():10;
   paranoid = args->extract_switch("--emitter-paranoid")|parent->paranoid;
+  op_debug = args->extract_switch("--emitter-op-debug");
   // load operation definitions
   string name = "core.ops"; load_ops(name,parent); terminate_on_error();
   // setup rule collection
@@ -1151,11 +1143,11 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   } else if(oi->op->isA("CompoundOp")) { 
     V4 << "Compound OP is: " << ce2s(oi->op) << endl;
     CompoundOp* cop = ((CompoundOp*)oi->op);
+    // get global ref to DEF_FUN
     Global* def_fun_instr = ((Global*)globalNameMap[cop]);
-    Reference* glo_ref = new Reference(def_fun_instr,oi);
-    chain_i(&chain,glo_ref); //needs offset to resolve
-    Instruction* fun_call = new FunctionCall(cop);
-    chain_i(&chain,fun_call);
+    // add GLO_REF, then FUN_CALL
+    chain_i(&chain,new Reference(def_fun_instr,oi)); 
+    chain_i(&chain,new FunctionCall(cop));
   } else { // also CompoundOp, Parameter
     ierror("Don't know how to emit instruction for "+oi->op->to_str());
   }
