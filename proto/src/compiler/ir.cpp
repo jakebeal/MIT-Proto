@@ -451,12 +451,18 @@ void indentSS(ostream* ss, int indent) {
     *ss << "    ";
 }
 
-void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output, int indent=1) {
-  OIset nodes; root->all_ois(&nodes);
+// Dot output naming utilities
+string dot_oname(OI* oi) { return "OI_"+oi->output->nicename(); }
+string dot_oname(Field* f) { return "OI_"+f->nicename(); }
+string dot_fname(Field* f) { return f->nicename(); }
+/// Print a DOT directed graph for an amorphous medium
+void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output,int indent=1,bool field_nodes=false){
+  string outport = ""; // ":s";
+  // print child amorphous mediums
   for_set(AM*,root->children,ait) {
     AM* am = *ait;
     string sub = "NO_FIELDS";
-    if(am->fields.size()) sub = (*am->fields.begin())->nicename();
+    if(am->fields.size()) sub = dot_oname(*am->fields.begin());
     string cname = "cluster_fn_" + am->nicename();
     indentSS(ss,indent);
     *ss << "subgraph " << cname << stepn << " {\n";
@@ -464,14 +470,18 @@ void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output, int indent=1)
     *ss << "color=green;\n";
     indentSS(ss,indent+1);
     *ss << "label=\"AM: " << am->nicename() << "\";\n";
-    dot_print_AM(ss,stepn,am,output,indent+1);
+    dot_print_AM(ss,stepn,am,output,indent+1,field_nodes);
     indentSS(ss,indent+1);
     *ss << "}\n";
     indentSS(ss,indent);
-    *ss << am->selector->nicename() << stepn << " -> " << sub
-        << stepn << " [label=\"" << am->selector->range->to_str() << "\", lhead="<<cname<<stepn<<"];"
-        << endl;
+    string selector=field_nodes?dot_fname(am->selector):dot_oname(am->selector);
+    string label = (field_nodes?"":(dot_fname(am->selector)+"\\n"))
+      + ce2s(am->selector->range);
+    string inport = ""; // ":n";
+    *ss << selector << stepn << outport << " -> " << sub << stepn << inport 
+        << " [label=\"" << label << "\", lhead="<<cname<<stepn<<"];\n";
   }
+  // print operators
   for_set(Field*,root->fields,f) {
     OI* oi = (*f)->producer;
     //operator name
@@ -480,36 +490,44 @@ void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output, int indent=1)
     if(oi->op->name.length()>0) name = oi->op->name;
     else if(oi->op->isA("Literal")) name = ce2s(((Literal*)oi->op)->value);
     indentSS(ss,indent);
-    *ss << oname<<stepn <<"[label=\""<<name<<"\" shape=box];" << endl;
+    *ss << oname << stepn <<"[label=\""<<name<<"\" shape=box];" << endl;
     //inputs
     for(int i=0; i<oi->inputs.size(); i++) {
-      if(oi->inputs[i]->nicename().length() > 0)
+      string label = ce2s(oi->inputs[i]->range);
+      string iname = dot_fname(oi->inputs[i]);
+      if(!field_nodes) { // if not showing fields...
+        label = dot_fname(oi->inputs[i]) + "\\n" + label; // put name on edge
+        iname = dot_oname(oi->inputs[i]); // and connect to OI instead
+      } else {
         indentSS(ss,indent);
-        *ss << oi->inputs[i]->nicename() << stepn << " [label=\"" <<
-           oi->inputs[i]->nicename() << "\"];" << endl;
-        indentSS(ss,indent);
-        *ss << oi->inputs[i]->nicename() << stepn << " -> " << oname
-           << stepn << " [label=\"" << oi->inputs[i]->range->to_str() << "\"];"
-           << endl;
+        *ss << iname << stepn << " [label=\"" << iname << "\"];" << endl;
+      }
+      string inport = "";
+      //if(oi->inputs.size()==1 || (oi->inputs.size()==3 && i==1)) { inport==":n";
+      //} else if(oi->inputs.size()<=3 && i==0) { inport=":nw";
+      //} else if(oi->inputs.size()<=3) { inport=":ne";
+      //}
+      indentSS(ss,indent);
+      *ss << iname << stepn << outport << " -> " << oname << stepn 
+          << inport << " [label=\"" << label << "\"];" << endl;
     }
-    //output
-    indentSS(ss,indent);
-    *ss << oname << stepn << " -> " << fname <<
-      stepn << " [label=\"" << oi->output->range->to_str() << "\"];" <<
-      endl;
-    if(oi->output==output) { //mark as OUTPUT
+    //operator output
+    if(field_nodes || (oi->output==output)) {
+      string inport = ""; // ":n";
       indentSS(ss,indent);
-      *ss << fname<<stepn <<" [label=\""<<fname<<"\" shape=doubleoctagon];\n";
-    } else {
+      *ss << oname << stepn << outport << " -> " << fname << stepn << inport
+          << " [label=\"" << oi->output->range->to_str() << "\"];" << endl;
       indentSS(ss,indent);
-      *ss << fname<<stepn << " [label=\"" << fname << "\"];" << endl;
+      // DFG output shown as double octagon
+      string shape = (oi->output==output)?" shape=doubleoctagon":"";
+      *ss << fname<<stepn <<" [label=\""<<fname<<"\""<<shape<<"];\n";
     }
   }
 }
 
 static int step=0;
 static string pastSteps = "";
-void DFG::dot_print_function(ostream* out,AM* root,Field* output) {
+void DFG::dot_print_function(ostream* out,AM* root,Field* output,bool field_nodes) {
   stringstream ss, head;
   step++;
   
@@ -519,7 +537,7 @@ void DFG::dot_print_function(ostream* out,AM* root,Field* output) {
        ss << "    subgraph cluster_fn_" << op->name << step << " {\n";
        ss << "        color=green;\n";
        ss << "        label=\"Function: " << op->name << "\";\n";
-       dot_print_AM(&ss, step, *i, op->output, 2);
+       dot_print_AM(&ss, step, *i, op->output, 2, field_nodes);
        ss << "    }\n";
     }
   }
@@ -527,7 +545,7 @@ void DFG::dot_print_function(ostream* out,AM* root,Field* output) {
   ss << "    subgraph cluster_base_fn" << step << " {\n";
   ss << "        color=green;\n";
   ss << "        label=\"main expression\";\n";
-  dot_print_AM(&ss, step, root, output, 2);
+  dot_print_AM(&ss, step, root, output, 2, field_nodes);
   ss << "    }\n";
 
   *out << "digraph dfg {" << endl;
@@ -736,9 +754,9 @@ void DFG::print(ostream* out) {
   dfg_print_function(out,output->domain->root(),output);
 }
 
-void DFG::printdot(ostream* out) {
+void DFG::printdot(ostream* out, bool field_nodes) {
   pastSteps = "";
-  dot_print_function(out,output->domain->root(),output);
+  dot_print_function(out,output->domain->root(),output,field_nodes);
 }
 
 /*****************************************************************************

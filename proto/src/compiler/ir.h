@@ -381,7 +381,7 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   
   DataflowGraph() { output = NULL; } // base state
   void print(ostream* out=0);
-  void printdot(ostream* out=0);
+  void printdot(ostream* out=0,bool field_nodes=false);
   
   // DFG manipulation
   void relocate_input(OI* src, int src_loc, OI* dst,int dst_loc);
@@ -397,8 +397,8 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   Field* add_literal(ProtoType* val,AM* space,CompilationElement* src);
   Field* add_parameter(CompoundOp* op,string name,int index,AM* space,CE* src);
 
-   private:
-  void dot_print_function(ostream* out,AM* root,Field* output);
+ private:
+  void dot_print_function(ostream* out,AM* root,Field* output,bool field_nodes);
 };
 
 /*****************************************************************************

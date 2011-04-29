@@ -44,7 +44,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   if(is_dump_interpreted) interpreter->dfg->print(cpout);
   if(is_dump_dotfiles) {
     ofstream dotstream((dotstem+".interpreted.dot").c_str());
-    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream);
+    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream,is_dotfields);
   }
   if(is_early_terminate==3) 
     { *cperr << "Stopping before analysis" << endl; exit(0); }
@@ -55,7 +55,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   if(is_dump_analyzed) interpreter->dfg->print(cpout);
   if(is_dump_dotfiles) {
     ofstream dotstream((dotstem+".analyzed.dot").c_str());
-    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream);
+    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream,is_dotfields);
   }
   if(is_early_terminate==2) 
     { *cperr << "Stopping before localization" << endl; exit(0); }
@@ -70,7 +70,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   if(is_dump_raw_localized) interpreter->dfg->print(cpout);
   if(is_dump_dotfiles) {
     ofstream dotstream((dotstem+".rawlocalized.dot").c_str());
-    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream);
+    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream,is_dotfields);
   }
   V1 << "Analyzing and optimizing localized DFG\n";
   compile_phase = "local analysis"; // PHASE: IR manipulation
@@ -78,7 +78,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
   if(is_dump_localized) interpreter->dfg->print(cpout);
   if(is_dump_dotfiles) {
     ofstream dotstream((dotstem+".localized.dot").c_str());
-    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream);
+    if(dotstream.is_open()) interpreter->dfg->printdot(&dotstream,is_dotfields);
   }
   if(is_early_terminate==1) 
     { *cperr << "Stopping before emission" << endl; exit(0); }
@@ -99,6 +99,7 @@ NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
   is_dump_localized = args->extract_switch("-CDlocalized") | is_dump_all;
   is_dump_code = args->extract_switch("--instructions") | is_dump_all;
   is_dump_dotfiles = args->extract_switch("--dump-dotfiles");
+  is_dotfields = args->extract_switch("-dot-field-nodes");
   dotstem = args->extract_switch("--dotstem")?args->pop_next():"ir";
   is_early_terminate = (args->extract_switch("--no-emission") ? 1 : 0);
   if(args->extract_switch("--no-localization")) is_early_terminate = 2;
