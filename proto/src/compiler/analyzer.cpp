@@ -1448,13 +1448,20 @@ class DeadCodeEliminator : public IRPropagator {
   
   void act(Field* f) {
     if(!kill_f.count(f)) return; // only check the dead
-    bool live=false;
-    if(f->is_output()) live=true; // output is live
-    if(f->producer->op->attributes.count(":side-effect")) live=true;
-    for_set(Consumer,f->consumers,i) // live consumer -> live
-      if(!kill_f.count((*i).first->output)) {live=true;break;}
+    bool live=false; string reason = "";
+    if(f->is_output()) { live=true; reason="output";} // output is live
+    if(f->producer->op->attributes.count(":side-effect"))
+      { live=true; reason="side effect"; }
+    for_set(Consumer,f->consumers,i) { // live consumer -> live
+      // ignore non-called functions
+      if(root->relevant.count((*i).first->domain()->root())==0) continue;
+      // check for live consumers
+      if(!kill_f.count((*i).first->output)) 
+        {live=true;reason="consumer";break;}
+    }
     for_set(AM*,f->selectors,ai) // live selector -> live
-      if(!kill_a.count(*ai)) {live=true;break;}
+      if(!kill_a.count(*ai)) {live=true;reason="selector";break;}
+    V4<<"Is field "<<ce2s(f)<<" live? "<<b2s(live)<<"("<<reason<<")"<<endl;
     if(live) { kill_f.erase(f); note_change(f); }
   }
   
@@ -1586,7 +1593,13 @@ public:
         if((*i)->op==Env::core_op("nbr")) {
           root->relocate_consumers((*i)->output,(*i)->inputs[0]);
         } else if((*i)->op==Env::core_op("local")) {
-          root->relocate_consumers((*i)->output,(*i)->inputs[0]);
+          ierror("No locals should be found in an extracted hood function");
+        } else if((*i)->op==Env::core_op("restrict")) {
+          // restrict is not change to reference here: it will be handled later
+          OI* src = ((*i)->inputs[0]==NULL?NULL:(*i)->inputs[0]->producer);
+          if(src!=NULL && src->op==Env::core_op("local")) {
+            root->relocate_source(*i,0,src->inputs[0]);
+          }
         } else {
           (*i)->op = localize_operator((*i)->op);
           (*i)->output->range = (*i)->op->signature->output; // fix output
@@ -1613,8 +1626,9 @@ public:
             ierror("No input for nbr operator: "+f->producer->to_str());
           if(index_of(&exports,f->producer->inputs[0])==-1)
             exports.push_back(f->producer->inputs[0]);
-        } 
-        if(f->range->isA("ProtoField") && !elts.count(f->producer))
+        }
+        if(f->range->isA("ProtoField") && !elts.count(f->producer) &&
+           f->producer->op!=Env::core_op("local")) 
           { elts.insert(f->producer); q.insert(f->producer); }
       }
     }

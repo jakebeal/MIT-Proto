@@ -702,7 +702,7 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
   for(int i=0;i<in->size();i++)
     fmap[(*in)[i]] =
       add_parameter(cop,make_gensym("arg")->name,i,cop->body,(*in)[i]);
-
+  
   // copy AMs & OIs
   amap[space]=cop->body;
   for_set(OI*,*elts,i) {
@@ -730,12 +730,21 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
   }
   for_map(OI*,OI*,omap,oi) {
     for(int i=0; i<oi->first->inputs.size(); i++) {
-      if(amap.count(oi->first->inputs[i]->domain)) 
-        oi->second->add_input(fmap[oi->first->inputs[i]]);
-      else
-        oi->second->add_input(oi->first->inputs[i]);
+      if(amap.count(oi->first->inputs[i]->domain)) {
+        if(fmap.count(oi->first->inputs[i])) { // internal field
+          oi->second->add_input(fmap[oi->first->inputs[i]]);
+        } else {  // new reference
+          OI* restrict = new OI(oi->second,Env::core_op("restrict"),
+                                oi->second->output->domain);
+          restrict->add_input(oi->first->inputs[i]);
+          oi->second->add_input(restrict->output);
+        }
+      } else {
+        oi->second->add_input(oi->first->inputs[i]); // external reference
+      }
     }
   }
+  
   // complete!
   cop->output = fmap[out]; // always in root AM
   return cop;

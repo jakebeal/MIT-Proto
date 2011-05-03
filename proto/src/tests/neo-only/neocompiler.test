@@ -1650,6 +1650,59 @@ is 19 _   [Lit: <Lambda [max]>] --> Golf<Lambda [max]>
 is 20 _   [Lit: <Lambda [Fun: lambda~6]>] --> Hotel<Lambda [Fun: lambda~6]>
 is 21 _ Stopping before emission
 
+// Basic neighborhood localization test:
+test: $(P2B) -CDlocalized "(all-hood (+ 2 (nbr (mid))))"
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar 2>
+is 7 _   Operator Instances:
+is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 9 _     Delta<Scalar 2>, Bravo<Scalar> --> [+] --> Charlie<Scalar> OUTPUT
+is 10 _     [Lit: <Scalar 2>] --> Delta<Scalar 2>
+is 11 _ Amorphous Mediums:
+is 12 _   [Medium: Echo = root]
+is 13 _ Fields:
+is 14 _   Foxtrot: Echo --> <Scalar>
+is 15 _   Golf: Echo --> <Scalar> OUTPUT
+is 16 _   Hotel: Echo --> <Lambda [min]>
+is 17 _   India: Echo --> <Lambda [Fun: lambda~6]>
+is 18 _ Operator Instances:
+is 19 _   [mid] --> Foxtrot<Scalar>
+is 20 _   Hotel<Lambda [min]>, India<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 21 _   [Lit: <Lambda [min]>] --> Hotel<Lambda [min]>
+is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
+is 23 _ Stopping before emission
+
+test: $(P2B) -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar>
+is 7 _   Operator Instances:
+is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 9 _     Delta<Scalar>, Bravo<Scalar> --> [+] --> Charlie<Scalar> OUTPUT
+is 10 _     [Local~~nbr-range] --> Delta<Scalar>
+is 11 _ Amorphous Mediums:
+is 12 _   [Medium: Echo = root]
+is 13 _ Fields:
+is 14 _   Foxtrot: Echo --> <Scalar>
+is 15 _   Golf: Echo --> <Scalar> OUTPUT
+is 16 _   Hotel: Echo --> <Lambda [min]>
+is 17 _   India: Echo --> <Lambda [Fun: lambda~6]>
+is 18 _ Operator Instances:
+is 19 _   [mid] --> Foxtrot<Scalar>
+is 20 _   Hotel<Lambda [min]>, India<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 21 _   [Lit: <Lambda [min]>] --> Hotel<Lambda [min]>
+is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
+is 23 _ Stopping before emission
+
 // Test zero exports:
 test: $(P2B) -CDlocalized "(int-hood (nbr-range))"
 is 0 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
@@ -1848,6 +1901,98 @@ is 42 _   [Lit: <Lambda [max]>] --> Quebec<Lambda [max]>
 is 43 _   [Lit: <Lambda [Fun: lambda~9]>] --> Romeo<Lambda [Fun: lambda~9]>
 is 44 _ Stopping before emission
 
+// Neighborhood variables:
+test: $(P2B) -CDlocalized "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar>
+is 7 _   Operator Instances:
+is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 9 _     Delta<Scalar>, Bravo<Scalar> --> [+] --> Charlie<Scalar> OUTPUT
+is 10 _     [mid] --> Delta<Scalar>
+is 11 _ Amorphous Mediums:
+is 12 _   [Medium: Echo = root]
+is 13 _ Fields:
+is 14 _   Foxtrot: Echo --> <Scalar>
+is 15 _   Golf: Echo --> <Scalar> OUTPUT
+is 16 _   Hotel: Echo --> <Scalar>
+is 17 _   India: Echo --> <Lambda [min]>
+is 18 _   Juliet: Echo --> <Lambda [Fun: lambda~6]>
+is 19 _ Operator Instances:
+is 20 _   [mid] --> Foxtrot<Scalar>
+is 21 _   Foxtrot<Scalar>, Hotel<Scalar> --> [+] --> Golf<Scalar> OUTPUT
+is 22 _   India<Lambda [min]>, Juliet<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Hotel<Scalar>
+is 23 _   [Lit: <Lambda [min]>] --> India<Lambda [min]>
+is 24 _   [Lit: <Lambda [Fun: lambda~6]>] --> Juliet<Lambda [Fun: lambda~6]>
+is 25 _ Stopping before emission
+
+// Neighborhood variables: 
+test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar>
+is 7 _   Operator Instances:
+is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 9 _     Delta<Scalar>, Bravo<Scalar> --> [+] --> Charlie<Scalar> OUTPUT
+is 10 _     Echo<Scalar> --> [reference] --> Delta<Scalar>
+is 11 _ Amorphous Mediums:
+is 12 _   [Medium: Foxtrot = root]
+is 13 _ Fields:
+is 14 _   Echo: Foxtrot --> <Scalar>
+is 15 _   Golf: Foxtrot --> <Scalar 2>
+is 16 _   Hotel: Foxtrot --> <Scalar>
+is 17 _   India: Foxtrot --> <Scalar> OUTPUT
+is 18 _   Juliet: Foxtrot --> <Scalar>
+is 19 _   Kilo: Foxtrot --> <Lambda [min]>
+is 20 _   Lima: Foxtrot --> <Lambda [Fun: lambda~6]>
+is 21 _ Operator Instances:
+is 22 _   Golf<Scalar 2>, Hotel<Scalar> --> [+] --> Echo<Scalar>
+is 23 _   [Lit: <Scalar 2>] --> Golf<Scalar 2>
+is 24 _   [mid] --> Hotel<Scalar>
+is 25 _   Echo<Scalar>, Juliet<Scalar> --> [+] --> India<Scalar> OUTPUT
+is 26 _   Kilo<Lambda [min]>, Lima<Lambda [Fun: lambda~6]>, Echo<Scalar> --> [fold-hood-plus] --> Juliet<Scalar>
+is 27 _   [Lit: <Lambda [min]>] --> Kilo<Lambda [min]>
+is 28 _   [Lit: <Lambda [Fun: lambda~6]>] --> Lima<Lambda [Fun: lambda~6]>
+is 29 _ Stopping before emission
+
+// Test handling of AMs within hood expression
+test: $(P2B) -CDlocalized "(sum-hood (if (mid) 5 7))"
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
+// Test locals
+test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
+// Mixing local and exported
+test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
+// Mixing local and exported
+test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ (+ 1 x) (nbr x)))))"
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
+// Test localization cache:
+test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
+// Local variables and a common-subexpression export:
+test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
 // Multiple exports (turned into a tuple)
 //test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
 //is 0 _ TEST NOT DEFINED YET
@@ -1858,55 +2003,24 @@ is 44 _ Stopping before emission
 //is 0 _ TEST NOT DEFINED YET
 //is 44 _ Stopping before emission
 
-// Neighborhood variables:
-//test: $(P2B) -CDlocalized "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
-//is 0 _ TEST NOT DEFINED YET
-//is 44 _ Stopping before emission
-
-// Neighborhood variables: 
-//test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
-//is 0 _ TEST NOT DEFINED YET
-
-// Test handling of AMs within hood expression
-test: $(P2B) -CDlocalized "(sum-hood (if (mid) 5 7))"
-//is 0 _ TEST NOT DEFINED YET
-
-// Basic test:
-test: $(P2B) -CDlocalized "(all-hood (+ 2 (nbr (mid))))"
-//is 0 _ TEST NOT DEFINED YET
-test: $(P2B) -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
-//is 0 _ TEST NOT DEFINED YET
-
-// Test locals
-test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
-//is 0 _ TEST NOT DEFINED YET
-
-// Mixing local and exported
-test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
-//is 0 _ TEST NOT DEFINED YET
-
-// Test localization cache:
-test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
-//is 0 _ TEST NOT DEFINED YET
-
-// Local variables and a common-subexpression export:
-test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
-//is 0 _ TEST NOT DEFINED YET
-
 // Tuple operations within a neighborhood
 test: $(P2B) -CDlocalized "(max-hood (tup (tup (nbr (mid)) 2) 3))"
 //is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
 
 // Using fold-hood directly:
 test: $(P2B) -CDlocalized "(fold-hood + 0 (mid))"
 //is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
 
 // How to handle nbr references	within subfunctions?
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (mid)))" --function-inlining-threshold 0
 //is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
 
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (nbr (mid))))" --function-inlining-threshold 0
 //is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
 
 
 
