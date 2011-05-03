@@ -1212,11 +1212,14 @@ string hexbyte(uint8_t v) {
 }
 
 class ReferenceToParameter : public IRPropagator {
- private:
-  int verbosity;
  public:
-  ReferenceToParameter(int verbosity)
-     : IRPropagator(false,true,false) { this->verbosity = verbosity; }
+  ReferenceToParameter(ProtoKernelEmitter* parent)
+     : IRPropagator(false,true,false) { 
+    // Kyle: please make this bit work:
+    //verbosity = args->extract_switch("--reference-to-parameter-verbosity") ? 
+    //  args->pop_int() : parent->verbosity;
+    verbosity = parent->verbosity;
+  }
   virtual void print(ostream* out=0) { *out << "ReferenceToParameter"; }
   virtual void act(OperatorInstance* oi) {
      AM* current_am = oi->domain();
@@ -1266,7 +1269,7 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   CheckEmittableType echecker(this); echecker.propagate(g);
 
   V1<<"Pre-linearization steps...\n";
-  ReferenceToParameter* propagator = new ReferenceToParameter(verbosity);
+  ReferenceToParameter* propagator = new ReferenceToParameter(this);
   propagator->propagate(g);
 
   if(parent->is_dump_dotfiles) {
