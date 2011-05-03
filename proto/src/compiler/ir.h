@@ -354,25 +354,36 @@ struct Field : public CompilationElement { reflection_sub(Field,CE);
   void unuse(OperatorInstance* oi,int i); // remove a consumer
 };
 
-// OPERATOR INSTANCES are computations performed on particular fields
+/// OPERATOR INSTANCES are computations performed on particular fields
 struct OperatorInstance : public CompilationElement { reflection_sub(OI,CE);
   DFG* container; Operator* op; // set by constructor
   vector<Field*> inputs;
   Field* output; // generated automatically
   
+  /// Constructor
   OperatorInstance(CE* src, Operator *op, AM* space);
+
   // Mutators
-  Field* add_input(Field* f); // add field as last input, updating its consumers
-  Field* remove_input(int i); // disconnects the field, updating its consumers
+  /// add field as last input, updating its consumers
+  Field* add_input(Field* f); 
+  /// insert input field at pos, updating its consumers
+  Field* insert_input(vector<Field*>::iterator pos, Field* f); 
+  /// disconnects the field, updating its consumers
+  Field* remove_input(int i); 
+
   // Accessors & utilities
-  ProtoType* nth_input(int i);//get range of nth input (sets become vecs/tuples)
-  AM* domain() { return output->domain; } // get the output space
+  ///get range of nth input (sets become vecs/tuples)
+  ProtoType* nth_input(int i);
+  /// get the output space
+  AM* domain() { return output->domain; } 
   virtual void print(ostream* out=0);
-  int pointwise(); // op has space/time extent? 1=no, 0=yes, -1=unresolved
-  int recursive(); // is this a recursive call? 1=yes, 0=no, -1=unresolved
+  /// op has space/time extent? 1=no, 0=yes, -1=unresolved
+  int pointwise(); 
+  /// is this a recursive call? 1=yes, 0=no, -1=unresolved
+  int recursive(); 
 };
 
-// A DATAFLOW GRAPH is a complete program
+/// A DATAFLOW GRAPH is a complete program
 struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   OIset nodes; Fset edges; AMset spaces;
   CEmap(Operator*,OIset) funcalls; // List of times each op is used

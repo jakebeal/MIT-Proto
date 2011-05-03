@@ -509,19 +509,29 @@ public:
     }
   }
   void maybe_set_stack(Instruction* i,int neth,int maxh) {
-    V4 << "Trying to set stack for " << ce2s(i) 
-       << " to (" << neth << ", " << maxh << ")" << endl;
+    V4 << "Inst(" << ce2s(i) << ")";
+    if(!stack_height.count(i)) {
+       V4 << " did not exist" << endl;
+    } else {
+       V4 << " was (" << stack_height[i] << ", " << stack_maxes[i] << ")";
+       V4 << "\t now (" << neth << ", " << maxh << ")" << endl;
+    }
     if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh){
       stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); 
-      V4 << "- Set stack." << endl;
+      V4 << "\t Set stack." << endl;
     }
   }
   void maybe_set_env(Instruction* i,int neth, int maxh) {
-    V4 << "Trying to set env for " << ce2s(i) 
-       << " to (" << neth << ", " << maxh << ")" << endl;
+    V4 << "Inst(" << ce2s(i) << ")";
+    if(!env_height.count(i)) {
+       V4 << " did not exist" << endl;
+    } else {
+       V4 << " was (" << env_height[i] << ", " << env_maxes[i] << ")";
+       V4 << "\t now (" << neth << ", " << maxh << ")" << endl;
+    }
     if(!env_height.count(i) || env_height[i]!=neth || env_maxes[i]!=maxh) {
       env_height[i]=neth; env_maxes[i]=maxh; note_change(i);
-      V4 << "- Set stack." << endl;
+      V4 << "\t Set env." << endl;
     }
   }
   void act(Instruction* i) {
@@ -544,9 +554,8 @@ public:
     // resolve i's value
     if(baseh>=0) 
       maybe_set_stack(i,baseh+i->net_stack_delta(),baseh+i->max_stack_delta());
-    else
-      V4 << "Instruction " << ce2s(i) << " could not be resolved yet." << endl;
-
+    else 
+      V4 << "Instruction " << ce2s(i) << " (stack) could not be resolved yet." << endl;
 
     // env heights:
     baseh = -1;
@@ -559,6 +568,8 @@ public:
     }
     if(baseh>=0) 
       maybe_set_env(i,baseh+i->net_env_delta(),baseh+i->max_env_delta());
+    else
+      V4 << "Instruction " << ce2s(i) << " (env) could not be resolved yet." << endl;
   }
 };
 
@@ -1200,8 +1211,68 @@ string hexbyte(uint8_t v) {
   string out = "xx"; out[0]=hex[v>>4]; out[1]=hex[v & 0xf]; return out;
 }
 
+class ReferenceToParameter : public IRPropagator {
+ private:
+  int verbosity;
+ public:
+  ReferenceToParameter(int verbosity)
+     : IRPropagator(false,true,false) { this->verbosity = verbosity; }
+  virtual void print(ostream* out=0) { *out << "ReferenceToParameter"; }
+  virtual void act(OperatorInstance* oi) {
+     AM* current_am = oi->domain();
+
+     // Only act on non-branch reference operators
+     if(oi->op == Env::core_op("reference") 
+        && !current_am->marked("branch-fn")) {
+
+        // 1) alter CompoundOp by adding a parameter 
+        CompoundOp* cop = current_am->bodyOf;
+        int num_params = cop->signature->n_fixed();
+        string fn_name = cop->name;
+        // 1a) add an input to the function signature
+        cop->signature->required_inputs.insert(
+           cop->signature->required_inputs.begin(),
+           oi->nth_input(0));
+        // 1b) foreach funcall, insert an input (input to [reference])
+        OIset srcs = root->funcalls[cop];
+        for_set(OI*,srcs,i) {
+           OI* op_inst = (*i);
+           op_inst->insert_input(op_inst->inputs.begin(),
+                                 oi->inputs[0]);
+        }
+        // TODO: 1c) ensure that # inputs/outputs and their types still match
+
+        // 2) convert Reference into Parameter
+        V3 << "Converting " << ce2s(oi->op) 
+           << " to " << "__"+fn_name+"_"+i2s(num_params)+"__"
+           << " of " << ce2s(current_am->bodyOf) 
+           << " as " << ce2s(oi->nth_input(0))
+           << endl;
+        // 2a) add a parameter to the CompoundOp
+        Field* param = root->add_parameter(cop,
+                                           "__"+fn_name+"_"+i2s(num_params)+"__", 
+                                           num_params,
+                                           current_am,
+                                           oi->nth_input(0));
+        // 2b) relocate the [reference] consumers to the new parameter
+        root->relocate_consumers(oi->output,param);
+        // 2c) delete the old reference OI
+        root->delete_node(oi);
+     }
+  }
+};
+
 uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   CheckEmittableType echecker(this); echecker.propagate(g);
+
+  V1<<"Pre-linearization steps...\n";
+  ReferenceToParameter* propagator = new ReferenceToParameter(verbosity);
+  propagator->propagate(g);
+
+  if(parent->is_dump_dotfiles) {
+    ofstream dotstream((parent->dotstem+".pre-emission.dot").c_str());
+    if(dotstream.is_open()) g->printdot(&dotstream,parent->is_dotfields);
+  }
 
   V1<<"Linearizing DFG to instructions...\n";
   start = end = new iDEF_VM(); // start of every script

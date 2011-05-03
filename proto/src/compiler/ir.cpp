@@ -9,6 +9,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "compiler.h"
 #include "nicenames.h"
+#include <algorithm>
 
 extern SE_Symbol* make_gensym(string root); // from interpreter
 
@@ -366,6 +367,10 @@ Field* OperatorInstance::add_input(Field* f) {
   if(f==NULL) ierror("OperatorInstance given NULL input");
   f->use(this,inputs.size()); inputs.push_back(f); return f; 
 }
+Field* OperatorInstance::insert_input(vector<Field*>::iterator pos, Field* f) {
+  if(f==NULL) ierror("OperatorInstance given NULL input");
+  f->use(this,inputs.size()); inputs.insert(pos, f); return f; 
+}
 Field* OperatorInstance::remove_input(int i) {
   if(inputs.size()<=i)ierror("OperatorInstance can't remove nonexistant input");
   inputs[i]->unuse(this,i); return delete_at(&inputs,i);
@@ -451,6 +456,11 @@ void indentSS(ostream* ss, int indent) {
     *ss << "    ";
 }
 
+static string remove_invalid_chars(string in) {
+   std::replace(in.begin(), in.end(), '~', '_');
+   return in;
+}
+
 // Dot output naming utilities
 string dot_oname(OI* oi) { return "OI_"+oi->output->nicename(); }
 string dot_oname(Field* f) { return "OI_"+f->nicename(); }
@@ -463,13 +473,14 @@ void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output,int indent=1,b
     AM* am = *ait;
     string sub = "NO_FIELDS";
     if(am->fields.size()) sub = dot_oname(*am->fields.begin());
-    string cname = "cluster_fn_" + am->nicename();
+    string am_name = remove_invalid_chars(am->nicename());
+    string cname = "cluster_fn_" + am_name;
     indentSS(ss,indent);
     *ss << "subgraph " << cname << stepn << " {\n";
     indentSS(ss,indent+1);
     *ss << "color=green;\n";
     indentSS(ss,indent+1);
-    *ss << "label=\"AM: " << am->nicename() << "\";\n";
+    *ss << "label=\"AM: " << am_name << "\";\n";
     dot_print_AM(ss,stepn,am,output,indent+1,field_nodes);
     indentSS(ss,indent+1);
     *ss << "}\n";
@@ -534,7 +545,7 @@ void DFG::dot_print_function(ostream* out,AM* root,Field* output,bool field_node
   for_set(AM*,relevant,i) {
     CompoundOp* op = (*i)->bodyOf;
     if(op) {
-       ss << "    subgraph cluster_fn_" << op->name << step << " {\n";
+       ss << "    subgraph cluster_fn_" << remove_invalid_chars(op->name) << step << " {\n";
        ss << "        color=green;\n";
        ss << "        label=\"Function: " << op->name << "\";\n";
        dot_print_AM(&ss, step, *i, op->output, 2, field_nodes);

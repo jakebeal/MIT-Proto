@@ -99,7 +99,7 @@ NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
   is_dump_localized = args->extract_switch("-CDlocalized") | is_dump_all;
   is_dump_code = args->extract_switch("--instructions") | is_dump_all;
   is_dump_dotfiles = args->extract_switch("--dump-dotfiles");
-  is_dotfields = args->extract_switch("-dot-field-nodes");
+  is_dotfields = args->extract_switch("--dot-field-nodes");
   dotstem = args->extract_switch("--dotstem")?args->pop_next():"ir";
   is_early_terminate = (args->extract_switch("--no-emission") ? 1 : 0);
   if(args->extract_switch("--no-localization")) is_early_terminate = 2;

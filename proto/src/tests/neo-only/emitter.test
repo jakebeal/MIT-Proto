@@ -212,12 +212,13 @@ is 3 _ uint16_t script_len = 21;
 = 8 3 5
 
 // function with references to outside variables:
-//test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --function-inlining-threshold 0
-//is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, DEF_FUN_4_OP, 
-//is 1 _   LIT_3_OP, MID_OP, ADD_OP, RET_OP, EXIT_OP };
-//is 2 _ uint16_t script_len = 15;
-//= 4 3 3
-//= 8 3 7
+test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, DEF_FUN_4_OP, 
+is 1 _   LIT_3_OP, REF_1_OP, ADD_OP, RET_OP, DEF_FUN_5_OP, MID_OP, LIT_3_OP, 
+is 2 _   GLO_REF_0_OP, FUNCALL_2_OP, RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 21;
+= 5 3 3
+= 9 3 7
 
 test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, DEF_FUN_4_OP, 
@@ -227,7 +228,13 @@ is 2 _ uint16_t script_len = 15;
 = 8 3 7
 
 // returning a bare reference
-//test: $(PROTO) "(let ((x (mid))) (apply (fun () x)))" --function-inlining-threshold 0
+test: $(PROTO) "(let ((x (mid))) (apply (fun () x)))" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 3, 1, DEF_FUN_2_OP, 
+is 1 _   REF_0_OP, RET_OP, DEF_FUN_4_OP, MID_OP, GLO_REF_0_OP, FUNCALL_1_OP, 
+is 2 _   RET_OP, EXIT_OP };
+is 3 _ uint16_t script_len = 18;
+= 5 3 0
+= 9 3 4
 
 test: $(PROTO) "(let ((x (mid))) (apply (fun () x)))" 
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, DEF_FUN_2_OP, 
@@ -244,7 +251,12 @@ is 2 _ uint16_t script_len = 13;
 = 4 3 2
 = 8 3 2
 
-//test: $(PROTO) "(apply (fun (y) y) 2)" --function-inlining-threshold 0
+test: $(PROTO) "(apply (fun (y) y) 2)" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, DEF_FUN_2_OP, 
+is 1 _   LIT_2_OP, RET_OP, EXIT_OP };
+is 2 _ uint16_t script_len = 13;
+= 4 3 2
+= 8 3 2
 
 // multi-layer references
 //test: $(PROTO) "(let ((x (mid))) (def bar () x) (def foo () (bar)) (foo))" 
@@ -254,7 +266,14 @@ is 2 _ uint16_t script_len = 13;
 //= 5 3 0
 //= 8 3 3
 
-//test: $(PROTO) "(let ((x (mid))) (def bar () x) (def foo () (bar)) (foo))" --function-inlining-threshold 0
+test: $(PROTO) "(let ((x (mid))) (def bar () x) (def foo () (bar)) (foo))" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 3, 0, 0, 3, 1, DEF_FUN_2_OP, 
+is 1 _   REF_0_OP, RET_OP, DEF_FUN_OP, 7, MID_OP, LET_1_OP, REF_0_OP, 
+is 2 _   POP_LET_1_OP, GLO_REF_0_OP, FUNCALL_1_OP, RET_OP, DEF_FUN_3_OP, 
+is 3 _   GLO_REF_1_OP, FUNCALL_0_OP, RET_OP, EXIT_OP };
+is 4 _ uint16_t script_len = 26;
+= 6 3 0
+= 9 3 3
 
 // Challenges for branches:
 // Basic test:
@@ -309,7 +328,14 @@ is 5 _ uint16_t script_len = 33;
 = 10 3 1
 
 // Selector reference inside function:
-// "(let ((m (mid))) (apply (fun (x) (if m x 4)) 3))" --function-inlining-threshold 0
+test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (if m x 4)) 3))" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, 
+is 1 _   DEF_FUN_OP, 8, REF_1_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 1, LIT_3_OP, 
+is 2 _   RET_OP, DEF_FUN_5_OP, MID_OP, LIT_3_OP, GLO_REF_0_OP, FUNCALL_2_OP, 
+is 3 _   RET_OP, EXIT_OP };
+is 4 _ uint16_t script_len = 26;
+= 6 3 4
+= 7 3 3
 
 // Selector reference inside inlined function:
 test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (if m x 4)) 3))"
@@ -440,6 +466,26 @@ is 3 _ uint16_t script_len = 21;
 = 8 3 -3
 = 9 3 -4
 = 10 3 -5
+
+//Testing multiple lets getting inlined
+//test: $(PROTO) "(let ((x (mid))) (def foo (y) (+ x y)) (+ (foo 3) (let ((z (+ 1 (mid)))) (+ (foo (* z z))z))))" --function-inlining-threshold 0
+//mid=0, output=5 
+//mid=1, output=11 
+//mid=2, output=19 
+//mid=3, output=29 
+//mid=4, output=41 
+//Lisp program to test it...
+//(defun test (mid)
+//  (let ((x mid))
+//      (defun foo (y) (+ x y))
+//          (+ (foo 3)
+//                 (let ((z (+ 1 mid)))
+//                          (+ (foo (* z z)) z)))))
+//(print (test 0))
+//(print (test 1))
+//(print (test 2))
+//(print (test 3))
+//(print (test 4))
 
 
 // Challenges for nbrs:
