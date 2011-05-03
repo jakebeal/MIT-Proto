@@ -151,6 +151,7 @@ class ProtoKernelEmitter : public CodeEmitter {
 
  private:
   vector<InstructionPropagator*> rules;
+  vector<IRPropagator*> preemitter_rules;
 
   /// global & env storage
   map<Field*,CompilationElement*, CompilationElement_cmp> memory;

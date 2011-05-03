@@ -885,6 +885,58 @@ class CheckEmittableType : public IRPropagator {
 };
 
 
+class ReferenceToParameter : public IRPropagator {
+ public:
+  ReferenceToParameter(ProtoKernelEmitter* parent, Args* args)
+     : IRPropagator(false,true,false) { 
+    verbosity = args->extract_switch("--reference-to-parameter-verbosity") ? 
+    args->pop_int() : parent->verbosity;
+  }
+  virtual void print(ostream* out=0) { *out << "ReferenceToParameter"; }
+  virtual void act(OperatorInstance* oi) {
+     AM* current_am = oi->domain();
+
+     // Only act on non-branch reference operators
+     if(oi->op == Env::core_op("reference") 
+        && !current_am->marked("branch-fn")) {
+
+        // 1) alter CompoundOp by adding a parameter 
+        CompoundOp* cop = current_am->bodyOf;
+        int num_params = cop->signature->n_fixed();
+        string fn_name = cop->name;
+        // 1a) add an input to the function signature
+        cop->signature->required_inputs.insert(
+           cop->signature->required_inputs.begin(),
+           oi->nth_input(0));
+        // 1b) foreach funcall, insert an input (input to [reference])
+        OIset srcs = root->funcalls[cop];
+        for_set(OI*,srcs,i) {
+           OI* op_inst = (*i);
+           op_inst->insert_input(op_inst->inputs.begin(),
+                                 oi->inputs[0]);
+        }
+        // TODO: 1c) ensure that # inputs/outputs and their types still match
+
+        // 2) convert Reference into Parameter
+        V3 << "Converting " << ce2s(oi->op) 
+           << " to " << "__"+fn_name+"_"+i2s(num_params)+"__"
+           << " of " << ce2s(current_am->bodyOf) 
+           << " as " << ce2s(oi->nth_input(0))
+           << endl;
+        // 2a) add a parameter to the CompoundOp
+        Field* param = root->add_parameter(cop,
+                                           "__"+fn_name+"_"+i2s(num_params)+"__", 
+                                           num_params,
+                                           current_am,
+                                           oi->nth_input(0));
+        // 2b) relocate the [reference] consumers to the new parameter
+        root->relocate_consumers(oi->output,param);
+        // 2c) delete the old reference OI
+        root->delete_node(oi);
+     }
+  }
+};
+
 
 /*****************************************************************************
  *  EMITTER PROPER                                                           *
@@ -1098,6 +1150,8 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
   op_debug = args->extract_switch("--emitter-op-debug");
   // load operation definitions
   string name = "core.ops"; load_ops(name,parent); terminate_on_error();
+  // setup pre-emitter rule collection
+  preemitter_rules.push_back(new ReferenceToParameter(this,args));
   // setup rule collection
   rules.push_back(new DeleteNulls(this,args));
   rules.push_back(new InsertLetPops(this,args));
@@ -1211,66 +1265,14 @@ string hexbyte(uint8_t v) {
   string out = "xx"; out[0]=hex[v>>4]; out[1]=hex[v & 0xf]; return out;
 }
 
-class ReferenceToParameter : public IRPropagator {
- public:
-  ReferenceToParameter(ProtoKernelEmitter* parent)
-     : IRPropagator(false,true,false) { 
-    // Kyle: please make this bit work:
-    //verbosity = args->extract_switch("--reference-to-parameter-verbosity") ? 
-    //  args->pop_int() : parent->verbosity;
-    verbosity = parent->verbosity;
-  }
-  virtual void print(ostream* out=0) { *out << "ReferenceToParameter"; }
-  virtual void act(OperatorInstance* oi) {
-     AM* current_am = oi->domain();
-
-     // Only act on non-branch reference operators
-     if(oi->op == Env::core_op("reference") 
-        && !current_am->marked("branch-fn")) {
-
-        // 1) alter CompoundOp by adding a parameter 
-        CompoundOp* cop = current_am->bodyOf;
-        int num_params = cop->signature->n_fixed();
-        string fn_name = cop->name;
-        // 1a) add an input to the function signature
-        cop->signature->required_inputs.insert(
-           cop->signature->required_inputs.begin(),
-           oi->nth_input(0));
-        // 1b) foreach funcall, insert an input (input to [reference])
-        OIset srcs = root->funcalls[cop];
-        for_set(OI*,srcs,i) {
-           OI* op_inst = (*i);
-           op_inst->insert_input(op_inst->inputs.begin(),
-                                 oi->inputs[0]);
-        }
-        // TODO: 1c) ensure that # inputs/outputs and their types still match
-
-        // 2) convert Reference into Parameter
-        V3 << "Converting " << ce2s(oi->op) 
-           << " to " << "__"+fn_name+"_"+i2s(num_params)+"__"
-           << " of " << ce2s(current_am->bodyOf) 
-           << " as " << ce2s(oi->nth_input(0))
-           << endl;
-        // 2a) add a parameter to the CompoundOp
-        Field* param = root->add_parameter(cop,
-                                           "__"+fn_name+"_"+i2s(num_params)+"__", 
-                                           num_params,
-                                           current_am,
-                                           oi->nth_input(0));
-        // 2b) relocate the [reference] consumers to the new parameter
-        root->relocate_consumers(oi->output,param);
-        // 2c) delete the old reference OI
-        root->delete_node(oi);
-     }
-  }
-};
-
 uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   CheckEmittableType echecker(this); echecker.propagate(g);
 
   V1<<"Pre-linearization steps...\n";
-  ReferenceToParameter* propagator = new ReferenceToParameter(this);
-  propagator->propagate(g);
+  for(int i=0; i<preemitter_rules.size(); i++) {
+     IRPropagator* propagator = (IRPropagator*)preemitter_rules[i];
+     propagator->propagate(g);
+  }
 
   if(parent->is_dump_dotfiles) {
     ofstream dotstream((parent->dotstem+".pre-emission.dot").c_str());
