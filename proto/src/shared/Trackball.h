@@ -36,6 +36,7 @@ freely, subject to the following restrictions:
 #ifdef _WIN32
 #include <windows.h>
 /* #include <gl\gl.h> */
+#include <GL/gl.h>
 #else
 #include <unistd.h>
 #include <stdlib.h>
