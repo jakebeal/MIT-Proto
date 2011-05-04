@@ -12,6 +12,10 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "proto.h"
 #include "proto_vm.h"
 
+#ifdef _WIN32
+ #include <winsock.h> /* for ntohl() */
+#endif
+
 extern void * lookup_op_by_code (int code, char **name);
 
 int is_throttling = 0; // TODO: are_exports_serialized must be true right now

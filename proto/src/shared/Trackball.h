@@ -35,7 +35,7 @@ freely, subject to the following restrictions:
 #include <math.h>
 #ifdef _WIN32
 #include <windows.h>
-#include <gl\gl.h>
+/* #include <gl\gl.h> */
 #else
 #include <unistd.h>
 #include <stdlib.h>
