@@ -95,7 +95,7 @@
      <echo>Running configure for Neo Proto.....</echo>
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="${proto-dir}" executable="${shellpath}" failonerror="true" >
-          <arg line="./configure --prefix=${install-dir} --with-neocompiler" />
+          <arg line="./configure --prefix=${install-dir} --with-neocompiler ${configureopts}" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
    </target>
@@ -104,7 +104,7 @@
      <echo>Running configure for Paleo Proto.....</echo>
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="${proto-dir}" executable="${shellpath}" failonerror="true" >
-          <arg line="./configure --prefix=${install-dir}" />
+          <arg line="./configure --prefix=${install-dir} ${configureopts}" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
    </target>
