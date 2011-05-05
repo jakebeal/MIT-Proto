@@ -72,4 +72,4 @@ buildregistry_PROGRAMS = \
 
 # run the registry builder once everything's installed
 install-data-hook:
-	$(buildregistrydir)/buildregistry
+	$(buildregistrydir)/buildregistry$(EXEEXT)
