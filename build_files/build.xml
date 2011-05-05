@@ -96,6 +96,7 @@
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="${proto-dir}" executable="${shellpath}" failonerror="true" >
           <arg line="./configure --prefix=${install-dir} --with-neocompiler ${configureopts}" />
+          <env key="LIBS" value="${extralibs}" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
    </target>
@@ -105,6 +106,7 @@
      <record name="ConfigureLog.txt" action="start" />
         <exec dir="${proto-dir}" executable="${shellpath}" failonerror="true" >
           <arg line="./configure --prefix=${install-dir} ${configureopts}" />
+          <env key="LIBS" value="${extralibs}" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
    </target>
