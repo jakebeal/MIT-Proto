@@ -318,9 +318,11 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       if(reftype->isA("ProtoLocal")) {
         V3<<"Coercing a ProtoField for {"<<ce2s(ref)<<"} of {"<<ce2s(oi)<<"}"<<endl;
         return reftype;
+      } else if(reftype->type_of()=="ProtoType") { // top-level type
+        return reftype;
       }
-      ierror(ref,"Expected ProtoField, but got "+ce2s(reftype)); // temporary, to help test suite
-      return type_err(ref,"Expected ProtoField, but got "+ce2s(reftype));
+      // should never get here
+      ierror(ref,"Unhandled ProtoField ref case: "+ce2s(reftype)); // temporary, to help test suite
     }
     ProtoField* field = dynamic_cast<ProtoField*>(reftype);
     return field->hoodtype;
@@ -870,6 +872,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
         if(!repair_constraint_failure(oi,a,b))
           type_err(oi,"Type constraint "+ce2s(constraint)+" violated: \n  "
                    +a->to_str()+" vs. "+b->to_str()+" at "+ce2s(oi));
+        return true; // note that a change has occurred
       } else { // if GCS succeeded, assert onto referred locations
         V3<<"apply_constraint: joint="<<ce2s(joint)<< endl;
         bool ret = assert_ref(oi,aref,joint) | assert_ref(oi,bref,joint);
@@ -952,7 +955,7 @@ class TypePropagator : public IRPropagator {
     if(ftype->isA("ProtoField") && c.first&&c.first->op==Env::core_op("local")){
       V4<<"repair field->local"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
-      V2<<"Deleting 'local' at "<<ce2s(f)<<endl;
+      V2<<"Bypassing 'local' at "<<ce2s(f)<<endl;
       root->relocate_consumers(c.first->output,f);
       return true;
     }

@@ -1968,6 +1968,10 @@ test: $(P2B) -CDlocalized "(sum-hood (if (mid) 5 7))"
 //is 0 _ TEST NOT DEFINED YET
 //is 25 _ Stopping before emission
 
+test: $(P2B) -CDlocalized "(sum-hood (if (nbr (mid)) 5 7))"
+//is 0 _ TEST NOT DEFINED YET
+//is 25 _ Stopping before emission
+
 // Test locals
 test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
 //is 0 _ TEST NOT DEFINED YET
