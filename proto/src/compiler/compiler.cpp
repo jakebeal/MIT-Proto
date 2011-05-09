@@ -147,13 +147,21 @@ void NeoCompiler::init_standalone(Args* args) {
   } else {
     char buf[1000];
     // ensure that the directory exists
+#ifdef _WIN32  // windows' mkdir doesn't like '-p'
+    snprintf(buf, 1000, "mkdir %s", dump_dir);
+#else
     snprintf(buf, 1000, "mkdir -p %s", dump_dir);
+#endif
     if(!system(buf)) {
        // dump_dir already exists - ignore
        // this prevents a stupid compiler warning
     }
+#ifdef _WIN32  
+    sprintf(buf,"%s\%s.log",dump_dir,dump_stem);
+#else
     sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
-    
+#endif
+
     cpout = new ofstream(buf);
   }
   if(compiler_test_mode) cperr=cpout;
