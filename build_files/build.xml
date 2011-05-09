@@ -141,8 +141,8 @@
     <echo>Testing Proto with universal tests for normal machine...</echo>
     <exec dir="${universal-tests}" executable="${pythonpath}" >
       <arg value="${install-dir}/bin/prototest.py" />
-      <arg value="--proto=${install-dir}/bin/proto" />
-      <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--proto=${install-dir}/bin/proto${exeExt}" />
+      <arg value="--p2b=${install-dir}/bin/p2b${exeExt}" />
       <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
     </exec>
@@ -180,8 +180,8 @@
     <echo>Testing Proto with paleo only tests for normal machine...</echo>
     <exec dir="${paleo-only-tests}" executable="${pythonpath}" >
       <arg value="${install-dir}/bin/prototest.py" />
-      <arg value="--proto=${install-dir}/bin/proto" />
-      <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--proto=${install-dir}/bin/proto${exeExt}" />
+      <arg value="--p2b=${install-dir}/bin/p2b${exeExt}" />
       <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
     </exec>
@@ -219,8 +219,8 @@
     <echo>Testing Proto with neo only tests for normal machine...</echo>
     <exec dir="${neo-only-tests}" executable="${pythonpath}" >
       <arg value="${install-dir}/bin/prototest.py" />
-      <arg value="--proto=${install-dir}/bin/proto" />
-      <arg value="--p2b=${install-dir}/bin/p2b" />
+      <arg value="--proto=${install-dir}/bin/proto${exeExt}" />
+      <arg value="--p2b=${install-dir}/bin/p2b${exeExt}" />
       <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
     </exec>
