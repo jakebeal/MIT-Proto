@@ -12,7 +12,7 @@
    <property name="isNeoCompiler" value="true"/>
 
    <!-- the install directory can be overriden on the command line using -Dinstall-dir=<location> -->
-   <property name="install-dir" location="/home/mgillen/projects/proto/bin/"/>
+   <property name="install-dir" location="/opt/hudson/jobs/Proto/workspace/bin/"/>
  
    <target name="main" depends="build,test">
      <echo>Starting Ant main target...</echo>
