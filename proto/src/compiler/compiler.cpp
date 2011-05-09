@@ -10,6 +10,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // "off to the side" of the original, not replacing it.
 
 #include "config.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <fstream>
 #include "nicenames.h"
 #include "compiler.h"
@@ -147,7 +149,7 @@ void NeoCompiler::init_standalone(Args* args) {
   } else {
     char buf[1000];
     // ensure that the directory exists
-    if(mkdir(dump_dir) != 0) {
+    if(mkdir(dump_dir, ACCESSPERMS) != 0) {
       //ignore
     }
 #ifdef _WIN32  

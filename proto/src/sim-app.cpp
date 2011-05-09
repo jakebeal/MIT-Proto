@@ -10,6 +10,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // the evolution of time, and dispatch events.
 
 #include "config.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "proto_version.h"
 #include "spatialcomputer.h"
 #include "utils.h" // also pulls in math
@@ -453,12 +455,14 @@ void process_app_args(Args *args) {
       args->extract_switch("-dump-stem") ? args->pop_next() : "dump";
     
     // ensure that the directory exists
-    snprintf(dump_name, 1000, "mkdir -p %s", dump_dir);
-    if(!system(dump_name)) {
-       //dump_dir already exists
-       // this prevents a stupid compiler warning
+    if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+      //ignore
     }
+#ifdef _WIN32  
+    sprintf(dump_name,"%s\%s.log",dump_dir,dump_stem);
+#else
     sprintf(dump_name,"%s/%s.log",dump_dir,dump_stem);
+#endif
     cperr = cpout = new ofstream(dump_name); // begin by making compiler output
   }
 }

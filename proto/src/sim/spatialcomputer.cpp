@@ -6,10 +6,12 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include "config.h"
 #include <iostream>
 #include <set>
 #include <algorithm>
-#include "config.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "spatialcomputer.h"
 #include "visualizer.h"
 #include "plugin_manager.h"
@@ -728,17 +730,24 @@ void SpatialComputer::dump_header(FILE* out) {
 void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
   if(is_own_dump_file) { // manage the file ourselves
     char buf[1000];
-    // ensure that the directory exists
-    snprintf(buf, 1000, "mkdir -p %s", dump_dir); 
-    if(!system(buf)) {
-       // dump_dir already exists - ignore
-       // this prevents a stupid compiler warning
+    if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+      //ignore
     }
     // open the file
-    if(time_in_name)
+    if(time_in_name) {
+#ifdef _WIN32  
+      sprintf(buf,"%s\%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
+#else
       sprintf(buf,"%s/%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
-    else
+#endif
+    }
+    else {
+#ifdef _WIN32  
+      sprintf(buf,"%s\%s%.2f.log",dump_dir,dump_stem,time);
+#else
       sprintf(buf,"%s/%s%.2f.log",dump_dir,dump_stem,time);
+#endif
+    }
     dump_file = fopen(buf,"w");
     if(dump_file==NULL) { post("Unable to open dump file '%s'\n",buf); return; }
   } else {

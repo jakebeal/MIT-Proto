@@ -14,6 +14,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <inttypes.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <string>
 #include <list>
 #include <map>
@@ -2967,14 +2969,15 @@ void PaleoCompiler::init_standalone(Args* args) {
     dump_target=stdout;
   } else {
     char buf[1000];
-    // ensure that the directory exists
-    snprintf(buf, 1000, "mkdir -p %s", dump_dir);
-    if(!system(buf)) {
-       // dump_dir already exists - ignore
-       // this prevents a stupid compiler warning
+    if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+      //ignore
     }
+#ifdef _WIN32  
+    sprintf(buf,"%s\%s.log",dump_dir,dump_stem);
+#else
     sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
-    
+#endif
+
     dump_target=fopen(buf,"w");
   }
 
