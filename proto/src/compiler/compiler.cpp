@@ -156,12 +156,7 @@ void NeoCompiler::init_standalone(Args* args) {
 #endif
       //ignore
     }
-#ifdef _WIN32  
-    sprintf(buf,"%s\%s.log",dump_dir,dump_stem);
-#else
     sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
-#endif
-
     cpout = new ofstream(buf);
   }
   if(compiler_test_mode) cperr=cpout;

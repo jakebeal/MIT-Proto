@@ -462,11 +462,7 @@ void process_app_args(Args *args) {
 #endif
       //ignore
     }
-#ifdef _WIN32  
-    sprintf(dump_name,"%s\%s.log",dump_dir,dump_stem);
-#else
     sprintf(dump_name,"%s/%s.log",dump_dir,dump_stem);
-#endif
     cperr = cpout = new ofstream(dump_name); // begin by making compiler output
   }
 }
