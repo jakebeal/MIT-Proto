@@ -2969,7 +2969,11 @@ void PaleoCompiler::init_standalone(Args* args) {
     dump_target=stdout;
   } else {
     char buf[1000];
+#ifdef _WIN32  
+    if(mkdir(dump_dir) != 0) {
+#else
     if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+#endif
       //ignore
     }
 #ifdef _WIN32  

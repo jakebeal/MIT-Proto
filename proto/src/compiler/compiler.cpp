@@ -149,7 +149,11 @@ void NeoCompiler::init_standalone(Args* args) {
   } else {
     char buf[1000];
     // ensure that the directory exists
+#ifdef _WIN32  
+    if(mkdir(dump_dir) != 0) {
+#else
     if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+#endif
       //ignore
     }
 #ifdef _WIN32  

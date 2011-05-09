@@ -455,7 +455,11 @@ void process_app_args(Args *args) {
       args->extract_switch("-dump-stem") ? args->pop_next() : "dump";
     
     // ensure that the directory exists
+#ifdef _WIN32  
+    if(mkdir(dump_dir) != 0) {
+#else
     if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+#endif
       //ignore
     }
 #ifdef _WIN32  

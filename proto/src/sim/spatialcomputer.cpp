@@ -730,7 +730,11 @@ void SpatialComputer::dump_header(FILE* out) {
 void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
   if(is_own_dump_file) { // manage the file ourselves
     char buf[1000];
+#ifdef _WIN32  
+    if(mkdir(dump_dir) != 0) {
+#else
     if(mkdir(dump_dir, ACCESSPERMS) != 0) {
+#endif
       //ignore
     }
     // open the file
