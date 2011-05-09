@@ -739,18 +739,10 @@ void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
     }
     // open the file
     if(time_in_name) {
-#ifdef _WIN32  
-      sprintf(buf,"%s\%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
-#else
       sprintf(buf,"%s/%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
-#endif
     }
     else {
-#ifdef _WIN32  
-      sprintf(buf,"%s\%s%.2f.log",dump_dir,dump_stem,time);
-#else
       sprintf(buf,"%s/%s%.2f.log",dump_dir,dump_stem,time);
-#endif
     }
     dump_file = fopen(buf,"w");
     if(dump_file==NULL) { post("Unable to open dump file '%s'\n",buf); return; }
