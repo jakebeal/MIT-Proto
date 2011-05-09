@@ -54,9 +54,9 @@ opsim_LDADD = \
 	../shared/libshared.la \
 	../compiler/libcompiler.la \
 	../motelink/libmotelink.la \
-	../sim/libsim.la \
-	../sim/libprotosimplugin.la \
-	../sim/libdefaultplugin.la \
+	libsim.la \
+	libprotosimplugin.la \
+	libdefaultplugin.la \
 	../shared/libshared.la \
 	../kernel/libkernel.la \
 	../compiler/libcompiler.la
