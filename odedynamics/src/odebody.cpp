@@ -330,7 +330,6 @@ ODEBody::ODEBody(ODEDynamics *parent, Device* container, flo x, flo y, flo z,
 
   geom = dCreateBox(parent->space,w,l,h);
   dMass m;
-
   dMassSetBox(&m,parent->density,w,l,h);
 
   dGeomSetBody(geom,body);
@@ -369,8 +368,7 @@ ODEBody::ODEBody(ODEDynamics *parent, Device* container, flo x, flo y, flo z,
   body = dBodyCreate(parent->world);
   geom = dCreateBox(parent->space,w,l,h);
   dMass m;
-  m.mass = mass;
-  dMassSetBox(&m,parent->density,w,l,h);
+  dMassSetBoxTotal(&m,mass,w,l,h);
 
   dGeomSetBody(geom,body);
 
@@ -436,9 +434,7 @@ ODEBox::ODEBox(ODEDynamics* parent, Device* container, flo x, flo y, flo z, flo 
 
   geom = dCreateBox(parent->space,w,l,h);
   dMass m;
-  mass = 100;
-  m.mass = mass;
-  dMassSetBox(&m,parent->density,w,l,h);
+  dMassSetBoxTotal(&m,mass,w,l,h);
 
   dGeomSetBody(geom,body);
 
@@ -539,8 +535,7 @@ cout<<"radius "<<radius<<endl;
 
   geom = dCreateSphere(parent->space, radius);
   dMass m;
-  m.mass = mass;
-  dMassSetSphere(&m, parent->density, radius);
+  dMassSetSphereTotal(&m, mass, radius);
 
   dGeomSetBody(geom,body);
 
@@ -620,8 +615,7 @@ cout<<"radius "<<radius<<endl;
 
   geom = dCreateCylinder(parent->space,radius, length);
   dMass m;
-  m.mass = mass;
-  dMassSetCylinder(&m, parent->density, 1, radius, length);
+  dMassSetCylinderTotal(&m, mass, 1, radius, length);
 
   dGeomSetBody(geom,body);
 
@@ -710,8 +704,7 @@ cout<<"radius "<<radius<<endl;
 
 	geom = dCreateCapsule(parent->space,radius, length);
   dMass m;
-  m.mass = mass;
-  dMassSetCapsule(&m, parent->density, 1, radius, length);
+  dMassSetCapsuleTotal(&m, mass, 1, radius, length);
 
   dGeomSetBody(geom,body);
 

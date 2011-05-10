@@ -41,7 +41,8 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
 //    	contact[i].surface.mode = dContactBounce;
 //    	contact[i].surface.mu = 0;
 //      contact[i].surface.mu = dInfinity;
-      contact[i].surface.mu = 0.85;
+      contact[i].surface.mu = 30;
+//      contact[i].surface.mu = 0.85;
       contact[i].surface.mu2 = 0.85	;
       // contact[i].surface.bounce = 0.1;
       //      contact[i].surface.bounce = 0.5;
@@ -70,7 +71,7 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
 #define MAX_V 100               // default ceiling on velocity
 #define SUBSTEP 0.001           // default sub-step size
 #define K_BODY_RAD 0.0870 // constant matched against previous visualization
-#define GRAVITY -0.1
+#define GRAVITY -9.81
 void ODEDynamics::make_walls() {
   flo pen_w=parent->volume->r - parent->volume->l;
   flo pen_h=parent->volume->t - parent->volume->b;
