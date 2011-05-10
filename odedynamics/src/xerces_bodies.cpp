@@ -22,7 +22,7 @@ using namespace xercesc;
  *  @param name name of child element to retrieve
  *  @return the child element with the given name or NULL if there are 0 or >1 elements with the given name
  */
-DOMNode* getElement(DOMElement* element,const char* name) {
+DOMNode* getElement(DOMElement* element, const char* name) {
 	if (element == NULL)
 		return NULL;
 
@@ -40,7 +40,7 @@ DOMNode* getElement(DOMElement* element,const char* name) {
  *  @param name name of child element value is stored in
  *  @return the value of the child element with the given name or NULL if there are 0 or >1 elements with the given name
  */
-char* getChildValue(DOMElement* element,const char* name) {
+char* getChildValue(DOMElement* element, const char* name) {
 	DOMNode* child = getElement(element, name);
 	if (child == NULL)
 		return NULL;
@@ -82,7 +82,7 @@ char* getAttribute(DOMNode* node, const char* name) {
  * @param angle contains X-Y-Z, angle[0] = x, angle[1] = y, angle[2] = z
  * @param matrix 3x3 matrix that become the rotation matrix
  */
-void xyzFixedToRotMatrix(double* angle, double* matrix){
+void xyzFixedToRotMatrix(double* angle, double* matrix) {
 	double sg = sin(angle[0]);
 	double sb = sin(angle[1]);
 	double sa = sin(angle[2]);
@@ -92,21 +92,17 @@ void xyzFixedToRotMatrix(double* angle, double* matrix){
 	double ca = cos(angle[2]);
 
 	//first row
-	matrix[0] = ca*cb;
-	matrix[1] = ca*sb*sg + sa*cg;
-	matrix[2] = ca*sb*cg +sa*sg;
+	matrix[0] = ca * cb;
+	matrix[1] = ca * sb * sg + sa * cg;
+	matrix[2] = ca * sb * cg + sa * sg;
 
+	matrix[3] = sa * cb;
+	matrix[4] = sa * sb * sg + ca * cg;
+	matrix[5] = sa * sb * cg - ca * sg;
 
-	matrix[3] = sa*cb ;
-	matrix[4] = sa*sb*sg+ca*cg   ;
-	matrix[5] = sa*sb*cg-ca*sg   ;
-
-
-	matrix[6] = -sb  ;
-	matrix[7] = cb*sg  ;
-	matrix[8] =	cb*cg  ;
-
-
+	matrix[6] = -sb;
+	matrix[7] = cb * sg;
+	matrix[8] = cb * cg;
 
 }
 
@@ -117,7 +113,8 @@ void xyzFixedToRotMatrix(double* angle, double* matrix){
  * @param rotMatrix A 3x3 rotation matrix
  * @param transMatrix The 4x4 matrix that values are placed into
  */
-void createMyTransformMatrix(double* pos, double* rotMatrix, double* transMatrix) {
+void createMyTransformMatrix(double* pos, double* rotMatrix,
+		double* transMatrix) {
 
 	//row 1
 	transMatrix[0] = rotMatrix[0];
@@ -166,8 +163,9 @@ XmlJoint::XmlJoint(DOMElement* element) {
 }
 
 //TODO this should be a pure virtual function
-void XmlJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
+dJointID XmlJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	cout << "Unsupported argument" << endl;
+	return NULL;
 }
 
 /***************************************************
@@ -177,10 +175,11 @@ XmlFixedJoint::XmlFixedJoint(DOMElement* element) :
 	XmlJoint(element) {
 }
 
-void XmlFixedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
+dJointID XmlFixedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	dJointID joint = dJointCreateFixed(world, 0);
 	dJointAttach(joint, bod1, bod2);
 	dJointSetFixed(joint);
+	return joint;
 }
 
 /***************************************************
@@ -258,13 +257,14 @@ XmlHingedJoint::XmlHingedJoint(XERCES_CPP_NAMESPACE::DOMElement* element,
 	anchor[2] += transform[2];
 
 }
-void XmlHingedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
+dJointID XmlHingedJoint::createJoint(dWorldID world, dBodyID bod1, dBodyID bod2) {
 	dJointID joint = dJointCreateHinge(world, 0);
 	dJointAttach(joint, bod1, bod2);
 	dJointSetHingeAnchor(joint, anchor[0], anchor[1], anchor[2]);
 	dJointSetHingeAxis(joint, axis[0], axis[1], axis[2]);
 	dJointSetHingeParam(joint, dParamLoStop, loStop);
 	dJointSetHingeParam(joint, dParamHiStop, hiStop);
+	return joint;
 }
 
 /********************************************************
@@ -315,7 +315,8 @@ XmlBody::XmlBody(DOMElement* element, const double* transform) {
 	}
 	//extract mass
 	char* massChar = getChildValue(element, MASS_TAG);
-	if (massChar == NULL) throw exception();
+	if (massChar == NULL)
+		throw exception();
 	mass = atof(massChar);
 
 	/**
@@ -340,7 +341,8 @@ XmlBox::XmlBox(DOMElement* element, const double* transform) :
 
 	//extract position
 	DOMNode* dimNode = getElement(element, DIM_TAG);
-	if(dimNode == NULL) throw exception();
+	if (dimNode == NULL)
+		throw exception();
 
 	char* dimAtt[3];
 	dimAtt[0] = getAttribute(dimNode, "w");
@@ -348,7 +350,8 @@ XmlBox::XmlBox(DOMElement* element, const double* transform) :
 	dimAtt[2] = getAttribute(dimNode, "h");
 
 	for (int i = 0; i < 3; i++) {
-		if(dimAtt[i] == NULL) throw exception();
+		if (dimAtt[i] == NULL)
+			throw exception();
 		dim[i] = atof(dimAtt[i]);
 	}
 }
@@ -373,7 +376,8 @@ XmlSphere::XmlSphere(DOMElement* element, const double* transform) :
 	XmlBody(element, transform) {
 	//extract radius
 	char* radiusChar = getChildValue(element, "radius");
-	if( radiusChar == NULL) throw exception();
+	if (radiusChar == NULL)
+		throw exception();
 
 	radius = atof(radiusChar);
 }
@@ -389,17 +393,41 @@ XmlCylinder::XmlCylinder(DOMElement* element, const double* transform) :
 	XmlBody(element, transform) {
 	//extract radius
 	char* radiusChar = getChildValue(element, "radius");
-	if( radiusChar == NULL) throw exception();
+	if (radiusChar == NULL)
+		throw exception();
 	radius = atof(radiusChar);
 
 	//extract height
 	char* heightChar = getChildValue(element, "height");
-	if( heightChar == NULL) throw exception();
+	if (heightChar == NULL)
+		throw exception();
 	height = atof(heightChar);
 }
 
 ODEBody* XmlCylinder::getODEBody(ODEDynamics* parent, Device* d) {
 	return new ODECylinder(parent, d, pos, quaternion, radius, height, mass);
+}
+
+/***************************************************
+ * XmlCapsule implementation
+ ***************************************************/
+XmlCapsule::XmlCapsule(DOMElement* element, const double* transform) :
+	XmlBody(element, transform) {
+	//extract radius
+	char* radiusChar = getChildValue(element, "radius");
+	if (radiusChar == NULL)
+		throw exception();
+	radius = atof(radiusChar);
+
+	//extract height
+	char* heightChar = getChildValue(element, "height");
+	if (heightChar == NULL)
+		throw exception();
+	height = atof(heightChar);
+}
+
+ODEBody* XmlCapsule::getODEBody(ODEDynamics* parent, Device* d) {
+	return new ODECapsule(parent, d, pos, quaternion, radius, height, mass);
 }
 
 /********************************************************
@@ -415,8 +443,11 @@ void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
 
 		DOMElement* node = (DOMElement*) tw->getCurrentNode();
 
+		//		printNode(node);
+
 		/* Process body */
 		if (XMLString::equals(XMLString::transcode("body"), node->getNodeName())) {
+			cout << "adding a body" << endl;
 			addBody(node, pos);
 		} else
 		/* Process joint */
@@ -432,7 +463,8 @@ void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
 			char* y_c = getAttribute(node, "y");
 			char* z_c = getAttribute(node, "z");
 
-			if(x_c == NULL || y_c == NULL || z_c == NULL) throw exception();
+			if (x_c == NULL || y_c == NULL || z_c == NULL)
+				throw exception();
 
 			trans[0] = pos[0] + atof(x_c);
 			trans[1] = pos[1] + atof(y_c);
@@ -453,8 +485,9 @@ void XmlWorldParser::processNode(DOMTreeWalker* tw, const double* pos) {
 }
 
 void XmlWorldParser::addJoint(DOMElement* node, const double* pos) {
-	string jointType = string(XMLString::transcode(node->getAttribute(
-			XMLString::transcode("type"))));
+	string jointType = string(
+			XMLString::transcode(
+					node->getAttribute(XMLString::transcode("type"))));
 	XmlJoint* joint;
 	try {
 		if (jointType == "fixed") {
@@ -473,8 +506,9 @@ void XmlWorldParser::addJoint(DOMElement* node, const double* pos) {
 
 void XmlWorldParser::addBody(DOMElement* node, const double* pos) {
 	try {
-		string bodyType = string(XMLString::transcode(node->getAttribute(
-				XMLString::transcode("type"))));
+		string bodyType = string(
+				XMLString::transcode(
+						node->getAttribute(XMLString::transcode("type"))));
 		XmlBody* xBody;
 
 		if (bodyType == "box") {
@@ -483,7 +517,9 @@ void XmlWorldParser::addBody(DOMElement* node, const double* pos) {
 			xBody = new XmlSphere(node, pos);
 		} else if (bodyType == "cylinder") {
 			xBody = new XmlCylinder(node, pos);
-		} else {
+		} else if (bodyType == "capsule") {
+			xBody = new XmlCapsule(node, pos);
+		}	else {
 			cout << "Unknown body type." << endl;
 			throw "Unknown body type.";
 		}
@@ -512,7 +548,7 @@ bool XmlWorldParser::process_xml(const char* xmlFile) {
 	 * Configure parser error handling
 	 */
 	ErrorHandler* errHandler = (ErrorHandler*) new HandlerBase();
-//	ErrorHandler *errHandler =(ErrorHandler*) new DOMPrintErrorHandler();
+	//	ErrorHandler *errHandler =(ErrorHandler*) new DOMPrintErrorHandler();
 	parser->setErrorHandler(errHandler);
 
 	try {
@@ -527,13 +563,13 @@ bool XmlWorldParser::process_xml(const char* xmlFile) {
 		cout << "Exception message is: \n" << message << "\n";
 		XMLString::release(&message);
 		return -1;
-	}catch (const SAXException& toCatch) {
-		char* message = XMLString::transcode( toCatch.getMessage() );
+	} catch (const SAXException& toCatch) {
+		char* message = XMLString::transcode(toCatch.getMessage());
 		cout << "Exception message is: " << message << "\n";
 		XMLString::release(&message);
 		return -1;
-	}  catch (const exception& toCatch) {
-		cout << "Unexpected Exception \n" << toCatch.what() <<endl;
+	} catch (const exception& toCatch) {
+		cout << "Unexpected Exception \n" << toCatch.what() << endl;
 		return -1;
 	}
 

@@ -115,7 +115,19 @@ public:
 
 };
 
+class ODECapsule : public ODEBody{
+public:
 
+	ODECapsule(ODEDynamics* parent, Device* container, double* pos, double* quat, double radius, double length, double mass);
+	  void visualize();
+	  void render_selection();
+	  flo display_radius()
+	  { 	dReal radius;
+			dReal height;
+			dGeomCapsuleGetParams(geom, &radius, &height);
+			return height;
+	  }
 
+};
 
 #endif // __ODEBODY__

@@ -35,6 +35,7 @@ class ODEBodyFactory;
 
 
 #define WALL_DATA -1            // identifier for walls
+#define RAY_DATA -2            // identifier for walls
 #define MAX_CONTACTS 8		// maximum number of contact points per body
 #define BUMP_OP "bump boolean"
 #define FORCE_OP "force boolean scalar scalar scalar"
@@ -105,6 +106,8 @@ class ODEDynamics : public BodyDynamics, HardwarePatch {
   static Color* ODE_BOT_BUMPED;
   static Color* ODE_EDGES;
   static Color* ODE_WALL;
+  static Color* ODE_BRADLEY;
+
   void register_colors() ;
 
 

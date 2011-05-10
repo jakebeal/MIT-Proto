@@ -55,10 +55,24 @@ void ODEBodyFactory::create_joints() {
 			}
 		}
 
-		joint->createJoint(world, bod1, bod2);
+		dJointID jointId = joint->createJoint(world, bod1, bod2);
+
+/*		if( joint->id1.find("DriveWheel") != -1 || joint->id2.find("DriveWheel") != -1){
+			dJointSetHingeParam(jointId, dParamFMax, 1);
+			dJointSetHingeParam(jointId, dParamVel, -0.2);
+			cout<<"Drive wheel found!"<<endl;
+		}else{
+			if( joint->id1.find("Wheel", 5) != -1 || joint->id2.find("Wheel", 5) != -1)
+				cout<<"Not driving on "<< joint->id1 <<" or " <<joint->id2<<endl;
+		}*/
 
 		parser->jointList.pop_back();
 	}
+
+
+	cout<<"Created joints"<<endl;
+
+
 }
 
 bool ODEBodyFactory::empty() {
@@ -75,12 +89,12 @@ ODEBody* ODEBodyFactory::next_body(ODEDynamics* parent, Device* d) {
 	if (nextBody == NULL) {
 		cout << "BODY IS NULL" << endl;
 	}
-	//	cout<<nextBody.mass<<endl;
 	ODEBody* b = ((XmlBox*) nextBody)->getODEBody(parent, d);
 	pair<map<string, ODEBody*>::iterator, bool> ret = bodyMap.insert(pair<
 			string, ODEBody*> (nextBody->id, b));
 	parser->bodyList.pop_back();
 	delete nextBody;
+
 
 	if (parser->bodyList.empty()) {
 		this->create_joints();

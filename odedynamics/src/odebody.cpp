@@ -3,6 +3,41 @@
  *  GEOM DRAWING                                                             *
  *****************************************************************************/
 // Note: this largely duplicates some of the code in drawing_primitives.cpp
+static void normalizeVector3 (float v[3])
+{
+  float len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+  if (len <= 0.0f) {
+    v[0] = 1;
+    v[1] = 0;
+    v[2] = 0;
+  }
+  else {
+    len = 1.0f / (float)sqrt(len);
+    v[0] *= len;
+    v[1] *= len;
+    v[2] *= len;
+  }
+}
+static void drawTriangle (const float *v0, const float *v1, const float *v2, int solid)
+{
+  float u[3],v[3],normal[3];
+  u[0] = v1[0] - v0[0];
+  u[1] = v1[1] - v0[1];
+  u[2] = v1[2] - v0[2];
+  v[0] = v2[0] - v0[0];
+  v[1] = v2[1] - v0[1];
+  v[2] = v2[2] - v0[2];
+  dCROSS (normal,=,u,v);
+  normalizeVector3 (normal);
+
+  glBegin(solid ? GL_TRIANGLES : GL_LINE_STRIP);
+  glNormal3fv (normal);
+  glVertex3fv (v0);
+  glVertex3fv (v1);
+  glVertex3fv (v2);
+  glEnd();
+}
+
 
 static void set_transform(const dReal pos[3], const dReal R[12]) {
 #ifdef WANT_GLUT
@@ -190,6 +225,72 @@ void draw_wire_cylinder(const dReal *pos, const dReal *R, dReal radius, dReal he
 #endif // WANT_GLUT
 }
 
+void draw_wire_capsule(const dReal *pos, const dReal *R, dReal radius, dReal height) {
+#ifdef WANT_GLUT
+  set_transform(pos, R);
+  const dReal pos2[3] = {0,0,-height/2.0};
+  shift_transform(pos2);
+  //TODO I should be reusing this quadric
+   GLUquadric *quad = gluNewQuadric();
+   gluQuadricDrawStyle(quad,GLU_LINE);
+   gluCylinder(quad, radius, radius, height, 24,24);
+
+   glutWireSphere(radius, 10,10 );
+  glPopMatrix();
+
+  const dReal pos3[3] = {0,0,height/2.0};
+  shift_transform(pos3);
+
+  glutWireSphere(radius, 10,10 );
+  glPopMatrix();
+
+  gluDeleteQuadric(quad);
+  glPopMatrix();
+#endif // WANT_GLUT
+
+}
+
+
+void draw_capsule(const dReal *pos, const dReal *R, dReal radius, dReal height) {
+#ifdef WANT_GLUT
+  set_transform(pos, R);
+  const dReal pos2[3] = {0,0,-height/2.0};
+  shift_transform(pos2);
+  //TODO I should be reusing this quadric
+  GLUquadric *quad = gluNewQuadric();
+  gluQuadricDrawStyle(quad,GLU_FILL);
+  gluCylinder(quad, radius, radius, height, 24,24);
+
+
+  glutSolidSphere(radius, 10, 10);
+  glPopMatrix();
+
+  const dReal pos3[3] = {0,0,height/2.0};
+  shift_transform(pos3);
+  glutSolidSphere(radius, 10, 10);
+  glPopMatrix();
+
+  gluDeleteQuadric(quad);
+  glPopMatrix();
+#endif // WANT_GLUT
+
+
+}
+
+
+extern "C" void dsDrawTriangle (
+				const float *v0, const float *v1,
+				const float *v2, int solid)
+{
+//  if (current_state != 2) dsError ("drawing function called outside simulation loop");
+//  setupDrawingMode();
+  glShadeModel (GL_FLAT);
+//  set_transform (pos,R);
+  drawTriangle (v0, v1, v2, solid);
+  glPopMatrix();
+}
+
+
 /*****************************************************************************
  *  ODE BODY                                                                 *
  *****************************************************************************/
@@ -226,7 +327,7 @@ ODEBody::ODEBody(ODEDynamics *parent, Device* container, flo x, flo y, flo z,
   for(int i=0;i<3;i++) desired_v[i]=0;
   did_bump=false;
   // create and attach body, shape, and mass
-  body = dBodyCreate(parent->world);
+
   geom = dCreateBox(parent->space,w,l,h);
   dMass m;
 
@@ -361,7 +462,26 @@ ODEBox::ODEBox(ODEDynamics* parent, Device* container, flo x, flo y, flo z, flo 
 
 void ODEBox::visualize() {
 #ifdef WANT_GLUT
-  if(!parent->is_show_bot) return; // don't display unless should be shown
+//		  GLfloat light_ambient[] =
+//		  {1.0,1.0,1.0, 1.0};
+//		  GLfloat light_diffuse[] =
+//		  {1.0, 1.0, 1.0, 1.0};
+//		  GLfloat light_specular[] =
+//		  {1.0, 1.0, 1.0, 1.0};
+//		  GLfloat light_position[] =
+//		  {1.0, 1.0, 10.0, 0.0};
+//
+//		  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+//		  glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+//		  glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+//		  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+//
+//		  glEnable(GL_LIGHT0);
+//		  glDepthFunc(GL_LESS);
+//		  glEnable(GL_DEPTH_TEST);
+//		  glEnable(GL_LIGHTING);
+
+	if(!parent->is_show_bot) return; // don't display unless should be shown
   // get location/size information
   const dReal pos[3] = {0,0,0};
   const dReal *R = dGeomGetRotation(geom);
@@ -489,7 +609,7 @@ void ODESphere::render_selection() {
 
 
 /******************************
- * ODE Sphere
+ * ODE Cylinder
  *******************************/
 ODECylinder::ODECylinder(ODEDynamics* parent, Device* container, double* pos, double* quat, double radius, double length, double mass)
 : ODEBody(parent, container ) {
@@ -509,7 +629,13 @@ cout<<"radius "<<radius<<endl;
   dBodySetMass(body,&m);
   // set position and orientation
   dBodySetPosition(body, pos[0], pos[1], pos[2]);
-  dQuaternion Q; dQFromAxisAndAngle (Q,0,0,1,0);
+  dQuaternion Q;
+//  dQFromAxisAndAngle (Q,0,0,1,0);
+  Q[0] = quat[0];
+  Q[1] = quat[1];
+  Q[2] = quat[2];
+  Q[3] = quat[3];
+
   dBodySetQuaternion (body,Q);
   // set up back-pointer
   dBodySetData(body,(void*)this);
@@ -569,5 +695,91 @@ void ODECylinder::render_selection() {
   dGeomCylinderGetParams(geom, &radius, &length);
   const dReal *R = dGeomGetRotation(geom);
   draw_cylinder(pos,R,radius, length);
+}
+
+
+/******************************
+ * ODE Capsule
+ *******************************/
+ODECapsule::ODECapsule(ODEDynamics* parent, Device* container, double* pos, double* quat, double radius, double length, double mass)
+: ODEBody(parent, container ) {
+
+//	mass = 10;
+//	radius = 10;
+cout<<"radius "<<radius<<endl;
+
+	geom = dCreateCapsule(parent->space,radius, length);
+  dMass m;
+  m.mass = mass;
+  dMassSetCapsule(&m, parent->density, 1, radius, length);
+
+  dGeomSetBody(geom,body);
+
+  //TODO just for meta sim
+  dBodySetMaxAngularSpeed(body, 0);
+
+  dBodySetMass(body,&m);
+  // set position and orientation
+  dBodySetPosition(body, pos[0], pos[1], pos[2]);
+  dQuaternion Q; dQFromAxisAndAngle (Q,0,0,1,0);
+  dBodySetQuaternion (body,Q);
+  // set up back-pointer
+  dBodySetData(body,(void*)this);
+  dGeomSetData(geom,(void*)this);
+
+   if(parent->is_2d){
+	  dJointID planeJointID = dJointCreatePlane2D( parent->world, 0);
+	  dJointAttach( planeJointID, body, 0 );
+   }
+}
+
+
+void ODECapsule::visualize() {
+#ifdef WANT_GLUT
+  if(!parent->is_show_bot) return; // don't display unless should be shown
+  // get location/size information
+
+  const dReal *R = dGeomGetRotation(geom);
+  dReal height;
+  dReal rad;
+  dGeomCapsuleGetParams(geom, &rad, &height);
+  const dReal pos[3] = {0,0,0};
+  // choose base color
+  BOOL pushed=FALSE;
+  Color* color;
+  if (container->is_selected) {
+		palette->use_color(ODEDynamics::ODE_SELECTED);
+	} else {
+		if (!dBodyIsEnabled(body)) {
+			palette->use_color(ODEDynamics::ODE_DISABLED);
+		} else {
+			if (parent->is_multicolored_bots) {
+				flo h = (360.0 * parloc) / parent->bodies.max_id();
+				flo r, g, b;
+				hsv_to_rgb(h, 1, 1, &r, &g, &b);
+
+				pushed = TRUE;
+			}
+		}
+	}
+  if(did_bump){
+		palette->use_color(ODEDynamics::ODE_BOT_BUMPED);
+  }
+
+  draw_capsule(pos, R, rad, height);
+  palette->use_color(ODEDynamics::ODE_EDGES); // draw edges in separate color
+
+  draw_wire_capsule(pos, R, rad, height);
+  if(pushed) palette->use_color(ODEDynamics::ODE_BOT);
+#endif // WANT_GLUT
+}
+
+void ODECapsule::render_selection() {
+	  const dReal pos[3] = {0,0,0};
+	dReal length;
+  dReal radius;
+  dGeomCapsuleGetParams(geom, &radius, &length);
+  const dReal *R = dGeomGetRotation(geom);
+  draw_capsule(pos,R,radius, length);
 }
 

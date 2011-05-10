@@ -43,13 +43,13 @@ public:
 	 * @param bod1 First ODEBody the joint is attached too
 	 * @param bod2 Other ODEBody the joint is attached too
 	 */
-	virtual void createJoint(dWorldID world, dBodyID bod1, dBodyID bod2);
+	virtual dJointID createJoint(dWorldID world, dBodyID bod1, dBodyID bod2);
 };
 
 class XmlFixedJoint: public XmlJoint {
 public:
 	XmlFixedJoint(XERCES_CPP_NAMESPACE::DOMElement* element);
-	void createJoint(dWorldID world,dBodyID bod1, dBodyID bod2);
+	dJointID createJoint(dWorldID world,dBodyID bod1, dBodyID bod2);
 };
 
 class XmlHingedJoint: public XmlJoint {
@@ -59,7 +59,7 @@ public:
 	dReal loStop;
 	dReal hiStop;
 	XmlHingedJoint(XERCES_CPP_NAMESPACE::DOMElement* element, const double* transform);
-	void createJoint(dWorldID world,dBodyID bod1, dBodyID bod2);
+	dJointID createJoint(dWorldID world,dBodyID bod1, dBodyID bod2);
 };
 
 class XmlBody {
@@ -104,7 +104,16 @@ public:
 
 };
 
-//TODO split Bodies, Joints, and Parser into 3 different files
+
+class XmlCapsule: public XmlBody {
+private:
+	double radius;
+	double height;
+public:
+	XmlCapsule(XERCES_CPP_NAMESPACE::DOMElement* element, const double* transform);
+	ODEBody* getODEBody(ODEDynamics* parent, Device* d);
+
+};
 
 //TODO create destructor
 class XmlWorldParser{

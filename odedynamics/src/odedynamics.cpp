@@ -15,10 +15,18 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
  *****************************************************************************/
 
 static int isWall (dGeomID g) { return dGeomGetData(g)==((void*)WALL_DATA); }
+static int isRay (dGeomID g) { return dGeomGetData(g)==((void*)RAY_DATA); }
+
+
+//Create test rays
+bool rayAdded = false;
+dGeomID rayId;
 
 static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
   int i, numc;
   ODEDynamics *dyn = (ODEDynamics*)data;
+
+
 
   // exit without doing anything if the two bodies are connected by a joint
   dBodyID b1 = dGeomGetBody(o1); dBodyID b2 = dGeomGetBody(o2);
@@ -27,14 +35,14 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
   if(!dyn->is_walls && (isWall(o1) || isWall(o2))) { return; }
 
   dContact contact[MAX_CONTACTS];   // up to MAX_CONTACTS contacts per pair
-  if (int numc = dCollide (o1,o2,MAX_CONTACTS,&contact[0].geom,
-                           sizeof(dContact))) {
+  if (int numc = dCollide (o1,o2,MAX_CONTACTS,&contact[0].geom, sizeof(dContact))) {
     for (i=0; i<numc; i++) {
-//      contact[i].surface.mode = dContactBounce | dContactSoftCFM;
-    	contact[i].surface.mode = dContactBounce;
-    	contact[i].surface.mu = 0;
-      // contact[i].surface.mu = dInfinity;
-      contact[i].surface.mu2 = 0;
+      contact[i].surface.mode = dContactBounce | dContactSoftCFM;
+//    	contact[i].surface.mode = dContactBounce;
+//    	contact[i].surface.mu = 0;
+//      contact[i].surface.mu = dInfinity;
+      contact[i].surface.mu = 0.85;
+      contact[i].surface.mu2 = 0.85	;
       // contact[i].surface.bounce = 0.1;
       //      contact[i].surface.bounce = 0.5;
       contact[i].surface.bounce_vel = 0.1;
@@ -46,6 +54,12 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
     // record bumps
     if(b1 && (b2 || isWall(o2))) ((ODEBody*)dBodyGetData(b1))->did_bump=TRUE;
     if(b2 && (b1 || isWall(o1))) ((ODEBody*)dBodyGetData(b2))->did_bump=TRUE;
+    if(b1 && (isRay(o2))) ((ODEBody*)dBodyGetData(b1))->did_bump=TRUE;
+    if(b2 && (isRay(o1))) ((ODEBody*)dBodyGetData(b2))->did_bump=TRUE;
+//
+//    if( dCollide (rayId,o1,MAX_CONTACTS,&contact[0].geom, sizeof(dContact)) ){
+//    	 ((ODEBody*)dBodyGetData(b1))->did_bump=TRUE;
+//    }
   }
 }
 /*****************************************************************************
@@ -197,15 +211,6 @@ ODEDynamics::ODEDynamics(Args* args, SpatialComputer* p, int n)
 
 }
 
-//void ODEDynamics::addDist(){
-//
-//	  FixedTimer* timer = new FixedTimer(0.1, 1.0);
-//	  METERS* tLoc = new METERS[3];
-//	  tLoc[0] = 0.0; tLoc[1] = 0.0; tLoc[2] = 0.0;
-//	  SECONDS start;
-//	  Device* tempd = new SimulatedDevice(parent, tLoc, timer);
-//}
-
 ODEDynamics::~ODEDynamics() {
   dJointGroupDestroy(contactgroup);
   for(int i=0;i<ODE_N_WALLS;i++) dGeomDestroy(walls[i]);
@@ -220,7 +225,7 @@ void ODEDynamics::bump_op(MACHINE* machine) {
 
 void ODEDynamics::force_op(MACHINE* machine){
 
-	  ODEBody* b = (ODEBody*)device->body;
+	ODEBody* b = (ODEBody*)device->body;
 	dReal fz =  NUM_POP();
 	dReal fy = NUM_POP();
 	dReal fx = NUM_POP();
@@ -307,6 +312,7 @@ Body* ODEDynamics::new_body(Device* d, flo x, flo y, flo z) {
 
 	}
 		b->parloc = bodies.add(b);
+
   return b;
 }
 
@@ -320,22 +326,30 @@ void ODEDynamics::dump_header(FILE* out) {
 }
 
 BOOL ODEDynamics::evolve(SECONDS dt) {
-	if(!is_mobile) return FALSE;
-  time_slop+=dt;
-  while(time_slop>0) {
-    dSpaceCollide(space,this,&nearCallback);
-    // add forces
-    for(int i=0;i<bodies.max_id();i++) 
-      { ODEBody* b = (ODEBody*)bodies.get(i); if(b) b->drive(); }
-//    dWorldStep(world,substep);
-    dWorldQuickStep(world,substep);
-    dJointGroupEmpty(contactgroup);
-    if(is_walls && is_inescapable) reset_escapes();
-    time_slop -= substep;
-  }
-  for(int i=0;i<bodies.max_id();i++) // mark everything as moved
-    { Body* b = (Body*)bodies.get(i); if(b) b->moved=TRUE; }
-  return TRUE;
+	if (!is_mobile)
+		return FALSE;
+	time_slop += dt;
+	while (time_slop > 0) {
+		dSpaceCollide(space, this, &nearCallback);
+		// add forces
+		for (int i = 0; i < bodies.max_id(); i++) {
+			ODEBody* b = (ODEBody*) bodies.get(i);
+			if (b)
+				b->drive();
+		}
+		dWorldQuickStep(world, substep);
+		dJointGroupEmpty(contactgroup);
+		if (is_walls && is_inescapable)
+			reset_escapes();
+		time_slop -= substep;
+	}
+	for (int i = 0; i < bodies.max_id(); i++) // mark everything as moved
+	{
+		Body* b = (Body*) bodies.get(i);
+		if (b)
+			b->moved = TRUE;
+	}
+	return TRUE;
 }
 
 // return escaped bots to a new starting position
@@ -387,6 +401,8 @@ Color* ODEDynamics::ODE_BOT;
 Color* ODEDynamics::ODE_BOT_BUMPED;
 Color* ODEDynamics::ODE_EDGES;
 Color* ODEDynamics::ODE_WALL;
+Color* ODEDynamics::ODE_BRADLEY;
+
 void ODEDynamics::register_colors() {
 #ifdef WANT_GLUT
 	  ODE_SELECTED = palette->register_color("ODE_SELECTED", 0, 0.7, 1, 1);
@@ -395,6 +411,7 @@ void ODEDynamics::register_colors() {
 	  ODE_BOT_BUMPED = palette->register_color("ODE_BOT_BUMP", 0, 1, 0, 0.7);
 	  ODE_EDGES = palette->register_color("ODE_EDGES", 0, 0, 1, 1);
 	  ODE_WALL = palette->register_color("ODE_WALL", 1, 0, 0, 0.1);
+	  ODE_BRADLEY = palette->register_color("ODE_BRADLEY", 0.29, 0.325, 0.125, 1.0);
 #endif
 }
 
