@@ -2,9 +2,15 @@
 #define __ODEBODY__
 
 
-#include "odedynamics.h"
+//TODO this should be defined in config.h, for some reason it wasn't working
+#define WANT_GLUT 1
+#define dDOUBLE 1
+//#define dSINGLE 1
+//#include "odedynamics.h"
 #include "config.h"
+#include <ode/ode.h>
 #include <proto/visualizer.h>
+#include <proto/spatialcomputer.h>
 #include <sstream>
 /*****************************************************************************
  *  ODE BODY                                                                 *

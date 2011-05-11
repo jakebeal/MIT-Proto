@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
 pkglib_LTLIBRARIES = libproto-ode.la
-include_HEADERS  = src/odedynamics.h  src/odebody.h  src/odebodyfactory.h config.h
+pkginclude_HEADERS  = src/odedynamics.h  src/odebody.h  src/odebodyfactory.h
 
 libproto_ode_la_SOURCES  =  src/odebody.cpp src/odedynamics.cpp src/odebodyfactory.cpp src/xerces_bodies.cpp
 libproto_ode_la_LDFLAGS  = -module $(ODELDFLAGS) -dynamiclib -avoid-version -lprotosimplugin -lode

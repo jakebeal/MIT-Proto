@@ -1,7 +1,8 @@
 #include "odebodyfactory.h"
 //#include "xerces_bodies.h"
 
-ODEBodyFactory::ODEBodyFactory(const char* body_file) {
+ODEBodyFactory::ODEBodyFactory(const char* body_file,ODEDynamics* parent) {
+  this->parent = parent;
 	bodySize = 1.0;
 	defaultSize = 10.0;
 	x = 0; // -5
@@ -55,16 +56,16 @@ void ODEBodyFactory::create_joints() {
 			}
 		}
 
-		dJointID jointId = joint->createJoint(world, bod1, bod2);
+		dJointID jointId = joint->createJoint(parent->world, bod1, bod2);
 
-/*		if( joint->id1.find("DriveWheel") != -1 || joint->id2.find("DriveWheel") != -1){
-			dJointSetHingeParam(jointId, dParamFMax, 1);
+                /*		if( joint->id1.find("DriveWheel") != -1 || joint->id2.find("DriveWheel") != -1){
+			dJointSetHingeParam(jointId, dParamFMax, 50);
 			dJointSetHingeParam(jointId, dParamVel, -0.2);
 			cout<<"Drive wheel found!"<<endl;
 		}else{
 			if( joint->id1.find("Wheel", 5) != -1 || joint->id2.find("Wheel", 5) != -1)
 				cout<<"Not driving on "<< joint->id1 <<" or " <<joint->id2<<endl;
-		}*/
+                                }*/
 
 		parser->jointList.pop_back();
 	}
@@ -83,8 +84,7 @@ int ODEBodyFactory::numBodies() {
 	return parser->bodyList.size();
 }
 
-ODEBody* ODEBodyFactory::next_body(ODEDynamics* parent, Device* d) {
-
+ODEBody* ODEBodyFactory::next_body(Device* d) {
 	XmlBody* nextBody = parser->bodyList.back();
 	if (nextBody == NULL) {
 		cout << "BODY IS NULL" << endl;

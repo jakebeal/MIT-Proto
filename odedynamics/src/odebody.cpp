@@ -1,3 +1,4 @@
+#include "odedynamics.h"
 #include "odebody.h"
 /*****************************************************************************
  *  GEOM DRAWING                                                             *

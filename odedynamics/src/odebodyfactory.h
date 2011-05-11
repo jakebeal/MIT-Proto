@@ -16,8 +16,8 @@
 #include <xercesc/util/XMLChar.hpp>
 
 #include "xerces_bodies.h"
-class ODEBody;
-class ODEDynamics;
+//class ODEBody;
+//class ODEDynamics;
 
 class XmlJoint;
 class XmlBody;
@@ -37,13 +37,20 @@ private:
 	const char* body_file;
 	XmlWorldParser* parser;
 	map<string, ODEBody*> bodyMap;
-
+        ODEDynamics* parent;
 
 public:
 	static ODEBodyFactory* instance;
 	dWorldID  world;
 
-	ODEBodyFactory(const char* body_file);
+	/**
+	 * Creates a ODEBodyFactory that turns an XML file into bodies
+         * for the ODEDynamics layer
+	 *
+	 * @param parent the ODE Dynamics layer this file will make bodies for
+	 * @param body_file the name of the XML file specifying the bodies
+	 */
+	ODEBodyFactory(const char* body_file,ODEDynamics* parent);
 //	static ODEBodyFactory* instanceof();
 	/**
 	 * Returns a new ODEBody which is not necessarily in the
@@ -53,7 +60,7 @@ public:
 	 * @param d The device to be attached to a body
 	 * @return a new ODEBody if possible, null if factory is out of bodies to make
 	 */
-	ODEBody* next_body(ODEDynamics* parent, Device* d);
+	ODEBody* next_body(Device* d);
 	void create_joints();
 	bool empty();
 	int numBodies();

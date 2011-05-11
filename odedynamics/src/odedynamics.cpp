@@ -201,8 +201,7 @@ ODEDynamics::ODEDynamics(Args* args, SpatialComputer* p, int n)
   if(strcmp(xml_body_file, "") == 0){
 	  bodyFactory = NULL;
   }else{
-	  bodyFactory = new ODEBodyFactory(xml_body_file);
-	  bodyFactory->world = world;
+    bodyFactory = new ODEBodyFactory(xml_body_file,this);
 
 	  if(bodyFactory->numBodies() != n){
 		  printf("Warning! Number of bodies specified with switch \'-n\' does not match number of bodies specified in %s configuration file.\n Please use \'-n %d\'\n ",xml_body_file, bodyFactory->numBodies());
@@ -307,7 +306,7 @@ void ODEDynamics::visualize() {
 Body* ODEDynamics::new_body(Device* d, flo x, flo y, flo z) {
 	ODEBody* b ;
 	if(bodyFactory != NULL){
-		b = bodyFactory->next_body(this,d);
+		b = bodyFactory->next_body(d);
 	}else{
 		b = new ODEBox(this, d, x, y, z, this->body_radius*2, this->body_radius*2, this->body_radius*2, 10.0);
 
