@@ -148,6 +148,7 @@
       <arg value="--p2b=${install-dir}/bin/p2b${exeExt}" />
       <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
+      <env key="PRINTF_EXPONENT_DIGITS" value="2" />
     </exec>
   </target>
     
@@ -187,6 +188,7 @@
       <arg value="--p2b=${install-dir}/bin/p2b${exeExt}" />
       <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
+      <env key="PRINTF_EXPONENT_DIGITS" value="2" />
     </exec>
   </target>
     
@@ -226,6 +228,7 @@
       <arg value="--p2b=${install-dir}/bin/p2b${exeExt}" />
       <arg value="--demos=${proto-dir}/demos" />
       <arg value="*.test" />
+      <env key="PRINTF_EXPONENT_DIGITS" value="2" />
     </exec>
   </target>
     
