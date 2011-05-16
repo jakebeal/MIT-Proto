@@ -99,6 +99,7 @@
         <exec dir="${proto-dir}" executable="${shellpath}" failonerror="true" >
           <arg line="./configure --prefix=${install-dir} --with-neocompiler ${configureopts}" />
           <env key="LIBS" value="${extralibs}" />
+          <env key="CFLAGS" value="${cflags}" />
         </exec>
      <record name="ConfigureLog.txt" action="stop" />
    </target>
