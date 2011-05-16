@@ -94,6 +94,11 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
  *  COMPILER OBJECT API                                                      *
  *****************************************************************************/
 NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
+#ifdef __WIN32__
+  // Ensure floating point numbers are printed unix-style
+  _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+
   is_dump_all = args->extract_switch("-CDall");
   is_dump_interpreted = args->extract_switch("-CDinterpreted") | is_dump_all;
   is_dump_analyzed = args->extract_switch("-CDanalyzed") | is_dump_all;
