@@ -13,6 +13,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
+#include <stdio.h>
 #include "nicenames.h"
 #include "compiler.h"
 #include "plugin_manager.h"
@@ -96,7 +97,7 @@ uint8_t* NeoCompiler::compile(const char *str, int* len) {
 NeoCompiler::NeoCompiler(Args* args) : Compiler(args) {
 #ifdef __WIN32__
   // Ensure floating point numbers are printed unix-style
-  //_set_output_format(_TWO_DIGIT_EXPONENT); // What header is needed?
+  _set_output_format(_TWO_DIGIT_EXPONENT); // What header is needed?
 #endif
 
   is_dump_all = args->extract_switch("-CDall");
