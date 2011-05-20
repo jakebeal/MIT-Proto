@@ -260,6 +260,9 @@ void Parameter::print(ostream* out) {
 // table of FieldOps used to date
 CEmap(Operator*,FieldOp*) FieldOp::fieldops;
 Operator* FieldOp::get_field_op(OperatorInstance* oi) {
+  if(oi->op->marked(":side-effect"))
+     return op_err(oi,"Cannot apply operators with side effects to fields");
+  
   if(oi->op->isA("LocalFieldOp")) return ((LocalFieldOp*)oi->op)->base;
   if(!oi->op->isA("Primitive") || oi->pointwise()==0) return NULL;
   // reuse or create appropriate FieldOp
