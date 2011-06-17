@@ -31,7 +31,6 @@ protolib_DATA = \
 	muxor.proto \
 	neg.proto \
 	normalize.proto \
-	not.proto \
 	once.proto \
 	or.proto \
 	pi.proto \

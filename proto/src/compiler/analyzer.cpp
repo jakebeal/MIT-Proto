@@ -1303,8 +1303,7 @@ class ConstantFolder : public IRPropagator {
     } else if(name=="ceil") {
       maybe_set_output(oi,new ProtoScalar(ceil(nth_scalar(oi,0))));
     } else if(name=="round") {
-      // (primitive round (scalar) scalar)
-      compile_warn(oi,"ConstantFolder incomplete for "+oi->op->to_str());
+      maybe_set_output(oi,new ProtoScalar(rint(nth_scalar(oi,0))));
     } else if(name=="mod") {
       double a = nth_scalar(oi,0), b = nth_scalar(oi,1);
       maybe_set_output(oi,new ProtoScalar(fmod(a,b)));

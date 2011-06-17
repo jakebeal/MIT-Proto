@@ -64,12 +64,14 @@
  (INF_OP 1)				; not actually used
  (ELT_OP -1 elt)
  (RND_OP -1 rnd)
+ (NOT_OP 0 not)
  (ADD_OP -1) ;; type-dependent & n-ary
  (SUB_OP -1) ;; type-dependent & n-ary
  (MUL_OP -1) ;; type-dependent & n-ary
  (DIV_OP -1) ;; type-dependent & n-ary
  (FLOOR_OP 0 floor)
  (CEIL_OP 0 ceil)
+ (ROUND_OP 0 round)
  (MOD_OP -1 mod)
  (POW_OP -1 pow)
  (LOG_OP 0 log)
