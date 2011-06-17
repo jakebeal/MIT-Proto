@@ -39,7 +39,8 @@ proto_LDADD = \
 	compiler/libcompiler.la
 
 proto_LDFLAGS = \
-	-export-dynamic
+	-export-dynamic \
+	-rpath ${libdir}
 
 p2b_SOURCES = \
 	compiler-app.cpp
