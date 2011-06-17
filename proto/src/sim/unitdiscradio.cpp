@@ -52,7 +52,8 @@ UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(a
     (int)ceil((((Rect3*)p->volume)->c-(((Rect3*)p->volume)->f))/range)+2;
   // pre-calculate bounds
   cell_left = p->volume->l-range; cell_bottom = p->volume->b-range;
-  cell_floor = ((Rect3*)p->volume)->f-range;
+  cell_floor = (p->volume->dimensions()==2)?1:
+    ((Rect3*)p->volume)->f-range;
   lvl_size = cell_rows*cell_cols; num_cells = lvl_size*cell_lvls;
   // make and populate the cell table
   cells = (Population**)calloc(num_cells,sizeof(Population*));
