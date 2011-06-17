@@ -51,6 +51,7 @@
  (HOOD_RADIUS_OP 1 hood-radius)
  (AREA_OP 1)				; obsoleted by infinitesimal?
  (FLEX_OP 0 flex)
+ (DENSITY_OP 1 density)
  (INFINITESIMAL_OP 1 infinitesimal)
  (DT_OP 1 dt)
  (NBR_RANGE_OP 1 nbr-range)

@@ -1157,6 +1157,10 @@ NUM_VAL machine_area (MACHINE *m) {
   return radius*radius * M_PI / (m->n_hood + 1);
 }
 
+static NUM_VAL machine_density (MACHINE *m) {
+  return 1 / machine_area(m);
+}
+
 INLINE void fold_one (FUN_VAL fuse, uint16_t id, DATA *res, DATA *src) {
   DATA val = funcall2(fuse, res, src);
   if (is_debugging(machine)) { POST("M%d ", id); /* POST("[%.1f %.1f]", nbr_range(), nbr_bearing()); */ POST("<"); post_data(res); POST(" "); post_data(src); POST(">=>"); post_data(&val); POST(" "); }
@@ -1605,6 +1609,8 @@ DATA *eval(DATA *res, FUN_VAL fun) {
    break; }
       case INFINITESIMAL_OP: 
    NUM_PUSH(machine_area(m)); break;
+      case DENSITY_OP: 
+   NUM_PUSH(machine_density(m)); break;
       case NBR_RANGE_OP: 
    NUM_PUSH(nbr_range()); break;
       case AREA_OP: 

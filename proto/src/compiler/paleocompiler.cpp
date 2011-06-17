@@ -1617,6 +1617,7 @@ void init_ops () {
                  new FUN_TYPE(ANYT,NUMT,ANYT,ANYT,0), &mux_type_infer);
   def_op_alias("WHERE", if_op);
   if_op->emit_fn = &ast_if_emit;
+  add_op("DENSITY", DENSITY_OP, 0, 0, new FUN_TYPE(NUMT,0));
   add_op("INFINITESIMAL", INFINITESIMAL_OP, 0, 0, new FUN_TYPE(NUMT,0));
   add_op("NBR-RANGE", NBR_RANGE_OP, 0, 0, new FUN_TYPE(NUMT,0));
   def_op_alias("NBR-ANGLE", add_op("NBR-BEARING", NBR_BEARING_OP, 0, 0, new FUN_TYPE(NUMT,0)));
