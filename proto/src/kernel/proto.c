@@ -1647,6 +1647,8 @@ DATA *eval(DATA *res, FUN_VAL fun) {
       case MIN_OP: {
    NUM_VAL val = MIN(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }
    //Basic Mathematical Operations
+      case NOT_OP: {
+   NUM_VAL val = (0 == NUM_PEEK(0)); NPOP(1); NUM_PUSH(val); break; }
       case ADD_OP: {
    NUM_VAL val = NUM_PEEK(1) + NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case MOD_OP: {
@@ -1686,6 +1688,8 @@ DATA *eval(DATA *res, FUN_VAL fun) {
    NUM_PUSH(floor(NUM_POP())); break; }      
       case CEIL_OP: {
    NUM_PUSH(ceil(NUM_POP())); break; }            
+      case ROUND_OP: {
+   NUM_PUSH(rint(NUM_POP())); break; }
       case ATAN2_OP: {
    NUM_VAL val = atan2(NUM_PEEK(1), NUM_PEEK(0)); NPOP(2); NUM_PUSH(val); break; }      
    
