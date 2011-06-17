@@ -1499,7 +1499,7 @@ void init_ops () {
                new FUN_TYPE(ANYT,ANYT,NUMT,0),&probe_type_infer);
   add_op("FLEX", FLEX_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
 
-
+  add_op("NOT", NOT_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
   add_op("RND", RND_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
   add_op_named("INF", "INF", INF_OP, 0, 0, new FUN_TYPE(NUMT,0));
   
@@ -1521,6 +1521,7 @@ void init_ops () {
   //Math Functions
   add_op("FLOOR", FLOOR_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
   add_op("CEIL", CEIL_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));  
+  add_op("ROUND", ROUND_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
   add_op("ABS", ABS_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
   add_op("MAX", MAX_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
   add_op("MIN", MIN_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
