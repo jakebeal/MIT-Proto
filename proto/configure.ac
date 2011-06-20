@@ -76,6 +76,8 @@ AC_CHECK_FUNCS([floor gettimeofday memset pow select sqrt strcasecmp strrchr])
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/core/Makefile
+                 p2b
+                 proto
                  src/Makefile
                  src/compiler/Makefile
                  src/compiler/unittests/Makefile
@@ -89,4 +91,10 @@ AC_CONFIG_FILES([Makefile
                  doc/Doxyfile
                  doc/html/Makefile
                 ])
+
+# Make proto and p2b scripts executable.
+
+AC_CONFIG_COMMANDS([make-proto-executable], [chmod +x ./proto])
+AC_CONFIG_COMMANDS([make-p2b-executable], [chmod +x ./p2b])
+
 AC_OUTPUT
