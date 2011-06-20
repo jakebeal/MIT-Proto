@@ -1118,6 +1118,14 @@ INLINE NUM_VAL nbr_range (VOID) {
   return sqrt(m->nbr_x*m->nbr_x + m->nbr_y*m->nbr_y + m->nbr_z*m->nbr_z);
 }
 
+// Approximates the area of the disc of radio communication about m.
+// FIXME: What if we are in a three-dimensional space?
+
+static NUM_VAL machine_radio_disc_area (MACHINE *m) {
+  NUM_VAL radius = m->radio_range;
+  return (radius * radius * M_PI);
+}
+
 #define NUM_AREA_BINS 16
 
 NUM_VAL machine_area (MACHINE *m) {
@@ -1153,12 +1161,11 @@ NUM_VAL machine_area (MACHINE *m) {
 
   // This is an estimate made with no neighbor location information
   // given neighbor X/Y or X/Y/Z information, a better estimate can be made
-  NUM_VAL radius = m->radio_range;
-  return radius*radius * M_PI / (m->n_hood + 1);
+  return (machine_radio_disc_area(m) / (m->n_hood + 1));
 }
 
 static NUM_VAL machine_density (MACHINE *m) {
-  return 1 / machine_area(m);
+  return ((m->n_hood + 1) / machine_radio_disc_area(m));
 }
 
 INLINE void fold_one (FUN_VAL fuse, uint16_t id, DATA *res, DATA *src) {
