@@ -17,7 +17,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h" // also pulls in math
 #include "plugin_manager.h"
 #include "DefaultsPlugin.h"
-#if __USE_NEOCOMPILER__
+#if USE_NEOCOMPILER
 #include "compiler.h"
 #else
 #include "compiler-utils.h" // ordinarily included by neocompiler
@@ -28,7 +28,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 void shutdown_app(void);
 
-#if __USE_NEOCOMPILER__
+#if USE_NEOCOMPILER
 NeoCompiler* compiler = NULL;
 #else
 PaleoCompiler* compiler = NULL;
@@ -470,7 +470,7 @@ void process_app_args(Args *args) {
 int main (int argc, char *argv[]) {
   post("PROTO v%s%s (Kernel %s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
       PROTO_VERSION,
-#if __USE_NEOCOMPILER__
+#if USE_NEOCOMPILER
       "[neo]",
 #else
       "[paleo]",
@@ -494,7 +494,7 @@ int main (int argc, char *argv[]) {
     palette = Palette::default_palette;
 #endif // WANT_GLUT
   }
-#if __USE_NEOCOMPILER__
+#if USE_NEOCOMPILER
   compiler = new NeoCompiler(args);  // first the compiler
   compiler->emitter = new ProtoKernelEmitter(compiler,args);
   computer = new SpatialComputer(args,!test_mode); // then the computer

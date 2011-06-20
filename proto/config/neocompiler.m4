@@ -6,15 +6,15 @@ AC_DEFUN([PROTO_WITH_NEOCOMPILER], [
 #                [use_neocompiler=meh])
                 [use_neocompiler="no"])
 
-    if test x"$use_neocompiler" != x"no"; then
-       	__USE_NEOCOMPILER__=true
+    if test "x$use_neocompiler" != xno; then
+        USE_NEOCOMPILER=true
     else
-        __USE_NEOCOMPILER__=false
+        USE_NEOCOMPILER=false
     fi
 
-    AM_CONDITIONAL(__USE_NEOCOMPILER__, $__USE_NEOCOMPILER__)
-    if $__USE_NEOCOMPILER__; then
-        AC_DEFINE([__USE_NEOCOMPILER__], 1,
+    AM_CONDITIONAL(USE_NEOCOMPILER, $USE_NEOCOMPILER)
+    if $USE_NEOCOMPILER; then
+        AC_DEFINE([USE_NEOCOMPILER], 1,
                   [Define if you want to use the new-version Proto compiler])
     fi
 ])
