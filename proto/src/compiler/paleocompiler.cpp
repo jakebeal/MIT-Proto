@@ -6,23 +6,27 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "config.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <inttypes.h>
-#include <stdarg.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <string>
+
+#include <inttypes.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <list>
 #include <map>
+#include <string>
+
+#include "config.h"
+
 #include "lisp.h"
-#include "reader.h"
 #include "paleocompiler.h"
 #include "plugin_manager.h"
+#include "reader.h"
 
 using namespace std; // allow c-strings, etc; note: shadows 'pair'
 
