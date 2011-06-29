@@ -1,5 +1,5 @@
 /* Reader finds text and turns it into s-expressions
-Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -33,25 +33,25 @@ typedef struct {
   char *name;
 } Token;
 
-extern Obj *read_object (const char *string, int *start);
+extern Obj *read_object(const char *string, int *start);
 
-extern List *qq_env (const char *str, Obj *val, ...);
-extern Obj *read_qq (const char *str, List *env);
+extern List *qq_env(const char *str, Obj *val, ...);
+extern Obj *read_qq(const char *str, List *env);
 
-extern Obj *read_from_str (const char *str);
+extern Obj *read_from_str(const char *str);
 
 
 // New-style path handling
 struct Path {
   list<string> dirs;
-  
-  void add_default_path(string srcdir);
-  void add_to_path(string addition) { dirs.push_back(addition); }
-  ifstream* find_in_path(char *filename){string s = filename; find_in_path(s);}
-  ifstream* find_in_path(string filename);
+
+  void add_default_path(const string &srcdir);
+  void add_to_path(const string &addition) { dirs.push_back(addition); }
+  ifstream *find_in_path(const char *filename) const
+    { string s(filename); find_in_path(s); }
+  ifstream *find_in_path(const string &filename) const;
 };
 
-extern List *read_objects_from (char *filename);
-extern List *read_objects_from_dirs (string filename, Path *path);
+extern List *read_objects_from_dirs(const string &filename, const Path *path);
 
 #endif

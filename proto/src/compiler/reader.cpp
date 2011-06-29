@@ -8,56 +8,66 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <cctype>
 #include <cstdarg>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 
 #include "config.h"
 
 #include "reader.h"
+#include "scoped_ptr.h"
 
-void Path::add_default_path(string srcdir) {
+void
+Path::add_default_path(const string &srcdir)
+{
   dirs.push_back(srcdir + ".");
   if (srcdir != "") {
-    // use srcdir-relative paths
+    // Use srcdir-relative paths.
     dirs.push_back(srcdir + "/lib/");
     dirs.push_back(srcdir + "/lib/core/");
   }
-  // always use the install location
+  // Always use the install location.
   dirs.push_back(PROTOLIBDIR);
 }
 
-ifstream* Path::find_in_path(string filename) {
-  ifstream* s = new ifstream();
-  for(list<string>::iterator i=dirs.begin(); i!=dirs.end(); i++) {
-    string fullname = *i+"/"+filename;
-    s->open(fullname.c_str());
-    if(s->good()) return s;
-    s->close();
+ifstream *
+Path::find_in_path(const string &filename) const
+{
+  scoped_ptr<ifstream> stream(new ifstream);
+
+  for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
+    string absolute_filename = *i + "/" + filename;
+    stream->open(absolute_filename.c_str());
+    if (stream->good())
+      return stream.release();
+    stream->close();
   }
-  delete s;
+
   return NULL;
 }
 
-void print_token (Token *token) {
+static void
+print_token(Token *token)
+{
   switch (token->type) {
   case Token_left_paren: post("LP"); break;
   case Token_right_paren: post("RP"); break;
-  case Token_symbol: post("N(%s)", (char*)token->name); break;
-  case Token_string: post("S(%s)", (char*)token->name); break;
+  case Token_symbol: post("N(%s)", token->name); break;
+  case Token_string: post("S(%s)", token->name); break;
   case Token_eof: post("EF"); break;
   }
 }
 
-Token *new_token (Token_type type, const char *name, int max_size) {
-  Token *tok = (Token*)MALLOC(sizeof(Token));
-  char  *buf = (char*)MALLOC(strlen(name)+1);
+static Token *
+new_token(Token_type type, const char *name, int max_size)
+{
+  Token *token = new Token;
   if (strlen(name) > max_size)
     uerror("NEW TOKEN NAME OVERFLOW %d\n", max_size);
-  strcpy(buf, name);
-  tok->type = type;
-  tok->name = buf;
+  token->type = type;
+  token->name = strdup(name);
   // print_token(tok); debug("\n");
-  return tok;
+  return token;
 }
 
 #define BUF_SIZE 1024
@@ -69,7 +79,9 @@ Token *new_token (Token_type type, const char *name, int max_size) {
 #define H_CHR    '#'
 #define C_CHR    '\''
 
-Token *read_token (const char *string, int *start) {
+static Token *
+read_token (const char *string, int *start)
+{
   int  is_str = 0;
   int  i = *start;
   int  j = 0;
@@ -79,6 +91,7 @@ Token *read_token (const char *string, int *start) {
   int  is_hash = 0;
   char c;
   char buf[BUF_SIZE];
+
   // post("READING TOKEN %s %d\n", string, *start);
   for (;;) {
     if (j >= BUF_SIZE)
@@ -126,7 +139,7 @@ Token *read_token (const char *string, int *start) {
  ready:
   if (is_str) {
     int is_esc = 0;
-    for (; i < len && j < BUF_SIZE; ) {
+    while (i < len && j < BUF_SIZE) {
       c      = string[i++];
       *start = i;
       if (!is_raw_str && c == '\\') {
@@ -144,14 +157,14 @@ Token *read_token (const char *string, int *start) {
     }
     uerror("unable to find end of string %s\n", buf);
   } else {
-    for (; i < len; ) {
+    while (i < len) {
       c      = string[i++];
       *start = i;
-      if (c == ')' || c == '('  || c == ' ' || c == '\t' || c == '\n' || c == '\r') {
-        if (c == ')' || c == '(')
-          *start -= 1;
+      if (c == ')' || c == '(')
+        *start -= 1;
+      if (c == ')'  || c == '('  || c == ' ' ||
+          c == '\t' || c == '\n' || c == '\r')
         return new_token(Token_symbol, buf, BUF_SIZE);
-      }
       buf[j++] = c;
       buf[j]   = 0;
     }
@@ -160,9 +173,11 @@ Token *read_token (const char *string, int *start) {
   }
 }
 
-extern Obj *read_from (Token *token, const char *string, int *start);
+static Obj *read_from(Token *token, const char *string, int *start);
 
-List *read_list (char *string, int *start) {
+static List *
+read_list(const char *string, int *start)
+{
   List *_list  = lisp_nil;
   // debug("READING LIST %d\n", *start);
   for (;;) {
@@ -181,16 +196,19 @@ List *read_list (char *string, int *start) {
   }
 }
 
-int isnum (char *name) {
+static int
+isnum(const char *name)
+{
   int i, nump;
   nump = isdigit(name[0]) || (name[0] == '-' && strlen(name) > 1);
-  for (i = 1; i < strlen(name); i++) {
+  for (i = 1; i < strlen(name); i++)
     nump = nump && (isdigit(name[i]) || name[i] == '.');
-  }
   return nump;
 }
 
-Obj *new_sym_or_num(char *name) {
+static Obj *
+new_sym_or_num(const char *name)
+{
   if (isnum(name)) {
     int inum; flo fnum;
     int res = sscanf(name, "%f", &fnum);
@@ -207,17 +225,20 @@ Obj *new_sym_or_num(char *name) {
     return new Symbol(name);
 }
 
-Obj *read_from (Token *token, const char *string, int *start) {
+static Obj *
+read_from(Token *token, const char *string, int *start)
+{
   // post("READING FROM %s\n", &string[*start]);
   switch (token->type) {
   case Token_quote:
-    return PAIR(new Symbol("QUOTE"), PAIR(read_object(string, start), lisp_nil));
+    return
+      PAIR(new Symbol("QUOTE"), PAIR(read_object(string, start), lisp_nil));
   case Token_char: {
     Obj *obj = read_object(string, start);
     if (numberp(obj))
-      return new Number('0' + ((Number*)obj)->getValue());
+      return new Number('0' + dynamic_cast<Number &>(*obj).getValue());
     else if (symbolp(obj))
-      return new Number(((Symbol*)obj)->getName()[0]);
+      return new Number(dynamic_cast<Symbol &>(*obj).getName()[0]);
     else
       uerror("BAD CHAR TOKEN\n");
   }
@@ -225,34 +246,42 @@ Obj *read_from (Token *token, const char *string, int *start) {
   case Token_true:        return new Number(1);
   case Token_false:       return new Number(0);
   case Token_symbol:      return new_sym_or_num(token->name);
-  case Token_left_paren:  return read_list((char*)string, start);
+  case Token_left_paren:  return read_list(string, start);
   case Token_right_paren: uerror("Unbalanced parens\n");
   case Token_eof:         return NULL;
   default:                uerror("Unknown token type %d\n", token->type);
   }
 }
 
-Obj *read_object (const char *string, int *start) {
+Obj *
+read_object(const char *string, int *start)
+{
   Token *token = read_token(string, start);
   return read_from(token, string, start);
 }
 
-#define FILE_BUF_SIZE 100000
+#define STREAM_BUF_SIZE 100000
 
-int copy_from_file (ifstream *file, char *buf) {
-  int i=0;
-  while(file->good() && i<FILE_BUF_SIZE-1) buf[i++] = file->get();
-  if(i==FILE_BUF_SIZE-1) uerror("FILE READING BUFFER OVERFLOW %d\n", i);
+static int
+copy_from_stream(istream *stream, char *buf)
+{
+  int i = 0;
+  while (stream->good() && i < STREAM_BUF_SIZE - 1)
+    buf[i++] = stream->get();
+  if (i == STREAM_BUF_SIZE - 1)
+    uerror("STREAM READING BUFFER OVERFLOW %d\n", i);
   buf[i-1] = 0; // minus 1 because last character came from EOF
   return 1;
 }
 
-List *read_objects_from (ifstream *file) {
+static List *
+read_objects_from(istream *stream)
+{
   int    start = 0;
   List   *objs = lisp_nil;
-  char   buf[FILE_BUF_SIZE];
+  char   buf[STREAM_BUF_SIZE];
 
-  if (!copy_from_file(file, buf))
+  if (!copy_from_stream(stream, buf))
     return NULL;
   for (;;) {
     Obj *obj = read_object(buf, &start);
@@ -263,14 +292,18 @@ List *read_objects_from (ifstream *file) {
   }
 }
 
-List *read_objects_from_dirs (string filename, Path *path) {
-  ifstream* file = path->find_in_path(filename);
-  if(file==NULL) { return NULL; }
-  List *res = read_objects_from(file);
-  delete file; return res;
+List *
+read_objects_from_dirs (const string &filename, const Path *path)
+{
+  scoped_ptr<ifstream> stream(path->find_in_path(filename));
+  if (stream == NULL)
+    return NULL;
+  return read_objects_from(stream.get());
 }
 
-List *qq_env (const char *str, Obj *val, ...) {
+List *
+qq_env (const char *str, Obj *val, ...)
+{
   int i, n;
   va_list ap;
   List *res = PAIR(PAIR(new Symbol(str), PAIR(val, lisp_nil)), lisp_nil);
@@ -286,24 +319,30 @@ List *qq_env (const char *str, Obj *val, ...) {
   return lst_rev(res);
 }
 
-Obj *read_from_str (const char *str) {
+Obj *
+read_from_str(const char *str)
+{
   int    j = 0;
   Obj *obj = read_object(str, &j);
   return obj;
 }
 
-Obj *qq_lookup(const char *name, List *env) {
+static Obj *
+qq_lookup(const char *name, List *env)
+{
   int i;
   List *args = lisp_nil;
   for (i = 0; i < lst_len(env); i++) {
-    List *binding = (List*)lst_elt(env, i);
-    if (sym_name(lst_elt(binding, 0)) == name)
-      return lst_elt(binding, 1);
+    List &binding = dynamic_cast<List &>(*lst_elt(env, i));
+    if (sym_name(lst_elt(&binding, 0)) == name)
+      return lst_elt(&binding, 1);
   }
   uerror("Unable to find qq_binding %s", name);
 }
 
-Obj *copy_eval_quasi_quote(Obj *obj, List *env) {
+static Obj *
+copy_eval_quasi_quote(Obj *obj, List *env)
+{
   if (obj->lispType() == LISP_SYMBOL) {
     if (sym_name(obj)[0] == '$') {
       return qq_lookup(sym_name(obj).c_str(), env);
@@ -314,27 +353,30 @@ Obj *copy_eval_quasi_quote(Obj *obj, List *env) {
   } else if (obj->lispType() == LISP_LIST) {
     int i;
     int is_dot = 0;
+    List &list = dynamic_cast<List &>(*obj);
     List *args = lisp_nil;
-    for (i = 0; i < lst_len((List*)obj); i++) {
-      Obj *copy = copy_eval_quasi_quote(lst_elt((List*)obj, i), env);
+    for (i = 0; i < lst_len(&list); i++) {
+      Obj *copy = copy_eval_quasi_quote(lst_elt(&list, i), env);
       if (is_dot) {
 	args = lst_rev(args);
 	List *a = args;
 	while (a->getTail() != lisp_nil)
-	  a = (List*)a->getTail();
+	  a = &dynamic_cast<List &>(*a->getTail());
 	a->setTail(copy);
-	return (Obj*)args;
+	return args;
       } else if (copy->lispType() == LISP_SYMBOL && sym_name(copy) == ".")
 	is_dot = 1;
       else
 	args = PAIR(copy, args);
     }
-    return (Obj*)lst_rev(args);
+    return lst_rev(args);
   } else
     uerror("Unknown quasi quote element %s", obj->typeName());
 }
 
-Obj *read_qq (const char *str, List *env) {
+Obj *
+read_qq (const char *str, List *env)
+{
   Obj *obj = read_from_str(str);
   return copy_eval_quasi_quote(obj, env);
 }
