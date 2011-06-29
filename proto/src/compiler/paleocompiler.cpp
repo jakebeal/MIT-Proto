@@ -2872,83 +2872,90 @@ TYPE* name_to_type (SExpr* ex) {
   uerror("Unhandled or unknown type %s",ex->to_str().c_str());
 }
 
-void parse_external_defop(SE_List& list) {
+void
+parse_external_defop(SE_List &list)
+{
   assert(0 < list.len());
-  assert(list.children[0]->isSymbol());
-  assert(*list.children[0] == "defop");
+  assert(list[0]->isSymbol());
+  assert(*list[0] == "defop");
   if (list.len() < 3)
     uerror("defop has too few arguments");
 
   int opcode;
-  SExpr& opspec = *list.children[1];
+  SExpr &opspec = *list[1];
   if (opspec.isSymbol()) {
-    SE_Symbol& symbol = dynamic_cast<SE_Symbol&>(opspec);
+    SE_Symbol &symbol = dynamic_cast<SE_Symbol &>(opspec);
     opcode = ((symbol == "?") ? next_free_op() : op_num(symbol.name));
   } else if (opspec.isScalar()) {
-    SE_Scalar& scalar = dynamic_cast<SE_Scalar&>(opspec);
+    SE_Scalar &scalar = dynamic_cast<SE_Scalar &>(opspec);
     opcode = static_cast<int>(scalar.value);
   } else {
     uerror("defop op not symbol or number");
   }
 
-  SExpr& name_sexpr = *list.children[2];
+  SExpr &name_sexpr = *list[2];
   if (!name_sexpr.isSymbol())
     uerror("defop fn not symbol");
-  const string& name_string = dynamic_cast<SE_Symbol&>(name_sexpr).name;
+  const string &name_string = dynamic_cast<SE_Symbol &>(name_sexpr).name;
   size_t name_size = name_string.size();
-  char* name_cstr = new char[name_size + 1];
+  char *name_cstr = new char[name_size + 1];
   name_string.copy(name_cstr, name_size);
   name_cstr[name_size] = 0;
 
-  vector<TYPE*> types;
+  vector<TYPE *> types;
   for (size_t i = 3; i < list.len(); i++)
-    types.push_back(name_to_type(list.children[i]));
+    types.push_back(name_to_type(list[i]));
 
   add_op(name_cstr, opcode, 0, 0, new FUN_TYPE(&types));
 }
 
-void parse_external_op(SE_List& list) {
+void
+parse_external_op(SE_List &list)
+{
   assert(0 < list.len());
-  assert(list.children[0]->isSymbol());
+  assert(list[0]->isSymbol());
 
-  SE_Symbol& definer = dynamic_cast<SE_Symbol&>(*list.children[0]);
+  SE_Symbol &definer = dynamic_cast<SE_Symbol &>(*list[0]);
   if (definer == "defop")
     parse_external_defop(list);
   else
     uerror("Unknown external operation definer: %s", definer.name.c_str());
 }
 
-bool parse_opfile(SExpr& sexpr) {
+bool
+parse_opfile(SExpr &sexpr)
+{
   if (!sexpr.isList())
     return false;
 
-  SE_List& list = dynamic_cast<SE_List&>(sexpr);
-  SExpr& first = *list.children[0];
+  SE_List &list = dynamic_cast<SE_List &>(sexpr);
+  SExpr &first = *list[0];
   if (!first.isSymbol())
     return false;
 
-  // FIXME: Reverse the sense of this to read better.  Requires
-  // implementing operator!= and not just operator==...
-  if (first == "all")
+  // FIXME: Implement != on symbols.  This is silly.
+  if (! (first == "all"))
+    parse_external_op(list);
+  else
     for (int i = 1; i < list.len(); i++) {
-      SExpr& item = *list.children[i];
+      SExpr &item = *list[i];
       if (!item.isList())
         return false;
-      SE_List& sublist = dynamic_cast<SE_List&>(item);
+      SE_List &sublist = dynamic_cast<SE_List &>(item);
       if (sublist.len() <= 0)
         return false;
-      if (!sublist.children[0]->isSymbol())
+      if (!sublist[0]->isSymbol())
         return false;
       parse_external_op(sublist);
     }
-  else
-    parse_external_op(list);
 
   return true;
 }
 
-void read_opfile(const string& filename) {
-  SExpr* sexpr;
+void
+read_opfile(const string &filename)
+{
+  SExpr *sexpr;
 
   {
     ifstream opfile_stream(filename.c_str());
@@ -2963,11 +2970,13 @@ void read_opfile(const string& filename) {
     uerror("Could not parse opfile %s", filename.c_str());
 }
 
-void PaleoCompiler::setDefops(string defops) {
-  if(is_echo_defops)
+void
+PaleoCompiler::setDefops(string defops)
+{
+  if (is_echo_defops)
     std::cout << "defops = " << defops.c_str() << "\n";
 
-  SExpr* sexpr = read_sexpr("defops", defops);
+  SExpr *sexpr = read_sexpr("defops", defops);
   if (sexpr == 0)
     uerror("Could not read defops %s", defops.c_str());
   if (!parse_opfile(*sexpr))
