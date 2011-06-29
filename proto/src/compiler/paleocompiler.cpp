@@ -9,6 +9,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdarg.h>
@@ -2871,64 +2872,108 @@ TYPE* name_to_type (SExpr* ex) {
   uerror("Unhandled or unknown type %s",ex->to_str().c_str());
 }
 
-void parse_external_op(SExpr* ex) {
-  if(!ex->isList()) uerror("%s is not a defop",ex->to_str().c_str());
-  SE_List *l = (SE_List*)ex;
-  if(!(*l->children[0]=="defop")) uerror("%s is not a defop",ex->to_str().c_str());
-  if(l->len() < 3) uerror("defop has too few arguments");
-  int op;
-  if (l->children[1]->isSymbol()) {
-    string name = ((SE_Symbol*) l->children[1])->name;
-    if(name=="?") op = next_free_op(); else op = op_num(name);
-  } else if (l->children[1]->isScalar()) {
-    op = (int) ((SE_Scalar*) l->children[1])->value;
+void parse_external_defop(SE_List& list) {
+  assert(0 < list.len());
+  assert(list.children[0]->isSymbol());
+  assert(*list.children[0] == "defop");
+  if (list.len() < 3)
+    uerror("defop has too few arguments");
+
+  int opcode;
+  SExpr& opspec = *list.children[1];
+  if (opspec.isSymbol()) {
+    SE_Symbol& symbol = dynamic_cast<SE_Symbol&>(opspec);
+    opcode = ((symbol == "?") ? next_free_op() : op_num(symbol.name));
+  } else if (opspec.isScalar()) {
+    SE_Scalar& scalar = dynamic_cast<SE_Scalar&>(opspec);
+    opcode = static_cast<int>(scalar.value);
   } else {
     uerror("defop op not symbol or number");
   }
-  if(!l->children[2]->isSymbol()) uerror("defop fn not symbol");
-  string sfun = ((SE_Symbol*)l->children[2])->name;
-  char* fun = new char[sfun.size()+1];
-  for(int i=0;i<sfun.size();i++) { fun[i]=sfun.c_str()[i]; }
-  fun[sfun.size()]=0;
-  
+
+  SExpr& name_sexpr = *list.children[2];
+  if (!name_sexpr.isSymbol())
+    uerror("defop fn not symbol");
+  const string& name_string = dynamic_cast<SE_Symbol&>(name_sexpr).name;
+  size_t name_size = name_string.size();
+  char* name_cstr = new char[name_size + 1];
+  name_string.copy(name_cstr, name_size);
+  name_cstr[name_size] = 0;
+
   vector<TYPE*> types;
-  for(int i=3;i<l->len();i++) types.push_back(name_to_type(l->children[i]));
-  
-  add_op(fun, op, 0, 0, new FUN_TYPE(&types));
+  for (size_t i = 3; i < list.len(); i++)
+    types.push_back(name_to_type(list.children[i]));
+
+  add_op(name_cstr, opcode, 0, 0, new FUN_TYPE(&types));
 }
 
-void read_opfile(string filename) {
-  ifstream* opfile = new ifstream();
-  opfile->open(filename.c_str());
-  if(!opfile->good()) uerror("Could not find opfile %s",filename.c_str());
-  SExpr* ex = read_sexpr(filename,opfile);
-  if(ex==NULL) uerror("Could not read opfile %s",filename.c_str());
-  if(!ex->isList()) uerror("%s is not an opfile",filename.c_str());
-  SE_List* l = (SE_List*)ex; // is either a defop or an all
-  if(!l->children[0]->isSymbol()) uerror("%s is not an opfile",filename.c_str());
-  if(*l->children[0]=="all") {
-    for(int i=1;i<l->len();i++) parse_external_op(l->children[i]);
-  } else {
-    parse_external_op(l);
+void parse_external_op(SE_List& list) {
+  assert(0 < list.len());
+  assert(list.children[0]->isSymbol());
+
+  SE_Symbol& definer = dynamic_cast<SE_Symbol&>(*list.children[0]);
+  if (definer == "defop")
+    parse_external_defop(list);
+  else
+    uerror("Unknown external operation definer: %s", definer.name.c_str());
+}
+
+bool parse_opfile(SExpr& sexpr) {
+  if (!sexpr.isList())
+    return false;
+
+  SE_List& list = dynamic_cast<SE_List&>(sexpr);
+  SExpr& first = *list.children[0];
+  if (!first.isSymbol())
+    return false;
+
+  // FIXME: Reverse the sense of this to read better.  Requires
+  // implementing operator!= and not just operator==...
+  if (first == "all")
+    for (int i = 1; i < list.len(); i++) {
+      SExpr& item = *list.children[i];
+      if (!item.isList())
+        return false;
+      SE_List& sublist = dynamic_cast<SE_List&>(item);
+      if (sublist.len() <= 0)
+        return false;
+      if (!sublist.children[0]->isSymbol())
+        return false;
+      parse_external_op(sublist);
+    }
+  else
+    parse_external_op(list);
+
+  return true;
+}
+
+void read_opfile(const string& filename) {
+  SExpr* sexpr;
+
+  {
+    ifstream opfile_stream(filename.c_str());
+    if (!opfile_stream.good())
+      uerror("Could not find opfile %s", filename.c_str());
+    sexpr = read_sexpr(filename, &opfile_stream);
   }
-  delete opfile;
+
+  if (sexpr == 0)
+    uerror("Could not read opfile %s", filename.c_str());
+  if (!parse_opfile(*sexpr))
+    uerror("Could not parse opfile %s", filename.c_str());
 }
 
 void PaleoCompiler::setDefops(string defops) {
   if(is_echo_defops)
     std::cout << "defops = " << defops.c_str() << "\n";
-  SExpr* ex = read_sexpr("defops", defops);
-  if(ex==NULL) uerror("Could not read defops %s",defops.c_str());
-  if(!ex->isList()) uerror("%s is not an opfile",defops.c_str());
-  SE_List* l = (SE_List*) ex; // is either a defop or an all
-  if(!l->children[0]->isSymbol()) uerror("%s is not an opfile",defops.c_str());
-  if(*l->children[0]=="all") {
-    for(int i=1;i<l->len();i++) parse_external_op(l->children[i]);
-  } else {
-    parse_external_op(l);
-  }
+
+  SExpr* sexpr = read_sexpr("defops", defops);
+  if (sexpr == 0)
+    uerror("Could not read defops %s", defops.c_str());
+  if (!parse_opfile(*sexpr))
+    uerror("%s is not an opfile", defops.c_str());
 }
-  
+
 
 /***** COMPILER WRAPPER CLASS *****/
 PaleoCompiler::PaleoCompiler(Args* args) : Compiler(args) {
@@ -2987,8 +3032,9 @@ void PaleoCompiler::init_standalone(Args* args) {
   }
 
   // Get any platform-specific additional opcodes
-  string platform = args->extract_switch("--platform")?args->pop_next():"sim";
-  string pdir = ProtoPluginManager::PLATFORM_DIR+"/"+platform+"/";
+  const string& platform
+    = args->extract_switch("--platform")?args->pop_next():"sim";
+  const string& pdir = ProtoPluginManager::PLATFORM_DIR+"/"+platform+"/";
   read_opfile(pdir+ProtoPluginManager::PLATFORM_OPFILE);
   while(args->extract_switch("-L",false)) { // get layers
     string name = args->pop_next(); ensure_extension(name,".proto");
