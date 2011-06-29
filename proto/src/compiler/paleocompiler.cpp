@@ -10,6 +10,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <sys/types.h>
 
 #include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdarg.h>
@@ -3013,41 +3014,54 @@ PaleoCompiler::~PaleoCompiler() {
   srcdir = "";
 }
 
-// When being run standalone, -D controls dumping (it's normally 
+static int
+os_mkdir(const char *pathname)
+{
+#ifdef _WIN32
+  return mkdir(pathname);
+#else
+  return mkdir(pathname, ACCESSPERMS);
+#endif
+}
+
+// When being run standalone, -D controls dumping (it's normally
 // consumed by the simulator).  Likewise, if -dump-stem is present,
-// then dumping goes to a file instead of stdout
-void PaleoCompiler::init_standalone(Args* args) {
+// then dumping goes to a file instead of stdout.
+void
+PaleoCompiler::init_standalone(Args *args)
+{
   oldc_test_mode = args->extract_switch("--test-mode");
   is_dump_code |= args->extract_switch("-D");
   bool dump_to_stdout = true;
-  char *dump_dir = (char*)"dumps", *dump_stem = (char*)"dump";
-  if(args->extract_switch("-dump-dir"))
-    { dump_dir = args->pop_next(); dump_to_stdout=false; }
-  if(args->extract_switch("-dump-stem"))
-    { dump_stem = args->pop_next(); dump_to_stdout=false; }
+  const char *dump_dir = "dumps", *dump_stem = "dump";
+  if (args->extract_switch("-dump-dir"))
+    { dump_dir = args->pop_next(); dump_to_stdout = false; }
+  if (args->extract_switch("-dump-stem"))
+    { dump_stem = args->pop_next(); dump_to_stdout = false; }
   if(dump_to_stdout) {
-    dump_target=stdout;
+    dump_target = stdout;
   } else {
     char buf[1000];
-#ifdef _WIN32  
-    if(mkdir(dump_dir) != 0) {
-#else
-    if(mkdir(dump_dir, ACCESSPERMS) != 0) {
-#endif
-      //ignore
-    }
-    sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
-    dump_target=fopen(buf,"w");
+    // Ensure that the dump directory exists.  EEXIST is too coarse,
+    // but it will do for now.
+    if (0 != os_mkdir(dump_dir) && errno != EEXIST)
+      uerror("Unable to create dump directory %s", dump_dir);
+    snprintf(buf, sizeof buf, "%s/%s.log", dump_dir, dump_stem);
+    dump_target = fopen(buf,"w");
+    if (dump_target == 0)
+      uerror("Unable to open dump file: %s", strerror(errno));
   }
 
   // Get any platform-specific additional opcodes
-  const string& platform
-    = args->extract_switch("--platform")?args->pop_next():"sim";
-  const string& pdir = ProtoPluginManager::PLATFORM_DIR+"/"+platform+"/";
-  read_opfile(pdir+ProtoPluginManager::PLATFORM_OPFILE);
-  while(args->extract_switch("-L",false)) { // get layers
-    string name = args->pop_next(); ensure_extension(name,".proto");
-    read_opfile(pdir+name);
+  const string &platform
+    = args->extract_switch("--platform") ? args->pop_next() : "sim";
+  const string &platform_directory
+    = ProtoPluginManager::PLATFORM_DIR + "/" + platform + "/";
+  read_opfile(platform_directory + ProtoPluginManager::PLATFORM_OPFILE);
+  while (args->extract_switch("-L", false)) {
+    string layer_name = args->pop_next();
+    ensure_extension(layer_name, ".proto");
+    read_opfile(platform_directory + layer_name);
   }
 }
 
