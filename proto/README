@@ -169,3 +169,25 @@ D. BSD
 * If your /proc filesystem is not mounted, Proto cannot determine
   where it is running, and will be unable to load.  If this happens
   to you, log in as root and run 'mount -t procfs proc /proc'
+
+
+Non-Standard Plugin Installation
+================================
+
+   At times, it may be impossible to install Proto in the standard location.
+When this is the case, it is possible to install Proto in any directory by
+passing the `--prefix' parameters to the configure script.  When building
+plugins for this installation, however, it is necessary to explicitly state the
+installation location(s).  You can do so by passing the `LDFLAGS' and
+`CPPFLAGS' arguments to the plugins' configure script.For example, your
+configure line may look similar to the following:
+
+./configure --prefix=${INSTALLATION_DIR} \
+            LDFLAGS=-L${DIR_TO_LIB_FILES} \
+            CPPFLAGS=-I${DIR_TO_HEADER_FILES}
+
+Where ${INSTALLATION_DIR} is where the proto plugin will be installed,
+${DIR_TO_LIB_FILES} is where the proto library files are located (e.g., *.la),
+and ${DIR_TO_HEADER_FILES} is where the proto header files are located 
+(e.g., *.h).
+
