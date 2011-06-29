@@ -61,19 +61,29 @@ SExpr* sexp_err(CompilationElement *where,string msg) {
 // specials are the tokens that are hard-wired in and thus can't be shadowed
 set<string> special_tokens;
 bool specials_populated = false;
+
 void populate_specials() {
-  if(specials_populated) return;
-  special_tokens.insert("lambda"); special_tokens.insert("fun");
-  special_tokens.insert("def"); special_tokens.insert("macro");
-  special_tokens.insert("primitive"); special_tokens.insert("annotate");
-  special_tokens.insert("let"); special_tokens.insert("let*"); 
-  special_tokens.insert("letfed"); special_tokens.insert("letfed+");
-  special_tokens.insert("restrict");
+  if (specials_populated)
+    return;
   special_tokens.insert("all");
-  special_tokens.insert("include"); special_tokens.insert("tup");
-  special_tokens.insert("true"); special_tokens.insert("false");
-  specials_populated=true;
+  special_tokens.insert("annotate");
+  special_tokens.insert("def");
+  special_tokens.insert("false");
+  special_tokens.insert("fun");
+  special_tokens.insert("include");
+  special_tokens.insert("lambda");
+  special_tokens.insert("let");
+  special_tokens.insert("let*");
+  special_tokens.insert("letfed");
+  special_tokens.insert("letfed+");
+  special_tokens.insert("macro");
+  special_tokens.insert("primitive");
+  special_tokens.insert("restrict");
+  special_tokens.insert("true");
+  special_tokens.insert("tup");
+  specials_populated = true;
 }
+
 bool is_special(SExpr* s) {
   if(!s->isSymbol()) return false;
   return special_tokens.count(((SE_Symbol*)s)->name);
