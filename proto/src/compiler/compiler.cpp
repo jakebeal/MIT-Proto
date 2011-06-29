@@ -9,12 +9,15 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // During experimental development, the NeoCompiler will be worked on
 // "off to the side" of the original, not replacing it.
 
-#include "config.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+
 #include <fstream>
-#include "nicenames.h"
+
+#include "config.h"
+
 #include "compiler.h"
+#include "nicenames.h"
 #include "plugin_manager.h"
 
 /*****************************************************************************
