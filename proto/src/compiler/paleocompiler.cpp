@@ -2971,7 +2971,7 @@ read_opfile(const string &filename)
 }
 
 void
-PaleoCompiler::setDefops(string defops)
+PaleoCompiler::setDefops(const string &defops)
 {
   if (is_echo_defops)
     std::cout << "defops = " << defops.c_str() << "\n";

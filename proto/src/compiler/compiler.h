@@ -131,46 +131,55 @@ class CodeEmitter {
      * call Env::record_core_ops(parent->interpreter->toplevel)
      * after it has loaded its modified definitions
      */
-    virtual uint8_t* emit_from(DFG* g, int* len) = 0;
+    virtual uint8_t *emit_from(DFG *g, int *len) = 0;
+
+    virtual void setDefops(const string &defops) = 0;
 };
 
 class InstructionPropagator; class Instruction;
 
 class ProtoKernelEmitter : public CodeEmitter {
  public:
-  bool is_dump_hex, paranoid; 
+  bool is_dump_hex, paranoid;
   static bool op_debug;
   int max_loops, verbosity, print_compact;
-  NeoCompiler* parent;
+  NeoCompiler *parent;
 
-  ProtoKernelEmitter(NeoCompiler* parent, Args* args);
-  uint8_t* emit_from(DFG* g, int* len);
+  ProtoKernelEmitter(NeoCompiler *parent, Args *args);
+  void init_standalone(Args *args);
+  uint8_t *emit_from(DFG *g, int *len);
+  void setDefops(const string &defops);
 
-  /// map of compound ops -> instructions (in global mem)
-  map<CompoundOp*,Instruction*> globalNameMap;
+  /// Map of compound ops -> instructions (in global mem).
+  map<CompoundOp *, Instruction *> globalNameMap;
 
  private:
-  vector<InstructionPropagator*> rules;
-  vector<IRPropagator*> preemitter_rules;
+  vector<InstructionPropagator *> rules;
+  vector<IRPropagator *> preemitter_rules;
 
-  /// global & env storage
-  map<Field*,CompilationElement*, CompilationElement_cmp> memory;
-  /// fragments floating up to find a home
-  map<OI*,CompilationElement*, CompilationElement_cmp> fragments;
+  /// Global & env storage.
+  map<Field *,CompilationElement *, CompilationElement_cmp> memory;
+
+  /// Fragments floating up to find a home.
+  map<OI *,CompilationElement *, CompilationElement_cmp> fragments;
 
   /// list of scalar/vector ops
-  map<string,pair<int,int> > sv_ops; 
+  map<string, pair<int, int> > sv_ops;
   Instruction *start, *end;
 
-  void load_ops(const string& name, NeoCompiler* parent);
-  Instruction* tree2instructions(Field* f);
-  Instruction* primitive_to_instruction(OperatorInstance* oi);
-  Instruction* literal_to_instruction(ProtoType* l, OperatorInstance* context);
-  Instruction* parameter_to_instruction(Parameter* param);
-  Instruction* dfg2instructions(AM* g);
+  void load_ops(const string &name);
+  void read_extension_ops(istream *stream);
+  void load_extension_ops(const string &name);
+  void process_extension_ops(SExpr *sexpr);
+  void process_extension_op(SExpr *sexpr);
+  Instruction *tree2instructions(Field *f);
+  Instruction *primitive_to_instruction(OperatorInstance *oi);
+  Instruction *literal_to_instruction(ProtoType *l, OperatorInstance *context);
+  Instruction *parameter_to_instruction(Parameter *param);
+  Instruction *dfg2instructions(AM *g);
 
   /// allocates globals for vector ops
-  Instruction* vec_op_store(ProtoType* t);
+  Instruction *vec_op_store(ProtoType *t);
 };
 
 /*****************************************************************************
@@ -188,7 +197,8 @@ class Compiler : public EventConsumer {
   virtual void init_standalone(Args* args) = 0;
   // compile expression str; len is filled in w. output length
   virtual uint8_t* compile(const char *str, int* len) = 0;
-  virtual void set_platform(string path) = 0;
+  virtual void set_platform(const string &path) = 0;
+  virtual void setDefops(const string &defops) = 0;
 };
 
 /**  
@@ -215,7 +225,8 @@ class NeoCompiler : public Compiler {
   void init_standalone(Args* args);
 
   uint8_t* compile(const char *str, int* len);
-  void set_platform(string path);
+  void set_platform(const string &path);
+  void setDefops(const string &defops);
 };
 
 /// list of internal tests:

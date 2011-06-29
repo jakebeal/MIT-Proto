@@ -28,16 +28,16 @@ class PaleoCompiler : public Compiler {
   BOOL is_dump_code;
   BOOL is_dump_ast;
   BOOL is_echo_defops;
-  const char* last_script;
+  const char *last_script;
   
-  PaleoCompiler(Args* args);
+  PaleoCompiler(Args *args);
   ~PaleoCompiler();
-  void init_standalone(Args* args); // setup output files as standalone app
-  uint8_t* compile(const char *str, int* len); // len is filled in w. output length
+  void init_standalone(Args *args); // setup output files as standalone app
+  uint8_t *compile(const char *str, int* len); // len is filled in w. output length
   void visualize();
-  BOOL handle_key(KeyEvent* key);
-  void set_platform(string path) { uerror("Set platform not used any more in paleocompiler."); }
-  void setDefops(string defops);
+  BOOL handle_key(KeyEvent *key);
+  void set_platform(const string &path) { uerror("Set platform not used any more in paleocompiler."); }
+  void setDefops(const string &defops);
 };
 
 #endif //__COMPILER__

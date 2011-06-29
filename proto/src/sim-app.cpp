@@ -501,10 +501,10 @@ int main (int argc, char *argv[]) {
 #else
   compiler = new PaleoCompiler(args);  // first the compiler
   computer = new SpatialComputer(args,!test_mode); // then the computer
+#endif
   string defops;
   computer->appendDefops(defops);
   compiler->setDefops(defops);
-#endif
   if(!headless) {
     vis->set_bounds(computer->vis_volume); // connect to computer
     register_app_colors();

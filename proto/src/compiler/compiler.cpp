@@ -186,7 +186,9 @@ NeoCompiler::init_standalone(Args *args)
     if (emitter == NULL)
       uerror("Emitter not available");
   } else {
-    emitter = new ProtoKernelEmitter(this, args);
+    ProtoKernelEmitter *kemitter = new ProtoKernelEmitter(this, args);
+    kemitter->init_standalone(args);
+    emitter = kemitter;
   }
 
   // In internal-tests mode: run each internal test, then exit.
@@ -196,8 +198,16 @@ NeoCompiler::init_standalone(Args *args)
   }
 }
 
-void NeoCompiler::set_platform(string path) {
+void
+NeoCompiler::set_platform(const string &path)
+{
   cerr << "WARNING: NeoCompiler platform handling not yet implemented\n";
+}
+
+void
+NeoCompiler::setDefops(const string &defops)
+{
+  emitter->setDefops(defops);
 }
 
 // Neocompiler is case sensitive, paleocompiler is not

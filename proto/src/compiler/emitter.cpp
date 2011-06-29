@@ -20,6 +20,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 
 #include "compiler.h"
+#include "plugin_manager.h"
 #include "proto_opcodes.h"
 #include "scoped_ptr.h"
 
@@ -1105,10 +1106,19 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
   ierror("Don't know how to convert op to instruction: "+p->to_str());
 }
 
-void ProtoKernelEmitter::load_ops(const string &name, NeoCompiler *parent) {
+// Load a .ops file named `name', containing a single list of the form
+//
+//   ((<opcode-name0> <stack-delta0> [<primitive-name0>])
+//    (<opcode-name1> <stack-delta1> [<primitive-name1>])
+//    ...)
+
+void
+ProtoKernelEmitter::load_ops(const string &name)
+{
   SExpr *sexpr;
 
   {
+    // FIXME: Why find in path?
     scoped_ptr<ifstream> stream(parent->proto_path.find_in_path(name));
     if (stream == 0) {
       compile_error("Can't open op file: " + name);
@@ -1149,7 +1159,7 @@ void ProtoKernelEmitter::load_ops(const string &name, NeoCompiler *parent) {
         = static_cast<int>(dynamic_cast<SE_Scalar &>(*op[1]).value);
     } else if (op[1]->isSymbol()
                && dynamic_cast<SE_Symbol &>(*op[1]).name == "variable") {
-      // Give variables a fixed bogus number.
+      // Give variable stack deltas a fixed bogus number.
       op_stackdeltas[i] = 7734;
     } else {
       compile_error(op[1], "Invalid stack delta");
@@ -1175,33 +1185,209 @@ void ProtoKernelEmitter::load_ops(const string &name, NeoCompiler *parent) {
   sv_ops["mux"] = make_pair(MUX_OP,VMUX_OP);
 }
 
+// Load a .proto file named `name', containing not Proto code but
+// Paleo-style op extensions of the form
+//
+//   (defop <opcode> <primitive> <argument-type>*)
+
+void
+ProtoKernelEmitter::load_extension_ops(const string &filename)
+{
+  SExpr *sexpr;
+
+  {
+    // FIXME: Why not find in path?
+    ifstream stream(filename.c_str());
+    if (!stream.good()) {
+      compile_error("Can't open extension op file: " + filename);
+      return;
+    }
+
+    sexpr = read_sexpr(filename, &stream);
+  }
+
+  if (sexpr == 0) {
+    compile_error("Can't read extension op file: " + filename);
+    return;
+  }
+
+  process_extension_ops(sexpr);
+}
+
+// Do the same, but from a string in memory rather than from a file.
+
+void
+ProtoKernelEmitter::setDefops(const string &defops)
+{
+  SExpr *sexpr = read_sexpr("defops", defops);
+
+  if (sexpr == 0) {
+    compile_error("Can't read defops: " + defops);
+    return;
+  }
+
+  process_extension_ops(sexpr);
+}
+
+void
+ProtoKernelEmitter::process_extension_ops(SExpr *sexpr)
+{
+  if (!sexpr->isList()) {
+    compile_error(sexpr, "Op extension file not a list");
+    return;
+  }
+
+  SE_List &list = dynamic_cast<SE_List &>(*sexpr);
+
+  if (!list[0]->isSymbol()) {
+    compile_error(sexpr, "Invalid op extension file");
+    return;
+  }
+
+  if (*list[0] == "all")
+    for (int i = 1; i < list.len(); i++)
+      process_extension_op(list[i]);
+  else
+    process_extension_op(sexpr);
+}
+
+static ProtoType *
+parse_paleotype(SExpr *sexpr)
+{
+  if (sexpr->isList()) {
+    SE_List &list = dynamic_cast<SE_List &>(*sexpr);
+    if (! (list.len() == 2 && *list[0] == "vector" && *list[1] == 3)) {
+      compile_error(sexpr, "Invalid compound paleotype");
+      return 0;
+    }
+    return new ProtoVector;
+  } else if (sexpr->isSymbol()) {
+    SE_Symbol &symbol = dynamic_cast<SE_Symbol &>(*sexpr);
+    if (symbol == "scalar") {
+      return new ProtoScalar;
+    } else if (symbol == "boolean") {
+      return new ProtoBoolean;
+    } else {
+      compile_error(sexpr, "Unknown primitive type: " + symbol.name);
+      return 0;
+    }
+  } else {
+    return 0;
+  }
+}
+
+void
+ProtoKernelEmitter::process_extension_op(SExpr *sexpr)
+{
+  if (!sexpr->isList()) {
+    compile_error(sexpr, "Invalid extension op");
+    return;
+  }
+
+  SE_List &list = dynamic_cast<SE_List &>(*sexpr);
+  if (! (*list.op() == "defop")) {
+    compile_error(sexpr, "Invalid extension op");
+    return;
+  }
+
+  if (list.len() < 4) {
+    compile_error(sexpr, "defop has too few arguments");
+    return;
+  }
+
+  int opcode;
+  SExpr &opspec = *list[1];
+  if (opspec.isSymbol()) {
+    SE_Symbol &symbol = dynamic_cast<SE_Symbol &>(opspec);
+    if (symbol == "?") {
+      opcode = opnames.size();
+    } else if (primitive2op.count(symbol.name)) {
+      opcode = primitive2op[symbol.name];
+    } else {
+      compile_error(sexpr, "unknown opcode: " + symbol.name);
+      return;
+    }
+  } else if (opspec.isScalar()) {
+    SE_Scalar &scalar = dynamic_cast<SE_Scalar &>(opspec);
+    opcode = static_cast<int>(scalar.value);
+  } else {
+    compile_error(sexpr, "defop op not symbol or number");
+    return;
+  }
+
+  SExpr &name_sexpr = *list[2];
+  if (!name_sexpr.isSymbol()) {
+    compile_error(sexpr, "defop name not symbol");
+    return;
+  }
+  const string &name = dynamic_cast<SE_Symbol &>(name_sexpr).name;
+
+  scoped_ptr<Signature> signature(new Signature(sexpr));
+  ProtoType *type;
+  if (0 == (type = parse_paleotype(list[3])))
+    return;
+  signature->output = type;
+
+  size_t nargs = list.len() - 4;
+  for (size_t i = 4; i < list.len(); i++)
+    if (0 != (type = parse_paleotype(list[i])))
+      signature->required_inputs.push_back(type);
+    else
+      return;
+
+  opnames[opcode] = name;
+  op_stackdeltas[opcode] = 1 - nargs;
+  primitive2op[name] = opcode;
+
+  parent->interpreter->toplevel->force_bind
+    (name, new Primitive(sexpr, name, signature.release()));
+}
+
 // small hack for getting op debugging into low-level print functions
 bool ProtoKernelEmitter::op_debug = false;
 
-ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler* parent, Args* args) {
-  // set global variables
-  this->parent=parent;
+ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler *parent, Args *args)
+{
+  // Set global variables.
+  this->parent = parent;
   is_dump_hex = args->extract_switch("--hexdump");
   print_compact = (args->extract_switch("--emit-compact") ? 2 :
                    (args->extract_switch("--emit-semicompact") ? 1 : 0));
-  verbosity = args->extract_switch("--emitter-verbosity") ? 
+  verbosity = args->extract_switch("--emitter-verbosity") ?
     args->pop_int() : parent->verbosity;
-  max_loops=args->extract_switch("--emitter-max-loops")?args->pop_int():10;
-  paranoid = args->extract_switch("--emitter-paranoid")|parent->paranoid;
+  max_loops=args->extract_switch("--emitter-max-loops") ? args->pop_int() : 10;
+  paranoid = args->extract_switch("--emitter-paranoid") | parent->paranoid;
   op_debug = args->extract_switch("--emitter-op-debug");
-  // load operation definitions
-  string name = "core.ops"; load_ops(name,parent); terminate_on_error();
-  // setup pre-emitter rule collection
-  preemitter_rules.push_back(new ReferenceToParameter(this,args));
-  // setup rule collection
-  rules.push_back(new DeleteNulls(this,args));
-  rules.push_back(new InsertLetPops(this,args));
-  rules.push_back(new ResolveISizes(this,args));
-  rules.push_back(new ResolveLocations(this,args));
-  rules.push_back(new StackEnvSizer(this,args));
-  rules.push_back(new ResolveState(this,args));
-  // program starts empty
-  start=end=NULL;
+  // Load operation definitions.
+  load_ops("core.ops");
+  terminate_on_error();
+  // Setup pre-emitter rule collection.
+  preemitter_rules.push_back(new ReferenceToParameter(this, args));
+  // Setup rule collection.
+  rules.push_back(new DeleteNulls(this, args));
+  rules.push_back(new InsertLetPops(this, args));
+  rules.push_back(new ResolveISizes(this, args));
+  rules.push_back(new ResolveLocations(this, args));
+  rules.push_back(new StackEnvSizer(this, args));
+  rules.push_back(new ResolveState(this, args));
+  // Program starts empty.
+  start = end = NULL;
+}
+
+void
+ProtoKernelEmitter::init_standalone(Args *args)
+{
+  // Load platform-specific and layer plugin opcode extensions.
+  const string &platform
+    = args->extract_switch("--platform") ? args->pop_next() : "sim";
+  const string &platform_directory
+    = ProtoPluginManager::PLATFORM_DIR + "/" + platform + "/";
+  load_extension_ops(platform_directory + ProtoPluginManager::PLATFORM_OPFILE);
+  while (args->extract_switch("-L", false)) {
+    string layer_name = args->pop_next();
+    ensure_extension(layer_name, ".proto");
+    load_extension_ops(platform_directory + layer_name);
+  }
 }
 
 // A Field needs a let if it has:
