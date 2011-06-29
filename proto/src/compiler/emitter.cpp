@@ -9,9 +9,19 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // This turns a Proto program representation into ProtoKernel bytecode to
 // execute it.
 
+#include <stdint.h>
+
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "config.h"
+
 #include "compiler.h"
 #include "proto_opcodes.h"
+#include "scoped_ptr.h"
 
 map<int,string> opnames;
 map<string,int> primitive2op;
@@ -1095,31 +1105,62 @@ Instruction* ProtoKernelEmitter::primitive_to_instruction(OperatorInstance* oi){
   ierror("Don't know how to convert op to instruction: "+p->to_str());
 }
 
+void ProtoKernelEmitter::load_ops(const string &name, NeoCompiler *parent) {
+  SExpr *sexpr;
 
-
-void ProtoKernelEmitter::load_ops(string name, NeoCompiler* parent) {
-  ifstream* f = parent->proto_path.find_in_path(name);
-  if(f==NULL) { compile_error("Can't find file '"+name+"'"); return; }
-  SExpr* exp = read_sexpr(name,f); if(!exp) { compiler_error=true; return; }
-  if(!exp->isList()) { compile_error(exp,"Op declaration not a list"); return; }
-  SE_List* sl = (SE_List*)exp;
-  for(int i=0;i<sl->len();i++) {
-    SE_List* op = (SE_List*)(*sl)[i];
-    if(!(*sl)[i]->isList() || op->len()<2||op->len()>3 || !(*op)[0]->isSymbol()
-       || (op->len()==3 && !(*op)[2]->isSymbol())) { 
-      compile_error((*sl)[i],"Op not formatted (name stack-delta [primitive])");
+  {
+    scoped_ptr<ifstream> stream(parent->proto_path.find_in_path(name));
+    if (stream == 0) {
+      compile_error("Can't open op file: " + name);
       return;
     }
-    opnames[i] = ((SE_Symbol*)(*op)[0])->name;
-    if((*op)[1]->isScalar()) 
-      op_stackdeltas[i] = (int)((SE_Scalar*)(*op)[1])->value;
-    else if(((SE_Symbol*)(*op)[1])->name=="variable")
-      op_stackdeltas[i] = 7734; // give variables a fixed bogus number
-    else compile_error((*op)[1],"Unknown op stack-delta: "+(*op)[1]->to_str());
-    if(op->len()==3) primitive2op[((SE_Symbol*)(*op)[2])->name] = i;
+
+    sexpr = read_sexpr(name, stream.get());
   }
 
-  // now add the special-case ops
+  if (sexpr == 0) {
+    compile_error("Can't read op file: " + name);
+    return;
+  }
+
+  if (!sexpr->isList()) {
+    compile_error(sexpr, "Op file not a list");
+    return;
+  }
+
+  SE_List &list = dynamic_cast<SE_List &>(*sexpr);
+  for (int i = 0; i < list.len(); i++) {
+    if (!list[i]->isList()) {
+      compile_error(list[i], "Op not a list");
+      continue;
+    }
+
+    SE_List &op = dynamic_cast<SE_List &>(*list[i]);
+    if ((!op[0]->isSymbol())
+        || ((op.len() == 3) ? (!op[2]->isSymbol()) : (op.len() != 2))) {
+      compile_error(&op, "Op not formatted (name stack-delta [primitive])");
+      continue;
+    }
+
+    opnames[i] = dynamic_cast<SE_Symbol &>(*op[0]).name;
+
+    if (op[1]->isScalar()) {
+      op_stackdeltas[i]
+        = static_cast<int>(dynamic_cast<SE_Scalar &>(*op[1]).value);
+    } else if (op[1]->isSymbol()
+               && dynamic_cast<SE_Symbol &>(*op[1]).name == "variable") {
+      // Give variables a fixed bogus number.
+      op_stackdeltas[i] = 7734;
+    } else {
+      compile_error(op[1], "Invalid stack delta");
+      continue;
+    }
+
+    if (op.len() == 3)
+      primitive2op[dynamic_cast<SE_Symbol &>(*op[2]).name] = i;
+  }
+
+  // Now add the special-case ops.
   sv_ops["+"] = make_pair(ADD_OP,VADD_OP);
   sv_ops["-"] = make_pair(SUB_OP,VSUB_OP);
   sv_ops["*"] = make_pair(MUL_OP,VMUL_OP);

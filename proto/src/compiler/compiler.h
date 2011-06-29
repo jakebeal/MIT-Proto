@@ -162,7 +162,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   map<string,pair<int,int> > sv_ops; 
   Instruction *start, *end;
 
-  void load_ops(string name, NeoCompiler* parent);
+  void load_ops(const string& name, NeoCompiler* parent);
   Instruction* tree2instructions(Field* f);
   Instruction* primitive_to_instruction(OperatorInstance* oi);
   Instruction* literal_to_instruction(ProtoType* l, OperatorInstance* context);
