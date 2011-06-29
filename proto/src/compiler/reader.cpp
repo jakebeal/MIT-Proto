@@ -6,14 +6,14 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "config.h"
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <ctype.h>
-#include "reader.h"
-
+#include <cctype>
+#include <cstdarg>
+#include <cstring>
 #include <iostream>
+
+#include "config.h"
+
+#include "reader.h"
 
 void Path::add_default_path(string srcdir) {
   dirs.push_back(srcdir + ".");
