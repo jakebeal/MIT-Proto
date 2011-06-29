@@ -12,6 +12,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <errno.h>
+
 #include <fstream>
 
 #include "config.h"
@@ -135,46 +137,60 @@ NeoCompiler::~NeoCompiler() {
   delete interpreter;
 }
 
-// When being run standalone, -D controls dumping (it's normally 
+static int
+os_mkdir(const char *pathname)
+{
+#ifdef _WIN32
+  return mkdir(pathname);
+#else
+  return mkdir(pathname, ACCESSPERMS);
+#endif
+}
+
+// When being run standalone, -D controls dumping (it's normally
 // consumed by the simulator).  Likewise, if -dump-stem is present,
-// then dumping goes to a file instead of stdout
-void NeoCompiler::init_standalone(Args* args) {
+// then dumping goes to a file instead of stdout.
+void
+NeoCompiler::init_standalone(Args *args)
+{
   compiler_test_mode = args->extract_switch("--test-mode");
   is_dump_code |= args->extract_switch("-D");
   bool dump_to_stdout = true;
-  char *dump_dir = (char*)"dumps", *dump_stem = (char*)"dump";
-  if(args->extract_switch("-dump-dir"))
-    { dump_dir = args->pop_next(); dump_to_stdout=false; }
-  if(args->extract_switch("-dump-stem"))
-    { dump_stem = args->pop_next(); dump_to_stdout=false; }
-  if(dump_to_stdout) {
-    cpout=&cout;
+  const char *dump_dir = "dumps", *dump_stem = "dump";
+  if (args->extract_switch("-dump-dir"))
+    { dump_dir = args->pop_next(); dump_to_stdout = false; }
+  if (args->extract_switch("-dump-stem"))
+    { dump_stem = args->pop_next(); dump_to_stdout = false; }
+  if (dump_to_stdout) {
+    cpout = &cout;
   } else {
     char buf[1000];
-    // ensure that the directory exists
-#ifdef _WIN32  
-    if(mkdir(dump_dir) != 0) {
-#else
-    if(mkdir(dump_dir, ACCESSPERMS) != 0) {
-#endif
-      //ignore
-    }
-    sprintf(buf,"%s/%s.log",dump_dir,dump_stem);
+    // Ensure that the dump directory exists.  EEXIST is too coarse,
+    // but it will do for now.
+    if (0 != os_mkdir(dump_dir) && errno != EEXIST)
+      uerror("Unable to create dump directory %s", dump_dir);
+    snprintf(buf, sizeof buf, "%s/%s.log", dump_dir, dump_stem);
     cpout = new ofstream(buf);
   }
-  if(compiler_test_mode) cperr=cpout;
+  if (compiler_test_mode)
+    cperr = cpout;
 
-  // default is to emit for ProtoKernel
-  if(args->extract_switch("-EM")) {
-    emitter = (CodeEmitter*)
-      plugins.get_compiler_plugin(EMITTER_PLUGIN,args->pop_next(),args,this);
-    if(emitter==NULL) { uerror("Emitter not available"); } // abort
+  // Default is to emit for ProtoKernel.
+  if (args->extract_switch("-EM")) {
+    // This is a static cast rather than a dynamic cast because
+    // get_compiler_plugin yields a void *, not a pointer to class.
+    emitter =
+      static_cast<CodeEmitter *>
+        (plugins.get_compiler_plugin
+         (EMITTER_PLUGIN, args->pop_next(), args, this));
+    if (emitter == NULL)
+      uerror("Emitter not available");
   } else {
-    emitter = new ProtoKernelEmitter(this,args);
+    emitter = new ProtoKernelEmitter(this, args);
   }
-  
-  // in internal-tests mode: run each internal test, then exit
-  if(args->extract_switch("--internal-tests")) {
+
+  // In internal-tests mode: run each internal test, then exit.
+  if (args->extract_switch("--internal-tests")) {
     type_system_tests();
     exit(0);
   }
