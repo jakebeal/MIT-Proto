@@ -105,7 +105,7 @@ register_plugin(const string &plugin_directory, const string &filename,
   string pathname = plugin_directory + "/" + filename;
 
   // Open the plugin.
-  scoped_lt_dlhandle handle(lt_dlopen(pathname.c_str()));
+  scoped_lt_dlhandle handle(lt_dlopenext(pathname.c_str()));
   if (handle == 0) {
     string error(lt_dlerror());
     cerr << "Unable to open plugin `" << filename << "': " << error << "\n";
@@ -131,11 +131,9 @@ register_plugin(const string &plugin_directory, const string &filename,
 }
 
 static bool
-plugin_filename_p(const string &s)
+plugin_filename_p(const string &filename)
 {
-  size_t n = s.size();
-  return
-    ((n > 6) && (s.substr(0, 3) == "lib") && (s.substr(n - 3, n) == ".la"));
+  return ((filename.size() > 3) && (filename.substr(0, 3) == "lib"));
 }
 
 // Reading the plugin directory
@@ -161,8 +159,12 @@ register_plugins(const string &plugin_directory, ofstream *registry_stream)
     const struct dirent *dirent;
     while ((dirent = readdir(dirp.get())) != 0) {
       string filename(dirent->d_name);
-      if (plugin_filename_p(filename))
+      if (plugin_filename_p(filename)) {
+        size_t dot = filename.rfind('.');
+        if (dot)
+          filename = filename.substr(0, dot);
         plausible_plugins.insert(filename);
+      }
     }
   }
 
