@@ -6,20 +6,25 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include <sys/stat.h>
+
+#include <dirent.h>
+#include <dlfcn.h>
+#include <ltdl.h>
 #include <stdlib.h>
+
+#include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
 #include <set>
 #include <sstream>
-#include <fstream>
-#include <dlfcn.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <ltdl.h>
-#include "proto_plugin.h"
+#include <string>
+#include <vector>
+
+#include "ir.h"
 #include "plugin_manager.h"
+#include "proto_plugin.h"
 #include "spatialcomputer.h"
+
 using namespace std;
 
 bool dirExists(string name) {
