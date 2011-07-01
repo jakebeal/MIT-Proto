@@ -7,11 +7,17 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include <ltdl.h>
-#include <iostream>
+
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
+
 #include "config.h"
+
 #include "plugin_manager.h"
+
+using namespace std;
 
 // Registry location:
 const string ProtoPluginManager::PLUGIN_DIR = string(PLUGINDIR);
