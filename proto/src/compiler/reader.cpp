@@ -14,8 +14,11 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
 
+#include "lisp.h"
 #include "reader.h"
 #include "scoped_ptr.h"
+
+using namespace std;
 
 void
 Path::add_default_path(const string &srcdir)

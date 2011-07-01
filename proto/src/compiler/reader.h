@@ -13,9 +13,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <list>
 #include <string>
 
-#include "lisp.h"
-
-using namespace std; // allow c-strings, etc; note: shadows 'pair'
+class Obj;
+class List;
 
 extern Obj *read_object(const char *string, int *start);
 
@@ -27,15 +26,16 @@ extern Obj *read_from_str(const char *str);
 
 // New-style path handling
 struct Path {
-  list<string> dirs;
+  std::list<std::string> dirs;
 
-  void add_default_path(const string &srcdir);
-  void add_to_path(const string &addition) { dirs.push_back(addition); }
-  ifstream *find_in_path(const char *filename) const
-    { string s(filename); find_in_path(s); }
-  ifstream *find_in_path(const string &filename) const;
+  void add_default_path(const std::string &srcdir);
+  void add_to_path(const std::string &addition) { dirs.push_back(addition); }
+  std::ifstream *find_in_path(const char *filename) const
+    { std::string s(filename); find_in_path(s); }
+  std::ifstream *find_in_path(const std::string &filename) const;
 };
 
-extern List *read_objects_from_dirs(const string &filename, const Path *path);
+extern List *read_objects_from_dirs(const std::string &filename,
+    const Path *path);
 
 #endif  // PROTO_COMPILER_READER_H
