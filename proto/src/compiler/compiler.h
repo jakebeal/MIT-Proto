@@ -9,15 +9,17 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // During experimental development, the NeoCompiler will be worked on
 // "off to the side" of the original, not replacing it.
 
-#ifndef __NEOCOMPILER__
-#define __NEOCOMPILER__
+#ifndef PROTO_COMPILER_NEOCOMPILER_H
+#define PROTO_COMPILER_NEOCOMPILER_H
+
+#include <stdint.h>
 
 #include "config.h"
-#include <stdint.h>
-#include "utils.h"
-#include "ir.h"
+
 #include "analyzer.h"
-#include "reader.h" // for paths
+#include "ir.h"
+#include "reader.h"
+#include "utils.h"
 
 struct ProtoInterpreter; class NeoCompiler;
 
@@ -232,4 +234,4 @@ class NeoCompiler : public Compiler {
 /// list of internal tests:
 void type_system_tests();
 
-#endif // __NEOCOMPILER__
+#endif // PROTO_COMPILER_NEOCOMPILER_H
