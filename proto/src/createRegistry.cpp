@@ -235,6 +235,11 @@ main(int argc, char **argv)
   }
 
   // Commit the new file to its permanent location.
+#ifdef _WIN32
+  // Evidently Windows is a brain-damaged steaming pile of balderdash.
+  // Yes, this means that the update won't be atomic.  Win loses.
+  (void)remove(registry_pathname.c_str());
+#endif
   if (rename(temporary_registry_pathname.c_str(), registry_pathname.c_str())
       == -1) {
     string error(strerror(errno));
