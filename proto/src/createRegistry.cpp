@@ -124,7 +124,8 @@ register_plugin(const string &plugin_directory, const string &filename,
 
   // Get the inventory.
   cout << "Reading inventory of `" << filename << "'...\n";
-  get_inventory_func get_inventory = (get_inventory_func)symbol;
+  get_inventory_func get_inventory
+    = reinterpret_cast<get_inventory_func>(symbol);
   string inventory((*get_inventory)());
   print_indented(2, inventory, true);
   (*registry_stream)
