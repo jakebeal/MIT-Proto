@@ -13,8 +13,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <list>
 #include <string>
 
-class Obj;
 class List;
+class Obj;
 
 extern Obj *read_object(const char *string, int *start);
 
