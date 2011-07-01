@@ -86,11 +86,12 @@ class file_remover {
 
 class ltdl_initexit {
  public:
-  explicit ltdl_initexit(void) { ok_ = (0 == lt_dlinit()); }
-  ~ltdl_initexit() { if (ok_) { lt_dlexit(); ok_ = false; } }
+  explicit ltdl_initexit(void) { status_ = lt_dlinit(); }
+  ~ltdl_initexit() { if (status_ == 0) lt_dlexit(); }
+  int status() const { return status_; }
 
  private:
-  int ok_;
+  int status_;
   DISALLOW_COPY_AND_ASSIGN(ltdl_initexit);
 };
 
@@ -98,7 +99,7 @@ class ltdl_initexit {
 
 // Registing plugins
 
-static void
+static bool
 register_plugin(const string &plugin_directory, const string &filename,
     ofstream *registry_stream)
 {
@@ -109,7 +110,7 @@ register_plugin(const string &plugin_directory, const string &filename,
   if (handle == 0) {
     string error(lt_dlerror());
     cerr << "Unable to open plugin `" << filename << "': " << error << "\n";
-    return;
+    return false;
   }
 
   // Rummage about for the routine to give us the inventory.
@@ -118,7 +119,7 @@ register_plugin(const string &plugin_directory, const string &filename,
     string error(lt_dlerror());
     cerr << "Unable to register plugin `" << filename << "': "
          << "missing plugin inventory: " << error << "\n";
-    return;
+    return false;
   }
 
   // Get the inventory.
@@ -128,6 +129,8 @@ register_plugin(const string &plugin_directory, const string &filename,
   print_indented(2, inventory, true);
   (*registry_stream)
     << "# Inventory of plugin `" << filename << "'\n" << inventory << "\n";
+
+  return true;
 }
 
 static bool
@@ -144,6 +147,7 @@ register_plugins(const string &plugin_directory, ofstream *registry_stream)
   // Store the plausible plugin filenames in lexicographic order, for
   // consistent output.
   set<string> plausible_plugins;
+  size_t n_registered = 0;
 
   {
     // Open the directory.
@@ -171,13 +175,24 @@ register_plugins(const string &plugin_directory, ofstream *registry_stream)
   {
     // Make sure the libtool dynamic loader library is ready.
     ltdl_initexit ltdl;
+    if (ltdl.status() != 0) {
+      string error(lt_dlerror());
+      cerr << "Unable to initialize ltdl: " << error << "\n";
+      return 1;
+    }
 
     for (set<string>::const_iterator i = plausible_plugins.begin();
          i != plausible_plugins.end();
          ++i) {
       const string &filename = (*i);
-      register_plugin(plugin_directory, filename, registry_stream);
+      if (register_plugin(plugin_directory, filename, registry_stream))
+        n_registered += 1;
     }
+  }
+
+  if (n_registered == 0) {
+    cerr << "No plugins found!\n";
+    return 3;
   }
 
   return 0;
