@@ -6,128 +6,241 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include <sys/stat.h>
-
+#include <assert.h>
 #include <dirent.h>
-#include <dlfcn.h>
 #include <ltdl.h>
-#include <stdlib.h>
+#include <errno.h>
 
+#include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <string>
-#include <vector>
 
 #include "ir.h"
 #include "plugin_manager.h"
 #include "proto_plugin.h"
+#include "scoped_ptr.h"
 #include "spatialcomputer.h"
+#include "utils.h"
 
 using namespace std;
 
-static bool
-dirExists(const string &name)
+// Dummy declarations to fill in simulator names required to dlopen plugins.
+Device *device = 0;
+SimulatedHardware *hardware = 0;
+MACHINE *machine = 0;
+void *palette = 0;
+
+// Touch a neocompiler element to ensure it gets linked in.
+ProtoBoolean pb;
+
+// Miscellaneous utilities
+
+#define DISALLOW_COPY_AND_ASSIGN(T)    \
+  void operator=(const T &);           \
+  T(const T &)
+
+// scoped_lt_dlhandle is a kludge rather than a scoped_ptr_malloc<T,
+// D> for some D, because the API uses the opaque type lt_dlhandle
+// rather than the sensible type `struct lt_dlhandle *' or similar.
+
+class scoped_lt_dlhandle {
+ public:
+  explicit scoped_lt_dlhandle(lt_dlhandle handle) : handle_(handle) {}
+  ~scoped_lt_dlhandle() { if (handle_) (void)lt_dlclose(handle_); }
+  lt_dlhandle get(void) const { return handle_; }
+  bool operator==(lt_dlhandle handle) const { return (handle == handle_); }
+  bool operator!=(lt_dlhandle handle) const { return (handle != handle_); }
+
+ private:
+  lt_dlhandle handle_;
+  DISALLOW_COPY_AND_ASSIGN(scoped_lt_dlhandle);
+};
+
+class ScopedPtrClosedir {
+ public:
+  inline void operator()(void *x) const
+    { (void)closedir(static_cast<DIR *>(x)); }
+};
+
+typedef scoped_ptr_malloc<DIR, ScopedPtrClosedir> scoped_dirp;
+
+class file_remover {
+ public:
+  explicit file_remover(const string &pathname)
+    : pathname_(pathname), done_(false) {}
+  ~file_remover()
+    { if (!done_) { (void)remove(pathname_.c_str()); done_ = true; } }
+  void done(void) { done_ = true; }
+
+ private:
+  string pathname_;
+  bool done_;
+  DISALLOW_COPY_AND_ASSIGN(file_remover);
+};
+
+#define file_remover(...) You forgot to name your file remover.
+
+class ltdl_initexit {
+ public:
+  explicit ltdl_initexit(void) { ok_ = (0 == lt_dlinit()); }
+  ~ltdl_initexit() { if (ok_) { lt_dlexit(); ok_ = false; } }
+
+ private:
+  int ok_;
+  DISALLOW_COPY_AND_ASSIGN(ltdl_initexit);
+};
+
+#define ltdl_initexit(...) You forgot to name your ltdl initexit.
+
+// Registing plugins
+
+static void
+register_plugin(const string &plugin_directory, const string &filename,
+    ofstream *registry_stream)
 {
-  struct stat st;
-  if (stat(name.c_str(), &st) == 0) return true;
-  cout << "Plugin directory " << name << " not found." << endl; // else...
-  return false;
+  string pathname = plugin_directory + "/" + filename;
+
+  // Open the plugin.
+  scoped_lt_dlhandle handle(lt_dlopen(pathname.c_str()));
+  if (handle == 0) {
+    string error(lt_dlerror());
+    cerr << "Unable to open plugin `" << filename << "': " << error << "\n";
+    return;
+  }
+
+  // Rummage about for the routine to give us the inventory.
+  void *symbol = lt_dlsym(handle.get(), "get_proto_plugin_inventory");
+  if (symbol == 0) {
+    string error(lt_dlerror());
+    cerr << "Unable to register plugin `" << filename << "': "
+         << "missing plugin inventory: " << error << "\n";
+    return;
+  }
+
+  // Get the inventory.
+  cout << "Reading inventory of `" << filename << "'...\n";
+  get_inventory_func get_inventory = (get_inventory_func)symbol;
+  string inventory((*get_inventory)());
+  print_indented(2, inventory, true);
+  (*registry_stream)
+    << "# Inventory of plugin `" << filename << "'\n" << inventory << "\n";
 }
 
-// Note: We might find that on Cygwin, libraries don't get the "lib" prefix.
-static set<string>
-getPotentialPlugins(const string &dir)
+static bool
+plugin_filename_p(const string &s)
 {
-  set<string> candidates;
-  DIR *dp; struct dirent *dirp;
-  cout << "Searching for plugins...\n";
+  size_t n = s.size();
+  return
+    ((n > 6) && (s.substr(0, 3) == "lib") && (s.substr(n - 3, n) == ".la"));
+}
+
+// Reading the plugin directory
 
-  // Get directory.
-  if (!dirExists(dir))
-    return candidates;
+static int
+register_plugins(const string &plugin_directory, ofstream *registry_stream)
+{
+  // Store the plausible plugin filenames in lexicographic order, for
+  // consistent output.
+  set<string> plausible_plugins;
 
-  if ((dp = opendir(dir.c_str())) == NULL)
-    { cout << "Error opening " << dir << endl; return candidates; }
+  {
+    // Open the directory.
+    scoped_dirp dirp(opendir(plugin_directory.c_str()));
+    if (dirp == 0) {
+      string error(strerror(errno));
+      cerr << "Unable to open plugin directory `" << plugin_directory << "': "
+           << error << "\n";
+      return 1;
+    }
 
-  // Scan all file names for potential plugins.
-  while ((dirp = readdir(dp)) != NULL) {
-    string name = string(dirp->d_name);
-    // Possible plugin DLL if it starts with "lib".
-    if (name.size() > 3 && name.substr(0, 3) == "lib") {
-      size_t dot = name.rfind('.');
-      if (dot > 0) name = name.substr(0, dot);
-      // Record name minus extension.
-      // FIXME: This doesn't strip the library version first...
-      candidates.insert(name);
+    // Enumerate each plausibly plugin-named file in the directory.
+    const struct dirent *dirent;
+    while ((dirent = readdir(dirp.get())) != 0) {
+      string filename(dirent->d_name);
+      if (plugin_filename_p(filename))
+        plausible_plugins.insert(filename);
     }
   }
 
-  closedir(dp);
-  return candidates;
+  {
+    // Make sure the libtool dynamic loader library is ready.
+    ltdl_initexit ltdl;
+
+    for (set<string>::const_iterator i = plausible_plugins.begin();
+         i != plausible_plugins.end();
+         ++i) {
+      const string &filename = (*i);
+      register_plugin(plugin_directory, filename, registry_stream);
+    }
+  }
+
+  return 0;
 }
+
+// Main
 
 int
 main(int argc, char **argv)
 {
-  // Begin using libltdl library tool.
-  lt_dlinit();
+  // Parse arguments.
+  Args args(argc, argv);
+  string plugin_directory
+    = (args.extract_switch("--plugin-directory") ? args.pop_next()
+       : ProtoPluginManager::PLUGIN_DIR);
+  string registry_pathname
+    = (args.extract_switch("--registry-file") ? args.pop_next()
+       : (plugin_directory + "/" + ProtoPluginManager::REGISTRY_FILE_NAME));
 
-  string dir = ProtoPluginManager::PLUGIN_DIR, allProperties = "";
-  string registryFile = dir + ProtoPluginManager::REGISTRY_FILE_NAME;
-  set<string> candidates = getPotentialPlugins(dir);
-  if (candidates.size() == 0)
-    cout << "Warning: no plugins found\n";
-
-  for (set<string>::const_iterator i = candidates.begin();
-       i != candidates.end();
-       ++i) {
-    cout << "Examining potential plugin " << (*i) << "... ";
-    string dllFile = ProtoPluginManager::PLUGIN_DIR + (*i);
-    lt_dlhandle handle = lt_dlopenext(dllFile.c_str());
-    if (handle == NULL) {
-      // Vague message because ltdl currently stomps error info.
-      cout << "unable to open (unlinked symbol problem?)\n";
-      cout << lt_dlerror() << endl;
-      // FIXME: Hack for Mac OS X?  Shouldn't be necessary, ideally...
-      void *h2 = dlopen((dllFile + ".dylib").c_str(), RTLD_NOW);
-      cout << dlerror() << endl;
-    } else {
-      void *fp = lt_dlsym(handle, "get_proto_plugin_inventory");
-      if (fp == NULL) {
-        cout << "not a Proto plugin (no inventory)\n";
-      } else {
-        cout << "reading inventory\n";
-        string tstring((*((get_inventory_func)fp))());
-        // Show inventory in command-line output.
-        print_indented(2, tstring, true);
-        allProperties +=
-          "# Inventory of plugin '" + (*i) + "'\n" + tstring + "\n";
-      }
-      // Done with this plugin.
-      lt_dlclose(handle);
-    }
+  // Check for excess arguments.
+  if (args.argc > 1) {
+    cerr << "Usage: " << argv[0]
+         << " [--plugin-directory <pathname>]"
+         << " [--registry-file <pathname>]\n";
+    return 2;
   }
 
-  // Close libltdl: no more libraries need to be read.
-  lt_dlexit();
+  // FIXME: Need to use a better temporary file creation mechanism, or
+  // guarantee that the directory is not world-writable, to avoid
+  // symlink attacks.  Unlikely to matter, but good practice.
+  string temporary_registry_pathname = (registry_pathname + ".tmp");
 
-  cout << "Writing to registry\n";
-  ofstream registry(registryFile.c_str());
-  registry << allProperties;
-  registry.close();
-  if (registry.fail())
-    cout << "Unable to write registry file.";
+  // Open the new file at a temporary pathname.
+  ofstream registry_stream(temporary_registry_pathname.c_str());
+  if (!registry_stream.good()) {
+    string error(strerror(errno));
+    cerr << "Unable to open temporary file `" << temporary_registry_pathname
+         << "': " << error << "\n";
+    return 1;
+  }
 
-  return (EXIT_SUCCESS);
+  // Make sure we nuke the new file if we lose.
+  file_remover remove_temporary_registry(temporary_registry_pathname);
+
+  // Register the plugins, stopping here if it fails.
+  int result = register_plugins(plugin_directory, &registry_stream);
+  if (result != 0)
+    return result;
+
+  // Finish up.  Bail if anything went wrong.
+  registry_stream.close();
+  if (registry_stream.fail()) {
+    cerr << "Unable to write registry and I don't know why!\n";
+    return 1;
+  }
+
+  // Commit the new file to its permanent location.
+  if (rename(temporary_registry_pathname.c_str(), registry_pathname.c_str())
+      == -1) {
+    string error(strerror(errno));
+    cerr << "Unable to commit registry file `" << registry_pathname << "': "
+         << error << "\n";
+    return 1;
+  }
+  remove_temporary_registry.done();
+
+  return 0;
 }
-
-// Dummy declarations to fill in simulator names required to dlopen plugins.
-Device *device = NULL;
-SimulatedHardware *hardware = NULL;
-MACHINE *machine = NULL;
-void *palette = NULL;
-
-// Touch a neocompiler element to ensure it gets linked in.
-ProtoBoolean pb;
