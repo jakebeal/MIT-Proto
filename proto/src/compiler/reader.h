@@ -17,23 +17,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 using namespace std; // allow c-strings, etc; note: shadows 'pair'
 
-typedef enum {
-  Token_eof,
-  Token_string,
-  Token_symbol,
-  Token_true,
-  Token_false,
-  Token_quote,
-  Token_char,
-  Token_left_paren,
-  Token_right_paren,
-} Token_type;
-
-typedef struct {
-  Token_type type;
-  char *name;
-} Token;
-
 extern Obj *read_object(const char *string, int *start);
 
 extern List *qq_env(const char *str, Obj *val, ...);

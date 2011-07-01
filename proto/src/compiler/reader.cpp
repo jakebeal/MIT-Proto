@@ -46,6 +46,23 @@ Path::find_in_path(const string &filename) const
   return NULL;
 }
 
+typedef enum {
+  Token_eof,
+  Token_string,
+  Token_symbol,
+  Token_true,
+  Token_false,
+  Token_quote,
+  Token_char,
+  Token_left_paren,
+  Token_right_paren,
+} Token_type;
+
+typedef struct {
+  Token_type type;
+  char *name;
+} Token;
+
 static void
 print_token(Token *token)
 {
