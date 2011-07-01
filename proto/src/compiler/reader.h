@@ -6,12 +6,13 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#ifndef __READER__
-#define __READER__
+#ifndef PROTO_COMPILER_READER_H
+#define PROTO_COMPILER_READER_H
 
-#include <string>
-#include <list>
 #include <fstream>
+#include <list>
+#include <string>
+
 #include "lisp.h"
 
 using namespace std; // allow c-strings, etc; note: shadows 'pair'
@@ -54,4 +55,4 @@ struct Path {
 
 extern List *read_objects_from_dirs(const string &filename, const Path *path);
 
-#endif
+#endif  // PROTO_COMPILER_READER_H
