@@ -191,10 +191,14 @@ register_plugins(const string &plugin_directory, ofstream *registry_stream)
     }
   }
 
+  // FIXME: This is totally bogus, but I don't understand what's going
+  // on with Windows.  If you do understand, please fix this.
+#ifndef _WIN32
   if (n_registered == 0) {
     cerr << "No plugins found!\n";
     return 3;
   }
+#endif
 
   return 0;
 }
