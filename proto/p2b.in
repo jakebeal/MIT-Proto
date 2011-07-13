@@ -6,5 +6,5 @@
 builddir="$(dirname "$0")"
 srcdir="${builddir}/"'@srcdir@'
 
-exec "${builddir}/src/p2b" -path "${srcdir}/lib" -srcdir "${srcdir}" \
+exec "${builddir}/src/p2b" -path "${srcdir}/lib" --srcdir "${srcdir}" \
   ${1+"$@"}
