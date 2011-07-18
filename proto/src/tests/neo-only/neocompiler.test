@@ -1964,9 +1964,58 @@ is 28 _   [Lit: <Lambda [Fun: lambda~6]>] --> Lima<Lambda [Fun: lambda~6]>
 is 29 _ Stopping before emission
 
 // Test handling of AMs within hood expression
-test: $(P2B) -CDlocalized "(sum-hood (if (mid) 5 7))"
-//is 0 _ TEST NOT DEFINED YET
-//is 25 _ Stopping before emission
+test: $(P2B) -CDanalyzed "(sum-hood (if (mid) 5 7))" --no-localization
+is 0 _ Error during analysis:
+is 1 _ Error: Cannot restrict (if) inside a neighborhood operation ([sum-hood])
+
+// Test handling of AMs within hood expression
+test: $(P2B) -CDanalyzed "(sum-hood (mux (mid) 5 7))" --no-localization
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _ Fields:
+is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
+is 4 _   Charlie: Alfa --> <Scalar>
+is 5 _   Delta: Alfa --> <Scalar>
+is 6 _   Echo: Alfa --> <Scalar 5>
+is 7 _   Foxtrot: Alfa --> <Scalar 7>
+is 8 _   Golf: Alfa --> <Field <Scalar>>
+is 9 _ Operator Instances:
+is 10 _   Golf<Field <Scalar>> --> [sum-hood] --> Bravo<Scalar> OUTPUT
+is 11 _   Delta<Scalar>, Echo<Scalar 5>, Foxtrot<Scalar 7> --> [mux] --> Charlie<Scalar>
+is 12 _   [mid] --> Delta<Scalar>
+is 13 _   [Lit: <Scalar 5>] --> Echo<Scalar 5>
+is 14 _   [Lit: <Scalar 7>] --> Foxtrot<Scalar 7>
+is 15 _   Charlie<Scalar> --> [local] --> Golf<Field <Scalar>>
+is 16 _ Stopping before localization
+
+test: $(P2B) -CDanalyzed "(let ((x (nbr (mid)))) (if (> (mid) 3) (any-hood x) 0))" --no-localization 
+is 0 _ Amorphous Mediums:
+is 1 _   [Medium: Alfa = root]
+is 2 _   [Medium: Bravo = Alfa | Charlie]
+is 3 _   [Medium: Delta = Alfa | Echo]
+is 4 _ Fields:
+is 5 _   Foxtrot: Alfa --> <Field <Scalar>>
+is 6 _   Golf: Alfa --> <Scalar>
+is 7 _   Charlie: Alfa --> <Boolean>
+is 8 _   Hotel: Alfa --> <Scalar>
+is 9 _   India: Alfa --> <Scalar 3>
+is 10 _   Juliet: Alfa --> <Scalar> OUTPUT
+is 11 _   Kilo: Bravo --> <Boolean>
+is 12 _   Lima: Bravo --> <Field <Scalar>>
+is 13 _   Echo: Alfa --> <Boolean>
+is 14 _   Mike: Delta --> <Scalar 0>
+is 15 _ Operator Instances:
+is 16 _   Golf<Scalar> --> [nbr] --> Foxtrot<Field <Scalar>>
+is 17 _   [mid] --> Golf<Scalar>
+is 18 _   Hotel<Scalar>, India<Scalar 3> --> [>] --> Charlie<Boolean>
+is 19 _   [mid] --> Hotel<Scalar>
+is 20 _   [Lit: <Scalar 3>] --> India<Scalar 3>
+is 21 _   Charlie<Boolean>, Kilo<Boolean>, Mike<Scalar 0> --> [mux] --> Juliet<Scalar> OUTPUT
+is 22 _   Lima<Field <Scalar>> --> [any-hood] --> Kilo<Boolean>
+is 23 _   Foxtrot<Field <Scalar>>, Charlie<Boolean> --> [restrict] --> Lima<Field <Scalar>>
+is 24 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
+is 25 _   [Lit: <Scalar 0>] --> Mike<Scalar 0>
+is 26 _ Stopping before localization
 
 test: $(P2B) -CDlocalized "(sum-hood (if (nbr (mid)) 5 7))"
 //is 0 _ TEST NOT DEFINED YET

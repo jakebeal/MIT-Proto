@@ -941,7 +941,13 @@ class TypePropagator : public IRPropagator {
           OI* foi = new OperatorInstance(f->producer,fo,f->domain);
           root->relocate_source(c.first,c.second,foi->output);
           note_change(foi); return true; // let constraint retry later...
+        } else if(f->producer->inputs.size() >= 3 &&
+                  f->producer->domain() != f->producer->inputs[1]->domain &&
+                  f->producer->domain() != f->producer->inputs[2]->domain ) {
+          // Compilation error if a field crosses OUT of an AM boundary
+          compile_error("Cannot restrict (if) inside a neighborhood operation ("+ce2s(c.first->op)+")");
         } else {
+          // Otherwise, insert a local
           V2<<"Inserting 'local' at "<<ce2s(f)<<endl;
           OI* local = new OI(f->producer,Env::core_op("local"),f->domain);
           local->add_input(f);
@@ -987,8 +993,8 @@ class TypePropagator : public IRPropagator {
   bool back_constraint(ProtoType** tmp,Field* f,pair<OperatorInstance*,int> c) {
     DEBUG_FUNCTION(__FUNCTION__);
     ProtoType* ct = c.first->op->signature->nth_type(c.second);
-    V3<<"Back constraint on: "<<ce2s(c.first)<<", input "<<i2s(c.second);
-    V3<<"- back type: "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"...";
+    V3<<"Back constraint on: "<<ce2s(c.first)<<", input "<<i2s(c.second)<<endl;
+    V3<<"- back type: "<<ce2s(*tmp)<<" vs. "<<ce2s(ct)<<"..."<<endl;
     // Attempt to narrow the type:
     ProtoType* newtype = ProtoType::gcs(*tmp,ct);
     if(newtype) { V3<<"- ok\n"; *tmp = newtype; return true; }
