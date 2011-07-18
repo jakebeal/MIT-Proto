@@ -1,8 +1,17 @@
 '''
-author: G Bays
-purpose: this script is designed to read the Proto *.RESULTS files and
-convert them to Ant JUnit XML format. This will enable build tool Hudson 
-to provide a visual display of the test results.
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and
+contributors listed in the AUTHORS file in the MIT Proto
+distribution's top directory.
+
+This file is part of MIT Proto, and is distributed under the terms of
+the GNU General Public License, with a linking exception, as described
+in the file LICENSE in the MIT Proto distribution's top directory.
+'''
+
+'''
+This script is designed to read the Proto *.RESULTS files and convert
+them to Ant JUnit XML format. This will enable build tool Hudson to
+provide a visual display of the test results.
 '''
 
 import sys, glob, os

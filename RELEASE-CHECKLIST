@@ -5,6 +5,7 @@ Before making a public release, please go down this checklist:
 - Update the release number in proto/man/src/proto-docs.sty
 - Make sure all recent authors are credited in proto/AUTHORS and 
   proto/man/src/proto-docs.sty (and any other AUTHOR lists)
+- Make sure copyright goes through current year
 - Re-LaTex all manuals
 - Make sure all significant changes are listed in proto/NEWS
 - Use 'svn copy' to tag the release version
