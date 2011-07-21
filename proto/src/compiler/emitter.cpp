@@ -1101,12 +1101,19 @@ ProtoKernelEmitter::lambda_instruction(ProtoLambda *lambda, OI *context)
       is_branch = false;
       break;
     }
-  if (is_branch)
+  if (is_branch) {
     return new NoInstruction();
-
-  // Otherwise, ensure the function is defined and get a reference.
-  // NOT YET IMPLEMENTED
-  ierror("Don't know how to emit lambda: " + lambda->to_str());
+  } else {
+    if (!lambda->op->isA("CompoundOp"))
+      ierror("Non-compound operator in lambda: " + lambda->to_str());
+    CompoundOp *cop = &dynamic_cast<CompoundOp &>(*lambda->op);
+    map<CompoundOp *, Instruction *>::const_iterator iterator
+      = globalNameMap.find(cop);
+    if (iterator == globalNameMap.end())
+      ierror("Lambda has undefined operator: " + lambda->to_str());
+    Instruction *target = (*iterator).second;
+    return new Reference(target, context);
+  }
 }
 
 Instruction* ProtoKernelEmitter::parameter_to_instruction(Parameter* p) {
