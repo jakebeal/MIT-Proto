@@ -177,6 +177,12 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction *tree2instructions(Field *f);
   Instruction *primitive_to_instruction(OperatorInstance *oi);
   Instruction *literal_to_instruction(ProtoType *l, OperatorInstance *context);
+  Instruction *scalar_instruction(ProtoScalar *scalar);
+  Instruction *integer_literal_instruction(uint16_t value);
+  Instruction *float_literal_instruction(float value);
+  Instruction *tuple_instruction(ProtoTuple *tuple, OperatorInstance *context);
+  Instruction *lambda_instruction(ProtoLambda *lambda,
+      OperatorInstance *context);
   Instruction *parameter_to_instruction(Parameter *param);
   Instruction *dfg2instructions(AM *g);
 

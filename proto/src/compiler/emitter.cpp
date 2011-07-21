@@ -953,48 +953,98 @@ class ReferenceToParameter : public IRPropagator {
  *  EMITTER PROPER                                                           *
  *****************************************************************************/
 
-typedef union { flo val; uint8_t bytes[4]; } FLO_BYTES;
-Instruction* ProtoKernelEmitter::literal_to_instruction(ProtoType* l,
-                                                        OI* context) {
-  if(l->isA("ProtoScalar")) {
-    float val = dynamic_cast<ProtoScalar*>(l)->value;
-    if(val == (int)val) { // try to use integer
-      if (val >= 0 && val < MAX_LIT_OPS) {
-        return new Instruction(LIT_0_OP+(uint8_t)val);
-      } else if (val >= 0 && val < 128) { 
-        Instruction* i = new Instruction(LIT8_OP); i->padd((int)val); return i;
-      } else if (val >= 0 && val < 65536) {
-        Instruction* i = new Instruction(LIT16_OP);i->padd16((int)val);return i;
-      }
-    }
-    // otherwise, is a floating literal
-    FLO_BYTES f; f.val=val;
-    Instruction* i = new Instruction(LIT_FLO_OP);
-    i->padd(f.bytes[0]); i->padd(f.bytes[1]); i->padd(f.bytes[2]);
-    i->padd(f.bytes[3]); return i;
-  } else if(l->isA("ProtoTuple")) {
-    ProtoTuple* t = dynamic_cast<ProtoTuple*>(l);
-    if(!t->bounded) ierror("Cannot emit unbounded literal tuple "+t->to_str());
-    if(t->types.size()==0) return new Instruction(NUL_TUP_OP); // special case
-    // declare a global tup initialized to the right values
-    Instruction* deftup=NULL;
-    for(int i=0;i<t->types.size();i++) 
-      chain_i(&deftup,literal_to_instruction(t->types[i],context));
-    chain_i(&deftup,new iDEF_TUP(t->types.size(),true));
-    chain_i(&end,chain_start(deftup)); // add to global program
-    // make a global reference to it
-    return new Reference(deftup,context);
-  } else if(l->isA("ProtoLambda")) {
-    // Branch lambdas are handled with a special case on the branch primitive:
-    bool is_branch = true;
-    for_set(Consumer,context->output->consumers,i)
-      if(i->first->op!=Env::core_op("branch")) { is_branch=false; break; }
-    if(is_branch) return new NoInstruction();
-    // Otherwise, ensure the function is defined and get a reference
-    // NOT YET IMPLEMENTED
+Instruction *
+ProtoKernelEmitter::literal_to_instruction(ProtoType *literal, OI *context)
+{
+  if (literal->isA("ProtoScalar"))
+    return scalar_instruction(&dynamic_cast<ProtoScalar &>(*literal));
+  else if (literal->isA("ProtoTuple"))
+    return tuple_instruction(&dynamic_cast<ProtoTuple &>(*literal), context);
+  else if (literal->isA("ProtoLambda"))
+    return lambda_instruction(&dynamic_cast<ProtoLambda &>(*literal), context);
+  else
+    ierror("Don't know how to emit literal: " + literal->to_str());
+}
+
+static bool
+float_representable_as_uint16_p(float value)
+{
+  return
+    ((0 <= value)
+     && (value <= 0x8000)
+     && (value == static_cast<float>(static_cast<int>(value))));
+}
+
+Instruction *
+ProtoKernelEmitter::scalar_instruction(ProtoScalar *scalar)
+{
+  float value = scalar->value;
+  if (float_representable_as_uint16_p(value))
+    return integer_literal_instruction(static_cast<uint16_t>(value));
+  else
+    return float_literal_instruction(value);
+}
+
+Instruction *
+ProtoKernelEmitter::integer_literal_instruction(uint16_t value)
+{
+  if (value < MAX_LIT_OPS) {
+    return new Instruction(LIT_0_OP + value);
+  } else if (value < 0x80) {
+    Instruction *i = new Instruction(LIT8_OP); i->padd(value); return i;
+  } else /* if (value < 0x8000) */ {
+    Instruction *i = new Instruction(LIT16_OP); i->padd16(value); return i;
   }
-  // Catch-all fall-through case:
-  ierror("Don't know how to emit literal: "+l->to_str());
+}
+
+Instruction *
+ProtoKernelEmitter::float_literal_instruction(float value)
+{
+  union { float f; uint8_t b[4]; } u;
+  u.f = value;
+  Instruction *i = new Instruction(LIT_FLO_OP);
+  i->padd(u.b[0]); i->padd(u.b[1]); i->padd(u.b[2]); i->padd(u.b[3]);
+  return i;
+}
+
+Instruction *
+ProtoKernelEmitter::tuple_instruction(ProtoTuple *tuple, OI *context)
+{
+  if (!tuple->bounded)
+    ierror("Cannot emit unbounded literal tuple: " + tuple->to_str());
+
+  if (tuple->types.size() == 0)
+    return new Instruction(NUL_TUP_OP);
+
+  // Declare a global tup initialized to the right values.
+  Instruction *definition = 0;
+  for (size_t i = 0; i < tuple->types.size(); i++)
+    chain_i(&definition, literal_to_instruction(tuple->types[i], context));
+  chain_i(&definition, new iDEF_TUP(tuple->types.size(), true));
+
+  // Add it to the global program.
+  chain_i(&end, chain_start(definition));
+
+  // Make a global reference to it.
+  return new Reference(definition, context);
+}
+
+Instruction *
+ProtoKernelEmitter::lambda_instruction(ProtoLambda *lambda, OI *context)
+{
+  // Branch lambdas are handled with a special case on the branch primitive.
+  bool is_branch = true;
+  for_set(Consumer, context->output->consumers, i)
+    if (i->first->op != Env::core_op("branch")) {
+      is_branch = false;
+      break;
+    }
+  if (is_branch)
+    return new NoInstruction();
+
+  // Otherwise, ensure the function is defined and get a reference.
+  // NOT YET IMPLEMENTED
+  ierror("Don't know how to emit lambda: " + lambda->to_str());
 }
 
 Instruction* ProtoKernelEmitter::parameter_to_instruction(Parameter* p) {
