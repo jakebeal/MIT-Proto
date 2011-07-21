@@ -1019,11 +1019,15 @@ Instruction *
 ProtoKernelEmitter::literal_to_instruction(ProtoType *literal, OI *context)
 {
   if (literal->isA("ProtoScalar"))
-    return scalar_instruction(&dynamic_cast<ProtoScalar &>(*literal));
+    return scalar_literal_instruction(&dynamic_cast<ProtoScalar &>(*literal));
   else if (literal->isA("ProtoTuple"))
-    return tuple_instruction(&dynamic_cast<ProtoTuple &>(*literal), context);
+    return
+      tuple_literal_instruction(&dynamic_cast<ProtoTuple &>(*literal),
+          context);
   else if (literal->isA("ProtoLambda"))
-    return lambda_instruction(&dynamic_cast<ProtoLambda &>(*literal), context);
+    return
+      lambda_literal_instruction(&dynamic_cast<ProtoLambda &>(*literal),
+          context);
   else
     ierror("Don't know how to emit literal: " + literal->to_str());
 }
@@ -1038,7 +1042,7 @@ float_representable_as_uint16_p(float value)
 }
 
 Instruction *
-ProtoKernelEmitter::scalar_instruction(ProtoScalar *scalar)
+ProtoKernelEmitter::scalar_literal_instruction(ProtoScalar *scalar)
 {
   float value = scalar->value;
   if (float_representable_as_uint16_p(value))
@@ -1070,7 +1074,7 @@ ProtoKernelEmitter::float_literal_instruction(float value)
 }
 
 Instruction *
-ProtoKernelEmitter::tuple_instruction(ProtoTuple *tuple, OI *context)
+ProtoKernelEmitter::tuple_literal_instruction(ProtoTuple *tuple, OI *context)
 {
   if (!tuple->bounded)
     ierror("Cannot emit unbounded literal tuple: " + tuple->to_str());
@@ -1092,7 +1096,8 @@ ProtoKernelEmitter::tuple_instruction(ProtoTuple *tuple, OI *context)
 }
 
 Instruction *
-ProtoKernelEmitter::lambda_instruction(ProtoLambda *lambda, OI *context)
+ProtoKernelEmitter::lambda_literal_instruction(ProtoLambda *lambda,
+    OI *context)
 {
   // Branch lambdas are handled with a special case on the branch primitive.
   bool is_branch = true;
@@ -1121,151 +1126,191 @@ Instruction* ProtoKernelEmitter::parameter_to_instruction(Parameter* p) {
    return ret;
 }
 
-// adds a tuple to the global declarations, then references it in vector op i
-Instruction* ProtoKernelEmitter::vec_op_store(ProtoType* t) {
-  ProtoTuple* tt = dynamic_cast<ProtoTuple*>(t);
-  return chain_i(&end,new iDEF_TUP(tt->types.size()));
+// Add a tuple to the global declarations, then reference it in vector op i.
+
+Instruction *
+ProtoKernelEmitter::vec_op_store(ProtoType *type)
+{
+  ProtoTuple *tuple_type = &dynamic_cast<ProtoTuple &>(*type);
+  return chain_i(&end, new iDEF_TUP(tuple_type->types.size()));
 }
 
-void mark_branch_references(Branch* jmp,Block* branch,AM* source) {
-  Instruction* ptr = branch->contents;
-  while(ptr) {
-    // mark references that aren't already handled by an interior branch
-    if(ptr->isA("Reference")) {
-      OI* target = (OI*)((CEAttr*)ptr->attributes["~Ref~Target"])->value;
-      if(target->output->domain == source) {
-        if(ptr->attributes.count("~Branch~End"))
-          ierror("Tried to duplicate mark reference");
-        //cout << "  Marking reference for "<<ce2s(source)<<endl;
-        //cout << "    "<<ce2s(jmp->after_this)<<endl;
-        ptr->attributes["~Branch~End"]=new CEAttr(jmp->after_this);
-      }
-    } else if(ptr->isA("Block")) {
-      mark_branch_references(jmp,(Block*)ptr,source);
-    }
-    ptr = ptr->next;
-  }
-}
-
-// Takes an OperatorInstance because sometimes the operator type depends on it.
+// Takes an OperatorInstance rather than just the primitive because
+// sometimes the operator type depends on it.
 
 Instruction *
 ProtoKernelEmitter::primitive_to_instruction(OperatorInstance *oi)
 {
-  Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
-  ProtoType *otype = oi->output->range;
-  bool tuple = otype->isA("ProtoTuple");
+  Primitive *primitive = &dynamic_cast<Primitive &>(*oi->op);
 
-  if (primitive2op.count(p->name)) {
-    // Plain ops.
-    if (tuple)
-      return new Reference(primitive2op[p->name], vec_op_store(otype), oi);
-    else
-      return new Instruction(primitive2op[p->name]);
-
-  } else if (sv_ops.count(p->name)) {
-    // Scalar/vector paired ops.
-
-    // Op switch happens if *any* input is non-scalar.
-    bool anytuple = tuple;
-    for (size_t i = 0; i < oi->inputs.size(); i++)
-      anytuple |= oi->inputs[i]->range->isA("ProtoTuple");
-    OPCODE c = anytuple ? sv_ops[p->name].second : sv_ops[p->name].first;
-
-    // Now add ops: possible multiple if n-ary.
-    size_t n_copies = (p->signature->rest_input ? (oi->inputs.size() - 1) : 1);
-    Instruction *chain = 0;
-    for (size_t i = 0; i < n_copies; i++) {
-      if (tuple && !(p->name == "max" || p->name == "min"))
-        chain_i(&chain, new Reference(c, vec_op_store(otype), oi));
-      else
-        chain_i(&chain, new Instruction(c));
-    }
-    return chain_start(chain);
-
-  } else if (p->name == "/") {
-    // Special handling until VDIV is added.
-    Instruction *chain = 0;
-
-    // Multiply the divisors together.
-    for (size_t i = 0; i < (oi->inputs.size() - 2); i++)
-      chain_i(&chain, new Instruction(MUL_OP));
-
-    if (!tuple) {
-      chain_i(&chain, new Instruction(DIV_OP));
-    } else {
-      // Multiply by 1/divisor.
-      chain_i(&chain, new Instruction(LET_2_OP,2));
-      chain_i(&chain, new Instruction(LIT_1_OP));
-      chain_i(&chain, new Instruction(REF_0_OP));
-      chain_i(&chain, new Instruction(DIV_OP));
-      chain_i(&chain, new Instruction(REF_1_OP));
-      chain_i(&chain, new Reference(VMUL_OP, vec_op_store(otype), oi));
-      chain_i(&chain, new Instruction(POP_LET_2_OP, -2));
-    }
-    return chain_start(chain);
-
-  } else if (p->name == "tup") {
-    Instruction *i = new Reference(TUP_OP, vec_op_store(otype), oi);
-    i->stack_delta = (1 - oi->inputs.size());
-    i->padd(oi->inputs.size());
-    return i;
-
-  } else if (p == Env::core_op("branch")) { // FIXME: p->name?
-    Instruction *chain = 0;
-
-    // Dump lambdas into branches.
-    CompoundOp *t_cop, *f_cop;
-    t_cop = &dynamic_cast<CompoundOp &>(*L_VAL(oi->inputs[1]->range));
-    f_cop = &dynamic_cast<CompoundOp &>(*L_VAL(oi->inputs[2]->range));
-    Instruction *t_br = dfg2instructions(t_cop->body);
-    Instruction *f_br = dfg2instructions(f_cop->body);
-
-    // Trim off DEF & RETURN.
-    t_br = t_br->next;
-    f_br = f_br->next;
-    chain_delete(chain_start(t_br), chain_start(t_br));
-    chain_delete(chain_end(t_br), chain_end(t_br));
-    chain_delete(chain_start(f_br), chain_start(f_br));
-    chain_delete(chain_end(f_br), chain_end(f_br));
-    t_br = new Block(t_br);
-    f_br = new Block(f_br);
-
-    // Pull references for branch contents.
-    OIset handled_frags;
-    for_map(OI *, CE *, fragments, i) {
-      // FIXME: Need descriptive names here.
-      OI *other_oi = i->first;
-      if (other_oi->output->domain == oi->output->domain) {
-        Instruction *instruction = &dynamic_cast<Instruction &>(*i->second);
-        Instruction *ptr = chain_start(instruction);
-        chain_i(&chain, ptr);
-        handled_frags.insert(other_oi);
-      }
-    }
-
-    for_set(OI *, handled_frags, i)
-      fragments.erase(*i);
-
-    // String them together into a branch.
-    Branch *jmp = new Branch(t_br, true);
-    Block *t_block = &dynamic_cast<Block &>(*t_br);
-    Block *f_block = &dynamic_cast<Block &>(*f_br);
-    mark_branch_references(jmp, t_block, oi->output->domain);
-    mark_branch_references(jmp, f_block, oi->output->domain);
-    chain_i(&chain, new Branch(jmp));
-    chain_i(&chain, f_br);
-    chain_i(&chain, jmp);
-    chain_i(&chain, t_br);
-    return chain_start(chain);
-
-  } else if (p==Env::core_op("reference")) {
+  if (primitive2op.count(primitive->name))
+    return standard_primitive_instruction(oi);
+  else if (sv_ops.count(primitive->name))
+    return vector_primitive_instruction(oi);
+  else if (primitive->name == "/") // FIXME: Env::core_op?
+    return divide_primitive_instruction(oi);
+  else if (primitive->name == "tup") // FIXME: Env::core_op?
+    return tuple_primitive_instruction(oi);
+  else if (primitive == Env::core_op("branch")) // FIXME: primitive->name?
+    return branch_primitive_instruction(oi);
+  else if (primitive == Env::core_op("reference")) // FIXME: primitive->name?
     // Reference already created by input.
     return new NoInstruction();
+  else
+    ierror("Don't know how to convert op to instruction: "
+        + primitive->to_str());
+}
+
+Instruction *
+ProtoKernelEmitter::standard_primitive_instruction(OperatorInstance *oi)
+{
+  Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
+  ProtoType *output_type = oi->output->range;
+
+  if (output_type->isA("ProtoTuple"))
+    return new Reference(primitive2op[p->name], vec_op_store(output_type), oi);
+  else
+    return new Instruction(primitive2op[p->name]);
+}
+
+Instruction *
+ProtoKernelEmitter::vector_primitive_instruction(OperatorInstance *oi)
+{
+  Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
+  ProtoType *output_type = oi->output->range;
+
+  // Op switch happens if *any* input is non-scalar.
+  bool output_tuple_p = output_type->isA("ProtoTuple");
+  bool tuple_p = output_tuple_p;
+  if (!tuple_p)
+    for (size_t i = 0; i < oi->inputs.size(); i++)
+      if (oi->inputs[i]->range->isA("ProtoTuple")) {
+        tuple_p = true;
+        break;
+      }
+  OPCODE opcode = (tuple_p ? sv_ops[p->name].second : sv_ops[p->name].first);
+
+  // Now add ops: possible multiple if n-ary.
+  size_t n_copies = (p->signature->rest_input ? (oi->inputs.size() - 1) : 1);
+  Instruction *chain = 0;
+  for (size_t i = 0; i < n_copies; i++)
+    chain_i(&chain,
+        ((output_tuple_p && !(p->name == "max" || p->name == "min"))
+         ? new Reference(opcode, vec_op_store(output_type), oi)
+         : new Instruction(opcode)));
+
+  return chain_start(chain);
+}
+
+// Division is handled specially until VDIV is implemented.
+
+Instruction *
+ProtoKernelEmitter::divide_primitive_instruction(OperatorInstance *oi)
+{
+  ProtoType *output_type = oi->output->range;
+  Instruction *chain = 0;
+
+  // Multiply the divisors together.
+  for (size_t i = 0; i < (oi->inputs.size() - 2); i++)
+    chain_i(&chain, new Instruction(MUL_OP));
+
+  if (!output_type->isA("ProtoTuple")) {
+    chain_i(&chain, new Instruction(DIV_OP));
+  } else {
+    // Multiply by 1/divisor.
+    chain_i(&chain, new Instruction(LET_2_OP, 2));
+    chain_i(&chain, new Instruction(LIT_1_OP));
+    chain_i(&chain, new Instruction(REF_0_OP));
+    chain_i(&chain, new Instruction(DIV_OP));
+    chain_i(&chain, new Instruction(REF_1_OP));
+    chain_i(&chain, new Reference(VMUL_OP, vec_op_store(output_type), oi));
+    chain_i(&chain, new Instruction(POP_LET_2_OP, -2));
   }
 
-  // Fall-through error case.
-  ierror("Don't know how to convert op to instruction: " + p->to_str());
+  return chain_start(chain);
+}
+
+Instruction *
+ProtoKernelEmitter::tuple_primitive_instruction(OperatorInstance *oi)
+{
+  Instruction *i = new Reference(TUP_OP, vec_op_store(oi->output->range), oi);
+  i->stack_delta = (1 - oi->inputs.size());
+  i->padd(oi->inputs.size());
+  return i;
+}
+
+static void mark_branch_references(Branch *, Block *, AM *);
+
+Instruction *
+ProtoKernelEmitter::branch_primitive_instruction(OperatorInstance *oi)
+{
+  Instruction *chain = 0;
+
+  // Dump lambdas into branches.
+  CompoundOp *t_cop, *f_cop;
+  t_cop = &dynamic_cast<CompoundOp &>(*L_VAL(oi->inputs[1]->range));
+  f_cop = &dynamic_cast<CompoundOp &>(*L_VAL(oi->inputs[2]->range));
+  Instruction *t_br = dfg2instructions(t_cop->body);
+  Instruction *f_br = dfg2instructions(f_cop->body);
+
+  // Trim off DEF & RETURN.
+  t_br = t_br->next;
+  f_br = f_br->next;
+  chain_delete(chain_start(t_br), chain_start(t_br));
+  chain_delete(chain_end(t_br), chain_end(t_br));
+  chain_delete(chain_start(f_br), chain_start(f_br));
+  chain_delete(chain_end(f_br), chain_end(f_br));
+  t_br = new Block(t_br);
+  f_br = new Block(f_br);
+
+  // Pull references for branch contents.
+  OIset handled_frags;
+  for_map(OI *, CE *, fragments, i) {
+    // FIXME: Need descriptive names here.
+    OI *other_oi = i->first;
+    if (other_oi->output->domain == oi->output->domain) {
+      Instruction *instruction = &dynamic_cast<Instruction &>(*i->second);
+      Instruction *ptr = chain_start(instruction);
+      chain_i(&chain, ptr);
+      handled_frags.insert(other_oi);
+    }
+  }
+
+  for_set(OI *, handled_frags, i)
+    fragments.erase(*i);
+
+  // String them together into a branch.
+  Branch *jmp = new Branch(t_br, true);
+  Block *t_block = &dynamic_cast<Block &>(*t_br);
+  Block *f_block = &dynamic_cast<Block &>(*f_br);
+  mark_branch_references(jmp, t_block, oi->output->domain);
+  mark_branch_references(jmp, f_block, oi->output->domain);
+  chain_i(&chain, new Branch(jmp));
+  chain_i(&chain, f_br);
+  chain_i(&chain, jmp);
+  chain_i(&chain, t_br);
+  return chain_start(chain);
+}
+
+static void
+mark_branch_references(Branch *jmp, Block *branch, AM *source)
+{
+  for (Instruction *ptr = branch->contents; ptr != 0; ptr = ptr->next) {
+    // Mark references that aren't already handled by an interior branch.
+    if (ptr->isA("Reference")) {
+      CEAttr *attr = &dynamic_cast<CEAttr &>(*ptr->attributes["~Ref~Target"]);
+      OI *target = &dynamic_cast<OI &>(*attr->value);
+      if (target->output->domain == source) {
+        if (ptr->attributes.count("~Branch~End"))
+          ierror("Tried to duplicate mark reference");
+        //cout << "  Marking reference for " << ce2s(source) << endl;
+        //cout << "    " << ce2s(jmp->after_this) << endl;
+        ptr->attributes["~Branch~End"] = new CEAttr(jmp->after_this);
+      }
+    } else if (ptr->isA("Block")) {
+      mark_branch_references(jmp, &dynamic_cast<Block &>(*ptr), source);
+    }
+  }
 }
 
 // Load a .ops file named `name', containing a single list of the form

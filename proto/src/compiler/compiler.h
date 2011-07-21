@@ -176,12 +176,18 @@ class ProtoKernelEmitter : public CodeEmitter {
   void process_extension_op(SExpr *sexpr);
   Instruction *tree2instructions(Field *f);
   Instruction *primitive_to_instruction(OperatorInstance *oi);
+  Instruction *standard_primitive_instruction(OperatorInstance *oi);
+  Instruction *vector_primitive_instruction(OperatorInstance *oi);
+  Instruction *divide_primitive_instruction(OperatorInstance *oi);
+  Instruction *tuple_primitive_instruction(OperatorInstance *oi);
+  Instruction *branch_primitive_instruction(OperatorInstance *oi);
   Instruction *literal_to_instruction(ProtoType *l, OperatorInstance *context);
-  Instruction *scalar_instruction(ProtoScalar *scalar);
+  Instruction *scalar_literal_instruction(ProtoScalar *scalar);
   Instruction *integer_literal_instruction(uint16_t value);
   Instruction *float_literal_instruction(float value);
-  Instruction *tuple_instruction(ProtoTuple *tuple, OperatorInstance *context);
-  Instruction *lambda_instruction(ProtoLambda *lambda,
+  Instruction *tuple_literal_instruction(ProtoTuple *tuple,
+      OperatorInstance *context);
+  Instruction *lambda_literal_instruction(ProtoLambda *lambda,
       OperatorInstance *context);
   Instruction *parameter_to_instruction(Parameter *param);
   Instruction *dfg2instructions(AM *g);
