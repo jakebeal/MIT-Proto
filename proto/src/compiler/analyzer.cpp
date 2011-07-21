@@ -1553,168 +1553,220 @@ ProtoAnalyzer::ProtoAnalyzer(NeoCompiler* parent, Args* args) {
  *  GLOBAL-TO-LOCAL TRANSFORMER                                              *
  *****************************************************************************/
 
-Operator* op_err(CompilationElement *where,string msg); // from interpreter
+// From interpreter.
+Operator *op_err(CompilationElement *where, string msg);
 
-// Changes neighborhood operations to fold-hoods
+// Change neighborhood operations to fold-hoods.
+//
 // Mechanism:
-// 1. find the summary operation
-// 2. get the tree of field ops leading to it and turn them into a compound op
-// 3. inputs to nbr ops are combined together into a tuple input
-// 4. inputs to locals are turned are marked with "loopref"
-// 5. 
+// 1. Find the summary operation.
+// 2. Get the tree of field ops leading to it and turn them into a compound op.
+// 3. Combine inputs to nbr ops into a tuple input.
+// 4. Mark inputs to locals with "loopref".  (XXX ?)
+// 5. ???
+// 6. Profit!
+
 class HoodToFolder : public IRPropagator {
 public:
-  HoodToFolder(GlobalToLocal* parent, Args* args) : IRPropagator(false,true) {
+  HoodToFolder(GlobalToLocal *parent, Args *args) : IRPropagator(false, true) {
     verbosity = args->extract_switch("--hood-to-folder-verbosity") ?
       args->pop_int() : parent->verbosity;
   }
-  virtual void print(ostream* out=0) { *out << "HoodToFolder"; }
-  
-  CEmap(Operator*,CompoundOp*) localization_cache;
-  Operator* localize_operator(Operator* op) {
-    V4<<"Localizing operator: "<<ce2s(op)<<endl;
-    if(op->isA("Literal")) {
-      if(((Literal*)op)->value->isA("ProtoField"))
-        return new Literal(op,F_VAL(((Literal*)op)->value)); // strip field
-      else return op;
-    } else if(op->isA("Primitive")) {
-      Operator* local = LocalFieldOp::get_local_op(op);
-      return (local!=NULL) ? local : op;
-    } else if(op->isA("CompoundOp")) {
-      V5<<"Checking localization cache\n";
-      if(localization_cache.count(op)) return localization_cache[op];
-      // if it's already pointwise, just return
-      V5<<"Checking whether op is already pointwise\n";
-      Fset fields; ((CompoundOp*)op)->body->all_fields(&fields);
-      bool local=true;
-      for_set(Field*,fields,i) {
-        V5<<"Considering field "<<ce2s(*i)<<endl;
-        if((*i)->range->isA("ProtoField")) 
-          local=false;
-      }
-      if(local) return op;
-      // Walk through ops: local & nbr ops are flattened, others are localized
-      V5<<"Transforming op to local\n";
-      CompoundOp* newop = new CompoundOp((CompoundOp*)op);
-      OIset ois; newop->body->all_ois(&ois);
-      for_set(OI*,ois,i) {
-        if((*i)->op==Env::core_op("nbr")) {
-          root->relocate_consumers((*i)->output,(*i)->inputs[0]);
-        } else if((*i)->op==Env::core_op("local")) {
-          ierror("No locals should be found in an extracted hood function");
-        } else if((*i)->op==Env::core_op("restrict")) {
-          // restrict is not change to reference here: it will be handled later
-          OI* src = ((*i)->inputs[0]==NULL?NULL:(*i)->inputs[0]->producer);
-          if(src!=NULL && src->op==Env::core_op("local")) {
-            root->relocate_source(*i,0,src->inputs[0]);
-          }
-        } else {
-          (*i)->op = localize_operator((*i)->op);
-          (*i)->output->range = (*i)->op->signature->output; // fix output
-        }
-      }
-      localization_cache[op] = newop;
-      return newop;
-    } else if(op->isA("Parameter")) { 
-      return op; // parameters always OK
-    }
-    ierror("Don't know how to localize operator: "+ce2s(op));
-  }
-  
-  CompoundOp* make_nbr_subroutine(OperatorInstance* oi, Field** exportf) {
-    V3<<"Creating subroutine for: "<<ce2s(oi)<<endl;
-    // First, find all field-valued ops feeding this summary operator
-    OIset elts; vector<Field*> exports; OIset q; q.insert(oi);
-    while(q.size()) {
-      OperatorInstance* next = *q.begin(); q.erase(next);
-      for(int i=0;i<next->inputs.size();i++) {
-        Field* f = next->inputs[i];
-        if(f->producer->op==Env::core_op("nbr")) { // record exported fields
-          if(!f->producer->inputs.size())
-            ierror("No input for nbr operator: "+f->producer->to_str());
-          if(index_of(&exports,f->producer->inputs[0])==-1)
-            exports.push_back(f->producer->inputs[0]);
-        }
-        if(f->range->isA("ProtoField") && !elts.count(f->producer) &&
-           f->producer->op!=Env::core_op("local")) 
-          { elts.insert(f->producer); q.insert(f->producer); }
-      }
-    }
-    V3<<"Found "<<elts.size()<<" elements"<<endl;
-    V3<<"Found "<<exports.size()<<" exports"<<endl;
-    // create the compound op
-    V4<<"Creating compound operator from elements"<<endl;
-    CompoundOp* cop=root->derive_op(&elts,oi->domain(),&exports,oi->inputs[0]);
-    V5<<"Localizing new compound operator "<<ce2s(cop)<<endl;
-    cop = (CompoundOp*)localize_operator(cop);
-    //cop = tuplize_inputs(cop);
-    
-    // construct input structure
-    if(exports.size()==0) {
-      V4 << "Zero exports: adding a scratch export"<<endl;
-      // add a scratch input
-      ProtoType* scratch = new ProtoScalar(0);
-      *exportf = root->add_literal(scratch,oi->domain(),oi);
-      cop->signature->required_inputs.push_back(scratch);
-      cop->signature->names["arg0"] = 0;
-    } else if(exports.size()==1) {
-      V4 << "One export: using "<<ce2s(exports[0])<<" directly"<<endl;
-      *exportf = exports[0];
-    } else {
-      V4 << "Multiple exports: binding into a tuple"<<endl;
-      OI* tup=new OperatorInstance(oi,Env::core_op("tup"),oi->domain());
-      for(int i=0;i<exports.size();i++) tup->add_input(exports[i]);
-      *exportf = tup->output;
-    }
-    vector<Field*> in; in.push_back(*exportf);
-    
-    // add multiplier if needed
-    if(oi->op->name=="int-hood") {
-      V3<<"Adding int-hood multiplier\n";
-      OI *oin=new OperatorInstance(oi,Env::core_op("infinitesimal"),cop->body);
-      OI *tin=new OperatorInstance(oi,Env::core_op("*"),cop->body);
-      tin->add_input(oin->output); tin->add_input(cop->output);
-      cop->output = tin->output;
-    }
-    return cop;
-  }
-  
-  Operator* nbr_op_to_folder(OperatorInstance* oi) {
-    string name = oi->op->name;
-    V3<<"Selecting folder for: "<<name<<endl;
-    if(name=="min-hood") { return Env::core_op("min");
-    } else if(name=="max-hood") { return Env::core_op("max");
-    } else if(name=="any-hood") { return Env::core_op("max");
-    } else if(name=="all-hood") { return Env::core_op("min");
-    } else if(name=="int-hood") { return Env::core_op("+");
-    } else if(name=="sum-hood") { return Env::core_op("+");
-    } else {
-      return op_err(oi,"Can't convert summary '"+name+"' to local operator");
-    }
-  }
+  virtual void print(ostream *out = 0) { *out << "HoodToFolder"; }
+  void act(OperatorInstance *oi);
 
-  void act(OperatorInstance* oi) {
-    // conversions begin at summaries (field-to-local ops)
-    if(oi->inputs.size()==1 && oi->inputs[0]->range->isA("ProtoField") &&
-       oi->output->range->isA("ProtoLocal")) {
-      V2<<"Changing to fold-hood: "<<ce2s(oi)<<endl;
-      // (fold-hood-plus folder fn input)
-      AM* space = oi->output->domain; Field* exportf;
-      CompoundOp* nbrop = make_nbr_subroutine(oi,&exportf);
-      Operator* folder = nbr_op_to_folder(oi);
-      OI* noi = new OperatorInstance(oi,Env::core_op("fold-hood-plus"),space);
-      // hook the inputs up to the fold-hood
-      V3<<"Connecting inputs to foldhood\n";
-      noi->add_input(root->add_literal(new ProtoLambda(folder),space,oi));
-      noi->add_input(root->add_literal(new ProtoLambda(nbrop),space,oi));
-      noi->add_input(exportf);
-      // switch consumers and quit
-      V3<<"Changing over consumers\n";
-      root->relocate_consumers(oi->output,noi->output); note_change(oi);
-      root->delete_node(oi);
+private:
+  CEmap(CompoundOp *, CompoundOp *) localization_cache;
+  Operator *localize_operator(Operator *op);
+  CompoundOp *localize_compound_op(CompoundOp *cop);
+  CompoundOp *make_nbr_subroutine(OperatorInstance *oi, Field **exportf);
+  Operator *nbr_op_to_folder(OperatorInstance *oi);
+};
+
+void
+HoodToFolder::act(OperatorInstance *oi)
+{
+  // Conversions begin at summaries (field-to-local ops).
+  if (oi->inputs.size() == 1
+      && oi->inputs[0]->range->isA("ProtoField")
+      && oi->output->range->isA("ProtoLocal")) {
+    V2 << "Changing to fold-hood: " << ce2s(oi) << endl;
+    // (fold-hood-plus folder fn input)
+    AM *space = oi->output->domain;
+    Field *exportf;
+    CompoundOp *nbrop = make_nbr_subroutine(oi, &exportf);
+    Operator *folder = nbr_op_to_folder(oi);
+    OI *noi = new OperatorInstance(oi, Env::core_op("fold-hood-plus"), space);
+    // Hook the inputs up to the fold-hood.
+    V3 << "Connecting inputs to foldhood\n";
+    noi->add_input(root->add_literal(new ProtoLambda(folder), space, oi));
+    noi->add_input(root->add_literal(new ProtoLambda(nbrop), space, oi));
+    noi->add_input(exportf);
+    // Switch consumers and quit.
+    V3 << "Changing over consumers\n";
+    root->relocate_consumers(oi->output, noi->output); note_change(oi);
+    root->delete_node(oi);
+  }
+}
+
+Operator *
+HoodToFolder::localize_operator(Operator *op)
+{
+  V4 << "Localizing operator: " << ce2s(op) << endl;
+  if (op->isA("Literal")) {
+    Literal *literal = &dynamic_cast<Literal &>(*op);
+    // Strip any field.
+    if (literal->value->isA("ProtoField"))
+      return new Literal(op, F_VAL(literal->value));
+    else
+      return op;
+  } else if (op->isA("Primitive")) {
+    Operator *local = LocalFieldOp::get_local_op(op);
+    return local ? local : op;
+  } else if (op->isA("CompoundOp")) {
+    return localize_compound_op(&dynamic_cast<CompoundOp &>(*op));
+  } else if (op->isA("Parameter")) {
+    // Parameters are always OK.
+    return op;
+  } else {
+    ierror("Don't know how to localize operator: " + ce2s(op));
+  }
+}
+
+CompoundOp *
+HoodToFolder::localize_compound_op(CompoundOp *cop)
+{
+  V5 << "Checking localization cache\n";
+  if (localization_cache.count(cop))
+    return localization_cache[cop];
+
+  // If it's already pointwise, just return.
+  V5 << "Checking whether op is already pointwise\n";
+  Fset fields;
+  cop->body->all_fields(&fields);
+  bool local = true;
+  for_set(Field *, fields, i) {
+    V5 << "Considering field " << ce2s(*i) << endl;
+    if ((*i)->range->isA("ProtoField"))
+      local = false;
+  }
+  if (local)
+    return cop;
+
+  // Walk through ops: local & nbr ops are flattened, others are localized.
+  V5 << "Transforming op to local\n";
+  CompoundOp *new_cop = new CompoundOp(cop);
+  OIset ois;
+  new_cop->body->all_ois(&ois);
+  for_set(OI *, ois, i) {
+    OI *oi = *i;
+    if (oi->op == Env::core_op("nbr")) {
+      root->relocate_consumers(oi->output, oi->inputs[0]);
+    } else if (oi->op == Env::core_op("local")) {
+      ierror("No locals should be found in an extracted hood function");
+    } else if (oi->op == Env::core_op("restrict")) {
+      // restrict is not change to reference here: it will be handled later.
+      OI *src = (oi->inputs[0] ? oi->inputs[0]->producer : 0);
+      if (src != 0 && src->op == Env::core_op("local"))
+        root->relocate_source(oi, 0, src->inputs[0]);
+    } else {
+      oi->op = localize_operator(oi->op);
+      // Fix output.
+      oi->output->range = oi->op->signature->output;
     }
   }
-};
+  localization_cache[cop] = new_cop;
+  return new_cop;
+}
+
+CompoundOp *
+HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
+{
+  V3 << "Creating subroutine for: " << ce2s(oi) << endl;
+
+  // First, find all field-valued ops feeding this summary operator.
+  OIset elts;
+  vector<Field *> exports;
+  OIset q;
+  q.insert(oi);
+  while (q.size()) {
+    OperatorInstance *next = *q.begin();
+    q.erase(next);
+    for (size_t i = 0; i < next->inputs.size(); i++) {
+      Field *f = next->inputs[i];
+      // Record exported fields.
+      if (f->producer->op == Env::core_op("nbr")) {
+        if (!f->producer->inputs.size())
+          ierror("No input for nbr operator: " + f->producer->to_str());
+        if (index_of(&exports, f->producer->inputs[0]) == -1)
+          exports.push_back(f->producer->inputs[0]);
+      }
+      if (f->range->isA("ProtoField")
+          && !elts.count(f->producer)
+          && f->producer->op != Env::core_op("local"))
+        { elts.insert(f->producer); q.insert(f->producer); }
+    }
+  }
+  V3 << "Found " << elts.size() << " elements" << endl;
+  V3 << "Found " << exports.size() << " exports" << endl;
+
+  // Create the compound op.
+  V4 << "Creating compound operator from elements" << endl;
+  CompoundOp *cop
+    = root->derive_op(&elts, oi->domain(), &exports, oi->inputs[0]);
+  V5 << "Localizing new compound operator " << ce2s(cop) << endl;
+  cop = localize_compound_op(cop);
+  //cop = tuplize_inputs(cop);
+
+  // Construct input structure.
+  if (exports.size() == 0) {
+    V4 << "Zero exports: adding a scratch export" << endl;
+    // Add a scratch input.
+    ProtoType *scratch = new ProtoScalar(0);
+    *exportf = root->add_literal(scratch, oi->domain(), oi);
+    cop->signature->required_inputs.push_back(scratch);
+    cop->signature->names["arg0"] = 0;
+  } else if (exports.size() == 1) {
+    V4 << "One export: using "<< ce2s(exports[0]) << " directly" << endl;
+    *exportf = exports[0];
+  } else {
+    V4 << "Multiple exports: binding into a tuple" << endl;
+    OI *tup = new OperatorInstance(oi, Env::core_op("tup"), oi->domain());
+    for (size_t i = 0; i < exports.size(); i++)
+      tup->add_input(exports[i]);
+    *exportf = tup->output;
+  }
+  vector<Field *> in;
+  in.push_back(*exportf);
+
+  // Add multiplier if needed.
+  if (oi->op->name == "int-hood") {
+    V3 << "Adding int-hood multiplier\n";
+    Operator *infinitesimal = Env::core_op("infinitesimal");
+    OI *oin = new OperatorInstance(oi, infinitesimal, cop->body);
+    OI *tin = new OperatorInstance(oi, Env::core_op("*"), cop->body);
+    tin->add_input(oin->output);
+    tin->add_input(cop->output);
+    cop->output = tin->output;
+  }
+  return cop;
+}
+
+Operator *
+HoodToFolder::nbr_op_to_folder(OperatorInstance *oi)
+{
+  const string &name = oi->op->name;
+  V3 << "Selecting folder for: " << name << endl;
+  if      (name == "min-hood") return Env::core_op("min");
+  else if (name == "max-hood") return Env::core_op("max");
+  else if (name == "any-hood") return Env::core_op("max");
+  else if (name == "all-hood") return Env::core_op("min");
+  else if (name == "int-hood") return Env::core_op("+");
+  else if (name == "sum-hood") return Env::core_op("+");
+  else
+    return
+      op_err(oi, "Can't convert summary '" + name + "' to local operator");
+}
 
 // Changes restrict/mux complexes to branches
 // Mechanism:
