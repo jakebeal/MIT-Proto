@@ -948,6 +948,68 @@ class ReferenceToParameter : public IRPropagator {
   }
 };
 
+class PrimitiveToCompound : public IRPropagator {
+ public:
+  PrimitiveToCompound(ProtoKernelEmitter *parent, Args *args)
+    : IRPropagator(false, true) {}
+
+  void print(ostream *out = 0) { *out << "PrimitiveToCompound"; }
+
+  void
+  act(OperatorInstance *oi)
+  {
+    // Check for a literal whose value is a protolambda whose operator
+    // is a primitive.
+    if (!oi->op->isA("Literal"))
+      return;
+
+    Literal *literal = &dynamic_cast<Literal &>(*oi->op);
+    if (!literal->value->isA("ProtoLambda"))
+      return;
+
+    ProtoLambda *lambda = &dynamic_cast<ProtoLambda &>(*literal->value);
+    if (!lambda->op->isA("Primitive"))
+      return;
+
+    // Fabricate a compound operator that invokes the primitive with
+    // the parameters it was given.
+    Operator *primitive_op = lambda->op;
+    CompoundOp *compound_op = new CompoundOp(oi, root);
+    AmorphousMedium *am = compound_op->body;
+    compound_op->signature = primitive_op->signature;
+    OperatorInstance *poi = new OperatorInstance(oi, primitive_op, am);
+
+    size_t n = primitive_op->signature->required_inputs.size();
+
+    // MONSTROUS KLUDGE ALERT -- FIXME: This nonsense turns an n-ary
+    // primitive FOO into (lambda (x y) (FOO x y)).  This is what you
+    // want in (min-hood x) = (fold-hood min id x) = (fold-hood
+    // (lambda (x y) (min x y)) id x), but it's obviously wrong in
+    // general.  Can we APPLY?
+    if ((n == 0) && (primitive_op->signature->rest_input != 0)) {
+      compound_op->signature = new Signature(primitive_op->signature);
+      vector<ProtoType *> *inputs
+        = &compound_op->signature->required_inputs;
+      inputs->push_back(primitive_op->signature->rest_input);
+      inputs->push_back(primitive_op->signature->rest_input);
+      n = 2;
+    }
+
+    for (size_t i = 0; i < n; i += 1) {
+      string name = primitive_op->name + "~" + i2s(i);
+      poi->add_input(root->add_parameter(compound_op, name, i, am, oi));
+    }
+
+    // Replace the lambda's primitive operator by the newly
+    // constructed compound operator.
+    lambda->op = compound_op;
+  }
+
+  // We have added new compound operators and amorphous media, so we
+  // need to repeat determination of the relevant ones in order to
+  // coax the emitter into emitting them.
+  void postprop(void) { root->determine_relevant(); }
+};
 
 /*****************************************************************************
  *  EMITTER PROPER                                                           *
@@ -1413,6 +1475,7 @@ ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler *parent, Args *args)
   terminate_on_error();
   // Setup pre-emitter rule collection.
   preemitter_rules.push_back(new ReferenceToParameter(this, args));
+  preemitter_rules.push_back(new PrimitiveToCompound(this, args));
   // Setup rule collection.
   rules.push_back(new DeleteNulls(this, args));
   rules.push_back(new InsertLetPops(this, args));
