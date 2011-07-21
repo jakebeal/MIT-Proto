@@ -1542,7 +1542,17 @@ ProtoKernelEmitter::process_extension_op(SExpr *sexpr)
     else
       return;
 
-  opnames[opcode] = name;
+  // FIXME: Kludge.  What's the right thing?
+  string opname = name;
+  for (size_t i = 0; i < opname.size(); i++) {
+    if (isalpha(opname[i]))
+      opname[i] = toupper(opname[i]);
+    else if (opname[i] == '-')
+      opname[i] = '_';
+  }
+  opname += "_OP";
+
+  opnames[opcode] = opname;
   op_stackdeltas[opcode] = 1 - nargs;
   primitive2op[name] = opcode;
 
