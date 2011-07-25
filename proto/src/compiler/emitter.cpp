@@ -951,7 +951,10 @@ class ReferenceToParameter : public IRPropagator {
 class PrimitiveToCompound : public IRPropagator {
  public:
   PrimitiveToCompound(ProtoKernelEmitter *parent, Args *args)
-    : IRPropagator(false, true) {}
+    : IRPropagator(false, true) {
+    verbosity = args->extract_switch("--primitive-to-compound-verbosity") ?
+      args->pop_int() : parent->verbosity;
+  }
 
   void print(ostream *out = 0) { *out << "PrimitiveToCompound"; }
 
