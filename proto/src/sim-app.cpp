@@ -86,7 +86,8 @@ void idle () {
       if(new_time-last_sim_time > step_size/2) {
         flo tfps = 1/(new_real-last_real); last_real = new_real;
         fps = (1-FPS_DECAY)*tfps + FPS_DECAY*fps;
-        sim_time = MAX(new_time,last_sim_time+step_size); // step_size=min step
+        // step_size = min step
+        sim_time = max(new_time, last_sim_time + step_size);
         evolution_lagging = (sim_time-last_sim_time > step_size*10);
         if(evolution_lagging) { // maximum step is 10x normal step
           sim_time = last_sim_time+(step_size*10);
@@ -152,10 +153,10 @@ BOOL app_handle_mouse(MouseEvent *mouse) {
         return TRUE;
       case 3: // drag end
         drag_current[0]=mouse->x; drag_current[1]=mouse->y;
-        select_region(MIN(drag_anchor[0],drag_current[0]),
-                      MIN(drag_anchor[1],drag_current[1]),
-                      MAX(drag_anchor[0],drag_current[0]),
-                      MAX(drag_anchor[1],drag_current[1]));
+        select_region(min(drag_anchor[0], drag_current[0]),
+                      min(drag_anchor[1], drag_current[1]),
+                      max(drag_anchor[0], drag_current[0]),
+                      max(drag_anchor[1], drag_current[1]));
         selecting = FALSE;
         return TRUE;
       }
@@ -365,7 +366,7 @@ void on_mouse_motion( int x, int y ) {
   } else {
     if(mouse.state==0) { // is it still a click?
       // mouse location does not change until click becomes drag
-      if(MAX(abs(x-mouse.x),abs(y-mouse.y)) > CLICK_FUZZ) {
+      if(max(abs(x-mouse.x), abs(y-mouse.y)) > CLICK_FUZZ) {
         mouse.state=1;
         dispatch_mouse_event(); // start point is old position
       }

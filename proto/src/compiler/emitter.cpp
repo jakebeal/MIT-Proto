@@ -77,9 +77,9 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   }
   virtual void set_location(int l) { location = l; } 
   virtual int net_env_delta() { return env_delta; }
-  virtual int max_env_delta() { return MAX(0,env_delta); }
+  virtual int max_env_delta() { return max(0, env_delta); }
   virtual int net_stack_delta() { return stack_delta; }
-  virtual int max_stack_delta() { return MAX(0,stack_delta); }
+  virtual int max_stack_delta() { return max(0, stack_delta); }
 
   int padd(uint8_t param) { parameters.push_back(param); }
   int padd16(uint16_t param) { padd(param>>8); padd(param & 0xFF); }
@@ -115,7 +115,7 @@ struct Block : public Instruction { reflection_sub(Block,Instruction);
     int delta = 0, max_delta = 0;
     Instruction* ptr = contents;
     while(ptr) { 
-      max_delta = MAX(max_delta,delta+ptr->max_env_delta());
+      max_delta = max(max_delta, delta + ptr->max_env_delta());
       delta+=ptr->net_env_delta(); ptr=ptr->next;
     }
     return max_delta;
@@ -130,7 +130,7 @@ struct Block : public Instruction { reflection_sub(Block,Instruction);
     int delta = 0, max_delta = 0;
     Instruction* ptr = contents;
     while(ptr) { 
-      max_delta = MAX(max_delta,delta+ptr->max_stack_delta());
+      max_delta = max(max_delta, delta + ptr->max_stack_delta());
       delta+=ptr->net_stack_delta(); ptr=ptr->next;
     }
     return max_delta;
@@ -497,8 +497,8 @@ public:
       } 
       if(!stack_maxes.count(chain) || !env_maxes.count(chain))
         return; // wasn't able to entirely resolve
-      max_stack = MAX(max_stack,stack_maxes[chain]);
-      max_env = MAX(max_env,env_maxes[chain]);
+      max_stack = max(max_stack, stack_maxes[chain]);
+      max_env = max(max_env, env_maxes[chain]);
       ss += i2s(stack_height[chain])+" "; es += i2s(env_height[chain])+" ";
       chain=chain->next;
     }
@@ -766,7 +766,7 @@ public:
     }
   }
   void maybe_set_index(Instruction* i, int l) {
-    g_max = MAX(g_max,l+1);
+    g_max = max(g_max, l + 1);
     if(((Global*)i)->index != l) { 
       V4 << "Setting index of "<<ce2s(i)<<" to "<<l<<endl;
       ((Global*)i)->index=l; note_change(i);

@@ -146,7 +146,7 @@ BOOL Cylinder::next_location(METERS *loc) {
 
 
 Torus::Torus(Args* args, int n, Rect *volume) : Distribution(n, volume) {
-  METERS outer = MIN(width, height) / 2;
+  METERS outer = min(width, height) / 2;
   flo ratio = (str_is_number(args->peek_next()) ? args->pop_number() : 0.75);
   r = ratio * outer;
   r_inner = outer - r;

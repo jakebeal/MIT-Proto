@@ -191,7 +191,7 @@ flo stroke_multitext_size (void* font, int n, char** strs, flo *height) {
     char *s = strs[i];
     flo sw, sh;
     sw = stroke_text_size(font, s, &sh);
-    w  = MAX(w, sw);
+    w  = max(w, sw);
     h += sh*2;
   }
   *height = h;
@@ -214,7 +214,7 @@ void draw_text_raw (TXT_DIR td, flo w, flo h, const char *txt) {
   float tw, ts, th, aw, ah;
   glPushMatrix();
   tw = stroke_text_size(GLUT_STROKE_ROMAN, txt, &th);
-  ts = MIN(w/tw, h/th);
+  ts = min(w/tw, h/th);
   aw = ts * tw;
   ah = ts * th;
   // glPushMatrix(); glScalef(w/2, h/2, 1); draw_square(1); glPopMatrix();
@@ -264,10 +264,10 @@ void draw_justified_text_block_raw (flo w, flo h, const char *txt) {
   bh = bw = 0;
   for (j = 0; j < n; j++) {
     tw  = stroke_text_size(GLUT_STROKE_ROMAN, strs[j], &th);
-    bw  = MAX(bw, tw);
+    bw  = max(bw, tw);
     bh += 1.5 * th;
   }
-  bs = 0.9 * MIN(w/bw, h/bh);
+  bs = 0.9 * min(w/bw, h/bh);
   aw = bs * bw;
   ah = bs * bh;
   // glPushMatrix(); glScalef(w/2, h/2, 1); draw_square(1); glPopMatrix();
@@ -383,12 +383,12 @@ void draw_pixmap
 
 
 // CLIP forces the number x into the range [min,max]
-#define CLIP(x, min, max) MAX(min, MIN(max, x))
+#define CLIP(x, minimum, maximum) max((minimum), min((maximum), (x)))
 
 // Convert hue/saturation/value to red/green/blue.  Output returned in args.
 void hsv_to_rgb (flo h, flo s, flo v, flo *r, flo *g, flo *b) {
   flo rt, gt, bt;
-  s = CLIP(s, 0, 1);
+  s = CLIP(s, static_cast<flo>(0), static_cast<flo>(1));
   if (s == 0.0) {
     rt = gt = bt = v;
   } else {
@@ -419,8 +419,8 @@ void hsv_to_rgb (flo h, flo s, flo v, flo *r, flo *g, flo *b) {
 
 // Convert hue/saturation/value to red/green/blue.  Output returned in args.
 void rgb_to_hsv (flo r, flo g, flo b, flo *h, flo *s, flo *v) {
-  flo min   = MIN(r, MIN(g, b));
-  flo max   = MAX(r, MAX(g, b));
+  flo min   = std::min(r, std::min(g, b));
+  flo max   = std::max(r, std::max(g, b));
   flo delta = max - min;
   *v = max / 255;
   if (max == 0) {

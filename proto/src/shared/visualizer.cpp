@@ -210,7 +210,7 @@ void Visualizer::view_3D() {
   float fit_zy = ((bounds.t-bounds.b)/2) / tan(y_angle);
   float x_angle = atan(tan(y_angle)*aspect_ratio);
   float fit_zx = ((bounds.r-bounds.l)/2) / tan(x_angle);
-  glTranslatef( 0, 0, -MAX(fit_zx,fit_zy)*1.05);
+  glTranslatef( 0, 0, -max(fit_zx, fit_zy)*1.05);
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   load_trackball_transformation();
@@ -239,7 +239,7 @@ void Visualizer::click_3d(int winx, int winy, double *pt) {
   float fit_zy = ((bounds.t-bounds.b)/2) / tan(y_angle);
   float x_angle = atan(tan(y_angle)*aspect_ratio);
   float fit_zx = ((bounds.r-bounds.l)/2) / tan(x_angle);
-  float Z = MAX(fit_zx,fit_zy)*1.05;
+  float Z = max(fit_zx, fit_zy)*1.05;
   float z = (1.0/Z_NEAR - 1.0/Z) / (1.0/Z_NEAR - 1.0/Z_FAR); //depth->screen
   winy = viewport[3]-winy; // convert the y coordinate
   gluUnProject(winx,winy,z,model,proj,viewport,&pt[0],&pt[1],&pt[2]);
@@ -271,7 +271,7 @@ void Visualizer::start_select_3D(Rect* rgn, int max_names) {
   float fit_zy = ((bounds.t-bounds.b)/2) / tan(y_angle);
   float x_angle = atan(tan(y_angle)*aspect_ratio);
   float fit_zx = ((bounds.r-bounds.l)/2) / tan(x_angle);
-  glTranslatef( 0, 0, -MAX(fit_zx,fit_zy)*1.05);
+  glTranslatef( 0, 0, -max(fit_zx, fit_zy)*1.05);
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   load_trackball_transformation();

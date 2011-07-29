@@ -66,7 +66,7 @@ bool ProtoTuple::supertype_of(ProtoType* sub) {
   // I'm bounded but sub is not 
   if(!tsub->bounded && bounded) return false;
   // are elements compatible?
-  int ll = types.size(), sl = tsub->types.size(), len = MAX(ll,sl);
+  int ll = types.size(), sl = tsub->types.size(), len = max(ll, sl);
   for(int i=0;i<len;i++) {
     ProtoType *mine,*subs;
     // Get the type of the putative parent
@@ -143,7 +143,8 @@ ProtoType* ProtoLocal::lcs(ProtoType* t) {
 // Generalize elts to minimum fixed length, then generalize rests
 // e.g. T<3,4,5> + T<3,6> -> T<3,Scalar,Scalar...>
 void element_lcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
-  int nfixed = MIN(a->types.size()-(!a->bounded),b->types.size()-(!b->bounded));
+  int nfixed
+    = min(a->types.size() - (!a->bounded), b->types.size() - (!b->bounded));
   for(int i=0;i<nfixed;i++) 
     out->types.push_back(ProtoType::lcs(a->types[i],b->types[i]));
   // make a "rest" from remaining types, when needed
@@ -225,7 +226,7 @@ ProtoType* ProtoScalar::gcs(ProtoType* t) { return NULL; } // covers boolean
 bool element_gcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
   out->bounded = a->bounded || b->bounded;
   int afix=a->types.size()-(!a->bounded), bfix=b->types.size()-(!b->bounded);
-  int nfixed = MIN(afix, bfix);
+  int nfixed = min(afix, bfix);
   if((a->bounded && afix<bfix) || (b->bounded && bfix<afix)) return false;
   // start by handling the fixed portion
   for(int i=0;i<nfixed;i++) {

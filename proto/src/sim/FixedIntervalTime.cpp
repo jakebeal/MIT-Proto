@@ -44,7 +44,8 @@ DeviceTimer* FixedIntervalTime::next_timer(SECONDS* start_lag) {
   *start_lag = urnd(0,dt);
   flo p = urnd(dt-var,dt+var);
   flo ip = urnd(ratio-rvar,ratio+rvar);
-  return new FixedTimer(MAX(0,p),MAX(0,ip));
+  return
+    new FixedTimer(max(static_cast<flo>(0), p), max(static_cast<flo>(0), ip));
 }
 
 NUM_VAL FixedIntervalTime::set_dt (NUM_VAL dt) {

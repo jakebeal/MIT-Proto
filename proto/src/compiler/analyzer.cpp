@@ -1157,7 +1157,7 @@ int compare_numbers(ProtoType* a, ProtoType* b) { // 1-> a>b; -1-> a<b; 0-> a=b
     } else return (sx * ((S_VAL(v->types[0]) > s) ? 1 : -1));
   } else { // 2 vectors
     ProtoTuple *va = T_TYPE(a), *vb = T_TYPE(b);
-    int la = va->types.size(), lb = vb->types.size(), len = MAX(la,lb);
+    int la = va->types.size(), lb = vb->types.size(), len = max(la, lb);
     for(int i=0;i<len;i++) {
       double sa=(i<la)?S_VAL(va->types[i]):0, sb=(i<lb)?S_VAL(vb->types[i]):0;
       if(sa!=sb) { return (sa>sb) ?  1 : -1; }
@@ -1182,7 +1182,7 @@ ProtoNumber* add_consts(ProtoType* a, ProtoType* b) {
   } else { // 2 vectors
     ProtoTuple *va = T_TYPE(a), *vb = T_TYPE(b);
     ProtoVector* out = new ProtoVector(va->bounded && vb->bounded);
-    int la = va->types.size(), lb = vb->types.size(), len = MAX(la,lb);
+    int la = va->types.size(), lb = vb->types.size(), len = max(la, lb);
     for(int i=0;i<len;i++) {
       double sa=(i<la)?S_VAL(va->types[i]):0, sb=(i<lb)?S_VAL(vb->types[i]):0;
       out->add(new ProtoScalar(sa+sb));

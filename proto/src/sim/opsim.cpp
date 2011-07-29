@@ -125,7 +125,8 @@ void idle () {
       if(new_time-last_sim_time > step_size/2) {
         flo tfps = 1/(new_real-last_real); last_real = new_real;
         fps = (1-FPS_DECAY)*tfps + FPS_DECAY*fps;
-        sim_time = MAX(new_time,last_sim_time+step_size); // step_size=min step
+        // step_size = min step
+        sim_time = max(new_time, last_sim_time + step_size);
         evolution_lagging = (sim_time-last_sim_time > step_size*10);
         if(evolution_lagging) { // maximum step is 10x normal step
           sim_time = last_sim_time+(step_size*10);
