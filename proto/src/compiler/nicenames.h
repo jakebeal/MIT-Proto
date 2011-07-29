@@ -1,16 +1,14 @@
-#ifndef __NICENAMES__
-#define __NICENAMES__
+#ifndef PROTO_COMPILER_NICENAMES_H
+#define PROTO_COMPILER_NICENAMES_H
 
 #include <string>
 
-using namespace std;
-
 class Nameable {
  private:
-  string assigned_name;
+  std::string assigned_name;
  public:
   Nameable();
-  string nicename();
+  std::string nicename();
 };
 
-#endif // __NICENAMES__
+#endif  // PROTO_SHARED_PLUGIN_H
