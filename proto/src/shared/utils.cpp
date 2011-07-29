@@ -1,57 +1,65 @@
 /* Utilities & standard top-level types
-Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#include "config.h"
 #include "utils.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
+
 #include <ctype.h>
-#include <sstream>
-#include <iostream>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <fstream>
+#include <iostream>
+#include <limits>
+#include <sstream>
+
+#include "config.h"
+
 using namespace std;
 
-flo urnd(flo min, flo max) { return min + ((max-min)*rand())/RAND_MAX; }
+flo
+urnd(flo min, flo max)
+{
+  // FIXME: What a crock!
+  return min + (((max - min) * rand()) / RAND_MAX);
+}
 
 /*****************************************************************************
  *  NOTIFICATION FUNCTIONS                                                   *
  *****************************************************************************/
-void uerror (const char* message, ...) {
-  void **x = 0;
+
+void
+uerror(const char *message, ...)
+{
   va_list ap;
   va_start(ap, message);
-  vprintf(message, ap);  printf("\n Aborting on fatal error\n"); fflush(stdout); 
+  vprintf(message, ap);
+  printf("\n Aborting on fatal error\n");
+  fflush(stdout);
   va_end(ap);
-  //*x = (void*)1;
   exit(1);
 }
 
-void post_into(Strbuf *buf, char* pstring, ...) {
-  int n;
-  va_list ap;
-  va_start(ap, pstring);
-  buf->idx += vsprintf(&buf->data[buf->idx], pstring, ap);
-  va_end(ap);
-  fflush(stdout);
-}
-
-void debug(const char* dstring, ...) {
+void
+debug(const char *dstring, ...)
+{
   char buf[1024];
   va_list ap;
   va_start(ap, dstring);
-  vsprintf(buf, dstring, ap);
+  vsnprintf(buf, sizeof buf, dstring, ap);
   va_end(ap);
   fputs(buf, stderr);
   fflush(stderr);
 }
 
-void post(const char* pstring, ...) {
+void
+post(const char *pstring, ...)
+{
   va_list ap;
   va_start(ap, pstring);
   vprintf(pstring, ap);
@@ -62,272 +70,438 @@ void post(const char* pstring, ...) {
 /*****************************************************************************
  *  MEMORY MANAGEMENT                                                        *
  *****************************************************************************/
+
+// FIXME: MALLOC and FREE are a losing hack only for the
+// paleocompiler.  Kill!
+
 #define GC_malloc malloc
 #define GC_free   free
 
-void *MALLOC(size_t size) { return malloc(size); }
+void *
+MALLOC(size_t size)
+{
+  return malloc(size);
+}
 
-void FREE(void *ptr_) {
+void
+FREE(void *ptr_)
+{
+  // FIXME: WTF?
   void **ptr = (void**)ptr_;
-  if (*ptr == NULL) uerror("TRYING TO FREE ALREADY FREED MEMORY\n");
+  if (*ptr == 0) uerror("TRYING TO FREE ALREADY FREED MEMORY\n");
   GC_free(*ptr);
-  *ptr = NULL;
+  *ptr = 0;
 }
 
 /*****************************************************************************
  *  COMMAND LINE ARGUMENT SUPPORT                                            *
  *****************************************************************************/
-// debugging aid
-void printargs(Args* a) {
-  for(int i=0;i<a->argc;i++) printf("Arg %d = '%s'\n",i,a->argv[i]);
-}
 
-void Args::remove(int i) {
-  for(int j=0;j<save_ptrs.size();j++)
-    if(save_ptrs[j]>i) save_ptrs[j]--;
-  argc--; // shrink the size of the list
-  for(;i<argc;i++) { argv[i]=argv[i+1]; } // shuffle args backward
+void
+Args::remove(size_t i)
+{
+  for (size_t j = 0; j < save_ptrs_.size(); j++)
+    if (save_ptrs_[j] > i)
+      save_ptrs_[j]--;
+
+  // Shrink the size of the list.
+  argc--;
+
+  // Shuffle the arguments backward.
+  for (; i < argc; i++)
+    argv[i] = argv[i + 1];
 }
 
 // ARG_SAFE is used to check if two different things modules request the
 // same argument
 #define ARG_SAFE TRUE
 #define MAX_SWITCHES 200
+
 static int num_switch_tests = 0;
 static char switch_rec[MAX_SWITCHES][64]; // remember a set of <64-byte args
-BOOL Args::extract_switch(const char *sw) { return extract_switch(sw,TRUE); }
-BOOL Args::extract_switch(const char *sw, BOOL warn) {
-  if(ARG_SAFE && warn) { // warns the user if a switch is overloaded
-    for(int i=0;i<num_switch_tests;i++) {
-      if(strcmp(sw,switch_rec[i])==0) {
-	debug("WARNING: Switch '%s' used more than once.\n",sw); break;
+
+bool
+Args::extract_switch(const char *sw, bool warn)
+{
+  if (ARG_SAFE && warn) {
+    // Warns the user if a switch is overloaded.
+    for (size_t i = 0; i < num_switch_tests; i++)
+      if (strcmp(sw, switch_rec[i]) == 0) {
+	debug("WARNING: Switch '%s' used more than once.\n", sw);
+        break;
       }
-    }
-    if(num_switch_tests<MAX_SWITCHES) {
+
+    if (num_switch_tests < MAX_SWITCHES) {
       num_switch_tests++;
-      strcpy(switch_rec[num_switch_tests-1],sw);
+      strcpy(switch_rec[num_switch_tests-1], sw);
     }
   }
-  if(find_switch(sw)) { remove(argp); return TRUE; }
-  return FALSE;
+
+  if (!find_switch(sw))
+    return false;
+
+  remove(argp_);
+  return true;
 }
-BOOL Args::find_switch(const char *sw) {
-  for(argp=1;argp<argc;argp++) {
-    if(strcmp(argv[argp],sw)==0) { 
-      last_switch = argv[argp];
-      return TRUE;
+
+bool
+Args::find_switch(const char *sw)
+{
+  for (argp_ = 1; argp_ < argc; argp_++) {
+    if (strcmp(argv[argp_], sw) == 0) {
+      last_switch_ = argv[argp_];
+      return true;
     }
   }
-  return FALSE;
+
+  return false;
 }
 
-void Args::goto_first() { argp=1; }
+void
+Args::goto_first()
+{
+  argp_ = 1;
+}
 
-char* Args::pop_next() {
-  if(argp>=argc) return NULL;
-  char* save = argv[argp];
-  remove(argp);
+char *
+Args::pop_next()
+{
+  if (argp_ >= argc)
+    return 0;
+  char *save = argv[argp_];
+  remove(argp_);
   return save;
 }
 
-char* Args::peek_next() {
-  if(argp>=argc) return NULL;
-  return argv[argp];
+char *
+Args::peek_next() const
+{
+  if (argp_ >= argc)
+    return 0;
+  return argv[argp_];
 }
 
-double Args::pop_number() {
-  char* arg = pop_next();
-  if(arg==NULL || !str_is_number(arg)) {
-    if(arg && arg[0]=='0' && arg[1]=='x' && str_is_number(&arg[2]))
-      { int hexnum; sscanf(arg,"%x",&hexnum); return hexnum; }
-    uerror("Missing numerical parameter after '%s'", last_switch);
+double
+Args::pop_number()
+{
+  // FIXME: Use a real number parser here...
+  char *arg = pop_next();
+  if (arg == 0 || !str_is_number(arg)) {
+    if (arg != 0 && arg[0] == '0' && arg[1]=='x' && str_is_number(&arg[2])) {
+      unsigned int hexnum;
+      sscanf(arg, "%x", &hexnum);
+      return hexnum;
+    }
+    uerror("Missing numerical parameter after '%s'", last_switch_);
   }
   return atof(arg);
 }
-int Args::pop_int() { return (int)pop_number(); }
 
-// if pos is present, value set to TRUE; if neg is present, value set to FALSE
-// if neither, value is unchanged; if both, value is set to FALSE;
-void Args::undefault(BOOL *target,const char* pos,const char* neg) {
-  BOOL pp = extract_switch(pos), np = extract_switch(neg);
-  if(pp) { *target = !np; } else if(np) { *target = FALSE; }
+int
+Args::pop_int()
+{
+  return static_cast<int>(pop_number());
 }
 
-void Args::save_ptr() { save_ptrs.push_back(argp); }
-void Args::restore_ptr() { argp = save_ptrs.back(); save_ptrs.pop_back(); }
+// . If only positive is present, value is set to true.
+// . If only negative is present, value is set to false.
+// . If neither, value is unchanged.
+// . If both, value is set to false.
+// FIXME: Why not just return it?
+void
+Args::undefault(BOOL *value, const char *positive, const char *negative)
+{
+  bool pp = extract_switch(positive), np = extract_switch(negative);
+  if (pp)
+    *value = !np;
+  else if (np)
+    *value = FALSE;
+}
 
-/// read args from optional .[appname] and ~/.[appname] files
-void Args::add_defaults() {
-  char* dirstrip = strrchr(argv[0],DIRECTORY_SEP);
-  string appname = dirstrip ? &(dirstrip[1]) : argv[0];
-  ifstream fin; string name = "."+appname; 
-  fin.open(name.c_str()); if(fin.is_open()) {parse_argstream(fin); fin.close();}
-  char* homedir = getenv("HOME");
-  if(homedir) {
-    name = string(homedir)+"/."+appname;
-    fin.open(name.c_str()); if(fin.is_open()){parse_argstream(fin);fin.close();}
+void
+Args::save_ptr()
+{
+  save_ptrs_.push_back(argp_);
+}
+
+void
+Args::restore_ptr()
+{
+  argp_ = save_ptrs_.back();
+  save_ptrs_.pop_back();
+}
+
+// Read args from optional .[appname] and ~/.[appname] files.
+
+void
+Args::add_defaults()
+{
+  char *dirstrip = strrchr(argv[0], DIRECTORY_SEP);
+  string appname(dirstrip ? &dirstrip[1] : argv[0]);
+  ifstream fin;
+
+  string name = "." + appname;
+  fin.open(name.c_str());
+  if (fin.is_open()) {
+    parse_argstream(&fin);
+    fin.close();
+  }
+
+  const char *homedir = getenv("HOME");
+  if (homedir) {
+    name = string(homedir) + "/." + appname;
+    fin.open(name.c_str());
+    if (fin.is_open()) {
+      parse_argstream(&fin);
+      fin.close();
+    }
   }
 }
 
-void Args::parse_argstream(istream &s) {
+void
+Args::parse_argstream(istream *s)
+{
   string newargstr = "";
-  while(!s.eof()) { 
-    string line; getline(s,line,'\n'); 
-    if(line[0]!='#') newargstr+=line; else newargstr+=" ";
-  }
-  if(newargstr.find('"')!=string::npos || newargstr.find('\'')!=string::npos)
-    debug("WARNING: default arg-file parsing ignores quotes\n");
-  // put into a mutable, long-term allocated c-str
-  char* newargs = (char*)malloc(newargstr.size());
-  newargstr.copy(newargs,newargstr.size());
-  // extract tokens
-  vector<char*> tokens; int n = 0;
-  char* tok = strtok(newargs," '\"");
-  if(tok) { tokens.push_back(tok); n++; }
-  while(tok!=NULL) 
-    { tok = strtok(NULL," '\""); if(tok) { tokens.push_back(tok); n++; }}
-  // merge with existing collection
-  char **newargv = (char**)calloc(argc+n,sizeof(char*));
-  for(int i=0;i<argc;i++) { newargv[i]=argv[i]; }
-  for(int i=0;i<n;i++) { newargv[i+argc]=tokens[i]; }
-  argc += n; argv=newargv; // note: ignoring old argv memory leaking: it's small
-}
 
+  while (!s->eof()) {
+    string line;
+    getline(*s, line, '\n');
+    newargstr += ((line[0] != '#') ? line : " ");
+  }
+
+  if ((newargstr.find('"') != string::npos)
+      || (newargstr.find('\'') != string::npos))
+    debug("WARNING: default arg-file parsing ignores quotes\n");
+
+  // Put into a mutable, long-term allocated c-str.
+  char *newargs = static_cast<char *>(malloc(newargstr.size()));
+  newargstr.copy(newargs, newargstr.size());
+
+  // Extract tokens.
+  vector<char *> tokens;
+  size_t n = 0;
+
+  char *tok = strtok(newargs, " '\"");
+  while (tok) {
+    tokens.push_back(tok);
+    n++;
+    tok = strtok(0, " '\"");
+  }
+
+  // Merge with existing collection.
+  char **newargv = static_cast<char **>(calloc(argc + n, sizeof(char *)));
+  for (size_t i = 0; i < argc; i++) { newargv[i] = argv[i]; }
+  for (size_t i = 0; i < n; i++) { newargv[i + argc] = tokens[i]; }
+
+  // Note: ignoring old argv memory leaking: it's small.
+  argc += n;
+  argv = newargv;
+}
 
 /*****************************************************************************
  *  STRING UTILITIES                                                         *
  *****************************************************************************/
-// does the string contain a number after any initial whitespace?
-BOOL str_is_number(const char* str) {
-  if(str==NULL) return FALSE;
-  int i=0;
-  while(isspace(str[i])) { i++; } // remove whitespace
-  if(str[i]=='+' || str[i]=='-') i++; // initial plus
-  BOOL decpt=FALSE, expt=FALSE;
+
+// Does the string contain a number after any initial whitespace?
+
+bool
+str_is_number(const char *str)
+{
+  // FIXME: Null test masks legitimate errors.
+  if (str == 0)
+    return false;
+
+  size_t i = 0;
+
+  // Remove whitespace.
+  while (isspace(str[i]))
+    i++;
+
+  // Initial sign.
+  if ((str[i] == '+') || (str[i] == '-'))
+    i++;
+
+  bool decimal_point = false, exponent_marker = false;
   do {
-    if(!isdigit(str[i])) { // digits OK
-      if(str[i]=='.' && !decpt && !expt) decpt=TRUE; // optional decimal pt
-      else if(str[i]=='e' || str[i]=='E' && !expt) expt=TRUE; // opt. exponent
-      else return FALSE;
+    if (!isdigit(str[i])) {
+      if ((str[i] == '.') && !decimal_point && !exponent_marker)
+        decimal_point = true;
+      else if ((str[i] == 'e') || (str[i] == 'E') && !exponent_marker)
+        exponent_marker = true;
+      else
+        return false;
     }
     i++;
   } while(str[i] && !isspace(str[i]));
-  return TRUE;
-}
 
-const char* bool2str(BOOL b) {
-  static char truestr[]="TRUE", falsestr[]="FALSE";
-  return b ? truestr : falsestr;
-}
-const char* flo2str(float num, int precision) {
-  static char buffer[32]="", tmpl[10]="";
-  sprintf(tmpl,"%s%d%s","%.",precision,"f");
-  //printf("\nflo2str: %s\nFor precision: %d\n",tmpl,precision);
-  sprintf(buffer,tmpl,num); return buffer;
-}
-const char* int2str(int num) {
-  static char buffer[32]="";
-  sprintf(buffer,"%d",num); return buffer;
-}
-
-void print_indented(int n, string s, bool trim_trailing_newlines) {
-  int loc = 0;
-  while(true) {
-    int newloc = s.find('\n',loc);
-    if(!trim_trailing_newlines || newloc-loc>0) {
-      for(int i=0;i<n;i++) cout << " ";
-      cout << s.substr(loc,newloc-loc) << endl;
-    }
-    loc=newloc+1; if(newloc<0) return;
-  }
-}
-
-bool ends_with(string base, string tail) {
-  int b_n = base.size(), t_n = tail.size();
-  if(b_n < t_n) return false;
-  for(int i=0;i<t_n;i++)
-    if(tail[i]!=base[i+b_n-t_n]) return false;
   return true;
 }
 
-string ensure_extension(string& base, string extension) {
-  if(!ends_with(base,extension)) base += extension;
-  return base;
+const char *
+bool2str(bool b)
+{
+  return b ? "TRUE" : "FALSE";
+}
+
+const char *
+flo2str(float num, unsigned int precision)
+{
+  static char buffer[32] = "", tmpl[10] = "";
+  snprintf(tmpl, sizeof tmpl, "%s%u%s", "%.", precision, "f");
+  //printf("\nflo2str: %s\nFor precision: %d\n", tmpl, precision);
+  snprintf(buffer, sizeof buffer, tmpl, num);
+  return buffer;
+}
+
+const char *
+int2str(int num)
+{
+  static char buffer[32] = "";
+  snprintf(buffer, sizeof buffer, "%d", num);
+  return buffer;
+}
+
+void
+print_indented(size_t n, const string &s, bool trim_trailing_newlines)
+{
+  size_t loc = 0;
+  while (true) {
+    size_t newloc = s.find('\n', loc);
+    if ((!trim_trailing_newlines) || newloc != string::npos) {
+      for (size_t i = 0; i < n; i++) cout << " ";
+      cout << s.substr(loc, (newloc - loc)) << endl;
+    }
+    if (newloc == string::npos)
+      return;
+    loc = newloc + 1;
+  }
+}
+
+bool
+ends_with(const string &base, const string &tail)
+{
+  size_t b_n = base.size(), t_n = tail.size();
+  if (b_n < t_n)
+    return false;
+  for (size_t i = 0; i < t_n; i++)
+    if (tail[i] != base[i + b_n - t_n])
+      return false;
+  return true;
+}
+
+void
+ensure_extension(string &base, const string &extension)
+{
+  if (!ends_with(base, extension))
+    base += extension;
 }
 
 /*****************************************************************************
  *  POPULATION CLASS                                                         *
  *****************************************************************************/
-int Population::add(void* item) {
-  if(removed.empty()) {
-    if(top==capacity) resize_pop(capacity*2);
-    store[top]=item; pop_size++; top++;
-    return top-1;
+
+size_t
+Population::add(void *member)
+{
+  size_t i;
+
+  if (recycled_.empty()) {
+    i = vector_.size();
+    vector_.push_back(member);
+    population_size_++;
   } else {
-    int slot = removed.front(); removed.pop();
-    if(store[slot]!=NULL) uerror("Population tried to over-write a node!");
-    store[slot]=item; pop_size++;
-    return slot;
+    i = recycled_.front();
+    recycled_.pop();
+    if (vector_[i] != 0)
+      uerror("Population tried to over-write a node!");
+    vector_[i] = member;
   }
+
+  population_size_++;
+  return i;
 }
 
-void* Population::remove(int i) {
-  void* elt = store[i];
-  if(elt) { store[i]=NULL; removed.push(i); pop_size--; }
-  return elt;
+void *
+Population::remove(size_t i)
+{
+  void *member = vector_.at(i);
+
+  if (member != 0) {
+    vector_[i] = 0;
+    recycled_.push(i);
+    population_size_--;
+  }
+
+  return member;
 }
 
-void Population::destroy(int i) {
-  void* elt = remove(i);
-  if(elt) { free(elt); }
+void
+Population::destroy(size_t i)
+{
+  void *member = remove(i);
+  if (member)
+    free(member);
 }
 
-void Population::clear() {
-  for(int i=0;i<top;i++) { store[i]=NULL; }
-  while(!removed.empty()) removed.pop(); // clear the queue
-  top=pop_size=0;
+void
+Population::clear()
+{
+  vector_.clear();
+  while (!recycled_.empty())
+    recycled_.pop();
+  population_size_ = 0;
 }
 
-void* Population::get(int i) { 
-   if(i >= 0 && i < top)
-      return store[i];
-   uerror("Attempted to access out of bounds member of Population!");
-   return NULL;
-}
-void Population::init_pop(int cap) {
-  store = (void**)calloc(cap,sizeof(void*));
-  capacity = cap; top=0; pop_size=0;
-}
-
-void Population::resize_pop(int new_cap) {
-  store = (void**)realloc(store,new_cap*sizeof(void*));
-  if(store==NULL) uerror("Population fails to reallocate!");
-  capacity=new_cap;
+void *
+Population::get(size_t i) const
+{
+  if (0 <= i && i < vector_.size())
+    return vector_[i];
+  uerror("Attempted to access out of bounds member of Population!");
+  return 0;
 }
 
 /*****************************************************************************
  *  EVENTCONSUMER                                                            *
  *****************************************************************************/
+
 set<string> EventConsumer::colors_registered;
-void EventConsumer::ensure_colors_registered(string classname) {
-  if(!colors_registered.count(classname)) 
-    { register_colors(); colors_registered.insert(classname); }
+
+void
+EventConsumer::ensure_colors_registered(const string &classname)
+{
+  if(!colors_registered.count(classname)) {
+    register_colors();
+    colors_registered.insert(classname);
+  }
 }
 
 /*****************************************************************************
  *  GETTING TIME                                                             *
  *****************************************************************************/
+
 #ifdef __WIN32__
-#include <windows.h>
-double get_real_secs () {
+// Winblows
+
+# include <windows.h>
+double
+get_real_secs()
+{
   DWORD tv = timeGetTime();
-  return (double)(tv / 1000.0);
+  return static_cast<double>(tv / 1000.0);
 }
+
 #else
-#include <sys/time.h>
-double get_real_secs () {
+// Unix
+
+# include <sys/time.h>
+double
+get_real_secs ()
+{
   struct timeval t;
-  gettimeofday(&t, NULL);
-  return (double)(t.tv_sec + t.tv_usec / 1000000.0);
+  gettimeofday(&t, 0);
+  return static_cast<double>(t.tv_sec)
+    + static_cast<double>(t.tv_usec) / 1000000.0;
 }
+
 #endif

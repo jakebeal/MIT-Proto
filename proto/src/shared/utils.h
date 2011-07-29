@@ -1,36 +1,48 @@
 /* Utilities & standard top-level types
-Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
-#ifndef __UTILS__
-#define __UTILS__
+#ifndef PROTO_SHARED_UTILS_H
+#define PROTO_SHARED_UTILS_H
 
-#include <stdlib.h> // also provides NULL
-#include <string.h>
-#include <queue>
-#include <unistd.h>
 #include <dlfcn.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <map>
+#include <queue>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <map>
-using namespace std;
+
+// Kludge to make evil copy and clobber (`assign') constructors fail
+// to link.  This should have been the default.
+
+#define DISALLOW_COPY_AND_ASSIGN(T)    \
+  void operator=(const T &);           \
+  T(const T &)
+
 /*****************************************************************************
  *  NUMBERS AND DIMENSIONS                                                   *
  *****************************************************************************/
-// Numbers
-#include <math.h>  // will makes the values INFINITY and M_PI available
 
-#ifndef MIN
-#define MIN(x,y) (((x)<(y))?(x):(y))
-#define MAX(x,y) (((x)>(y))?(x):(y))
-#define ABS(x)  ((x)<0?-(x):(x))
-#endif
-#define BOUND(x,y,z) MIN(MAX(x,y),z)
+// Numbers
+
+#define BOUND bound
+
+template<typename T>
+inline const T &
+bound(const T &x, const T &y, const T &z)
+{
+  return std::min(std::max(x, y), z);
+}
 
 typedef float flo; // short name that jrb likes
 
@@ -38,171 +50,230 @@ typedef float flo; // short name that jrb likes
 typedef double SECONDS;
 typedef flo METERS;
 
-struct Rect { 
-  METERS l,r,b,t; // right>left, top>bottom
-  Rect(METERS left, METERS right, METERS bottom, METERS top) {
-    l=left; r=right; b=bottom; t=top; 
-  }
-  virtual Rect* clone() { return new Rect(l,r,b,t); }
-  virtual int dimensions() { return 2; }
+struct Rect {
+  METERS l, r, b, t; // right>left, top>bottom
+  Rect(METERS left, METERS right, METERS bottom, METERS top)
+    : l(left), r(right), b(bottom), t(top) {}
+  virtual Rect *clone() const { return new Rect(l, r, b, t); }
+  virtual int dimensions() const { return 2; }
 };
-struct Rect3 : public Rect { 
-  METERS f,c;   // ceiling>floor
-  Rect3(METERS left, METERS right, METERS bottom, METERS top, METERS floor, 
-	METERS ceiling) : Rect(left,right,bottom,top) {
-    f=floor; c=ceiling;
-  }
-  virtual Rect* clone() { return new Rect3(l,r,b,t,f,c); }
-  virtual int dimensions() { return 3; }
+
+struct Rect3 : public Rect {
+  METERS f, c;   // ceiling>floor
+  Rect3(METERS left, METERS right, METERS bottom, METERS top, METERS floor,
+      METERS ceiling)
+    : Rect(left, right, bottom, top), f(floor), c(ceiling) {}
+  virtual Rect *clone() const { return new Rect3(l, r, b, t, f, c); }
+  virtual int dimensions() const { return 3; }
 };
 
 // uniform random numbers
 flo urnd(flo min, flo max);
 
-// booleans
+// FIXME: Eliminate BOOL, TRUE, and FALSE -- C++ has a standard
+// boolean type, and it's lowercase.
 
 typedef int BOOL;
-#ifndef TRUE 
-#define TRUE (1) 
+#ifndef TRUE
+#define TRUE (1)
 #define FALSE (0)
 #endif
 
 /*****************************************************************************
  *  SMALL MISC EXTENSIONS                                                    *
  *****************************************************************************/
-// memory management, since we want to roll our own on some platforms
+
+// FIXME: MALLOC and FREE are a losing hack only for the
+// paleocompiler.  Kill!
+
 #ifndef MALLOC // avoid conflicts with MALLOC.H
 extern void  *MALLOC(size_t size);
 #endif
 extern void  FREE(void *ptr);
 
-#define for_set(t,x,i) for(set<t>::iterator i=(x).begin();i!=(x).end();i++)
-#define for_map(t1,t2,x,i) for(map<t1,t2>::iterator i=(x).begin();i!=(x).end();i++)
+#define for_set(t, x, i)                                        \
+  for (std::set<t>::iterator i = (x).begin() ; i != (x).end(); ++i)
 
-// LISP-like null
-//#define NULL ((void*)0)
+#define for_map(tk, td, x, i)                                           \
+  for (std::map<tk, td>::iterator i = (x).begin(); i != (x).end(); ++i)
 
-// string buffers
-#define MAX_STRBUF 1024
-struct Strbuf {
-  int idx; // pointer into the buffer; should be started at zero
-  char data[MAX_STRBUF];
-  Strbuf() { idx=0; }
-};
+bool str_is_number(const char *str);
 
-BOOL str_is_number(const char* str);
-// these next three functions do not promise their values will remain
-// past the next call to any of the three: they're for string construction
-const char* bool2str(BOOL b);
-const char* flo2str(float num, int precision=2);
-const char* int2str(int num);
-// prints a block of text with n spaces in front of each line
-void print_indented(int n, string s, bool trim_trailing_newlines=0);
-// ensures that a string ends with extension
-string ensure_extension(string& base, string extension);
+// These next three functions do not promise their values will remain
+// past the next call to any of the three: they're for string construction.
+const char *bool2str(bool b);
+const char *flo2str(float num, unsigned int precision = 2);
+const char *int2str(int num);
+
+// Prints a block of text with n spaces in front of each line.
+void print_indented(size_t n, const std::string &s,
+    bool trim_trailing_newlines = false);
+
+// Ensures that a string ends with extension.
+// FIXME: Pass a string pointer, not a string reference, for base.
+void ensure_extension(std::string &base, const std::string &extension);
 
 /*****************************************************************************
  *  NOTIFICATION FUNCTIONS                                                   *
  *****************************************************************************/
+
 // (since we may want to change the "printf" behavior on some platforms)
-extern "C" void uerror (const char* message, ...);
-extern "C" void debug(const char* dstring, ...);
-extern "C" void post(const char* pstring, ...);
-extern "C" void post_into(Strbuf *buf, const char* pstring, ...);
+
+extern "C" void uerror(const char *message, ...);
+extern "C" void debug(const char *dstring, ...);
+extern "C" void post(const char *pstring, ...);
 
 /*****************************************************************************
  *  COMMAND LINE ARGUMENT SUPPORT                                            *
  *****************************************************************************/
-// Makes it easy to have multiple routines that pull out switches during boot
-class Args {
-  int argp;  // Pointer to the current argument; 0 is the command, starts at 1
-  char *last_switch; // last successfully found switch
-  vector<int> save_ptrs;
- public:
-  int argc;  // number of arguments
-  char **argv; // pointers to argument strings
 
+// Makes it easy to have multiple routines that pull out switches during boot
+
+// FIXME: Need to switch all this crap to replace char * by string.
+
+class Args {
  public:
-  Args(int argc, char** argv) { 
-    argp=1; this->argc=argc; 
-    this->argv=argv; add_defaults();
-    last_switch=(char*)"(no switch yet)";
+  // Number of arguments.
+  int argc;
+
+  // Null-terminated array of pointers to argument strings.
+  char **argv;
+
+  Args(int argc_, char** argv_)
+      : argc(argc_), argv(argv_), argp_(1), last_switch_("(no switch yet)") {
+    add_defaults();
   }
-  BOOL find_switch(const char *sw); // tests if sw is in the list, leaves ptr there
-  BOOL extract_switch(const char *sw); // like find_switch, but deletes if found
-  BOOL extract_switch(const char *sw, BOOL warn); // can suppress warnings
-  char* pop_next(); // removes the argument at the pointer and returns it
-  char* peek_next(); // returns the argument at the pointer w/o removing
-  double pop_number(); // like pop_next, but converts to number
-  int pop_int(); // pop_number, converted to an int
-  void goto_first(); // returns the pointer to the start of the arguments
-  void remove(int i); // shrinks the list, deleting the ith argument
-  void undefault(BOOL *value,const char* pos,const char* neg); // modify a default switch
-  void save_ptr(); // saves the current pointer for later recall
-  void restore_ptr(); // sets pointer to the last saved, which is then unsaved
+
+  // Test if sw is in the list; leave pointer there.
+  bool find_switch(const char *sw);
+
+  // Like find_switch, but delete if found.
+  bool extract_switch(const char *sw, bool warn = true);
+
+  // Remove the argument at the pointer and returns it.
+  char *pop_next();
+
+  // Return the argument at the pointer without removing.
+  char *peek_next() const;
+
+  // Like pop_next, but converts to number.
+  double pop_number();
+
+  // pop_number, converted to an int.
+  int pop_int();
+
+  // Reset the pointer to the start of the arguments.
+  void goto_first();
+
+  // Shrink the list, deleting the ith argument.
+  void remove(size_t i);
+
+  // Modify a default switch.
+  void undefault(BOOL *value, const char *positive, const char *negative);
+
+  // Save the current pointer for later recall.
+  void save_ptr();
+
+  // Set pointer to the last saved, which is then unsaved.
+  void restore_ptr();
+
  private:
-  void add_defaults(); // read args from .[appname] and ~/.[appname] files
-  void parse_argstream(istream &s);
+  // Index of the current argument; 0 is the command, starts at 1.
+  int argp_;
+
+  // Last successfully found switch.
+  const char *last_switch_;
+
+  // Stack of saved pointers.
+  std::vector<int> save_ptrs_;
+
+  // Read args from .[appname] and ~/.[appname] files.
+  void add_defaults();
+  void parse_argstream(std::istream *s);
+
+  DISALLOW_COPY_AND_ASSIGN(Args);
 };
 
 /*****************************************************************************
  *  POPULATION                                                               *
  *****************************************************************************/
+
 // A Population is a cross between an array and a list
 // It is designed w. fast random access, compact storage, and automatic resize
+
+// FIXME: This should be templatized; void * is wrong.
+
 class Population {
-  int pop_size; // number of slots that are full
-  int top; // next never-used slot
-  int capacity;
-  void** store;
-  std::queue<int> removed;
  public:
-  Population() { init_pop(10); }
-  Population(int capacity) { init_pop(capacity); }
-  ~Population() { free(store); }
-  int add(void* item); // adds an item, returns where it went
-  void* remove(int i); // removes the item at location i and returns i
-  void destroy(int i); // idempotent freeing of item at location i
-  void* get(int i);    // return the item at location i (NULL if empty)
-  void clear();        // remove every item in the population
-  int size() { return pop_size; }
-  int max_id() { return top; }
+  Population() : population_size_(0) {}
+
+  size_t add(void *member);     // Add an item; return where it went.
+  void *remove(size_t i);       // Remove the item at i and return it.
+  void destroy(size_t i);       // Idempotent freeing of item at location i.
+  void *get(size_t i) const;    // Return the item at i, or null if empty.
+  void clear();                 // Remove every item in the population.
+
+  size_t size() const { return population_size_; }
+  size_t max_id() const { return vector_.size(); }
+
  private:
-  void init_pop(int cap); // 
-  void resize_pop(int newcap); // resize the population
+  size_t population_size_;      // Number of slots that are full.
+  std::queue<size_t> recycled_; // Queue of slot indices to be recycled.
+  std::vector<void *> vector_;  // Data.
+
+  DISALLOW_COPY_AND_ASSIGN(Population);
 };
 
 /*****************************************************************************
  *  STL HELPERS                                                              *
  *****************************************************************************/
 
-template<class T> T insert_at(vector<T>* v,int at,T elt) {
-  v->push_back(NULL); // add space to end
-  for(int i=v->size();i>at;i--) { (*v)[i] = (*v)[i-1]; }
-  (*v)[at] = elt; return elt;
+// FIXME: insert_at and delete_at are obsolete; they should be spelled
+// with the relevant STL routines.
+
+template<class T>
+T &
+insert_at(std::vector<T> *v, size_t at, T &elt)
+{
+  size_t size = v->size();
+  v->resize(size + 1);          // Add space to end.
+  for (size_t i = size; i > at; i--)
+    (*v)[i] = (*v)[i - 1];
+  (*v)[at] = elt;
+  return elt;
 }
 
-template<class T> T delete_at(vector<T>* v,int at) {
+template<class T>
+T
+delete_at(std::vector<T> *v, size_t at)
+{
   T elt = (*v)[at];
-  for(int i=at;i<v->size()-1;i++) { (*v)[i] = (*v)[i+1]; }
-  v->pop_back(); return elt;
+  for (size_t i = at; i < (v->size() - 1); i++)
+    (*v)[i] = (*v)[i + 1];
+  v->pop_back();
+  return elt;
 }
 
-template<class T> int index_of(vector<T>* v, T elt, int start=0) {
-  for(int i=start;i<v->size();i++) {
-    if(((*v)[i]) == elt) return i;
-  }
+template<class T>
+ssize_t
+index_of(std::vector<T> *v, const T &elt, size_t start = 0)
+{
+  for (size_t i = start; i < v->size(); i++)
+    if ((*v)[i] == elt)
+      return i;
   return -1;
 }
 
 /*****************************************************************************
  *  GLUT-BASED EVENT MODEL                                                   *
  *****************************************************************************/
+
 // Simple event model derived from GLUT
 // The current mouse location in window coordinates
 // [(0,0) in top-left corner, X increases rightward, Y increases downward]
 
-//Older versions of GLUT do not support wheels
+// Older versions of GLUT do not support wheels
+
 #ifndef GLUT_WHEEL_UP
 # define GLUT_WHEEL_UP 3
 #endif
@@ -214,18 +285,19 @@ struct MouseEvent {
   int x;
   int y;
   int state; // 0=click, 1=drag start, 2=drag, 3=end drag, -1=drag failed
-  BOOL shift; // only shift modifier, since CTRL and ALT select button on a Mac
+  bool shift; // only shift modifier, since CTRL and ALT select button on a Mac
   int button; // left, right, middle, or none (-1)?
-  MouseEvent() { x=0; y=0; state=0; shift=FALSE; button=-1; }
+  MouseEvent() : x(0), y(0), state(0), shift(false), button(-1) {}
 };
 
 // Warning: GLUT generates *different* numbers for control keys than normal
 // keys.  Alphabetic keys give A=1, B=2, ... Z=26; Space is zero, others are
 // not consistent across platforms.  Also, there is no case distinction.
 // I do not know why this is, only that GLUT does this.
+
 struct KeyEvent {
-  BOOL normal; // is this a normal key or a GLUT special key?
-  BOOL ctrl; // only CTRL: shift gives case, Macs mix ALT w. META and APPLE
+  bool normal; // is this a normal key or a GLUT special key?
+  bool ctrl; // only CTRL: shift gives case, Macs mix ALT w. META and APPLE
   union {
     unsigned char key; // ordinary characters
     int special; // GLUT directionals and F-keys
@@ -234,28 +306,40 @@ struct KeyEvent {
 
 class EventConsumer {
  public:
-  virtual BOOL handle_key(KeyEvent* key) {return FALSE;} // return if consumed
-  virtual BOOL handle_mouse(MouseEvent* mouse) {return FALSE;} // same return
-  virtual void visualize() {} // draw, assuming a prepared OpenGL context
-  // evolve moves state forward in time to 'limit' (an absolute)
-  virtual BOOL evolve(SECONDS limit) {} // return whether state changed
-  
-  // visualizer utility: color management for static variables
-  void ensure_colors_registered(string classname);
+  EventConsumer() {}
+  virtual ~EventConsumer() {}
+
+  // Returns true iff event consumed.
+  virtual BOOL handle_key(KeyEvent *key) { return FALSE; }
+
+  // Returns true iff event consumed.
+  virtual BOOL handle_mouse(MouseEvent *mouse) { return FALSE; }
+
+  // Draw, assuming a prepared OpenGL context.
+  virtual void visualize() {}
+
+  // Move state forward in time to the absolute time limit.  Returns
+  // true iff state changed.  FIXME: This can't be right...
+  virtual BOOL evolve(SECONDS limit) {};
+
+  // Visualizer utility: color management for static variables.
+  void ensure_colors_registered(const std::string &classname);
   virtual void register_colors() {}
+
  private:
-  static set<string> colors_registered;
+  static std::set<std::string> colors_registered;
+  DISALLOW_COPY_AND_ASSIGN(EventConsumer);
 };
 
 // obtains the time in seconds (in a system-dependent manner)
-double get_real_secs ();
+double get_real_secs();
 
-// system-dependent directory separator
+// System-dependent directory separator.
+
 #ifdef __WIN32__
 #define DIRECTORY_SEP '\\'
 #else
 #define DIRECTORY_SEP '/'
 #endif
 
-
-#endif // __UTILS__
+#endif  // PROTO_SHARED_UTILS_H
