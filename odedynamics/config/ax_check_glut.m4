@@ -43,7 +43,7 @@ else
   # If X is present, assume GLUT depends on it.
   #
   if test "X${no_x}" != "Xyes"; then
-    GLUT_LIBS="${X_PRE_LIBS} -lXmu -lXi ${X_EXTRA_LIBS} ${GLUT_LIBS}"
+    GLUT_LIBS="${X_PRE_LIBS} ${X_EXTRA_LIBS} ${GLUT_LIBS}"
   fi
 
   AC_LANG_PUSH(C)
@@ -55,7 +55,7 @@ else
   [ax_cv_check_glut_libglut="no"
   ax_save_LIBS="${LIBS}"
   LIBS=""
-  ax_check_libs="-lglut32 -lglut"
+  ax_check_libs="-lglut"
   for ax_lib in ${ax_check_libs}; do
     if test X$ax_compiler_ms = Xyes; then
       ax_try_lib=`echo $ax_lib | sed -e 's/^-l//' -e 's/$/.lib/'`
