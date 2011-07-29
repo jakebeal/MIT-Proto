@@ -1128,9 +1128,10 @@ ProtoKernelEmitter::lambda_literal_instruction(ProtoLambda *lambda,
   }
 }
 
-Instruction* ProtoKernelEmitter::parameter_to_instruction(Parameter* p) {
-   Instruction* ret = new Instruction(REF_0_OP+p->index);
-   return ret;
+Instruction *
+ProtoKernelEmitter::parameter_to_instruction(Parameter *p)
+{
+  return new Instruction(REF_0_OP + p->index);
 }
 
 // Add a tuple to the global declarations, then reference it in vector op i.
