@@ -20,10 +20,10 @@ SPECIAL      [;'(),`@|]
 
 %{
 #define YY_BREAK { if(cur->error) return 1; } break;
-
+#include <stack>
 #include "sexpr.h"
 #include "utils.h"
-
+using namespace std;
 extern "C" int yywrap() { return 1; }
 
 int yylex();
@@ -139,9 +139,9 @@ nan		cur->add_sexpr(new SE_Scalar(NAN));
 
 %%
 
-SExpr* read_sexpr(string name, string in)
+SExpr* read_sexpr(const string &name, const string &in)
 { return read_sexpr(name,new istringstream(in)); }
-SExpr* read_sexpr(string name, istream* in, ostream* out) { 
+SExpr* read_sexpr(const string &name, istream* in, ostream* out) { 
   SExprLexer lex(name,in,out); cur = &lex;
   SExpr* sexp = lex.tokenize();
   yylex_destroy(); // reset state
