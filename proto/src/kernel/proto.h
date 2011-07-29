@@ -1,5 +1,5 @@
 /* ProtoKernel virtual machine
-Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -14,11 +14,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
-
-#ifndef MIN
-#define MIN(x,y) (((x)<(y))?(x):(y))
-#define MAX(x,y) (((x)>(y))?(x):(y))
 #endif
 
 #include <string.h>
@@ -26,12 +21,12 @@ extern "C" {
 #include <stdint.h>
 #include "kernel_version.h"
 
-#ifndef INFINITY 
+#ifndef INFINITY
 	#define INFINITY HUGE_VAL
 #endif
 
 /*
-//Using math.h will give us a proper platform dependent definition of infinity 
+//Using math.h will give us a proper platform dependent definition of infinity
 //anyway. If it doesn't, it should be dealt in platform.h file.
 
 #ifndef INFINITY

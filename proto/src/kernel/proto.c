@@ -1,5 +1,5 @@
 /* ProtoKernel virtual machine
-Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors 
+Copyright (C) 2005-2008, Jonathan Bachrach, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -11,6 +11,11 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <math.h>
 #include "proto.h"
 #include "proto_vm.h"
+
+#ifndef MIN
+#define MIN(x,y) (((x)<(y))?(x):(y))
+#define MAX(x,y) (((x)>(y))?(x):(y))
+#endif
 
 #ifdef _WIN32
  #include <winsock.h> /* for ntohl() */
