@@ -1057,13 +1057,17 @@ ProtoKernelEmitter::scalar_literal_instruction(ProtoScalar *scalar)
 Instruction *
 ProtoKernelEmitter::integer_literal_instruction(uint16_t value)
 {
+  Instruction *i;
   if (value < MAX_LIT_OPS) {
-    return new Instruction(LIT_0_OP + value);
+    i = new Instruction(LIT_0_OP + value);
   } else if (value < 0x80) {
-    Instruction *i = new Instruction(LIT8_OP); i->padd(value); return i;
+    i = new Instruction(LIT8_OP);
+    i->padd(value);
   } else /* if (value < 0x8000) */ {
-    Instruction *i = new Instruction(LIT16_OP); i->padd16(value); return i;
+    i = new Instruction(LIT16_OP);
+    i->padd16(value);
   }
+  return i;
 }
 
 Instruction *
