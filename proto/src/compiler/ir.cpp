@@ -192,7 +192,7 @@ int CompoundOp::lambda_count=0;
 
 CompoundOp::CompoundOp(CE* src, DFG* container, string n) : Operator(src) {
   name = (n!="") ? n : make_gensym("lambda")->name;
-  signature=(Signature*)dummy("Signature",src);
+  signature = &dynamic_cast<Signature &>(*dummy("Signature", src));
   body = new AM(src, container, this);
 }
 
@@ -263,7 +263,8 @@ Operator* FieldOp::get_field_op(OperatorInstance* oi) {
   if(oi->op->marked(":side-effect"))
      return op_err(oi,"Cannot apply operators with side effects to fields");
   
-  if(oi->op->isA("LocalFieldOp")) return ((LocalFieldOp*)oi->op)->base;
+  if(oi->op->isA("LocalFieldOp"))
+    return dynamic_cast<LocalFieldOp &>(*oi->op).base;
   if(!oi->op->isA("Primitive") || oi->pointwise()==0) return NULL;
   // reuse or create appropriate FieldOp
   if(!fieldops.count(oi->op)) fieldops[oi->op] = new FieldOp(oi->op);
@@ -290,7 +291,7 @@ FieldOp::FieldOp(Operator* base) : Primitive(base) {
 // table of LocalFieldOps used to date
 CEmap(Operator*,LocalFieldOp*) LocalFieldOp::localops;
 Operator* LocalFieldOp::get_local_op(Operator* op) {
-  if(op->isA("FieldOp")) return ((FieldOp*)op)->base;
+  if(op->isA("FieldOp")) return dynamic_cast<FieldOp &>(*op).base;
   if(!op->isA("Primitive") || !op->attributes.count(":space")) return NULL;
   // reuse or create appropriate LocalFieldOp
   if(!localops.count(op)) localops[op] = new LocalFieldOp(op);
@@ -322,7 +323,7 @@ void collect_op_references(ProtoType* t,vector<CompoundOp*> *refs) {
   // lambdas might reference; tuples, fields might contain a lambda
   if(t->isA("ProtoLambda")) {
     if(L_VAL(t) && L_VAL(t)->isA("CompoundOp"))
-      refs->push_back((CompoundOp*)L_VAL(t));
+      refs->push_back(&dynamic_cast<CompoundOp &>(*L_VAL(t)));
   } else if(t->isA("ProtoTuple")) {
     ProtoTuple* tt = T_TYPE(t);
     for(int i=0;i<tt->types.size();i++) 
@@ -333,9 +334,9 @@ void collect_op_references(ProtoType* t,vector<CompoundOp*> *refs) {
 }
 void collect_op_references(Operator* op,vector<CompoundOp*> *refs) {
   if(op->isA("CompoundOp")) {
-    refs->push_back((CompoundOp*)op);
+    refs->push_back(&dynamic_cast<CompoundOp &>(*op));
   } else if(op->isA("Literal")) {
-    collect_op_references(((Literal*)op)->value,refs);
+    collect_op_references(dynamic_cast<Literal &>(*op).value, refs);
   }
 }
 
@@ -397,7 +398,8 @@ ProtoType* OperatorInstance::nth_input(int n) {
 int OperatorInstance::recursive() {
   // TODO: handle lambdas in inputs
   if(!op->isA("CompoundOp")) return 0; // only compounds can be recursive
-  return (output->domain == ((CompoundOp*)op)->body); // same space?
+  return
+    (output->domain == dynamic_cast<CompoundOp &>(*op).body); // same space?
 }
 
 // pointwise test returns 1 if pointwise, 0 if not, and -1 if unresolved
@@ -413,7 +415,7 @@ int OperatorInstance::pointwise() {
       return 0; // primitives involving space, time, actuators aren't pointwise
     return opp; // others may depend on what they're operating on...
   } else if(op->isA("CompoundOp")) {
-    OIset ois; ((CompoundOp*)op)->body->all_ois(&ois);
+    OIset ois; dynamic_cast<CompoundOp &>(*op).body->all_ois(&ois);
     for_set(OI*,ois,i)
       {int inop = (*i)->pointwise(); if(inop==0) return 0; if(inop==-1) opp=-1;}
     return opp; // compound op is pointwise if all its contents are pointwise
@@ -501,8 +503,10 @@ void dot_print_AM(ostream* ss, int stepn, AM* root, Field* output,int indent=1,b
     //operator name
     string fname = (*f)->nicename(), oname = "OI_"+fname;
     string name = "UNKNOWN: ERROR";
-    if(oi->op->name.length()>0) name = oi->op->name;
-    else if(oi->op->isA("Literal")) name = ce2s(((Literal*)oi->op)->value);
+    if(oi->op->name.length()>0)
+      name = oi->op->name;
+    else if(oi->op->isA("Literal"))
+      name = ce2s(dynamic_cast<Literal &>(*oi->op).value);
     indentSS(ss,indent);
     *ss << oname << stepn <<"[label=\""<<name<<"\" shape=box];" << endl;
     //inputs
@@ -679,7 +683,8 @@ void DFG::remap_medium(AM* src, AM* target) {
 void DFG::make_op_inline(OperatorInstance* target) {
   if(!target->op->isA("CompoundOp"))
     ierror("Cannot inline operator: "+target->to_str());
-  CompoundOp* nop = new CompoundOp((CompoundOp*)target->op); // copy op
+  CompoundOp* nop
+    = new CompoundOp(&dynamic_cast<CompoundOp &>(*target->op)); // copy op
   OIset body_ois; nop->body->all_ois(&body_ois); // remember contents
   remap_medium(nop->body,target->domain()); // add into target location
   // final stage: relocate Parameters & outputs, discard old OI
@@ -689,7 +694,8 @@ void DFG::make_op_inline(OperatorInstance* target) {
     // Note: the bodyOf backpointer is not valid, so output is changed manually.
     if((*i)->op->isA("Parameter")) {
       // Parameters are rewired to connect to inputs
-      Field* newsrc = target->inputs[((Parameter*)(*i)->op)->index];
+      Field* newsrc
+        = target->inputs[dynamic_cast<Parameter &>(*(*i)->op).index];
       if((*i)->output==nop->output) nop->output = newsrc;
       relocate_consumers((*i)->output,newsrc); delete_node(*i);
     } else if((*i)->op==Env::core_op("restrict") && (*i)->inputs.size()==1) {
@@ -821,7 +827,7 @@ void IRPropagator::queue_nbrs(OperatorInstance* oi, int marks) {
   for(int i=0;i<oi->inputs.size();i++) queue_nbrs(oi->inputs[i],marks);
   // if it's a compound op, queue the parameters & output
   if(oi->op->isA("CompoundOp")) {
-    CompoundOp* cop = (CompoundOp*)oi->op;
+    CompoundOp* cop = &dynamic_cast<CompoundOp &>(*oi->op);
     queue_nbrs(cop->body);
     queue_nbrs(cop->output,marks);
     for_set(Field*,cop->body->fields,i)
@@ -959,7 +965,7 @@ void CertifyBackpointers::act(OperatorInstance* oi) {
     { bad=true; compile_error(oi,"Bad container of "+oi->op->to_str()); }
   // if CompoundOp, body link and outputs OK
   if(oi->op->isA("CompoundOp")) {
-    CompoundOp* co = (CompoundOp*)oi->op;
+    CompoundOp* co = &dynamic_cast<CompoundOp &>(*oi->op);
     if(co->body==NULL || co->body->bodyOf!=co)
       { bad=true; compile_error(oi,"Bad body of "+oi->to_str());}
     if(co->output==NULL)
