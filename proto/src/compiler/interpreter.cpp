@@ -32,25 +32,31 @@ CompilationElement* dummy(string type, CompilationElement* context) {
 }
 
 Field* field_err(CompilationElement *where,AM* space,string msg) {
-  compile_error(where,msg); 
-  OI* oi = new OI(where,(Operator*)dummy("Operator",where),space);
+  compile_error(where,msg);
+  OI* oi = new OI(where, &dynamic_cast<Operator &>(*dummy("Operator", where)),
+      space);
   oi->attributes["DUMMY"]=new MarkerAttribute(true);
   return oi->output;
 }
 Operator* op_err(CompilationElement *where,string msg) {
-  compile_error(where,msg); return (Operator*)dummy("Operator",where);
+  compile_error(where,msg);
+  return &dynamic_cast<Operator &>(*dummy("Operator",where));
 }
 Macro* macro_err(CompilationElement *where,string msg) {
-  compile_error(where,msg); return (Macro*)dummy("Macro",where);
+  compile_error(where,msg);
+  return &dynamic_cast<Macro &>(*dummy("Macro",where));
 }
 ProtoType* type_err(CompilationElement *where,string msg) {
-  compile_error(where,msg); return (ProtoType*)dummy("Type",where);
+  compile_error(where,msg);
+  return &dynamic_cast<ProtoType &>(*dummy("Type",where));
 }
 Signature* sig_err(CompilationElement *where,string msg) {
-  compile_error(where,msg); return (Signature*)dummy("Signature",where);
+  compile_error(where,msg);
+  return &dynamic_cast<Signature &>(*dummy("Signature",where));
 }
 SExpr* sexp_err(CompilationElement *where,string msg) {
-  compile_error(where,msg); return (SExpr*)dummy("SExpr",where);
+  compile_error(where,msg);
+  return &dynamic_cast<SExpr &>(*dummy("SExpr",where));
 }
 
 
@@ -86,7 +92,7 @@ void populate_specials() {
 
 bool is_special(SExpr* s) {
   if(!s->isSymbol()) return false;
-  return special_tokens.count(((SE_Symbol*)s)->name);
+  return special_tokens.count(dynamic_cast<SE_Symbol &>(*s).name);
 }
 
 // tokens that need to be always available to the interpreter, for 
@@ -132,7 +138,8 @@ map<string,Operator*> Env::core_ops;
 void Env::record_core_ops(Env* toplevel) {
   map<string,CompilationElement*>::iterator i;
   for(i=toplevel->bindings.begin();i!=toplevel->bindings.end();i++)
-    if(i->second->isA("Operator")) core_ops[i->first]=(Operator*)i->second;
+    if(i->second->isA("Operator"))
+      core_ops[i->first]=&dynamic_cast<Operator &>(*i->second);
 }
 Operator* Env::core_op(string name) {
   if(!core_ops.count(name)) ierror("Compiler missing core operator '"+name+"'");
@@ -146,7 +153,7 @@ Operator* Env::core_op(string name) {
 
 ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
   if(s->isSymbol()) {
-    string name = ((SE_Symbol*)s)->name;
+    const string &name = dynamic_cast<SE_Symbol &>(*s).name;
     if(name=="any") { return new ProtoType();
     } else if(name=="local") { return new ProtoLocal();
     } else if(name=="tuple") { return new ProtoTuple();
@@ -160,16 +167,17 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
     } else { return type_err(s,"Unknown type "+s->to_str());
     }
   } else if(s->isList()) {
-    SE_List* sl = (SE_List*)s;
+    SE_List* sl = &dynamic_cast<SE_List &>(*s);
     if(!sl->op()->isSymbol()) 
       return type_err(s,"Compound type must start with symbol: "+ce2s(s));
-    string name = ((SE_Symbol*)sl->op())->name;
+    const string &name = dynamic_cast<SE_Symbol &>(*sl->op()).name;
     if(name=="tuple" || name=="vector") {
       ProtoTuple* t;
       if(name=="tuple") t=new ProtoTuple(true); else t=new ProtoVector(true);
       for(int i=1;i<sl->len();i++) {
         SExpr* subex = (*sl)[i];
-        if(subex->isSymbol() && ((SE_Symbol*)subex)->name=="&rest") {
+        if(subex->isSymbol()
+           && dynamic_cast<SE_Symbol &>(*subex).name=="&rest") {
           t->bounded=false; continue;
         }
         ProtoType* sub = sexp_to_type(subex);
@@ -193,7 +201,7 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
       return type_err(s,"Unknown type "+s->to_str());
     }
   } else { // scalars specify ProtoScalar literals
-    return new ProtoScalar(((SE_Scalar*)s)->value);
+    return new ProtoScalar(dynamic_cast<SE_Scalar &>(*s).value);
   }
 }
 
@@ -201,7 +209,7 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
 // correctly formatted) without actually trying to interpret
 bool ProtoInterpreter::sexp_is_type(SExpr* s) {
   if(s->isSymbol()) {
-    string name = ((SE_Symbol*)s)->name;
+    const string &name = dynamic_cast<SE_Symbol &>(*s).name;
     if(name=="any") return true;
     if(name=="local") return true;
     if(name=="tuple") return true;
@@ -213,9 +221,9 @@ bool ProtoInterpreter::sexp_is_type(SExpr* s) {
     if(name=="lambda" || name=="fun") return true;
     if(name=="field") return true;
   } else if(s->isList()) {
-    SE_List* sl = (SE_List*)s;
+    SE_List* sl = &dynamic_cast<SE_List &>(*s);
     if(!sl->op()->isSymbol()) return false;
-    string name = ((SE_Symbol*)sl->op())->name;
+    const string &name = dynamic_cast<SE_Symbol &>(*sl->op()).name;
     if(name=="tuple" || name=="vector") return true;
     if(name=="lambda" || name=="fun") return true;
     if(name=="field") return true;
@@ -232,24 +240,28 @@ bool ProtoInterpreter::sexp_is_type(SExpr* s) {
 // gensyms give guaranteed unique names, used to prevent variable capture
 int MacroOperator::gensym_count=0;
 bool is_gensym(SE_Symbol* s) { return s->name[0]=='?'; }
-bool is_gensym(SExpr* s) { return s->isSymbol() && is_gensym((SE_Symbol*)s); }
-SE_Symbol* make_gensym(string root) {
-  size_t breakloc = root.rfind("~"); // try to strip previous gensym #s
-  if(breakloc!=string::npos && str_is_number(root.substr(breakloc+1).c_str()))
-    root = root.substr(0,breakloc);
-  return new SE_Symbol(root+"~"+int2str(MacroOperator::gensym_count++));
+bool is_gensym(SExpr* s)
+{ return s->isSymbol() && is_gensym(&dynamic_cast<SE_Symbol &>(*s)); }
+
+SE_Symbol *make_gensym(const string &root) {
+  string r = root;
+  size_t breakloc = r.rfind("~"); // try to strip previous gensym #s
+  if(breakloc!=string::npos && str_is_number(r.substr(breakloc+1).c_str()))
+    r = r.substr(0,breakloc);
+  return new SE_Symbol(r+"~"+int2str(MacroOperator::gensym_count++));
 }
 
 // Macro signatures are simpler because they are syntactic, not semantic
 Signature* ProtoInterpreter::sexp_to_macro_sig(SExpr* s) {
   if(!s->isList()) return sig_err(s,"Signature not a list: "+s->to_str());
-  SE_List* sl = (SE_List*)s;  Signature* sig = new Signature(s);
+  SE_List* sl = &dynamic_cast<SE_List &>(*s);
+  Signature* sig = new Signature(s);
   int stage = 0; // 0=required, 1=optional, 2=rest
   vector<SExpr*>::iterator it;
   for(it=sl->children.begin(); it<sl->children.end(); it++) {
     if(!(*it)->isSymbol()) 
       return sig_err(s,"Bad signature structure: "+s->to_str());
-    string name = ((SE_Symbol*)*it)->name;
+    const string &name = dynamic_cast<SE_Symbol &>(*(*it)).name;
     if(name=="&optional") {
       if(stage>0) return sig_err(s,"Bad signature structure: "+s->to_str());
       stage=1; continue;
@@ -273,7 +285,7 @@ Signature* ProtoInterpreter::sexp_to_macro_sig(SExpr* s) {
 Macro* ProtoInterpreter::sexp_to_macro(SE_List* s, Env *env) {
   if(!(*s)[1]->isSymbol()) 
     return macro_err(s,"Bad macro name: "+(*s)[1]->to_str());
-  string name = ((SE_Symbol*)(*s)[1])->name;
+  const string &name = dynamic_cast<SE_Symbol &>(*(*s)[1]).name;
   Macro* m;
   if(s->len()==3) { // symbol-style macro
     if(is_special((*s)[2])) 
@@ -316,33 +328,41 @@ SExpr* ProtoInterpreter::expand_macro(MacroOperator* m, SE_List* call) {
 // walks through, copying (and inheriting attributes)
 SExpr* ProtoInterpreter::macro_substitute(SExpr* src, Env* e, SE_List* wrapper) {
   if(is_gensym(src)) { // substitute with a gensym for this instance
-    SE_Symbol *groot = (SE_Symbol*)src;
-    SExpr* gensym = (SExpr*)e->lookup(groot->name);
-    if(!gensym) { // if gensym not yet created, make & bind it
-      gensym = make_gensym(groot->name); gensym->inherit_attributes(src);
-      e->bind(groot->name,gensym);
+    SE_Symbol *groot = &dynamic_cast<SE_Symbol &>(*src);
+    SExpr *gensym;
+    CompilationElement *element = e->lookup(groot->name);
+    if (element == 0) {
+      gensym = make_gensym(groot->name);
+      gensym->inherit_attributes(src);
+      e->bind(groot->name, gensym);
+    } else {
+      gensym = &dynamic_cast<SExpr &>(*element);
     }
     return gensym;
   } else if(src->isList()) { // SE_List
-    SE_List *srcl = (SE_List*)src;
-    string opname = (*srcl)[0]->isSymbol() ? ((SE_Symbol*)(*srcl)[0])->name :"";
+    SE_List *srcl = &dynamic_cast<SE_List &>(*src);
+    string opname
+      = ((*srcl)[0]->isSymbol() ? dynamic_cast<SE_Symbol &>(*(*srcl)[0]).name
+         : "");
     if(opname=="comma") {
       if(srcl->len()!=2 || !(*srcl)[1]->isSymbol())
         return sexp_err(src,"Bad comma form: "+src->to_str());
-      SE_Symbol* sn = (SE_Symbol*)(*srcl)[1];
-      return ((SExpr*)e->lookup(sn,"SExpr"))->copy(); // insert source text
+      SE_Symbol* sn = &dynamic_cast<SE_Symbol &>(*(*srcl)[1]);
+      // insert source text
+      return dynamic_cast<SExpr &>(*e->lookup(sn,"SExpr")).copy();
     } else if(opname=="comma-splice") {
       if(wrapper==NULL)
         return sexp_err(src,"Comma-splice "+(*srcl)[0]->to_str()+" w/o list");
       if(srcl->len()!=2 || !(*srcl)[1]->isSymbol())
         return sexp_err(src,"Bad comma form: "+src->to_str());
-      SE_Symbol* sn = (SE_Symbol*)(*srcl)[1];
-      SE_List* value = (SE_List*)e->lookup(sn,"SE_List");
+      SE_Symbol* sn = &dynamic_cast<SE_Symbol &>(*(*srcl)[1]);
+      SE_List* value = &dynamic_cast<SE_List &>(*e->lookup(sn,"SE_List"));
       for(int i=0;i<value->len();i++) 
         wrapper->add((*value)[i]->copy());
       return NULL; // comma-splices return null
     } else { // otherwise, just substitute each child
-      SE_List *l = new SE_List(), *srcl = (SE_List*)src;
+      SE_List *l = new SE_List();
+      SE_List *srcl = &dynamic_cast<SE_List &>(*src);
       for(int i=0;i<srcl->len();i++) {
         SExpr* sub = macro_substitute((*srcl)[i],e,l);
         if(sub!=NULL) l->add(sub); // comma-splices add selves and return null
@@ -367,7 +387,7 @@ pair<string,ProtoType*> ProtoInterpreter::parse_argument(SE_List_iter* i, int n,
   if(b) { // specified as name|type
     if(sexp_is_type(a))
       compile_error(a,"Parameter name cannot be a type");
-    if(a->isSymbol()) name = ((SE_Symbol*)a)->name;
+    if(a->isSymbol()) name = dynamic_cast<SE_Symbol &>(*a).name;
     else compile_error(a,"Parameter name not a symbol: "+ce2s(a));
     type = sexp_to_type(b);
   } else { // determine name or type by parsing
@@ -375,7 +395,7 @@ pair<string,ProtoType*> ProtoInterpreter::parse_argument(SE_List_iter* i, int n,
       if(anonymous_ok) type = sexp_to_type(a);
       else compile_error(a,"Function parameters must be named: "+ce2s(a));
     }
-    else if(a->isSymbol()) name = ((SE_Symbol*)a)->name;
+    else if(a->isSymbol()) name = dynamic_cast<SE_Symbol &>(*a).name;
     else compile_error(a,"Parameter name not a symbol: "+ce2s(a));
   }
   // fall back to defaults where needed
@@ -395,7 +415,7 @@ Signature* ProtoInterpreter::sexp_to_sig(SExpr* s, Env* bindloc, CompoundOp* op,
   Signature* sig = new Signature(s);
   int stage = 0; // 0=required, 1=optional, 2=rest
   int varid = -1; // index to current parameter
-  SE_List_iter li((SE_List*)s);
+  SE_List_iter li(&dynamic_cast<SE_List &>(*s));
   while(li.has_next()) {
     if(li.on_token("&optional")) {
       if(stage>0) return sig_err(s,"Misplaced signature '&optional': "+ce2s(s));
@@ -427,20 +447,22 @@ void parse_primitive_attributes(SE_List_iter* li,Primitive* p) {
   while(li->has_next()) {
     SExpr* v = li->get_next();
     if(!v->isKeyword()) {compile_error(v,v->to_str()+" not a keyword"); return;}
-    if(p->attributes.count(((SE_Symbol*)v)->name))
+    const string &name = dynamic_cast<SE_Symbol &>(*v).name;
+    if(p->attributes.count(name))
       compile_warn("Primitive "+p->name+" overriding duplicate '"
-                   +((SE_Symbol*)v)->name+"' attribute");
+                   +name+"' attribute");
     if(li->has_next() && !li->peek_next()->isKeyword()) {
-      p->attributes[((SE_Symbol*)v)->name]=new SExprAttribute(li->get_next());
+      p->attributes[name]=new SExprAttribute(li->get_next());
     } else {
-      p->attributes[((SE_Symbol*)v)->name]=new MarkerAttribute(true);
+      p->attributes[name]=new MarkerAttribute(true);
     }
   }
 }
 
 Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
   if(s->isSymbol()) {
-    return (Operator*)env->lookup((SE_Symbol*)s,"Operator");
+    SE_Symbol *symbol = &dynamic_cast<SE_Symbol &>(*s);
+    return &dynamic_cast<Operator &>(*env->lookup(symbol,"Operator"));
   } else if(s->isScalar()) {return op_err(s,s->to_str()+" is not an Operator");
   } else { // it must be a list
     SE_List_iter li(s);
@@ -473,8 +495,8 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
       V4 << "Creating new primitive "<<pname<<endl;
       Signature* sig = sexp_to_sig(li.get_next());
       sig->output = parse_argument(&li,-1,sig).second;
-      Operator* p  = new Primitive(s,pname,sig);
-      parse_primitive_attributes(&li,(Primitive*)p); // add in attributes
+      Primitive* p  = new Primitive(s,pname,sig);
+      parse_primitive_attributes(&li,p); // add in attributes
       env->force_bind(pname,p); return p;
     } else {
       // check if it's a macro
@@ -483,12 +505,14 @@ Operator* ProtoInterpreter::sexp_to_op(SExpr* s, Env *env) {
         V4 << "Expanding macro "<<ce2s(ce)<<endl;
         SExpr* new_expr;
         if(ce->isA("MacroOperator")) {
-          new_expr = expand_macro((MacroOperator*)ce,(SE_List*)s);
+          MacroOperator *macro = &dynamic_cast<MacroOperator &>(*ce);
+          new_expr = expand_macro(macro, &dynamic_cast<SE_List &>(*s));
           if(new_expr->attributes.count("DUMMY")) // Mark of a failure
             return op_err(s,"Macro expansion failed on "+s->to_str());
         } else { // it's a MacroSymbol
           new_expr = s->copy();
-          ((SE_List*)new_expr)->children[0]=((Macro*)ce)->pattern;
+          dynamic_cast<SE_List &>(*new_expr).children[0]
+            = dynamic_cast<Macro &>(*ce).pattern;
         }
         return sexp_to_op(new_expr,env);
       }
@@ -505,14 +529,14 @@ Field* ProtoInterpreter::let_to_graph(SE_List* s, AM* space, Env *env,
   Env* child = new Env(env);
   vector<SExpr*>::iterator let_exps = s->args();
   // collect let declarations
-  SE_List* decls = (SE_List*)*let_exps++;
+  SE_List* decls = &dynamic_cast<SE_List &>(*(*let_exps++));
   for(int i=0;i<decls->len();i++) {
     if((*decls)[i]->isList()) {
-      SE_List* d = (SE_List*)(*decls)[i];
+      SE_List* d = &dynamic_cast<SE_List &>(*(*decls)[i]);
       if(d->len()==2 && (*d)[0]->isSymbol()) {
         V4 << "Creating let variable "<<ce2s((*d)[0])<<endl;
         Field* f = sexp_to_graph((*d)[1],space,(incremental?child:env));
-        child->bind(((SE_Symbol*)(*d)[0])->name,f);
+        child->bind(dynamic_cast<SE_Symbol &>(*(*d)[0]).name, f);
       } else compile_error(d,"Malformed let statement: "+d->to_str());
     } else compile_error((*decls)[i],"Malformed let statement: "+
                          (*decls)[i]->to_str());
@@ -531,10 +555,11 @@ Field* ProtoInterpreter::let_to_graph(SE_List* s, AM* space, Env *env,
 bool bind_letfed_vars(SExpr* s, Field* val, AM* space, Env* env) {
   bool ok=false;
   if(s->isSymbol()) { // base case: just bind the variable
-    env->bind(((SE_Symbol*)s)->name,val); ok=true;
+    env->bind(dynamic_cast<SE_Symbol &>(*s).name,val); ok=true;
   } else if(s->isList()) { // tuple variable?
-    SE_List *sl = (SE_List*)s;
-    if(sl->op()->isSymbol() && ((SE_Symbol*)sl->op())->name=="tup") {
+    SE_List *sl = &dynamic_cast<SE_List &>(*s);
+    if(sl->op()->isSymbol()
+       && dynamic_cast<SE_Symbol &>(*sl->op()).name=="tup") {
       ok=true;
       for(int i=1;i<sl->len();i++) {
         // make element accessor
@@ -571,11 +596,12 @@ Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env,
   }
   // collect & bind let declarations, verify syntax
   vector<SExpr*>::iterator let_exps = s->args();
-  SE_List* decls = (SE_List*)*let_exps++;
+  SE_List* decls = &dynamic_cast<SE_List &>(*(*let_exps++));
   vector<OperatorInstance*> vars;
   for(int i=0;i<decls->len();i++) {
-    if((*decls)[i]->isList() && ((SE_List*)(*decls)[i])->len()==3) {
-      SE_List* d = (SE_List*)(*decls)[i];
+    if((*decls)[i]->isList()
+       && dynamic_cast<SE_List &>(*(*decls)[i]).len()==3) {
+      SE_List* d = &dynamic_cast<SE_List &>(*(*decls)[i]);
       V4 << "Creating feedback variable "<<ce2s((*d)[0])<<endl;
       // create the variable & bind it
       OI *varmux, *delay;
@@ -605,7 +631,7 @@ Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env,
   }
   // second pass to evalute update expressions
   for(int i=0;i<decls->len();i++) {
-    SE_List* d = (SE_List*)(*decls)[i];
+    SE_List* d = &dynamic_cast<SE_List &>(*(*decls)[i]);
     Field* up_value = sexp_to_graph((*d)[2],update,delayed);
     if(!no_init) {
       bind_letfed_vars(d->op(),vars[i]->output,space,child);
@@ -639,11 +665,11 @@ ProtoType* ProtoInterpreter::symbolic_literal(string name) {
 
 ProtoLocal* quote_to_literal_type(SExpr* s) {
   if(s->isSymbol()) {
-    return new ProtoSymbol(((SE_Symbol*)s)->name);
+    return new ProtoSymbol(dynamic_cast<SE_Symbol &>(*s).name);
   } else if(s->isScalar()) {
-    return new ProtoScalar(((SE_Scalar*)s)->value);
+    return new ProtoScalar(dynamic_cast<SE_Scalar &>(*s).value);
   } else { // SE_List
-    SE_List* sl = (SE_List*)s;
+    SE_List* sl = &dynamic_cast<SE_List &>(*s);
     vector<ProtoType*> subs; bool all_scalar=true;
     for(int i=0;i<sl->len();i++) {
       ProtoType* sub = quote_to_literal_type((*sl)[i]); subs.push_back(sub);
@@ -660,15 +686,15 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
   V3 << "Interpret: " << ce2s(s) << " in " << ce2s(space) << endl;
   if(s->isSymbol()) {
     // All other symbols are looked up in the environment
-    CompilationElement* elt = env->lookup(((SE_Symbol*)s)->name);
+    CompilationElement* elt = env->lookup(dynamic_cast<SE_Symbol &>(*s).name);
     if(elt==NULL) { 
       V4 << "Symbolic literal?\n";
-      ProtoType* val = symbolic_literal(((SE_Symbol*)s)->name);
+      ProtoType* val = symbolic_literal(dynamic_cast<SE_Symbol &>(*s).name);
       if(val) { V4 << "- Yes\n"; return dfg->add_literal(val,space,s); }
       return field_err(s,space,"Couldn't find definition of "+s->to_str());
     } else if(elt->isA("Field")) { 
       V4 << "Found field: " << ce2s(elt) << endl;
-      Field* f = (Field*)elt;
+      Field* f = &dynamic_cast<Field &>(*elt);
       if(f->domain==space) { return f;
       } if(f->domain->child_of(space)) {
         ierror(s,"Direct reference to child space in parent:"+ce2s(s));
@@ -680,22 +706,26 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
       }
     } else if(elt->isA("Operator")) {
       V4 << "Lambda literal: " << ce2s(elt) << endl;
-      return dfg->add_literal(new ProtoLambda((Operator*)elt),space,s);
+      return dfg->add_literal(new ProtoLambda(&dynamic_cast<Operator &>(*elt)),
+          space, s);
     } else if(elt->isA("MacroSymbol")) {
       V4 << "Macro: " << ce2s(elt) << endl;
-      return sexp_to_graph(((MacroSymbol*)elt)->pattern,space,env);
+      return
+        sexp_to_graph(dynamic_cast<MacroSymbol &>(*elt).pattern,space,env);
     } else return field_err(s,space,"Can't interpret "+elt->type_of()+" "+
                             s->to_str()+" as field");
   } else if(s->isScalar()) { // Numbers are literals
     V4 << "Numeric literal.\n";
-    return dfg->add_literal(new ProtoScalar(((SE_Scalar*)s)->value),space,s);
+    return
+      dfg->add_literal(new ProtoScalar(dynamic_cast<SE_Scalar &>(*s).value),
+          space,s);
   } else { // it must be a list
     // Lists are special forms or function applicatios
-    SE_List* sl = (SE_List*)s;
+    SE_List* sl = &dynamic_cast<SE_List &>(*s);
     if(sl->len()==0) return field_err(sl,space,"Expression has no members"); 
     if(sl->op()->isSymbol()) { 
       // check if it's a special form
-      string opname = ((SE_Symbol*)sl->op())->name;
+      string opname = dynamic_cast<SE_Symbol &>(*sl->op()).name;
       if(opname=="let") { return let_to_graph(sl,space,env,false);
       } else if(opname=="let*") { return let_to_graph(sl,space,env,true);
       } else if(opname=="all") { // evaluate children, returning last field
@@ -710,7 +740,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         if(!def->isSymbol())
           return field_err(sl,space,"def name not a symbol: "+def->to_str());
         Field* f = sexp_to_graph(exp,space,env);
-        env->force_bind(((SE_Symbol*)def)->name,f);
+        env->force_bind(dynamic_cast<SE_Symbol &>(*def).name,f);
         V4 << "Defined variable: " << ce2s(f) << endl;
         return f;
       } else if(opname=="def" || opname=="primitive" || 
@@ -727,7 +757,8 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         } else if(!p->isA("Primitive")) {
           compile_error(sl,"Can't annotate '"+name+"': not a primitive");
         } else {
-          parse_primitive_attributes(&li,(Primitive*)p); // add in attributes
+          // add in attributes
+          parse_primitive_attributes(&li, &dynamic_cast<Primitive &>(*p));
         }
         return NULL; // annotations are like primitives: nothing returned
       } else if(opname=="letfed" || opname=="letfed+") {
@@ -740,7 +771,8 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         for(int j=1;j<sl->len();j++) {
           SExpr *ex = (*sl)[j];
           V4 << "Including file: "<<ce2s(ex)<<endl;
-          if(ex->isSymbol()) interpret_file(((SE_Symbol*)ex)->name);
+          if(ex->isSymbol())
+            interpret_file(dynamic_cast<SE_Symbol &>(*ex).name);
           else compile_error(ex,"File name "+ex->to_str()+" is not a symbol");
         }
         return NULL;
@@ -758,12 +790,13 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         V4 << "Applying macro\n";
         SExpr* new_expr;
         if(ce->isA("MacroOperator")) {
-          new_expr = expand_macro((MacroOperator*)ce,sl);
+          new_expr = expand_macro(&dynamic_cast<MacroOperator &>(*ce),sl);
           if(new_expr->attributes.count("DUMMY")) // Mark of a failure
             return field_err(s,space,"Macro expansion failed on "+s->to_str());
         } else { // it's a MacroSymbol
           new_expr = sl->copy();
-          ((SE_List*)new_expr)->children[0]=((Macro*)ce)->pattern;
+          dynamic_cast<SE_List &>(*new_expr).children[0]
+            = dynamic_cast<Macro &>(*ce).pattern;
         }
         return sexp_to_graph(new_expr,space,env);
       }

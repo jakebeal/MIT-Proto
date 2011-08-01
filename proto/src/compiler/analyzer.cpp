@@ -64,7 +64,7 @@ SExpr* get_sexp(CE* src, string attribute) {
   Attribute* a = src->attributes[attribute];
   if(a==NULL || !a->isA("SExprAttribute"))
     return sexp_err(src,"Couldn't get expression for: "+a->to_str());
-  return ((SExprAttribute*)a)->exp;
+  return dynamic_cast<SExprAttribute &>(*a).exp;
 }
 
 /**
@@ -111,7 +111,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     DEBUG_FUNCTION(__FUNCTION__);
     if(!op->isA("CompoundOp"))
       return type_err(op,"'return' used on non-compound operator:"+ce2s(op));
-    return ((CompoundOp*)op)->output->range;
+    return dynamic_cast<CompoundOp &>(*op).output->range;
   }
 
   ProtoTuple* TypeConstraintApplicator::get_all_args(OperatorInstance* oi) {
@@ -416,7 +416,8 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     V4<<"Getting type reference for "<<ce2s(ref)<<endl;
     if(ref->isSymbol()) {
       // Named input/output argument:
-      int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
+      int n = oi->op->signature->parameter_id(&dynamic_cast<SE_Symbol &>(*ref),
+          false);
       if(n>=0) return get_nth_arg(oi,n);
       if(n==-1) return oi->output->range;
       // "args": a tuple of argument types
@@ -696,7 +697,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     ProtoType* indexType;
     bool changedScalar = false;
     if(indexExpr->isScalar()) {
-      indexType = new ProtoScalar(((SE_Scalar*)indexExpr)->value);
+      indexType = new ProtoScalar(dynamic_cast<SE_Scalar &>(*indexExpr).value);
       V4 << "nth assertion found constant index: " << ce2s(indexType) << endl;
     } else {
       indexType = ProtoType::gcs(get_ref(oi,indexExpr),new ProtoScalar());
@@ -749,7 +750,8 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
   bool TypeConstraintApplicator::isRestElement(OperatorInstance* oi, SExpr* ref) {
     if(!ref->isSymbol()) return false;
     Signature* s = oi->op->signature;
-    return s->rest_input && (s->parameter_id((SE_Symbol*)ref)==s->n_fixed());
+    return s->rest_input
+      && (s->parameter_id(&dynamic_cast<SE_Symbol &>(*ref)) == s->n_fixed());
   }
 
   /**
@@ -798,7 +800,8 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     V4<<"Asserting type "<<ce2s(value)<<" for reference "<<ce2s(ref)<<endl;
     if(ref->isSymbol()) {
       // Named input/output argument:
-      int n = oi->op->signature->parameter_id(((SE_Symbol*)ref),false);
+      int n = oi->op->signature->parameter_id(&dynamic_cast<SE_Symbol &>(*ref),
+          false);
       if(n>=0) return assert_nth_arg(oi,n,value);
       if(n==-1) return assert_range(oi->output,value);
       // "args": a tuple of argument types
@@ -1016,7 +1019,8 @@ class TypePropagator : public IRPropagator {
     ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
     if(!newtmp) {
       V3 << "Attempting to repair conflict with producer "<<ce2s(tmp)<<endl;
-      if(!repair_conflict(f,make_pair((OI*)NULL,-1),tmp,f->range)) {
+      if(!repair_conflict(f, make_pair(static_cast<OI *>(0), -1), tmp,
+          f->range)) {
         type_err(f,"incompatible type and signature "+f->to_str()+": "+
                  ce2s(tmp)+" vs. "+ce2s(f->range));
         return;
@@ -1099,7 +1103,7 @@ class TypePropagator : public IRPropagator {
       // ALSO: find GCS of producer, consumers, & field values
     } else if(oi->op->isA("Parameter")) { // constrain vs all calls, signature
       // find LCS of input types
-      Parameter* p = (Parameter*)oi->op;
+      Parameter* p = &dynamic_cast<Parameter &>(*oi->op);
       OIset *srcs = &root->funcalls[p->container];
       ProtoType* inputs = NULL;
       for_set(OI*,*srcs,i) {
@@ -1115,7 +1119,7 @@ class TypePropagator : public IRPropagator {
       if(!newtype) {compile_error(oi,"type conflict for "+oi->to_str());return;}
       maybe_set_range(oi->output,newtype);
     } else if(oi->op->isA("CompoundOp")) { // constrain against params & output
-      ProtoType* rtype = ((CompoundOp*)oi->op)->output->range;
+      ProtoType* rtype = dynamic_cast<CompoundOp &>(*oi->op).output->range;
       maybe_set_range(oi->output,rtype);
     } else if(oi->op->isA("Literal")) { // ignore: already be fully resolved
       // ignored
@@ -1215,8 +1219,10 @@ class ConstantFolder : public IRPropagator {
   void act(OperatorInstance* oi) {
     if(!oi->op->isA("Primitive")) return; // only operates on primitives
     //if(oi->output->range->isLiteral()) return; // might change...
-    string name = ((Primitive*)oi->op)->name;
-    if(oi->op->isA("FieldOp")) name = ((FieldOp*)oi->op)->base->name;
+    const string &name
+      = ((oi->op->isA("FieldOp"))
+         ? dynamic_cast<FieldOp &>(*oi->op).base->name
+         : dynamic_cast<Primitive &>(*oi->op).name);
     // handled by type inference: elt, min, max, tup, all argk pass-throughs
     if(name=="mux") { 
       if(oi->inputs[0]->range->isLiteral()) { // case 1: arg0 is literal
@@ -1394,7 +1400,7 @@ class Literalizer : public IRPropagator {
 
   void act(OperatorInstance* oi) {
     if(!oi->op->isA("Primitive")) return; // only operates on primitives
-    string name = ((Primitive*)oi->op)->name;
+    string name = dynamic_cast<Primitive &>(*oi->op).name;
     // change "apply" of literal lambda into just an OI of that operator
     if(name=="apply") {
       if(oi->inputs[0]->range->isA("ProtoLambda") && 
@@ -1508,7 +1514,7 @@ class FunctionInlining : public IRPropagator {
     if(oi->recursive()) return; // don't inline recursive
     // check that either the body or the container is small
     Fset bodyfields;
-    int bodysize = ((CompoundOp*)oi->op)->body->size();
+    int bodysize = dynamic_cast<CompoundOp &>(*oi->op).body->size();
     int containersize = oi->output->domain->root()->size();
     if(threshold!=-1 && bodysize>threshold && containersize>threshold) return;
     

@@ -25,7 +25,7 @@ ProtoType* ProtoType::clone(ProtoType* t) {
     ProtoTuple* newt = new ProtoTuple(T_TYPE(t));
     return newt; // inheritance handled in constructor
   } else if(t->type_of()=="ProtoSymbol") {
-    ProtoSymbol* oldt = (ProtoSymbol*)t;
+    ProtoSymbol* oldt = &dynamic_cast<ProtoSymbol &>(*t);
     ProtoSymbol* newt = 
       (oldt->constant? new ProtoSymbol(oldt->value) : new ProtoSymbol());
     newt->inherit_attributes(t); return newt;

@@ -128,7 +128,7 @@ static void print_list_inner(List *list, std::ostream &stream) {
 
   if(listp(list->getTail())) {
     stream << " ";
-    print_list_inner((List*)list->getTail(), stream);
+    print_list_inner(&dynamic_cast<List &>(*list->getTail()), stream);
   } else {
     stream << " . ";
     list->getTail()->print(stream);
@@ -156,7 +156,7 @@ List *lst_rev (List *_list) {
     if (l == lisp_nil) {
       return r;
     } else {
-      List *tail = (List*)l->getTail();
+      List *tail = &dynamic_cast<List &>(*l->getTail());
       l->setTail(r);
       r = l;
       l = tail;
@@ -170,30 +170,30 @@ int lst_len(List *e) {
     if (e == lisp_nil)
       return i;
     else 
-      e = (List*)e->getTail();
+      e = &dynamic_cast<List &>(*e->getTail());
   }
 }
 
 Obj *lst_elt(List *e, int offset) {
   int i;
   for (i = 0; i < offset; i++)
-    e = (List*)e->getTail();
-  return (Obj*)e->getHead();
+    e = &dynamic_cast<List &>(*e->getTail());
+  return &dynamic_cast<Obj &>(*e->getHead());
 }
 
 Obj *lst_head (List *e) {
   check_type(e, LISP_LIST);
-  return ((List*)e)->getHead();
+  return dynamic_cast<List &>(*e).getHead();
 }
 
 List *lst_tail (List *e) {
   check_type(e, LISP_LIST);
-  return (List*)((List*)e)->getTail();
+  return &dynamic_cast<List &>(*dynamic_cast<List &>(*e).getTail());
 }
 
 const std::string &sym_name(Obj *o) {
   check_type(o, LISP_SYMBOL);
-  return ((Symbol*)o)->getName();
+  return dynamic_cast<Symbol &>(*o).getName();
 }
 
 
@@ -209,7 +209,7 @@ List *_list (Obj *head, ...) {
     o = va_arg(ap, Obj*);
     if (o == NULL) break;
     l->setTail(new List(o, lisp_nil));
-    l = (List*)l->getTail();
+    l = &dynamic_cast<List &>(*l->getTail());
   }
   return lst;
 }

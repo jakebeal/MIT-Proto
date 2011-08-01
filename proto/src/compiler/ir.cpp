@@ -11,7 +11,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "nicenames.h"
 #include <algorithm>
 
-extern SE_Symbol* make_gensym(string root); // from interpreter
+extern SE_Symbol *make_gensym(const string &root); // from interpreter
 
 /*****************************************************************************
  *  Amorphous Mediums                                                        *

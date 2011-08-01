@@ -186,8 +186,8 @@ string print_raw_chain(Instruction* chain, string line, int line_len,
                        ostream* out, int compactness, bool recursed=false) {
   while(chain) {
     if(chain->isA("Block")) {
-      line = print_raw_chain(((Block*)chain)->contents,line,line_len,
-                             out,compactness,true);
+      line = print_raw_chain(dynamic_cast<Block &>(*chain).contents, line,
+          line_len, out, compactness, true);
       chain = chain->next;
     } else {
       string block = chain->to_str(); chain = chain->next; 
@@ -311,7 +311,10 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
     bool global = store->isA("Global"); // else is a let
     this->store=store; store->dependents.insert(this);
     offset=-1; vec_op=false; 
-    if(!global) { op=REF_OP; ((iLET*)store)->usages.insert(this); }
+    if (!global) {
+      op = REF_OP;
+      dynamic_cast<iLET &>(*store).usages.insert(this);
+    }
   }
   // vector op form
   Reference(OPCODE op, Instruction* store,OI* source) : Instruction(op){ 
@@ -430,9 +433,10 @@ void InstructionPropagator::queue_nbrs(Instruction* i, int marks) {
  }
 
 void InstructionPropagator::queue_chain(Instruction* chain) {
-  while(chain) { 
-    worklist_i.insert(chain); 
-    if(chain->isA("Block")) queue_chain(((Block*)chain)->contents);
+  while(chain) {
+    worklist_i.insert(chain);
+    if (chain->isA("Block"))
+      queue_chain(dynamic_cast<Block &>(*chain).contents);
     chain=chain->next;
   }
 }
@@ -483,9 +487,11 @@ public:
         } else break;
       } else if(chain->isA("Block")) { // walk through subs
         ss+="{ ";es+="{ ";
-        block_nesting.push(chain); chain = ((Block*)chain)->contents; continue;
+        block_nesting.push(chain);
+        chain = dynamic_cast<Block &>(*chain).contents;
+        continue;
       } else if(chain->isA("Reference")) { // reference depths in environment:
-        Reference* r = (Reference*)chain;
+        Reference* r = &dynamic_cast<Reference &>(*chain);
         if(r->store->isA("iLET") && env_height.count(r->store) &&
            env_height.count(r)) {
           int rh = env_height[r], sh = env_height[r->store];
@@ -508,7 +514,7 @@ public:
        print_chain(chain_start(root), cpout);
        ierror("Stack resolves to non-zero height: "+i2s(final));
     }
-    iDEF_VM* dv = (iDEF_VM*)root;
+    iDEF_VM* dv = &dynamic_cast<iDEF_VM &>(*root);
     if(dv->max_stack!=max_stack || dv->max_env!=max_env) {
       V2 << "Changed: Stack: " << dv->max_stack << " -> " << max_stack
          << " Env: " << dv->max_env << " -> " << max_env << endl;
@@ -603,9 +609,10 @@ public:
       // is it marked as being in a branch?
       V5 << "Considering last reference: "<<ce2s(last)<<endl;
       if(last->marked("~Branch~End")) {
-        CE* inst = ((CEAttr*)last->attributes["~Branch~End"])->value;
+        CE* inst
+          = dynamic_cast<CEAttr &>(*last->attributes["~Branch~End"]).value;
         V5 << "Branch end ref: "<<ce2s(inst)<<endl;
-        dest_sets[(Instruction*)inst].insert(sources[i]);
+        dest_sets[&dynamic_cast<Instruction &>(*inst)].insert(sources[i]);
       } else {
         V5 << "Default location: "<<ce2s(pointer)<<endl;
         dest_sets[pointer].insert(sources[i]);
@@ -632,7 +639,7 @@ public:
   }
   
   void act(Instruction* i) {
-    if(i->isA("iLET")) { iLET* l = (iLET*)i;
+    if(i->isA("iLET")) { iLET* l = &dynamic_cast<iLET &>(*i);
       if(l->pop!=NULL) return; // don't do it when pops are resolved
       vector<iLET*> sources; sources.push_back(l);
       V2 << "Considering a LET";
@@ -650,11 +657,13 @@ public:
         }
         if(pointer->isA("Block")) { // search for references in subs
           V3 << "v";
-          block_nesting.push(pointer); pointer = ((Block*)pointer)->contents;
+          block_nesting.push(pointer);
+          pointer = dynamic_cast<Block &>(*pointer).contents;
           continue;
         } else if(pointer->isA("iLET")) { // add subs in
           V3 << "\n Adding sub LET";
-          iLET* sub = (iLET*)pointer; sources.push_back(sub);
+          iLET* sub = &dynamic_cast<iLET &>(*pointer);
+          sources.push_back(sub);
           usages.push_back(sub->usages);
         } else if(pointer->isA("Reference")) { // it's somebody's reference?
           V3 << "\n Found reference...";
@@ -702,7 +711,7 @@ public:
   void print(ostream* out=0) { *out<<"ResolveISizes"; }
   void act(Instruction* i) {
     if(i->isA("iDEF_FUN")) {
-      iDEF_FUN *df = (iDEF_FUN*)i; 
+      iDEF_FUN *df = &dynamic_cast<iDEF_FUN &>(*i);
       bool ok=true; int size=1; // return's size
       Instruction* j = df->next;
       while(j!=df->ret) {
@@ -724,17 +733,18 @@ public:
       }
     }
     if(i->isA("Reference")) {
-      Reference* r = (Reference*)i;
+      Reference* r = &dynamic_cast<Reference &>(*i);
       if(r->offset==-1 && r->store->isA("Global") && 
-         ((Global*)r->store)->index >= 0) {
+         dynamic_cast<Global &>(*r->store).index >= 0) {
         V2<<"Global index to "<<ce2s(r->store)<<" is "<<
-          ((Global*)r->store)->index << endl;
-        r->set_offset(((Global*)r->store)->index);
+          dynamic_cast<Global &>(*r->store).index << endl;
+        r->set_offset(dynamic_cast<Global &>(*r->store).index);
         note_change(i);
       }
     } 
     if(i->isA("Branch")) {
-      Branch* b = (Branch*)i; Instruction* target = b->after_this;
+      Branch* b = &dynamic_cast<Branch &>(*i);
+      Instruction* target = b->after_this;
       V5<<"Sizing branch: "<<ce2s(b)<<" over "<<ce2s(target)<<endl;
       if(b->start_location()>=0 && target->start_location()>=0) {
         int diff = target->next_location() - b->next_location();
@@ -767,9 +777,10 @@ public:
   }
   void maybe_set_index(Instruction* i, int l) {
     g_max = max(g_max, l + 1);
-    if(((Global*)i)->index != l) { 
+    if(dynamic_cast<Global &>(*i).index != l) {
       V4 << "Setting index of "<<ce2s(i)<<" to "<<l<<endl;
-      ((Global*)i)->index=l; note_change(i);
+      dynamic_cast<Global &>(*i).index = l;
+      note_change(i);
     }
   }
   void maybe_set_reference(Reference* i,int index) {
@@ -787,31 +798,32 @@ public:
       { maybe_set_location(i,i->prev->next_location()); }
     if(i->isA("Global")) {
       Instruction *ptr = i->prev; // find previous global...
-      while(ptr && !ptr->isA("Global")) { ptr = ptr->prev; }
-      Global* g_prev = (Global*)ptr;
-      if(g_prev) {
+      while (ptr && !ptr->isA("Global"))
+        ptr = ptr->prev;
+      if (ptr) {
+        Global *g_prev = &dynamic_cast<Global &>(*ptr);
         ptr->dependents.insert(i); // make sure we'll get triggered when it sets
-        if(g_prev->index!=-1) maybe_set_index(i,g_prev->index+1); 
+        if(g_prev->index!=-1) maybe_set_index(i,g_prev->index+1);
       } else { maybe_set_index(i,0); }
     }
     //if we can resolve the function call to its global index
     if(i->isA("FunctionCall")) {
-       if(emitter->globalNameMap.count(((FunctionCall*)i)->compoundOp)) {
-          CompoundOp* compoundOp = ((FunctionCall*)i)->compoundOp;
+       CompoundOp *compoundOp = dynamic_cast<FunctionCall &>(*i).compoundOp;
+       if(emitter->globalNameMap.count(compoundOp)) {
           CompilationElement* ce = emitter->globalNameMap[compoundOp];
           int index = -1;
           if(ce && ce->isA("Global"))
-             index = ((Global*)ce)->index;
+             index = dynamic_cast<Global &>(*ce).index;
           if(index >= 0 && i->prev && i->prev->isA("Reference"))
-            maybe_set_reference((Reference*)i->prev,index);
+            maybe_set_reference(&dynamic_cast<Reference &>(*i->prev), index);
        }
     }
   }
   int g_max; // highest global index seen
   void preprop() { g_max = 0; }
   void postprop() {
-    iDEF_VM* dv = (iDEF_VM*)root;
-    if(dv->n_globals!=g_max) { 
+    iDEF_VM* dv = &dynamic_cast<iDEF_VM &>(*root);
+    if(dv->n_globals!=g_max) {
       V3 << "Setting global max from "<<dv->n_globals<<" to "<<g_max<<endl;
       dv->n_globals=g_max; any_changes|=true;
     }
@@ -829,7 +841,7 @@ public:
   void preprop(){ unresolved=false; n_states=n_exports=export_len=0; }
   void postprop() {
     if(unresolved) return; // only set VM state if all is resolved
-    iDEF_VM* dv = (iDEF_VM*)root;
+    iDEF_VM* dv = &dynamic_cast<iDEF_VM &>(*root);
     dv->n_states=n_states; dv->n_exports=n_exports; dv->export_len=export_len;
   }
   void act(Instruction* i) {
@@ -1638,7 +1650,8 @@ bool needs_let(Field* f) {
 */
 Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   if(memory.count(f))
-    { return new Reference((Instruction*)memory[f],f->producer); }
+    return
+      new Reference(&dynamic_cast<Instruction &>(*memory[f]), f->producer);
   OperatorInstance* oi = f->producer; Instruction* chain = NULL;
   // first, get all the inputs
   for(int i=0;i<oi->inputs.size();i++) 
@@ -1654,15 +1667,17 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     chain_i(&chain,primitive_to_instruction(oi));
   } else if(oi->op->isA("Literal")) { 
     V4 << "Literal is: " << ce2s(oi->op) << endl;
-    chain_i(&chain,literal_to_instruction(((Literal*)oi->op)->value,oi));
+    chain_i(&chain,
+        literal_to_instruction(dynamic_cast<Literal &>(*oi->op).value, oi));
   } else if(oi->op->isA("Parameter")) { 
     V4 << "Parameter is: " << ce2s(oi->op) << endl;
-    chain_i(&chain,parameter_to_instruction((Parameter*)oi->op));
+    chain_i(&chain,
+        parameter_to_instruction(&dynamic_cast<Parameter &>(*oi->op)));
   } else if(oi->op->isA("CompoundOp")) { 
     V4 << "Compound OP is: " << ce2s(oi->op) << endl;
-    CompoundOp* cop = ((CompoundOp*)oi->op);
+    CompoundOp* cop = &dynamic_cast<CompoundOp &>(*oi->op);
     // get global ref to DEF_FUN
-    Global* def_fun_instr = ((Global*)globalNameMap[cop]);
+    Global* def_fun_instr = &dynamic_cast<Global &>(*globalNameMap[cop]);
     // add GLO_REF, then FUN_CALL
     chain_i(&chain,new Reference(def_fun_instr,oi)); 
     chain_i(&chain,new FunctionCall(cop));
@@ -1674,7 +1689,8 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     ierror("Restrictions not all compiled out for: "+f->to_str());
   if(needs_let(f)) { // need a let to contain this
     memory[f] = chain_i(&chain, new iLET());
-    chain_i(&chain,new Reference((Instruction*)memory[f],oi)); // and we got here by a ref...
+    chain_i(&chain, // and we got here by a ref...
+        new Reference(&dynamic_cast<Instruction &>(*memory[f]), oi));
   }
   return chain_start(chain);
 }
@@ -1723,7 +1739,8 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
 
   V1<<"Pre-linearization steps...\n";
   for(int i=0; i<preemitter_rules.size(); i++) {
-     IRPropagator* propagator = (IRPropagator*)preemitter_rules[i];
+     IRPropagator *propagator
+       = &dynamic_cast<IRPropagator &>(*preemitter_rules[i]);
      propagator->propagate(g);
   }
 
@@ -1744,7 +1761,8 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   // Check that we were able to linearize everything:
   if(fragments.size()) {
     ostringstream s; 
-    print_chain(chain_start((Instruction*)fragments.begin()->second),&s,2);
+    Instruction *i = &dynamic_cast<Instruction &>(*fragments.begin()->second);
+    print_chain(chain_start(i), &s, 2);
     ierror("Unplaced fragment: "+ce2s(fragments.begin()->first)+"\n"+s.str());
   }
 
@@ -1763,7 +1781,7 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
   // finally, output
   V1<<"Outputting final instruction sequence...\n";
   *len= end->next_location();
-  uint8_t* buf = (uint8_t*)calloc(*len,sizeof(uint8_t));
+  uint8_t *buf = static_cast<uint8_t *>(calloc(*len,sizeof(uint8_t)));
   start->output(buf);
   
   if(parent->is_dump_code) print_chain(start,cpout,print_compact);
