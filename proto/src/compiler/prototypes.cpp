@@ -1,14 +1,20 @@
 /* Proto type system
-Copyright (C) 2009, Jacob Beal, and contributors 
+Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include <algorithm>
+#include <iostream>
+
 #include "config.h"
+
 #include "ir.h"
 #include "nicenames.h"
+
+using namespace std;
 
 /*****************************************************************************
  *  CLONING                                                                  *

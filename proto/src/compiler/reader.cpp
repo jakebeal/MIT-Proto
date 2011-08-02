@@ -6,6 +6,8 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include "reader.h"
+
 #include <cctype>
 #include <cstdarg>
 #include <cstdlib>
@@ -15,7 +17,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 
 #include "lisp.h"
-#include "reader.h"
 #include "scoped_ptr.h"
 
 using namespace std;

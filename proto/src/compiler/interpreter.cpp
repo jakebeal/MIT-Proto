@@ -1,5 +1,5 @@
 /* Proto interpreter
-Copyright (C) 2009, Jacob Beal, and contributors 
+Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -8,9 +8,18 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 // The Proto interpreter turns S-Expressions into intermediate representation
 
+#include <iostream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "config.h"
-#include "nicenames.h"
+
 #include "compiler.h"
+#include "nicenames.h"
+
+using namespace std;
 
 /*****************************************************************************
  *  DUMMY ELEMENTS                                                           *

@@ -1,5 +1,5 @@
 /* Proto analyzer
-Copyright (C) 2009, Jacob Beal, and contributors 
+Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -9,15 +9,19 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // The analyzer takes us from an initial interpretation to a concrete,
 // optimized structure that's ready for compilation
 
-#ifndef __ANALYZER__
-#define __ANALYZER__
+#ifndef PROTO_COMPILER_ANALYZER_H
+#define PROTO_COMPILER_ANALYZER_H
+
+#include <iostream>
+#include <map>
+#include <vector>
 
 #include "ir.h"
 
 class CheckTypeConcreteness : public IRPropagator {
  public:
   CheckTypeConcreteness() : IRPropagator(true,false) { verbosity=0; }
-  virtual void print(ostream* out=0) { *out << "CheckTypeConcreteness"; }
+  virtual void print(std::ostream* out=0) { *out << "CheckTypeConcreteness"; }
   virtual void act(Field* f);
 };
 
@@ -44,7 +48,7 @@ class TypeConstraintApplicator {
   ProtoType* get_ref_last(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_lcs(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_nth(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
-  ProtoTuple* tupleOrVector(vector<ProtoType*> types);
+  ProtoTuple* tupleOrVector(std::vector<ProtoType*> types);
   ProtoType* get_ref_tupof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_fieldof(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
   ProtoType* get_ref_unlit(OperatorInstance* oi, SExpr* ref, SE_List_iter* li);
@@ -77,4 +81,4 @@ class TypeConstraintApplicator {
 };
 
 
-#endif // __ANALYZER__
+#endif  // PROTO_COMPILER_ANALYZER_H

@@ -1,4 +1,4 @@
-/* Proto optimizer Copyright (C) 2009, Jacob Beal, and contributors 
+/* Proto optimizer Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -8,9 +8,19 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // The analyzer takes us from an initial interpretation to a concrete,
 // optimized structure that's ready for compilation
 
+#include "analyzer.h"
+
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "config.h"
-#include "nicenames.h"
+
 #include "compiler.h"
+#include "nicenames.h"
+
+using namespace std;
 
 #define DEBUG_FUNCTION(...) V5<<"In function " << __VA_ARGS__ << endl;
 

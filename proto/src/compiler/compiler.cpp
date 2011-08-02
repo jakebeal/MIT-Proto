@@ -1,5 +1,5 @@
 /* Proto compiler
-Copyright (C) 2009, Jacob Beal, and contributors 
+Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -8,6 +8,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 // During experimental development, the NeoCompiler will be worked on
 // "off to the side" of the original, not replacing it.
+
+#include "compiler.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -18,9 +20,10 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
 
-#include "compiler.h"
 #include "nicenames.h"
 #include "plugin_manager.h"
+
+using namespace std;
 
 /*****************************************************************************
  *  COMPILATION SEQUENCE                                                     *

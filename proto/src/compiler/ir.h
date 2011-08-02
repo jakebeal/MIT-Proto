@@ -1,5 +1,5 @@
 /* Intermediate representation for Proto compiler
-Copyright (C) 2009-2010, Jacob Beal, and contributors 
+Copyright (C) 2009-2010, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -12,19 +12,24 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 // representation.  After this stage, a program is transformed into
 // first abstract bytecodes and then concrete bytecodes
 
-#ifndef __IR__
-#define __IR__
+#ifndef PROTO_COMPILER_IR_H
+#define PROTO_COMPILER_IR_H
 
-#include <set>
-#include <vector>
 #include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "sexpr.h"
 
-using namespace std;
-
 // forward pointers:
-struct DataflowGraph; struct Operator; 
-struct OperatorInstance; struct Field; struct AmorphousMedium;
+struct AmorphousMedium;
+struct DataflowGraph;
+struct Field;
+struct Operator;
+struct OperatorInstance;
 
 #define AM AmorphousMedium
 #define OI OperatorInstance
@@ -39,7 +44,7 @@ struct OperatorInstance; struct Field; struct AmorphousMedium;
 // Note: virtual inheritance requires dynamic_cast<type>(val) to downcast
 struct ProtoType : public CompilationElement {
   reflection_sub(ProtoType,CompilationElement);
-  virtual void print(ostream* out=0) { *out << "<Any>"; }
+  virtual void print(std::ostream* out=0) { *out << "<Any>"; }
   // default means of testing for supertype-ness
   virtual bool supertype_of(ProtoType* sub){ return sub->isA(this->type_of()); }
   static ProtoType* clone(ProtoType* t); // copy the type and its attributes
@@ -57,7 +62,7 @@ struct ProtoLocal : public ProtoType {
   reflection_sub(ProtoLocal,ProtoType);
   ProtoLocal() {}
   virtual ~ProtoLocal() {}
-  virtual void print(ostream* out=0) { *out << "<Local>"; }
+  virtual void print(std::ostream* out=0) { *out << "<Local>"; }
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t);
   virtual int pointwise() { return 1; } // definitely pointwise
@@ -65,23 +70,23 @@ struct ProtoLocal : public ProtoType {
 
 struct ProtoTuple : virtual public ProtoLocal {
   reflection_sub(ProtoTuple,ProtoLocal);
-  vector<ProtoType*> types;
+  std::vector<ProtoType*> types;
   bool bounded; // when false, last type is "rest" type
   ProtoTuple() { this->bounded=false; this->types.push_back(new ProtoType()); }
   ProtoTuple(bool bounded) { this->bounded=bounded; }
-  ProtoTuple(ProtoTuple* src) { 
+  ProtoTuple(ProtoTuple* src) {
     bounded=src->bounded;
-    for(int i=0;i<src->types.size();i++) add(src->types[i]); 
+    for(int i=0;i<src->types.size();i++) add(src->types[i]);
     inherit_attributes(src);
   }
   virtual ~ProtoTuple() {}
   void add(ProtoType* t) { types.push_back(t); }
   void clear() { types.clear(); }
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t);
-  virtual bool isLiteral() { 
+  virtual bool isLiteral() {
     if(!bounded) return false;
     for(int i=0;i<types.size();i++) if(!types[i]->isLiteral()) return false;
     return true;
@@ -91,10 +96,10 @@ struct ProtoTuple : virtual public ProtoLocal {
 
 struct ProtoSymbol : public ProtoLocal {
   reflection_sub(ProtoSymbol,ProtoLocal);
-  bool constant; string value;
-  ProtoSymbol() { constant=false; value=""; }
-  ProtoSymbol(string v) { constant=true; value=v; }
-  virtual void print(ostream* out=0) 
+  bool constant; std::string value;
+  ProtoSymbol() : constant(false), value("") {}
+  ProtoSymbol(const std::string &v) :  constant(true), value(v) {}
+  virtual void print(std::ostream* out=0)
   { *out << "<Symbol"; if(constant) { *out << " " << value; } *out << ">"; }
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
@@ -102,9 +107,9 @@ struct ProtoSymbol : public ProtoLocal {
   virtual bool isLiteral() { return constant; }
 };
 
-struct ProtoNumber : virtual public ProtoLocal { 
+struct ProtoNumber : virtual public ProtoLocal {
   reflection_sub(ProtoNumber,ProtoLocal);
-  virtual void print(ostream* out=0) { *out << "<Number>"; }
+  virtual void print(std::ostream* out=0) { *out << "<Number>"; }
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t);
 };
@@ -115,7 +120,7 @@ struct ProtoScalar : public ProtoNumber{
   ProtoScalar() { constant=false; value=7734; }
   ProtoScalar(float v) { constant=true; value=v; }
   virtual ~ProtoScalar() {}
-  virtual void print(ostream* out=0) 
+  virtual void print(std::ostream* out=0)
   { *out << "<Scalar"; if(constant) { *out << " " << value; } *out << ">"; }
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
@@ -129,7 +134,7 @@ struct ProtoBoolean : public ProtoScalar {
   reflection_sub(ProtoBoolean,ProtoScalar);
   ProtoBoolean() { constant=false; value=7734; }
   ProtoBoolean(bool b) { constant=true; value=b; }
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
   virtual ProtoType* lcs(ProtoType* t);
 };
 
@@ -138,9 +143,9 @@ struct ProtoVector : public ProtoTuple, public ProtoNumber {
   reflection_sub2(ProtoVector,ProtoNumber,ProtoTuple);
   ProtoVector() : ProtoTuple(false) {this->types.push_back(new ProtoScalar());}
   ProtoVector(bool bounded) : ProtoTuple(bounded) { }
-  ProtoVector(ProtoTuple* src) : ProtoTuple(src) { } 
+  ProtoVector(ProtoTuple* src) : ProtoTuple(src) { }
   virtual ~ProtoVector() {}
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t) { return ProtoTuple::gcs(t); }
 };
@@ -151,7 +156,7 @@ struct ProtoLambda: public ProtoLocal {
   Operator* op;
   ProtoLambda() { op=NULL; }
   ProtoLambda(Operator* op) { this->op = op; }
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t);
@@ -165,7 +170,7 @@ struct ProtoField : public ProtoType {
   ProtoType* hoodtype; // must be local, but derived types defer resolution
   ProtoField() { hoodtype=new ProtoType(); }
   ProtoField(ProtoType* hoodtype) { this->hoodtype = hoodtype; }
-  virtual void print(ostream* out=0) { *out<<"<Field "<<ce2s(hoodtype)<<">"; }
+  virtual void print(std::ostream* out=0) { *out<<"<Field "<<ce2s(hoodtype)<<">"; }
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t);
@@ -181,16 +186,18 @@ struct ProtoField : public ProtoType {
 // SIGNATURES specify the I/O compatibility of an operator
 struct Signature : public CompilationElement { reflection_sub(Signature,CE);
   ProtoType *output;
-  vector<ProtoType*> required_inputs;
-  vector<ProtoType*> optional_inputs;
+  std::vector<ProtoType*> required_inputs;
+  std::vector<ProtoType*> optional_inputs;
   ProtoType* rest_input;
-  map<string,int> names; // map from names to I/O locations (output = -1)
-  
+
+  // map from names to I/O locations (output = -1)
+  std::map<std::string,int> names;
+
   Signature(CE* src, ProtoType* output=NULL);
   /// copy constructor
   Signature(Signature* src);
-  virtual void print(ostream* out=0);
-  
+  virtual void print(std::ostream* out=0);
+
   /// true if n a permissible number of args
   bool legal_length(int n);
 
@@ -222,29 +229,29 @@ struct Signature : public CompilationElement { reflection_sub(Signature,CE);
   int n_fixed() { return required_inputs.size()+optional_inputs.size(); }
 
   /// English description of number of allowed types
-  string num_arg_str();
+  std::string num_arg_str();
 };
 
 // OPERATORS are functions mapping from fields to fields
 struct Operator : public CompilationElement { reflection_sub(Operator,CE);
-  Signature *signature; 
-  string name; // only set by some operators
-  
+  Signature *signature;
+  std::string name; // only set by some operators
+
   Operator(CE* src) { inherit_attributes(src); }
   Operator(CE* src, Signature *sig) { inherit_attributes(src); signature=sig; }
-  virtual void print(ostream* out=0) {*out<<"[Op"<<signature->to_str()<<"]";}
+  virtual void print(std::ostream* out=0) {*out<<"[Op"<<signature->to_str()<<"]";}
 };
 
 struct Literal : public Operator { reflection_sub(Literal,Operator);
   ProtoType *value;
   Literal(CE* src,ProtoType *v);
-  virtual void print(ostream* out=0) {*out << "[Lit: "<<value->to_str()<< "]";}
+  virtual void print(std::ostream* out=0) {*out << "[Lit: "<<value->to_str()<< "]";}
 };
 
 struct Primitive : public Operator { reflection_sub(Primitive,Operator);
   Primitive(CE* src); // used by subclasses that initialize separately
-  Primitive(CE* src, string name, Signature* sig);
-  virtual void print(ostream* out=0) { *out << "[" << name << "]"; }
+  Primitive(CE* src, std::string name, Signature* sig);
+  virtual void print(std::ostream* out=0) { *out << "[" << name << "]"; }
 };
 
 // Note: usage data tracked by DFG only
@@ -252,10 +259,10 @@ struct CompoundOp : public Operator { reflection_sub(CompoundOp,Operator);
   AM *body;
   Field *output;
   static int lambda_count; // uids for unnamed lambdas
-  CompoundOp(CE* src, DFG* container, string n="");
+  CompoundOp(CE* src, DFG* container, std::string n="");
   CompoundOp(CompoundOp* src);
   bool compute_side_effects(); // marks self & returns
-  virtual void print(ostream* out=0)  {*out << "[Fun: " << name << "]";}
+  virtual void print(std::ostream* out=0)  {*out << "[Fun: " << name << "]";}
 };
 
  // something input to a function
@@ -263,9 +270,9 @@ struct Parameter : public Operator { reflection_sub(Parameter,Operator);
   ProtoType *defaultValue;
   CompoundOp* container;
   int index; // which signature variable is it?
-  Parameter(CompoundOp* op, string name, int index, ProtoType* type=NULL,
+  Parameter(CompoundOp* op, std::string name, int index, ProtoType* type=NULL,
             ProtoType* def=NULL);
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
 };
 
 // A pointwise operator, "pushed down" to operator over field data types
@@ -291,19 +298,20 @@ struct LocalFieldOp : public Primitive { reflection_sub(LocalFieldOp,Primitive);
 // MACROS are syntactic operations on S-Expressions
 struct Macro : public CompilationElement { reflection_sub(Macro,CE);
   SExpr* pattern;
-  string name;
-  Macro(string name, SExpr* pattern) { this->name=name; this->pattern=pattern; }
-  virtual void print(ostream* out=0)  {*out << "[Macro: " << name << "]";}
+  std::string name;
+  Macro(const std::string &name_, SExpr* pattern_)
+    : name(name_), pattern(pattern_) {}
+  virtual void print(std::ostream* out=0)  {*out << "[Macro: " << name << "]";}
 };
 
 struct MacroSymbol : public Macro { reflection_sub(MacroSymbol,Macro);
- MacroSymbol(string name, SExpr* pattern) : Macro(name,pattern) {}
+ MacroSymbol(const std::string &name, SExpr* pattern) : Macro(name, pattern) {}
 };
 
 struct MacroOperator : public Macro { reflection_sub(MacroOperator,Macro);
   static int gensym_count;
   Signature *signature; // All ProtoSymbols w. constant value equal to var name
- MacroOperator(string name, Signature* sig, SExpr* pattern)
+ MacroOperator(const std::string &name, Signature* sig, SExpr* pattern)
    : Macro(name,pattern) { signature=sig; }
 };
 
@@ -321,14 +329,14 @@ struct AmorphousMedium : public CompilationElement { reflection_sub(AM,CE);
   AMset children;
   DFG* container; // the DFG this is in (set by constructor)
   CompoundOp* bodyOf;
-  
+
   AmorphousMedium(CE* src, DFG* root, CompoundOp* bodyOf=NULL);
   AmorphousMedium(CE* src, AmorphousMedium* parent, Field* f);
 
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
   virtual bool child_of(AM* am); // is this a child of am?
   virtual AM* root(){ if(parent==NULL) return this; else return parent->root();}
-  
+
   // For using AMs as function bodies
   int size(); // number of fields/ops in this AM and its children
   // These function fill "out" set with all elements from AM and its children:
@@ -338,49 +346,51 @@ struct AmorphousMedium : public CompilationElement { reflection_sub(AM,CE);
 };
 
 // FIELDS are sets of data across space
-typedef pair<OI*,int> Consumer;
+typedef std::pair<OI*,int> Consumer;
 struct Field : public CompilationElement { reflection_sub(Field,CE);
   AM *domain; ProtoType *range;
   // connections of this field elsewhere
   DFG* container; OperatorInstance* producer;
-  set<Consumer, CompilationElementIntPair_cmp > consumers;
+  std::set<Consumer, CompilationElementIntPair_cmp > consumers;
   AMset selectors;
-  
+
   Field(CE* src, AM *domain, ProtoType *range, OperatorInstance *oi);
-  virtual void print(ostream* out=0);
+  virtual void print(std::ostream* out=0);
   bool is_output(); // is this field an program/CompoundOp output?
   // producer/consumer maintenance: do not call directly
   void use(OperatorInstance* oi,int i); // add a consumer
   void unuse(OperatorInstance* oi,int i); // remove a consumer
 };
 
-/// OPERATOR INSTANCES are computations performed on particular fields
+/// OPERATOR INSTANCES are computations performed on particular fields.
+
 struct OperatorInstance : public CompilationElement { reflection_sub(OI,CE);
   DFG* container; Operator* op; // set by constructor
-  vector<Field*> inputs;
+  std::vector<Field*> inputs;
   Field* output; // generated automatically
-  
+
   /// Constructor
   OperatorInstance(CE* src, Operator *op, AM* space);
 
   // Mutators
   /// add field as last input, updating its consumers
-  Field* add_input(Field* f); 
+  Field* add_input(Field* f);
   /// insert input field at pos, updating its consumers
-  Field* insert_input(vector<Field*>::iterator pos, Field* f); 
+  Field* insert_input(std::vector<Field*>::iterator pos, Field* f);
   /// disconnects the field, updating its consumers
-  Field* remove_input(int i); 
+  Field* remove_input(int i);
 
   // Accessors & utilities
   ///get range of nth input (sets become vecs/tuples)
   ProtoType* nth_input(int i);
   /// get the output space
-  AM* domain() { return output->domain; } 
-  virtual void print(ostream* out=0);
+  AM* domain() { return output->domain; }
+  virtual void print(std::ostream* out=0);
+
   /// op has space/time extent? 1=no, 0=yes, -1=unresolved
-  int pointwise(); 
+  int pointwise();
   /// is this a recursive call? 1=yes, 0=no, -1=unresolved
-  int recursive(); 
+  int recursive();
 };
 
 /// A DATAFLOW GRAPH is a complete program
@@ -389,11 +399,11 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   CEmap(Operator*,OIset) funcalls; // List of times each op is used
   Field* output;
   AMset relevant; // root (and use count) of funcalls that are used
-  
+
   DataflowGraph() { output = NULL; } // base state
-  void print(ostream* out=0);
-  void printdot(ostream* out=0,bool field_nodes=false);
-  
+  void print(std::ostream* out=0);
+  void printdot(std::ostream* out=0,bool field_nodes=false);
+
   // DFG manipulation
   void relocate_input(OI* src, int src_loc, OI* dst,int dst_loc);
   void relocate_inputs(OI* src, OI* dst, int insert);
@@ -403,13 +413,13 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   void delete_space(AM* am);
   void remap_medium(AM* src, AM* target); // move src to target, destroying src
   void make_op_inline(OperatorInstance* oi); // CompoundOps only
-  CompoundOp* derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out);
+  CompoundOp* derive_op(OIset *elts,AM* space,std::vector<Field*> *in,Field *out);
   void determine_relevant(); // figure out which AMs are relevant
   Field* add_literal(ProtoType* val,AM* space,CompilationElement* src);
-  Field* add_parameter(CompoundOp* op,string name,int index,AM* space,CE* src);
+  Field* add_parameter(CompoundOp* op,std::string name,int index,AM* space,CE* src);
 
  private:
-  void dot_print_function(ostream* out,AM* root,Field* output,bool field_nodes);
+  void dot_print_function(std::ostream* out,AM* root,Field* output,bool field_nodes);
 };
 
 /*****************************************************************************
@@ -426,8 +436,8 @@ class IRPropagator : public CompilationElement {
   Fset worklist_f; OIset worklist_o; AMset worklist_a;
   bool any_changes;
   DFG* root;
-  
-  IRPropagator(bool field, bool op, bool am=false, int abort=10) 
+
+  IRPropagator(bool field, bool op, bool am=false, int abort=10)
     { act_fields=field; act_ops=op; act_am=am; loop_abort=abort; }
   bool propagate(DFG* g); // walk through worklist, acting until empty
   virtual void preprop() {} virtual void postprop() {} // hooks
@@ -436,7 +446,7 @@ class IRPropagator : public CompilationElement {
   virtual void act(OperatorInstance* oi) {}
   virtual void act(AM* am) {}
   // note_change: adds neighbors to the worklist
-  void note_change(AM* am); void note_change(Field* f); 
+  void note_change(AM* am); void note_change(Field* f);
   void note_change(OperatorInstance* oi);
   bool maybe_set_range(Field* f,ProtoType* range); // change & note if different
  private:
@@ -448,7 +458,7 @@ class CertifyBackpointers : public IRPropagator {
  public:
   bool bad;
   CertifyBackpointers(int verbosity);
-  virtual void print(ostream* out=0) { *out << "CertifyBackpointers"; }
+  virtual void print(std::ostream* out=0) { *out << "CertifyBackpointers"; }
   void preprop();
   void postprop();
   void act(Field* f);
@@ -461,11 +471,11 @@ class CertifyBackpointers : public IRPropagator {
  *****************************************************************************/
 // These errors return a dummy expression, allowing the compiler to
 // return and exit gracefully
-CompilationElement* dummy(string type, CompilationElement* context);
-Field* field_err(CompilationElement *where,string msg);
-Operator* op_err(CompilationElement *where,string msg);
-Macro* macro_err(CompilationElement *where,string msg);
-ProtoType* type_err(CompilationElement *where,string msg);
-Signature* sig_err(CompilationElement *where,string msg);
+CompilationElement* dummy(std::string type, CompilationElement* context);
+Field* field_err(CompilationElement *where,std::string msg);
+Operator* op_err(CompilationElement *where,std::string msg);
+Macro* macro_err(CompilationElement *where,std::string msg);
+ProtoType* type_err(CompilationElement *where,std::string msg);
+Signature* sig_err(CompilationElement *where,std::string msg);
 
-#endif // __IR__
+#endif  // PROTO_COMPILER_IR_H

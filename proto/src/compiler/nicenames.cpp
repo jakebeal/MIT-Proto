@@ -1,7 +1,10 @@
-#include "config.h"
-#include <map>
 #include "nicenames.h"
+
 #include <stdio.h>
+
+#include <string>
+
+#include "config.h"
 
 using namespace std;
 

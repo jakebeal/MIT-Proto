@@ -1,5 +1,5 @@
 /* Proto compiler
-Copyright (C) 2009, Jacob Beal, and contributors 
+Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -13,6 +13,12 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #define PROTO_COMPILER_NEOCOMPILER_H
 
 #include <stdint.h>
+
+#include <iostream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "config.h"
 
@@ -32,26 +38,26 @@ struct ProtoInterpreter; class NeoCompiler;
  */
 struct Env {
   Env* parent; ProtoInterpreter* cp;
-  map<string,CompilationElement*> bindings;
-  
+  std::map<std::string,CompilationElement*> bindings;
+
   Env(ProtoInterpreter* cp) { parent=NULL; this->cp = cp; }
   Env(Env* parent) { this->parent=parent; cp = parent->cp; }
-  void bind(string name, CompilationElement* value);
-  void force_bind(string name, CompilationElement* value);
+  void bind(std::string name, CompilationElement* value);
+  void force_bind(std::string name, CompilationElement* value);
 
   /**
    * Lookups: w/o type, returns NULL on failure; w. type, checks, returns dummy
    */
-  CompilationElement* lookup(string name, bool recursed=false);
-  CompilationElement* lookup(SE_Symbol* sym, string type);
-  
+  CompilationElement* lookup(std::string name, bool recursed=false);
+  CompilationElement* lookup(SE_Symbol* sym, std::string type);
+
   /**
    * Operators needed to be accessed unshadowed by compiler. These are gathered
    * after initialization, but before user code is loaded.
    */
-  static map<string,Operator*> core_ops;
+  static std::map<std::string,Operator*> core_ops;
   static void record_core_ops(Env* toplevel);
-  static Operator* core_op(string name);
+  static Operator* core_op(std::string name);
 };
 
 class ProtoInterpreter {
@@ -70,22 +76,22 @@ class ProtoInterpreter {
   static bool sexp_is_type(SExpr* s);
   static ProtoType* sexp_to_type(SExpr* s);
   static Signature* sexp_to_sig(SExpr* s,Env* bindloc=NULL,CompoundOp* op=NULL,AM* space=NULL);
-  static pair<string,ProtoType*> parse_argument(SE_List_iter* i, int n, Signature* sig, bool anonymous_ok=true);
-  
+  static std::pair<std::string,ProtoType*> parse_argument(SE_List_iter* i, int n, Signature* sig, bool anonymous_ok=true);
+
  private:
   /**
    * FOR INTERNAL USE ONLY
    */
   void interpret(SExpr* sexpr, bool recursed);
-  void interpret_file(string name);
-  
-  Operator* sexp_to_op(SExpr* s, Env *env);  
-  Macro* sexp_to_macro(SE_List* s, Env *env);  
+  void interpret_file(std::string name);
+
+  Operator* sexp_to_op(SExpr* s, Env *env);
+  Macro* sexp_to_macro(SE_List* s, Env *env);
   Signature* sexp_to_macro_sig(SExpr* s);
   Field* sexp_to_graph(SExpr* s, AM* space, Env *env);
   SExpr* expand_macro(MacroOperator* m, SE_List* call);
   SExpr* macro_substitute(SExpr* src,Env* e,SE_List* wrapper=NULL);
-  ProtoType* symbolic_literal(string name);
+  ProtoType* symbolic_literal(std::string name);
 
   /// compiler special-form handlers
   Field* let_to_graph(SE_List* s, AM* space, Env *env,bool incremental);
@@ -100,13 +106,13 @@ class ProtoInterpreter {
  */
 class DFGTransformer {
  public:
-  vector<IRPropagator*> rules;
+  std::vector<IRPropagator*> rules;
   bool paranoid;
   int max_loops, verbosity;
 
   DFGTransformer() {}
   ~DFGTransformer() {}
-  
+
   virtual void transform(DFG* g);
 };
 
@@ -135,7 +141,7 @@ class CodeEmitter {
      */
     virtual uint8_t *emit_from(DFG *g, int *len) = 0;
 
-    virtual void setDefops(const string &defops) = 0;
+    virtual void setDefops(const std::string &defops) = 0;
 };
 
 class InstructionPropagator; class Instruction;
@@ -150,28 +156,29 @@ class ProtoKernelEmitter : public CodeEmitter {
   ProtoKernelEmitter(NeoCompiler *parent, Args *args);
   void init_standalone(Args *args);
   uint8_t *emit_from(DFG *g, int *len);
-  void setDefops(const string &defops);
+  void setDefops(const std::string &defops);
 
   /// Map of compound ops -> instructions (in global mem).
-  map<CompoundOp *, Instruction *> globalNameMap;
+  std::map<CompoundOp *, Instruction *> globalNameMap;
 
  private:
-  vector<InstructionPropagator *> rules;
-  vector<IRPropagator *> preemitter_rules;
+  std::vector<InstructionPropagator *> rules;
+  std::vector<IRPropagator *> preemitter_rules;
 
   /// Global & env storage.
-  map<Field *,CompilationElement *, CompilationElement_cmp> memory;
+  std::map<Field *,CompilationElement *, CompilationElement_cmp> memory;
 
   /// Fragments floating up to find a home.
-  map<OI *,CompilationElement *, CompilationElement_cmp> fragments;
+  std::map<OI *,CompilationElement *, CompilationElement_cmp> fragments;
 
-  /// list of scalar/vector ops
-  map<string, pair<int, int> > sv_ops;
+  /// List of scalar/vector ops.
+  std::map<std::string, std::pair<int, int> > sv_ops;
+
   Instruction *start, *end;
 
-  void load_ops(const string &name);
-  void read_extension_ops(istream *stream);
-  void load_extension_ops(const string &name);
+  void load_ops(const std::string &name);
+  void read_extension_ops(std::istream *stream);
+  void load_extension_ops(const std::string &name);
   void process_extension_ops(SExpr *sexpr);
   void process_extension_op(SExpr *sexpr);
   Instruction *tree2instructions(Field *f);
@@ -211,22 +218,22 @@ class Compiler : public EventConsumer {
   virtual void init_standalone(Args* args) = 0;
   // compile expression str; len is filled in w. output length
   virtual uint8_t* compile(const char *str, int* len) = 0;
-  virtual void set_platform(const string &path) = 0;
-  virtual void setDefops(const string &defops) = 0;
+  virtual void set_platform(const std::string &path) = 0;
+  virtual void setDefops(const std::string &defops) = 0;
 };
 
-/**  
+/**
  * NeoCompiler implementation
  */
 class NeoCompiler : public Compiler {
  public:
   Path proto_path;
   bool is_dump_code, is_dump_all, is_dump_analyzed, is_dump_interpreted,
-    is_dump_raw_localized, is_dump_localized, is_dump_dotfiles,is_dotfields; 
-  string dotstem;
+    is_dump_raw_localized, is_dump_localized, is_dump_dotfiles,is_dotfields;
+  std::string dotstem;
   int is_early_terminate;
   bool paranoid; int verbosity;
-  string infile;
+  std::string infile;
   ProtoInterpreter* interpreter;
   DFGTransformer *analyzer, *localizer;
   CodeEmitter* emitter;
@@ -239,8 +246,8 @@ class NeoCompiler : public Compiler {
   void init_standalone(Args* args);
 
   uint8_t* compile(const char *str, int* len);
-  void set_platform(const string &path);
-  void setDefops(const string &defops);
+  void set_platform(const std::string &path);
+  void setDefops(const std::string &defops);
 };
 
 /// list of internal tests:

@@ -1,5 +1,5 @@
 /* ProtoKernel code emitter
-Copyright (C) 2009, Jacob Beal, and contributors 
+Copyright (C) 2009, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
@@ -23,6 +23,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "plugin_manager.h"
 #include "proto_opcodes.h"
 #include "scoped_ptr.h"
+
+using namespace std;
 
 map<int,string> opnames;
 map<string,int> primitive2op;

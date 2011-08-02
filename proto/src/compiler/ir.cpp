@@ -1,15 +1,22 @@
 /* Intermediate representation for Proto compiler
-Copyright (C) 2009-2010, Jacob Beal, and contributors 
+Copyright (C) 2009-2010, Jacob Beal, and contributors
 listed in the AUTHORS file in the MIT Proto distribution's top directory.
 
 This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include "ir.h"
+
+#include <algorithm>
+#include <string>
+
 #include "config.h"
+
 #include "compiler.h"
 #include "nicenames.h"
-#include <algorithm>
+
+using namespace std;
 
 extern SE_Symbol *make_gensym(const string &root); // from interpreter
 
