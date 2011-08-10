@@ -92,7 +92,7 @@ struct ProtoTuple : virtual public ProtoLocal {
     return true;
   }
 };
-#define T_TYPE(x) (dynamic_cast<ProtoTuple*>(x))
+#define T_TYPE(x) (&dynamic_cast<ProtoTuple &>(*(x)))
 
 struct ProtoSymbol : public ProtoLocal {
   reflection_sub(ProtoSymbol,ProtoLocal);
@@ -127,8 +127,8 @@ struct ProtoScalar : public ProtoNumber{
   virtual ProtoType* gcs(ProtoType* t);
   virtual bool isLiteral() { return constant; }
 };
-#define S_TYPE(x) (dynamic_cast<ProtoScalar*>(x))
-#define S_VAL(x) (dynamic_cast<ProtoScalar*>(x)->value)
+#define S_TYPE(x) (&dynamic_cast<ProtoScalar &>(*(x)))
+#define S_VAL(x) (dynamic_cast<ProtoScalar &>(*(x)).value)
 
 struct ProtoBoolean : public ProtoScalar {
   reflection_sub(ProtoBoolean,ProtoScalar);
@@ -149,7 +149,7 @@ struct ProtoVector : public ProtoTuple, public ProtoNumber {
   virtual ProtoType* lcs(ProtoType* t);
   virtual ProtoType* gcs(ProtoType* t) { return ProtoTuple::gcs(t); }
 };
-#define V_TYPE(x) (dynamic_cast<ProtoVector*>(x))
+#define V_TYPE(x) (&dynamic_cast<ProtoVector &>(*(x)))
 
 struct ProtoLambda: public ProtoLocal {
   reflection_sub(ProtoLambda,ProtoLocal);
@@ -162,8 +162,8 @@ struct ProtoLambda: public ProtoLocal {
   virtual ProtoType* gcs(ProtoType* t);
   virtual bool isLiteral() { return op!=NULL; }
 };
-#define L_TYPE(x) (dynamic_cast<ProtoLambda*>(x))
-#define L_VAL(x) (dynamic_cast<ProtoLambda*>(x)->op)
+#define L_TYPE(x) (&dynamic_cast<ProtoLambda &>(*(x)))
+#define L_VAL(x) (dynamic_cast<ProtoLambda &>(*(x)).op)
 
 struct ProtoField : public ProtoType {
   reflection_sub(ProtoField,ProtoType);
@@ -177,8 +177,8 @@ struct ProtoField : public ProtoType {
   virtual bool isLiteral() { return hoodtype->isLiteral(); }
   virtual int pointwise() { return 0; } // definitely not pointwise
 };
-#define F_TYPE(x) (dynamic_cast<ProtoField*>(x))
-#define F_VAL(x) (dynamic_cast<ProtoField*>(x)->hoodtype)
+#define F_TYPE(x) (&dynamic_cast<ProtoField &>(*(x)))
+#define F_VAL(x) (dynamic_cast<ProtoField &>(*(x)).hoodtype)
 
 /*****************************************************************************
  *  OPERATORS & MACROS                                                       *
