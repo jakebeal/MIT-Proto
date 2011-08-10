@@ -873,22 +873,22 @@ class Emittable {
   // concreteness of fields comes from their types
   static bool acceptable(Field* f) { return acceptable(f->range); }
   // concreteness of types
-  static bool acceptable(ProtoType* t) { 
+  static bool acceptable(ProtoType* t) {
     if(t->isA("ProtoScalar")) { return true;
     } else if(t->isA("ProtoSymbol")) { return true;
-    } else if(t->isA("ProtoTuple")) { 
-      ProtoTuple* tp = dynamic_cast<ProtoTuple*>(t);
+    } else if(t->isA("ProtoTuple")) {
+      ProtoTuple* tp = &dynamic_cast<ProtoTuple &>(*t);
       if(!tp->bounded) return false;
       for(int i=0;i<tp->types.size();i++)
         if(!acceptable(tp->types[i])) return false;
       return true;
-    } else if(t->isA("ProtoLambda")) { 
-      ProtoLambda* tl = dynamic_cast<ProtoLambda*>(t); 
+    } else if(t->isA("ProtoLambda")) {
+      ProtoLambda* tl = &dynamic_cast<ProtoLambda &>(*t);
       return acceptable(tl->op);
     } else return false; // all others, including ProtoField
   }
   // concreteness of operators, for ProtoLambda:
-  static bool acceptable(Operator* op) { 
+  static bool acceptable(Operator* op) {
     if(op->isA("Literal") || op->isA("Parameter") || op->isA("Primitive")) {
       return true;
     } else if(op->isA("CompoundOp")) {
