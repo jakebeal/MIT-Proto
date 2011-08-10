@@ -68,7 +68,7 @@ ProtoType* ProtoType::clone(ProtoType* t) {
 bool ProtoTuple::supertype_of(ProtoType* sub) { 
   if(sub==NULL || this==NULL) ierror("supertype_of called on NULL type.");
   if(!sub->isA(type_of())) return false; // not supertype of non-tuples
-  ProtoTuple *tsub = dynamic_cast<ProtoTuple*>(sub);
+  ProtoTuple *tsub = &dynamic_cast<ProtoTuple &>(*sub);
   // I'm bounded but sub is not 
   if(!tsub->bounded && bounded) return false;
   // are elements compatible?
@@ -101,19 +101,19 @@ bool ProtoTuple::supertype_of(ProtoType* sub) {
 }
 bool ProtoSymbol::supertype_of(ProtoType* sub) { 
   if(!sub->isA("ProtoSymbol")) return false; // not supertype of non-symbols
-  ProtoSymbol *ssub = dynamic_cast<ProtoSymbol*>(sub);
+  ProtoSymbol *ssub = &dynamic_cast<ProtoSymbol &>(*sub);
   return !constant || value==ssub->value;
 }
 
 bool ProtoScalar::supertype_of(ProtoType* sub) { 
   if(!sub->isA(type_of())) return false; // not supertype of non-scalars
-  ProtoScalar *ssub = dynamic_cast<ProtoScalar*>(sub);
+  ProtoScalar *ssub = &dynamic_cast<ProtoScalar &>(*sub);
   return !constant || value==ssub->value || (isnan(value)&&isnan(ssub->value));
 }
 
 bool ProtoLambda::supertype_of(ProtoType* sub) { 
   if(!sub->isA(type_of())) return false; // not supertype of non-lambdas
-  ProtoLambda* lsub = dynamic_cast<ProtoLambda*>(sub);
+  ProtoLambda* lsub = &dynamic_cast<ProtoLambda &>(*sub);
   // generic is super of all fields
   if(!op) return true; if(!lsub->op) return false;
   return op==lsub->op; // lambdas are the same only if they have the same op
@@ -121,7 +121,7 @@ bool ProtoLambda::supertype_of(ProtoType* sub) {
 
 bool ProtoField::supertype_of(ProtoType* sub) { 
   if(!sub->isA(type_of())) return false; // not supertype of non-fields
-  ProtoField *fsub = dynamic_cast<ProtoField*>(sub);
+  ProtoField *fsub = &dynamic_cast<ProtoField &>(*sub);
   // generic is super of all fields
   if(!hoodtype) return true; if(!fsub->hoodtype) return false;
   return hoodtype->supertype_of(fsub->hoodtype);
@@ -165,7 +165,7 @@ void element_lcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
 
 ProtoType* ProtoTuple::lcs(ProtoType* t) {
   if(!t->isA("ProtoTuple")) return ProtoLocal::lcs(t);
-  ProtoTuple* tt = dynamic_cast<ProtoTuple*>(t);
+  ProtoTuple* tt = &dynamic_cast<ProtoTuple &>(*t);
   ProtoTuple* nt = new ProtoTuple(true); element_lcs(this,tt,nt); return nt;
 }
 
@@ -195,7 +195,7 @@ ProtoType* ProtoVector::lcs(ProtoType* t) {
     if(t->isA("ProtoTuple")) return ProtoTuple::lcs(t);
     return ProtoLocal::lcs(t); // join point in inheritance
   }
-  ProtoVector* tv = dynamic_cast<ProtoVector*>(t);
+  ProtoVector* tv = &dynamic_cast<ProtoVector &>(*t);
   ProtoVector* nv = new ProtoVector(true); element_lcs(this,tv,nv); return nv;
 }
 
@@ -206,7 +206,7 @@ ProtoType* ProtoLambda::lcs(ProtoType* t) {
 
 ProtoType* ProtoField::lcs(ProtoType* t) {
   if(!t->isA("ProtoField")) return ProtoType::lcs(t);
-  ProtoField* tf = dynamic_cast<ProtoField*>(t); //not super -> hoodtype != null
+  ProtoField* tf = &dynamic_cast<ProtoField &>(*t); //not super -> hoodtype != null
   return new ProtoField(ProtoType::lcs(hoodtype,tf->hoodtype));
 }
 
@@ -256,7 +256,7 @@ bool element_gcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
 
 ProtoType* ProtoTuple::gcs(ProtoType* t) { // covers vectors too
   if(t->isA("ProtoTuple")) {
-    ProtoTuple* tt = dynamic_cast<ProtoTuple*>(t);
+    ProtoTuple* tt = &dynamic_cast<ProtoTuple &>(*t);
     bool vec = (isA("ProtoVector") || t->isA("ProtoVector"));
     ProtoTuple* newt;
     if(vec) newt = new ProtoVector(false); else newt = new ProtoTuple(false);
@@ -287,7 +287,7 @@ ProtoType* ProtoLambda::gcs(ProtoType* t) {
 }
 ProtoType* ProtoField::gcs(ProtoType* t) {
   if(!t->isA("ProtoField")) return NULL;
-  ProtoField* tf = dynamic_cast<ProtoField*>(t); //not super -> hoodtype != null
+  ProtoField* tf = &dynamic_cast<ProtoField &>(*t); //not super -> hoodtype != null
   ProtoType* hood = ProtoType::gcs(tf->hoodtype,hoodtype);
   return (hood==NULL) ? NULL : new ProtoField(hood);
 }

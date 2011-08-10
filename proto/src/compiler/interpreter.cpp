@@ -317,15 +317,18 @@ SExpr* ProtoInterpreter::expand_macro(MacroOperator* m, SE_List* call) {
     return sexp_err(call,"Wrong number of arguments for macro "+m->name);
   int i=1; // start after macro name
   for(int j=0;j<m->signature->required_inputs.size();j++) {
-    ProtoSymbol* var = dynamic_cast<ProtoSymbol*>(m->signature->required_inputs[j]);
+    ProtoSymbol* var
+      = &dynamic_cast<ProtoSymbol &>(*m->signature->required_inputs[j]);
     m_env.bind(var->value,(*call)[i++]);
   }
   for(int j=0;j<m->signature->optional_inputs.size() && i<call->len();j++) {
-    ProtoSymbol* var = dynamic_cast<ProtoSymbol*>(m->signature->optional_inputs[j]);
+    ProtoSymbol* var
+      = &dynamic_cast<ProtoSymbol &>(*m->signature->optional_inputs[j]);
     m_env.bind(var->value,(*call)[i++]);
   }
   if(i<call->len()) { // sweep all else into rest argument
-    ProtoSymbol* var = dynamic_cast<ProtoSymbol*>(m->signature->rest_input);
+    ProtoSymbol* var
+      = &dynamic_cast<ProtoSymbol &>(*m->signature->rest_input);
     SE_List *rest = new SE_List(); rest->inherit_attributes(m);
     for(; i<call->len(); ) { rest->add((*call)[i++]); }
     m_env.bind(var->value,rest);

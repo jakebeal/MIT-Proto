@@ -86,30 +86,30 @@ SExpr* get_sexp(CE* src, string attribute) {
  */
 ProtoType* Deliteralization::deliteralize(ProtoType* base) {
   if(base->isA("ProtoVector")) {
-    ProtoVector* t = dynamic_cast<ProtoVector*>(base);
+    ProtoVector* t = &dynamic_cast<ProtoVector &>(*base);
     ProtoVector* newt = new ProtoVector(t->bounded);
     for(int i=0;i<t->types.size();i++)
       newt->types.push_back(deliteralize(t->types[i]));
     return newt;
   } else if(base->isA("ProtoTuple")) {
-    ProtoTuple* t = dynamic_cast<ProtoTuple*>(base);
+    ProtoTuple* t = &dynamic_cast<ProtoTuple &>(*base);
     ProtoTuple* newt = new ProtoTuple(t->bounded);
     for(int i=0;i<t->types.size();i++)
       newt->types.push_back(deliteralize(t->types[i]));
     return newt;
   } else if(base->isA("ProtoSymbol")) {
-    ProtoSymbol* t = dynamic_cast<ProtoSymbol*>(base);
+    ProtoSymbol* t = &dynamic_cast<ProtoSymbol &>(*base);
     return t->constant ? new ProtoSymbol() : t;
   } else if(base->isA("ProtoBoolean")) {
-    ProtoBoolean* t = dynamic_cast<ProtoBoolean*>(base);
+    ProtoBoolean* t = &dynamic_cast<ProtoBoolean &>(*base);
     return t->constant ? new ProtoBoolean() : t;
   } else if(base->isA("ProtoScalar")) {
-    ProtoScalar* t = dynamic_cast<ProtoScalar*>(base);
+    ProtoScalar* t = &dynamic_cast<ProtoScalar &>(*base);
     return t->constant ? new ProtoScalar() : t;
   } else if(base->isA("ProtoLambda")) {
     ierror("Deliteralization of ProtoLambdas is not yet implemented.");
   } else if(base->isA("ProtoField")) {
-    ProtoField* t = dynamic_cast<ProtoField*>(base);
+    ProtoField* t = &dynamic_cast<ProtoField &>(*base);
     return new ProtoField(deliteralize(t->hoodtype));
   } else {
     return base;
@@ -161,7 +161,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       ierror(ref,"Expected ProtoTuple, but got "+ce2s(nextType)); // temporary, to help test suite
       return type_err(ref,"Expected ProtoTuple, but got "+ce2s(nextType));
     }
-    ProtoTuple* tup = dynamic_cast<ProtoTuple*>(nextType);
+    ProtoTuple* tup = &dynamic_cast<ProtoTuple &>(*nextType);
     return tup->types[tup->types.size()-1];
   }
   
@@ -179,7 +179,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       SExpr* next = li->get_next("type");
       nextType = get_ref(oi,next);
       if(isRestElement(oi, next) && nextType->isA("ProtoTuple")) {
-        ProtoTuple* tv = dynamic_cast<ProtoTuple*>(nextType);
+        ProtoTuple* tv = &dynamic_cast<ProtoTuple &>(*nextType);
         for(int i=0;i<tv->types.size();i++) {
           compound=(compound==NULL)? tv->types[i] : ProtoType::lcs(compound, tv->types[i]);
           V4 << "get_ref (rest) lcs oi=" << ce2s(oi)
@@ -207,7 +207,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     ProtoType* nextType = get_ref(oi,li->get_next("type"));
     ProtoTuple* tup = NULL;
     if(nextType->isA("ProtoTuple"))
-       tup = dynamic_cast<ProtoTuple*>(nextType);
+       tup = &dynamic_cast<ProtoTuple &>(*nextType);
 
     //get index
     ProtoType* indexType;
@@ -215,7 +215,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     else indexType = get_ref(oi,li->get_next("type"));
     ProtoScalar* index = NULL;
     if( indexType->isA("ProtoScalar") )
-       index = dynamic_cast<ProtoScalar*>(indexType);
+       index = &dynamic_cast<ProtoScalar &>(*indexType);
 
     //get result if possible
     if(index != NULL && tup != NULL && tup->types.size() > index->value) {
@@ -334,7 +334,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       // should never get here
       ierror(ref,"Unhandled ProtoField ref case: "+ce2s(reftype)); // temporary, to help test suite
     }
-    ProtoField* field = dynamic_cast<ProtoField*>(reftype);
+    ProtoField* field = &dynamic_cast<ProtoField &>(*reftype);
     return field->hoodtype;
   }
 
@@ -351,7 +351,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       ierror(ref,"Expected ProtoLambda, but got "+ce2s(reftype)); // temporary, to help test suite
       return type_err(ref,"Expected ProtoLambda, but got "+ce2s(reftype));
     }
-    ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(reftype);
+    ProtoLambda* lambda = &dynamic_cast<ProtoLambda &>(*reftype);
     Signature* sig = lambda->op->signature;
     // we only know the length of the inputs if there's no &rest
     ProtoTuple* ret = new ProtoTuple(!sig->rest_input);
@@ -377,7 +377,7 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       ierror(ref,"Expected ProtoLambda, but got "+ce2s(reftype)); // temporary, to help test suite
       return type_err(ref,"Expected ProtoLambda, but got "+ce2s(reftype));
     }
-    ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(reftype);
+    ProtoLambda* lambda = &dynamic_cast<ProtoLambda &>(*reftype);
     return lambda->op->signature->output;
   }
 
@@ -560,7 +560,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     ProtoType* lambda_arg = get_ref(oi,ref);
     if(!lambda_arg->isA("ProtoLambda"))
        ierror("'output' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+lambda_arg->to_str()+")");
-    ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(lambda_arg);
+    ProtoLambda* lambda = &dynamic_cast<ProtoLambda &>(*lambda_arg);
     //Signature* sig = lambda->op->signature;
     return assert_ref(oi,ref,lambda);
   }
@@ -575,7 +575,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     ProtoType* lambda_arg = get_ref(oi,ref);
     if(!lambda_arg->isA("ProtoLambda"))
        ierror("'inputs' assertion on a non-lambda type: "+ref->to_str()+" (it's a "+lambda_arg->to_str()+")");
-    ProtoLambda* lambda = dynamic_cast<ProtoLambda*>(lambda_arg);
+    ProtoLambda* lambda = &dynamic_cast<ProtoLambda &>(*lambda_arg);
     Signature* sig = lambda->op->signature;
     if(!value->isA("ProtoTuple"))
        ierror("'inputs' assertion on a non-tuple type: value (it's a "+value->to_str()+")");
@@ -626,7 +626,7 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
     ProtoType* compound = prevType;
     // if it's a &rest element, take the LCS of each sub-argument
     if(isRestElem && nextType->isA("ProtoTuple")) {
-      ProtoTuple* tv = dynamic_cast<ProtoTuple*>(nextType);
+      ProtoTuple* tv = &dynamic_cast<ProtoTuple &>(*nextType);
       for(int i=0;i<tv->types.size();i++) {
         compound=(compound==NULL)? tv->types[i] : ProtoType::lcs(compound, tv->types[i]);
         V4 << "Assert (rest) lcs: next=" << ce2s(nextType)
@@ -946,7 +946,7 @@ class TypePropagator : public IRPropagator {
     if(ftype->isA("ProtoLocal") && ctype->isA("ProtoField")) {
       V4<<"repair local->field"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
-      ProtoField* ft = dynamic_cast<ProtoField*>(ctype);
+      ProtoField* ft = &dynamic_cast<ProtoField &>(*ctype);
       if(ProtoType::gcs(ftype,ft->hoodtype)) {
         Operator* fo = FieldOp::get_field_op(f->producer);
         if(f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
@@ -983,7 +983,7 @@ class TypePropagator : public IRPropagator {
     if(ftype->isA("ProtoField") && ctype->isA("ProtoLocal")) {
       V4<<"repair field->pointwise"<< endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
-      ProtoField* ft = dynamic_cast<ProtoField*>(ftype);
+      ProtoField* ft = &dynamic_cast<ProtoField &>(*ftype);
       int pw = c.first->pointwise();
       V4<<"pointwise? "<< pw << endl;
       if(pw!=0 && ProtoType::gcs(ctype,ft->hoodtype)) {
@@ -1052,7 +1052,7 @@ class TypePropagator : public IRPropagator {
     
     /*
     if(f->range->type_of()=="ProtoTuple") { // look for tuple->vector upgrades
-      ProtoTuple* tt = dynamic_cast<ProtoTuple*>(f->range);
+      ProtoTuple* tt = &dynamic_cast<ProtoTuple &>(*f->range);
       for(int i=0;i<tt->types.size();i++) 
         if(!tt->types[i]->isA("ProtoScalar")) return; // all scalars?
       ProtoVector* v = new ProtoVector(tt->bounded); v->types = tt->types;
@@ -1188,10 +1188,10 @@ ProtoNumber* add_consts(ProtoType* a, ProtoType* b) {
     ProtoTuple* v = T_TYPE(a->isA("ProtoScalar")?b:a);
     ProtoVector* out = new ProtoVector(v->bounded);
     for(int i=0;i<v->types.size();i++) { 
-       ProtoScalar* element = dynamic_cast<ProtoScalar*>(v->types[i]);
+       ProtoScalar* element = &dynamic_cast<ProtoScalar &>(*v->types[i]);
        out->add(new ProtoScalar(element->value));
     }
-    (dynamic_cast<ProtoScalar*>(out->types[0]))->value += s;
+    dynamic_cast<ProtoScalar &>(*out->types[0]).value += s;
     return out;
   } else { // 2 vectors
     ProtoTuple *va = T_TYPE(a), *vb = T_TYPE(b);
@@ -1266,7 +1266,7 @@ class ConstantFolder : public IRPropagator {
       // multiply by negative 1
       if(sum->isA("ProtoScalar")) { S_VAL(sum) *= -1;
       } else { // vector
-        ProtoVector* s = dynamic_cast<ProtoVector*>(sum); 
+        ProtoVector* s = &dynamic_cast<ProtoVector &>(*sum);
         for(int i=0;i<s->types.size();i++) S_VAL(s->types[i]) *= -1;
       }
       // add in first
@@ -1359,11 +1359,11 @@ class ConstantFolder : public IRPropagator {
       // check two, equal length vectors
       ProtoVector* v1 = NULL;
       ProtoVector* v2 = NULL;
-      if(2==oi->inputs.size() 
-         && nth_type(oi,0)->isA("ProtoVector") 
+      if(2==oi->inputs.size()
+         && nth_type(oi,0)->isA("ProtoVector")
          && nth_type(oi,1)->isA("ProtoVector")) {
-        v1 = dynamic_cast<ProtoVector*>(nth_type(oi,0)); 
-        v2 = dynamic_cast<ProtoVector*>(nth_type(oi,1)); 
+        v1 = &dynamic_cast<ProtoVector &>(*nth_type(oi,0));
+        v2 = &dynamic_cast<ProtoVector &>(*nth_type(oi,1));
         if(v1->types.size() != v2->types.size()) {
           compile_error("Dot product requires 2, *equal size* vectors");
         }
@@ -1373,8 +1373,8 @@ class ConstantFolder : public IRPropagator {
       // sum of products
       ProtoScalar* sum = new ProtoScalar(0);
       for(int i=0; i<v1->types.size(); i++) {
-        sum->value += dynamic_cast<ProtoScalar*>(v1->types[i])->value *
-          dynamic_cast<ProtoScalar*>(v2->types[i])->value;
+        sum->value += dynamic_cast<ProtoScalar &>(*v1->types[i]).value *
+          dynamic_cast<ProtoScalar &>(*v2->types[i]).value;
       }
       maybe_set_output(oi,sum);
     } else if(name=="min-hood" || name=="max-hood" || name=="any-hood"
