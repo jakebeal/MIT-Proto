@@ -2017,14 +2017,37 @@ is 24 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
 is 25 _   [Lit: <Scalar 0>] --> Mike<Scalar 0>
 is 26 _ Stopping before localization
 
+// FIXME: Doesn't work -- hmm.
 test: $(P2B) -CDlocalized "(sum-hood (if (nbr (mid)) 5 7))"
 //is 0 _ TEST NOT DEFINED YET
 //is 25 _ Stopping before emission
 
 // Test locals
 test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
-//is 0 _ TEST NOT DEFINED YET
-//is 25 _ Stopping before emission
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar>
+is 7 _   Operator Instances:
+is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 9 _     Delta<Scalar>, Bravo<Scalar> --> [-] --> Charlie<Scalar> OUTPUT
+is 10 _     [mid] --> Delta<Scalar>
+is 11 _ Amorphous Mediums:
+is 12 _   [Medium: Echo = root]
+is 13 _ Fields:
+is 14 _   Foxtrot: Echo --> <Scalar>
+is 15 _   Golf: Echo --> <Scalar> OUTPUT
+is 16 _   Hotel: Echo --> <Lambda [max]>
+is 17 _   India: Echo --> <Lambda [Fun: lambda~6]>
+is 18 _ Operator Instances:
+is 19 _   [mid] --> Foxtrot<Scalar>
+is 20 _   Hotel<Lambda [max]>, India<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 21 _   [Lit: <Lambda [max]>] --> Hotel<Lambda [max]>
+is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
+is 23 _ Stopping before emission
 
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
