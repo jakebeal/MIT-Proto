@@ -2056,8 +2056,40 @@ test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
 
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ (+ 1 x) (nbr x)))))"
-//is 0 _ TEST NOT DEFINED YET
-//is 25 _ Stopping before emission
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar>
+is 7 _   Operator Instances:
+is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 9 _     Delta<Scalar>, Bravo<Scalar> --> [+] --> Charlie<Scalar> OUTPUT
+is 10 _     Echo<Scalar> --> [reference] --> Delta<Scalar>
+is 11 _ Amorphous Mediums:
+is 12 _   [Medium: Foxtrot = root]
+is 13 _ Fields:
+is 14 _   Golf: Foxtrot --> <Scalar>
+is 15 _   Hotel: Foxtrot --> <Scalar 2>
+is 16 _   India: Foxtrot --> <Scalar>
+is 17 _   Juliet: Foxtrot --> <Scalar> OUTPUT
+is 18 _   Echo: Foxtrot --> <Scalar>
+is 19 _   Kilo: Foxtrot --> <Scalar 1>
+is 20 _   Lima: Foxtrot --> <Scalar>
+is 21 _   Mike: Foxtrot --> <Lambda [min]>
+is 22 _   November: Foxtrot --> <Lambda [Fun: lambda~6]>
+is 23 _ Operator Instances:
+is 24 _   Hotel<Scalar 2>, India<Scalar> --> [+] --> Golf<Scalar>
+is 25 _   [Lit: <Scalar 2>] --> Hotel<Scalar 2>
+is 26 _   [mid] --> India<Scalar>
+is 27 _   Golf<Scalar>, Lima<Scalar> --> [+] --> Juliet<Scalar> OUTPUT
+is 28 _   Kilo<Scalar 1>, Golf<Scalar> --> [+] --> Echo<Scalar>
+is 29 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
+is 30 _   Mike<Lambda [min]>, November<Lambda [Fun: lambda~6]>, Golf<Scalar> --> [fold-hood-plus] --> Lima<Scalar>
+is 31 _   [Lit: <Lambda [min]>] --> Mike<Lambda [min]>
+is 32 _   [Lit: <Lambda [Fun: lambda~6]>] --> November<Lambda [Fun: lambda~6]>
+is 33 _ Stopping before emission
 
 // Test localization cache:
 test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
