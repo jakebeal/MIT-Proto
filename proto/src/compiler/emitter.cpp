@@ -396,6 +396,58 @@ struct FunctionCall : public Instruction { reflection_sub(FunctionCall,Instructi
       }
 };
 
+// Structure for instructions that index a state or export.
+
+struct InstructionWithIndex : public Instruction {
+  reflection_sub(InstructionWithIndex, Instruction);
+
+  int index;
+
+  InstructionWithIndex(OPCODE opcode) : index(-1), Instruction(opcode) {}
+  bool resolved(void)
+  { return ((0 <= index) && Instruction::resolved()); }
+
+  // FIXME: Should be size_t, not int.
+  int size() { return 1 + parameters.size() + 1; }
+
+  void
+  print(ostream *out = 0)
+  {
+    Instruction::print(out);
+    *out << ", " << index;
+  }
+
+  void
+  output(uint8_t *buf)
+  {
+    if (!resolved())
+      ierror("Attempted to output unresolved instruction.");
+    if (! ((0 <= index) && (index <= 0xff)))
+      ierror("Invalid index: " + index);
+    buf[location] = op;
+    for (size_t i = 0; i < parameters.size(); i++)
+      buf[location + 1 + i] = parameters[i];
+    buf[location + 1 + parameters.size() + 1] = static_cast<uint8_t>(index);
+    if (next)
+      next->output(buf);
+  }
+};
+
+struct Fold : public InstructionWithIndex {
+  CompoundOp *folder;
+  CompoundOp *nbrop;
+
+  reflection_sub(Fold, InstructionWithIndex);
+  Fold(OPCODE opcode, CompoundOp *folder_, CompoundOp *nbrop_)
+    : InstructionWithIndex(opcode), folder(folder_), nbrop(nbrop_)
+  {}
+};
+
+// struct Feedback : public InstructionWithIndex {
+//   reflection_sub(Feedback, InstructionWithIndex);
+//   Feedback(OPCODE opcode) : InstructionWithIndex(opcode) {}
+// };
+
 /*****************************************************************************
  *  PROPAGATOR                                                               *
  *****************************************************************************/
@@ -465,130 +517,241 @@ bool InstructionPropagator::propagate(Instruction* chain) {
   return any_changes;
 }
 
-
-
 class StackEnvSizer : public InstructionPropagator {
-public:
+ public:
   // height = after instruction; maxes = anytime during
-  CEmap(Instruction*,int) stack_height, stack_maxes;
-  CEmap(Instruction*,int) env_height, env_maxes;
-  StackEnvSizer(ProtoKernelEmitter* parent,Args* args) 
+  CEmap(Instruction *, int) stack_height, stack_maxes;
+  CEmap(Instruction *, int) env_height, env_maxes;
+  CEmap(Instruction *, CEset(Instruction *)) dependents;
+
+  StackEnvSizer(ProtoKernelEmitter *parent, Args *args) : emitter_(parent)
   { verbosity = parent->verbosity; }
-  void print(ostream* out=0) { *out<<"StackEnvSizer"; }
-  void preprop() { stack_height.clear(); env_height.clear(); }
-  void postprop() {
-    Instruction* chain=root;
-    int max_env=0, max_stack=0;
-    string ss="Stack heights: ", es="Env heights:   ";
-    stack<Instruction*> block_nesting;
-    while(true) { 
-      if(chain==NULL) {
-        if(!block_nesting.empty()) {
-          ss+="} "; es+="} ";
-          chain=block_nesting.top()->next; block_nesting.pop(); continue;
-        } else break;
-      } else if(chain->isA("Block")) { // walk through subs
-        ss+="{ ";es+="{ ";
+
+  void print(ostream *out = 0) { *out << "StackEnvSizer"; }
+
+  void
+  note_change(Instruction *instruction)
+  {
+    InstructionPropagator::note_change(instruction);
+    CEmap(Instruction *, CEset(Instruction *))::const_iterator i
+      = dependents.find(instruction);
+    if (i != dependents.end())
+      for_set (Instruction *, (*i).second, j)
+        worklist_i.insert(*j);
+  }
+
+  void
+  preprop()
+  {
+    stack_height.clear();
+    env_height.clear();
+    dependents.clear();
+  }
+
+  void
+  postprop()
+  {
+    Instruction *chain = root;
+    int max_env = 0, max_stack = 0;
+    string ss = "Stack heights: ", es = "Env heights:   ";
+    stack<Instruction *> block_nesting;
+
+    while (true) {
+      if (chain == NULL) {
+        if (block_nesting.empty())
+          break;
+        ss += "} ";
+        es += "} ";
+        chain = block_nesting.top()->next;
+        block_nesting.pop();
+        continue;
+      } else if (chain->isA("Block")) {
+        // Walk through subblocks.
+        ss += "{ ";
+        es += "{ ";
         block_nesting.push(chain);
         chain = dynamic_cast<Block &>(*chain).contents;
         continue;
-      } else if(chain->isA("Reference")) { // reference depths in environment:
-        Reference* r = &dynamic_cast<Reference &>(*chain);
-        if(r->store->isA("iLET") && env_height.count(r->store) &&
-           env_height.count(r)) {
+      } else if (chain->isA("Reference")) {
+        // Reference depths in environment.
+        Reference *r = &dynamic_cast<Reference &>(*chain);
+        if (r->store->isA("iLET")
+            && env_height.count(r->store)
+            && env_height.count(r)) {
           int rh = env_height[r], sh = env_height[r->store];
-          if(r->offset!=(rh-sh)) {
-            V3<<"Setting let ref offset: "<<rh<<"-"<<sh<<"="<<(rh-sh)<<endl;
-            r->set_offset(rh-sh);
+          if (r->offset != (rh - sh)) {
+            V3 << "Setting let ref offset: " << rh << "-" << sh
+               << "=" << (rh - sh) << endl;
+            r->set_offset(rh - sh);
           }
         }
-      } 
-      if(!stack_maxes.count(chain) || !env_maxes.count(chain))
-        return; // wasn't able to entirely resolve
+      }
+
+      if (! (stack_maxes.count(chain) && env_maxes.count(chain)))
+        // Wasn't able to entirely resolve.
+        return;
+
       max_stack = max(max_stack, stack_maxes[chain]);
       max_env = max(max_env, env_maxes[chain]);
-      ss += i2s(stack_height[chain])+" "; es += i2s(env_height[chain])+" ";
-      chain=chain->next;
+      ss += i2s(stack_height[chain]) + " ";
+      es += i2s(env_height[chain]) + " ";
+      chain = chain->next;
     }
-    V2 << ss << endl; V2 << es << endl;
+
+    V2 << ss << endl;
+    V2 << es << endl;
+
     int final = stack_height[chain_end(root)];
-    if(final) {
-       print_chain(chain_start(root), cpout);
-       ierror("Stack resolves to non-zero height: "+i2s(final));
+    if (final) {
+      print_chain(chain_start(root), cpout);
+      ierror("Stack resolves to non-zero height: " + i2s(final));
     }
-    iDEF_VM* dv = &dynamic_cast<iDEF_VM &>(*root);
-    if(dv->max_stack!=max_stack || dv->max_env!=max_env) {
+
+    iDEF_VM *dv = &dynamic_cast<iDEF_VM &>(*root);
+    if (! ((dv->max_stack == max_stack) && (dv->max_env == max_env))) {
       V2 << "Changed: Stack: " << dv->max_stack << " -> " << max_stack
          << " Env: " << dv->max_env << " -> " << max_env << endl;
-      dv->max_stack=max_stack; dv->max_env=max_env;
-      any_changes=true;
+      dv->max_stack = max_stack;
+      dv->max_env = max_env;
+      any_changes = true;
     } else {
-      V2 << "No change to stack or env maximum size"<<endl;
-      any_changes=false;
+      V2 << "No change to stack or env maximum size" << endl;
+      any_changes = false;
     }
   }
-  void maybe_set_stack(Instruction* i,int neth,int maxh) {
+
+  void
+  maybe_set_stack(Instruction *i, int neth, int maxh)
+  {
     V4 << "Inst(" << ce2s(i) << ")";
-    if(!stack_height.count(i)) {
-       V4 << " did not exist" << endl;
+    if (!stack_height.count(i)) {
+      V4 << " did not exist" << endl;
     } else {
-       V4 << " was (" << stack_height[i] << ", " << stack_maxes[i] << ")";
-       V4 << "\t now (" << neth << ", " << maxh << ")" << endl;
+      V4 << " was (" << stack_height[i] << ", " << stack_maxes[i] << ")";
+      V4 << "\t now (" << neth << ", " << maxh << ")" << endl;
     }
-    if(!stack_height.count(i) || stack_height[i]!=neth || stack_maxes[i]!=maxh){
-      stack_height[i]=neth; stack_maxes[i]=maxh; note_change(i); 
+    if (! (stack_height.count(i)
+           && (stack_height[i] == neth)
+           && (stack_maxes[i] == maxh))) {
+      stack_height[i] = neth;
+      stack_maxes[i] = maxh;
+      note_change(i);
       V4 << "\t Set stack." << endl;
     }
   }
-  void maybe_set_env(Instruction* i,int neth, int maxh) {
+
+  void
+  maybe_set_env(Instruction *i, int neth, int maxh)
+  {
     V4 << "Inst(" << ce2s(i) << ")";
-    if(!env_height.count(i)) {
-       V4 << " did not exist" << endl;
+    if (!env_height.count(i)) {
+      V4 << " did not exist" << endl;
     } else {
-       V4 << " was (" << env_height[i] << ", " << env_maxes[i] << ")";
-       V4 << "\t now (" << neth << ", " << maxh << ")" << endl;
+      V4 << " was (" << env_height[i] << ", " << env_maxes[i] << ")";
+      V4 << "\t now (" << neth << ", " << maxh << ")" << endl;
     }
-    if(!env_height.count(i) || env_height[i]!=neth || env_maxes[i]!=maxh) {
-      env_height[i]=neth; env_maxes[i]=maxh; note_change(i);
+    if (! (env_height.count(i)
+           && (env_height[i] == neth)
+           && (env_maxes[i] == maxh))) {
+      env_height[i] = neth;
+      env_maxes[i] = maxh;
+      note_change(i);
       V4 << "\t Set env." << endl;
     }
   }
-  void act(Instruction* i) {
-    // stack heights:
-    int baseh=-1;
-    // base case: i is first instruction.
-    if(!i->prev && (!i->container || (i->container && !i->container->prev))) {
-      baseh=0;
-    }
-    // i is the first instruction of a block and inst prior to block has been
-    // resolved
-    else if(!i->prev && stack_height.count(i->container->prev)) { 
-      baseh = stack_height[i->container->prev];
-    }
-    // i has a previous instruction whose value has been resolved
-    else if(i->prev && stack_height.count(i->prev)) {
-      baseh = stack_height[i->prev];
-    }
-    // if the instruction whose value i depends on has been resolved, then
-    // resolve i's value
-    if(baseh>=0) 
-      maybe_set_stack(i,baseh+i->net_stack_delta(),baseh+i->max_stack_delta());
-    else 
-      V4 << "Instruction " << ce2s(i) << " (stack) could not be resolved yet." << endl;
 
-    // env heights:
+  void
+  act(Instruction *i)
+  {
+    int baseh;
+
+    // Stack heights.
     baseh = -1;
-    if(!i->prev && (!i->container || (i->container && !i->container->prev))) {
-      baseh=0;
-    } else if(!i->prev && env_height.count(i->container->prev)) { 
-      baseh = env_height[i->container->prev];
-    } else if(i->prev && env_height.count(i->prev)) {
-      baseh = env_height[i->prev];
+
+    if (!i->prev && (!i->container || (i->container && !i->container->prev)))
+      // Base case: i is first instruction.
+      baseh = 0;
+    else if (!i->prev && stack_height.count(i->container->prev))
+      // i is the first instruction of a block and inst prior to block
+      // has been resolved.
+      baseh = stack_height[i->container->prev];
+    else if (i->prev && stack_height.count(i->prev))
+      // i has a previous instruction whose value has been resolved.
+      baseh = stack_height[i->prev];
+
+    // If the instruction whose value i depends on has been resolved, then
+    // resolve i's value.
+    if (baseh >= 0) {
+      int extra_net = i->net_stack_delta();
+      int extra_max = i->max_stack_delta();
+      // FIXME: Mega-kludgerific!  This is totally the wrong place to
+      // do this computation.
+      if (i->isA("Fold")) {
+        V4 << "Handling fold... " << extra_net << ", " << extra_max << endl;
+        Fold *fold = &dynamic_cast<Fold &>(*i);
+        Instruction *i_folder = compound_op_block(fold->folder);
+        Instruction *i_nbrop = compound_op_block(fold->nbrop);
+        dependents[i_folder].insert(i);
+        dependents[i_nbrop].insert(i);
+        extra_net += i_folder->net_stack_delta() + i_nbrop->net_stack_delta();
+        extra_max
+          += max(i_folder->max_stack_delta(), i_nbrop->max_stack_delta());
+        V4 << "Handling fold*... " << extra_net << ", " << extra_max << endl;
+      }
+      maybe_set_stack(i, baseh + extra_net, baseh + extra_max);
+    } else {
+      V4 << "Instruction " << ce2s(i) << " (stack) could not be resolved yet."
+         << endl;
     }
-    if(baseh>=0) 
-      maybe_set_env(i,baseh+i->net_env_delta(),baseh+i->max_env_delta());
-    else
-      V4 << "Instruction " << ce2s(i) << " (env) could not be resolved yet." << endl;
+
+    // Env heights.
+    baseh = -1;
+    if (!i->prev && (!i->container || (i->container && !i->container->prev)))
+      baseh=0;
+    else if (!i->prev && env_height.count(i->container->prev))
+      baseh = env_height[i->container->prev];
+    else if (i->prev && env_height.count(i->prev))
+      baseh = env_height[i->prev];
+
+    if (baseh >= 0) {
+      int extra_net = i->net_env_delta();
+      int extra_max = i->max_env_delta();
+      if (i->isA("Fold")) {
+        Fold *fold = &dynamic_cast<Fold &>(*i);
+        Instruction *i_folder = compound_op_block(fold->folder);
+        Instruction *i_nbrop = compound_op_block(fold->nbrop);
+        dependents[i_folder].insert(i);
+        dependents[i_nbrop].insert(i);
+        // FIXME: This pattern of computing the extra depth must be
+        // named somewhere.
+        int folder_arity = fold->folder->signature->required_inputs.size();
+        int nbrop_arity = fold->nbrop->signature->required_inputs.size();
+        extra_net += folder_arity + i_folder->net_env_delta()
+          + nbrop_arity + i_nbrop->net_env_delta();
+        extra_max =
+          max(extra_max,
+              max(folder_arity + i_folder->max_env_delta(),
+                  nbrop_arity + i_nbrop->max_env_delta()));
+      }
+      maybe_set_env(i, baseh + extra_net, baseh + extra_max);
+    } else {
+      V4 << "Instruction " << ce2s(i) << " (env) could not be resolved yet."
+         << endl;
+    }
+  }
+
+ private:
+  ProtoKernelEmitter *emitter_;
+
+  // Utility.
+  Block *
+  compound_op_block(CompoundOp *cop)
+  {
+    map<CompoundOp *, Block *>::const_iterator iterator
+      = emitter_->globalNameMap.find(cop);
+    if (iterator == emitter_->globalNameMap.end())
+      ierror("No instruction for compound operator!");
+    return (*iterator).second;
   }
 };
 
@@ -811,11 +974,13 @@ public:
     //if we can resolve the function call to its global index
     if(i->isA("FunctionCall")) {
        CompoundOp *compoundOp = dynamic_cast<FunctionCall &>(*i).compoundOp;
-       if(emitter->globalNameMap.count(compoundOp)) {
-          CompilationElement* ce = emitter->globalNameMap[compoundOp];
+       map<CompoundOp *, Block *>::const_iterator iterator
+         = emitter->globalNameMap.find(compoundOp);
+       if (iterator != emitter->globalNameMap.end()) {
+          Instruction *fnstart = (*iterator).second->contents;
           int index = -1;
-          if(ce && ce->isA("Global"))
-             index = dynamic_cast<Global &>(*ce).index;
+          if (fnstart && fnstart->isA("Global"))
+             index = dynamic_cast<Global &>(*fnstart).index;
           if(index >= 0 && i->prev && i->prev->isA("Reference"))
             maybe_set_reference(&dynamic_cast<Reference &>(*i->prev), index);
        }
@@ -832,23 +997,53 @@ public:
   }
 };
 
-// counts states, exports
+// Counts states and exports, and compute stack deltas.
+
 class ResolveState : public InstructionPropagator {
-public:
-  int n_states, n_exports, export_len;
-  bool unresolved;
-  ResolveState(ProtoKernelEmitter* parent,Args* args) 
+ public:
+  ResolveState(ProtoKernelEmitter *parent, Args *args)
+    : emitter_(parent)
   { verbosity = parent->verbosity; }
-  void print(ostream* out=0) { *out<<"ResolveState"; }
-  void preprop(){ unresolved=false; n_states=n_exports=export_len=0; }
-  void postprop() {
-    if(unresolved) return; // only set VM state if all is resolved
-    iDEF_VM* dv = &dynamic_cast<iDEF_VM &>(*root);
-    dv->n_states=n_states; dv->n_exports=n_exports; dv->export_len=export_len;
+
+  void print(ostream *out = 0) { *out << "ResolveState"; }
+
+  void preprop(void)
+  {
+    resolved_ = true;
+    n_states_ = n_exports_ = export_len_ = 0;
   }
-  void act(Instruction* i) {
-    // count up states, etc. here & resolve their pointings
+
+  void
+  postprop(void)
+  {
+    if (!resolved_)
+      return;
+
+    iDEF_VM *dv = &dynamic_cast<iDEF_VM &>(*root);
+    dv->n_states = n_states_;
+    dv->n_exports = n_exports_;
+    dv->export_len = export_len_;
   }
+
+  void
+  act(Instruction *instruction)
+  {
+    if (instruction->isA("Fold")) {
+      Fold *fold = &dynamic_cast<Fold &>(*instruction);
+      fold->index = n_exports_++;
+      export_len_ += 1;   // FIXME: Add up the tuple lengths.
+    }//  else if (instruction->isA("Feedback")) {
+    //   Feedback *feedback = &dynamic_cast<Feedback &>(*instruction);
+    //   feedback->index = n_states_++;
+    // }
+  }
+
+ private:
+  ProtoKernelEmitter *emitter_;
+  bool resolved_;
+  unsigned int n_states_;
+  unsigned int n_exports_;
+  unsigned int export_len_;
 };
 
 class CheckResolution : public InstructionPropagator {
@@ -1133,11 +1328,11 @@ ProtoKernelEmitter::lambda_literal_instruction(ProtoLambda *lambda,
     if (!lambda->op->isA("CompoundOp"))
       ierror("Non-compound operator in lambda: " + lambda->to_str());
     CompoundOp *cop = &dynamic_cast<CompoundOp &>(*lambda->op);
-    map<CompoundOp *, Instruction *>::const_iterator iterator
+    map<CompoundOp *, Block *>::const_iterator iterator
       = globalNameMap.find(cop);
     if (iterator == globalNameMap.end())
       ierror("Lambda has undefined operator: " + lambda->to_str());
-    Instruction *target = (*iterator).second;
+    Instruction *target = (*iterator).second->contents;
     return new Reference(target, context);
   }
 }
@@ -1169,6 +1364,10 @@ ProtoKernelEmitter::primitive_to_instruction(OperatorInstance *oi)
     return standard_primitive_instruction(oi);
   else if (sv_ops.count(primitive->name))
     return vector_primitive_instruction(oi);
+  else if (fold_ops.count(primitive->name))
+    return fold_primitive_instruction(oi);
+  // else if (state_ops.count(primitive->name))
+  //   return state_primitive_instruction(oi);
   else if (primitive->name == "/") // FIXME: Env::core_op?
     return divide_primitive_instruction(oi);
   else if (primitive->name == "tup") // FIXME: Env::core_op?
@@ -1222,6 +1421,38 @@ ProtoKernelEmitter::vector_primitive_instruction(OperatorInstance *oi)
          : new Instruction(opcode)));
 
   return chain_start(chain);
+}
+
+// FIXME: Reduce code duplicated in vector_primitive_instruction.
+
+static CompoundOp *
+fold_operand_cop(OperatorInstance *oi, size_t i)
+{
+  Field *field = oi->inputs[i];
+  ProtoType *type = field->range;
+  if (!type->isA("ProtoLambda"))
+    ierror("Fold operand is not a lambda!");
+  Operator *op = L_VAL(type);
+  if (!op->isA("CompoundOp"))
+    ierror("Lambda operator is not compound!");
+  return &dynamic_cast<CompoundOp &>(*op);
+}
+
+Instruction *
+ProtoKernelEmitter::fold_primitive_instruction(OperatorInstance *oi)
+{
+  Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
+
+  if (oi->output->range->isA("ProtoTuple"))
+    ierror("Fold can't handle tuples yet!");
+  for (size_t i = 0; i < oi->inputs.size(); i++)
+    if (oi->inputs[i]->range->isA("ProtoTuple"))
+      ierror("Fold can't handle tuples yet!");
+
+  OPCODE opcode = (*fold_ops.find(p->name)).second.first;
+  CompoundOp *folder = fold_operand_cop(oi, 0);
+  CompoundOp *nbrop = fold_operand_cop(oi, 1);
+  return new Fold(opcode, folder, nbrop);
 }
 
 // Division is handled specially until VDIV is implemented.
@@ -1400,18 +1631,21 @@ ProtoKernelEmitter::load_ops(const string &name)
   }
 
   // Now add the special-case ops.
-  sv_ops["+"] = make_pair(ADD_OP,VADD_OP);
-  sv_ops["-"] = make_pair(SUB_OP,VSUB_OP);
-  sv_ops["*"] = make_pair(MUL_OP,VMUL_OP);
-  //sv_ops["/"] = make_pair(DIV_OP,VDIV_OP);
-  sv_ops["<"] = make_pair(LT_OP,VLT_OP);
-  sv_ops["<="] = make_pair(LTE_OP,VLTE_OP);
-  sv_ops[">"] = make_pair(GT_OP,VGT_OP);
-  sv_ops[">="] = make_pair(GTE_OP,VGTE_OP);
-  sv_ops["="] = make_pair(EQ_OP,VEQ_OP);
-  sv_ops["max"] = make_pair(MAX_OP,VMAX_OP);
-  sv_ops["min"] = make_pair(MIN_OP,VMIN_OP);
-  sv_ops["mux"] = make_pair(MUX_OP,VMUX_OP);
+  sv_ops["+"] = make_pair(ADD_OP, VADD_OP);
+  sv_ops["-"] = make_pair(SUB_OP, VSUB_OP);
+  sv_ops["*"] = make_pair(MUL_OP, VMUL_OP);
+  //sv_ops["/"] = make_pair(DIV_OP, VDIV_OP);
+  sv_ops["<"] = make_pair(LT_OP, VLT_OP);
+  sv_ops["<="] = make_pair(LTE_OP, VLTE_OP);
+  sv_ops[">"] = make_pair(GT_OP, VGT_OP);
+  sv_ops[">="] = make_pair(GTE_OP, VGTE_OP);
+  sv_ops["="] = make_pair(EQ_OP, VEQ_OP);
+  sv_ops["max"] = make_pair(MAX_OP, VMAX_OP);
+  sv_ops["min"] = make_pair(MIN_OP, VMIN_OP);
+  sv_ops["mux"] = make_pair(MUX_OP, VMUX_OP);
+
+  fold_ops["fold-hood"] = make_pair(FOLD_HOOD_OP, VFOLD_HOOD_OP);
+  fold_ops["fold-hood-plus"] = make_pair(FOLD_HOOD_PLUS_OP, VFOLD_HOOD_PLUS_OP);
 }
 
 // Load a .proto file named `name', containing not Proto code but
@@ -1679,7 +1913,8 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     V4 << "Compound OP is: " << ce2s(oi->op) << endl;
     CompoundOp* cop = &dynamic_cast<CompoundOp &>(*oi->op);
     // get global ref to DEF_FUN
-    Global* def_fun_instr = &dynamic_cast<Global &>(*globalNameMap[cop]);
+    Global* def_fun_instr
+      = &dynamic_cast<Global &>(*globalNameMap[cop]->contents);
     // add GLO_REF, then FUN_CALL
     chain_i(&chain,new Reference(def_fun_instr,oi)); 
     chain_i(&chain,new FunctionCall(cop));
@@ -1726,7 +1961,7 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   chain_i(&chain, fnstart->ret = new Instruction(RET_OP));
   if(root->bodyOf!=NULL) {
      V3 << "Adding fn:" << root->bodyOf->name << " to globalNameMap" << endl;
-     globalNameMap[root->bodyOf] = fnstart;
+     globalNameMap[root->bodyOf] = new Block(fnstart);
   }
   return fnstart;
 }

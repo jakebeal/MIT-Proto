@@ -144,7 +144,12 @@ class CodeEmitter {
     virtual void setDefops(const std::string &defops) = 0;
 };
 
-class InstructionPropagator; class Instruction;
+// FIXME: What a kludge!  The top-level compiler cruft shouldn't have
+// to know about this crap.
+
+class InstructionPropagator;
+class Instruction;
+class Block;
 
 class ProtoKernelEmitter : public CodeEmitter {
  public:
@@ -159,7 +164,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   void setDefops(const std::string &defops);
 
   /// Map of compound ops -> instructions (in global mem).
-  std::map<CompoundOp *, Instruction *> globalNameMap;
+  std::map<CompoundOp *, Block *> globalNameMap;
 
  private:
   std::vector<InstructionPropagator *> rules;
@@ -174,6 +179,9 @@ class ProtoKernelEmitter : public CodeEmitter {
   /// List of scalar/vector ops.
   std::map<std::string, std::pair<int, int> > sv_ops;
 
+  /// List of folding ops, which are also scalar/vector pairs.
+  std::map<std::string, std::pair<int, int> > fold_ops;
+
   Instruction *start, *end;
 
   void load_ops(const std::string &name);
@@ -185,6 +193,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction *primitive_to_instruction(OperatorInstance *oi);
   Instruction *standard_primitive_instruction(OperatorInstance *oi);
   Instruction *vector_primitive_instruction(OperatorInstance *oi);
+  Instruction *fold_primitive_instruction(OperatorInstance *oi);
   Instruction *divide_primitive_instruction(OperatorInstance *oi);
   Instruction *tuple_primitive_instruction(OperatorInstance *oi);
   Instruction *branch_primitive_instruction(OperatorInstance *oi);
