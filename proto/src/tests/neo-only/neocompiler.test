@@ -1988,7 +1988,7 @@ is 14 _   [Lit: <Scalar 7>] --> Foxtrot<Scalar 7>
 is 15 _   Charlie<Scalar> --> [local] --> Golf<Field <Scalar>>
 is 16 _ Stopping before localization
 
-test: $(P2B) -CDanalyzed "(let ((x (nbr (mid)))) (if (> (mid) 3) (any-hood x) 0))" --no-localization 
+test: $(P2B) -CDanalyzed "(let ((x (nbr (mid)))) (if (> (mid) 3) (any-hood x) 0))" --no-localization
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _   [Medium: Bravo = Alfa | Charlie]
@@ -2017,10 +2017,33 @@ is 24 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
 is 25 _   [Lit: <Scalar 0>] --> Mike<Scalar 0>
 is 26 _ Stopping before localization
 
-// FIXME: Doesn't work -- hmm.
-test: $(P2B) -CDlocalized "(sum-hood (if (nbr (mid)) 5 7))"
-//is 0 _ TEST NOT DEFINED YET
-//is 25 _ Stopping before emission
+test: $(P2B) -CDlocalized "(sum-hood (mux (nbr (mid)) 5 7))"
+is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar 5>
+is 7 _     Echo: Alfa --> <Scalar 7>
+is 8 _   Operator Instances:
+is 9 _     [Parameter 0: arg~5] --> Bravo<Scalar>
+is 10 _     Bravo<Scalar>, Delta<Scalar 5>, Echo<Scalar 7> --> [mux] --> Charlie<Scalar> OUTPUT
+is 11 _     [Lit: <Scalar 5>] --> Delta<Scalar 5>
+is 12 _     [Lit: <Scalar 7>] --> Echo<Scalar 7>
+is 13 _ Amorphous Mediums:
+is 14 _   [Medium: Foxtrot = root]
+is 15 _ Fields:
+is 16 _   Golf: Foxtrot --> <Scalar>
+is 17 _   Hotel: Foxtrot --> <Scalar> OUTPUT
+is 18 _   India: Foxtrot --> <Lambda [+]>
+is 19 _   Juliet: Foxtrot --> <Lambda [Fun: lambda~6]>
+is 20 _ Operator Instances:
+is 21 _   [mid] --> Golf<Scalar>
+is 22 _   India<Lambda [+]>, Juliet<Lambda [Fun: lambda~6]>, Golf<Scalar> --> [fold-hood-plus] --> Hotel<Scalar> OUTPUT
+is 23 _   [Lit: <Lambda [+]>] --> India<Lambda [+]>
+is 24 _   [Lit: <Lambda [Fun: lambda~6]>] --> Juliet<Lambda [Fun: lambda~6]>
+is 25 _ Stopping before emission
 
 // Test locals
 test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
@@ -2051,8 +2074,46 @@ is 23 _ Stopping before emission
 
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
-//is 0 _ TEST NOT DEFINED YET
-//is 25 _ Stopping before emission
+is 0 _ Function: lambda~7 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 1 _   Amorphous Mediums:
+is 2 _     [Medium: Alfa = root]
+is 3 _   Fields:
+is 4 _     Bravo: Alfa --> <Scalar>
+is 5 _     Charlie: Alfa --> <Scalar> OUTPUT
+is 6 _     Delta: Alfa --> <Scalar>
+is 7 _     Echo: Alfa --> <Scalar inf>
+is 8 _     Foxtrot: Alfa --> <Boolean>
+is 9 _     Golf: Alfa --> <Scalar>
+is 10 _     Hotel: Alfa --> <Scalar 0>
+is 11 _     India: Alfa --> <Scalar>
+is 12 _   Operator Instances:
+is 13 _     [Parameter 0: arg~6] --> Bravo<Scalar>
+is 14 _     Foxtrot<Boolean>, Echo<Scalar inf>, Delta<Scalar> --> [mux] --> Charlie<Scalar> OUTPUT
+is 15 _     India<Scalar>, Bravo<Scalar> --> [*] --> Delta<Scalar>
+is 16 _     [Lit: <Scalar inf>] --> Echo<Scalar inf>
+is 17 _     Golf<Scalar>, Hotel<Scalar 0> --> [=] --> Foxtrot<Boolean>
+is 18 _     [Local~~nbr-range] --> Golf<Scalar>
+is 19 _     [Lit: <Scalar 0>] --> Hotel<Scalar 0>
+is 20 _     Juliet<Scalar> --> [reference] --> India<Scalar>
+is 21 _ Amorphous Mediums:
+is 22 _   [Medium: Kilo = root]
+is 23 _ Fields:
+is 24 _   Juliet: Kilo --> <Scalar>
+is 25 _   Lima: Kilo --> <Scalar>
+is 26 _   Mike: Kilo --> <Scalar 1>
+is 27 _   November: Kilo --> <Scalar>
+is 28 _   Oscar: Kilo --> <Scalar> OUTPUT
+is 29 _   Papa: Kilo --> <Lambda [min]>
+is 30 _   Quebec: Kilo --> <Lambda [Fun: lambda~7]>
+is 31 _ Operator Instances:
+is 32 _   Lima<Scalar>, Mike<Scalar 1> --> [+] --> Juliet<Scalar>
+is 33 _   [mid] --> Lima<Scalar>
+is 34 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
+is 35 _   [mid] --> November<Scalar>
+is 36 _   Papa<Lambda [min]>, Quebec<Lambda [Fun: lambda~7]>, November<Scalar> --> [fold-hood-plus] --> Oscar<Scalar> OUTPUT
+is 37 _   [Lit: <Lambda [min]>] --> Papa<Lambda [min]>
+is 38 _   [Lit: <Lambda [Fun: lambda~7]>] --> Quebec<Lambda [Fun: lambda~7]>
+is 39 _ Stopping before emission
 
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ (+ 1 x) (nbr x)))))"
