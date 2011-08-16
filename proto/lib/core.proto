@@ -187,10 +187,10 @@
   :type-constraints ((= value (ft (unlit arg0)))))
 
 (def is-self () (= (nbr-range) 0))
-(macro any-hood+ (value) (any-hood (if (is-self) false ,value)))
-(macro all-hood+ (value) (all-hood (if (is-self) true ,value)))
-(macro min-hood+ (value) (min-hood (if (is-self) inf ,value)))
-(macro max-hood+ (value) (max-hood (if (is-self) -inf ,value)))
+(macro any-hood+ (value) (any-hood (mux (is-self) false ,value)))
+(macro all-hood+ (value) (all-hood (mux (is-self) true ,value)))
+(macro min-hood+ (value) (min-hood (mux (is-self) inf ,value)))
+(macro max-hood+ (value) (max-hood (mux (is-self) -inf ,value)))
 
 ;; fold-hood's lambda takes a partial summary and the value from a nbr
 ;; and combines them to make a new partial summary.  The 2nd argument is
