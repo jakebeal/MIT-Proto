@@ -6,7 +6,6 @@ test_files_paleocompiler = \
 	paleo-only/mathlib.test \
 	paleo-only/math.test \
 	paleo-only/misc.test \
-	paleo-only/plugins.test \
 	paleo-only/tuple.test
 
 test_files_neocompiler = \
@@ -21,6 +20,7 @@ test_files_common = \
 	universal/position.test \
 	universal/smoke.test \
 	universal/vectcomp.test
+	universal/plugins.test
 
 if USE_NEOCOMPILER
 test_files = $(test_files_common) $(test_files_neocompiler)
