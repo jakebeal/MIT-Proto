@@ -25,6 +25,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "scoped_ptr.h"
 #include "spatialcomputer.h"
 #include "utils.h"
+#include "config.h"
 
 using namespace std;
 
@@ -105,7 +106,6 @@ register_plugin(const string &plugin_directory, const string &filename,
 {
   string pathname = plugin_directory + "/" + filename;
 
-  cout << "Trying to open: " << pathname.c_str() << "\n";
   // Open the plugin.
   scoped_lt_dlhandle handle(lt_dlopenext(pathname.c_str()));
   if (handle == 0) {
@@ -140,7 +140,7 @@ plugin_filename_p(const string &filename)
 {
   return ((filename.size() > 3) && (filename.substr(0, 3) == "lib"));
 }
-	
+
 // Reading the plugin directory
 
 static int
@@ -167,15 +167,8 @@ register_plugins(const string &plugin_directory, ofstream *registry_stream)
       string filename(dirent->d_name);
       if (plugin_filename_p(filename)) {
         size_t dot = filename.rfind('.');
-        if (dot) {
-        	filename = filename.substr(0, dot);
-        	// Cygwin creates x.dll.a files, just get the base name here
-        	dot = filename.rfind(".dll");
-        	if (dot) {
-        		filename = filename.substr(0, dot);
-        	}
-        }
-        cout << "Adding " << filename << " to plausible plugins\n";
+        if (dot)
+          filename = filename.substr(0, dot);
         plausible_plugins.insert(filename);
       }
     }
@@ -198,6 +191,15 @@ register_plugins(const string &plugin_directory, ofstream *registry_stream)
         n_registered += 1;
     }
   }
+
+  // FIXME: This is totally bogus, but I don't understand what's going
+  // on with Windows.  If you do understand, please fix this.
+#if !defined(_WIN32) && !defined(_CYGWIN)
+  if (n_registered == 0) {
+    cerr << "No plugins found!\n";
+    return 3;
+  }
+#endif
 
   return 0;
 }
