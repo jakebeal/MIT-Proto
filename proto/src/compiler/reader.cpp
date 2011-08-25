@@ -37,19 +37,14 @@ Path::add_default_path(const string &srcdir)
 ifstream *
 Path::find_in_path(const string &filename) const
 {
-
-  scoped_ptr<ifstream> stream(new ifstream);
   for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
     string absolute_filename = *i + "/" + filename;
-    stream->open(absolute_filename.c_str());
-    if (stream->good()) {
+    scoped_ptr<ifstream> stream(new ifstream(absolute_filename.c_str()));
+    if (stream->good())
       return stream.release();
-    } 
-    stream->close();
-    stream->clear();
   }
 
-  return NULL;
+  return 0;
 }
 
 typedef enum {
