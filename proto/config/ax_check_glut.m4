@@ -55,7 +55,7 @@ else
   [ax_cv_check_glut_libglut="no"
   ax_save_LIBS="${LIBS}"
   LIBS=""
-  ax_check_libs="-lglut"
+  ax_check_libs="-lglut -lglut32"
   for ax_lib in ${ax_check_libs}; do
     if test X$ax_compiler_ms = Xyes; then
       ax_try_lib=`echo $ax_lib | sed -e 's/^-l//' -e 's/$/.lib/'`
