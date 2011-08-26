@@ -561,124 +561,158 @@ Field* ProtoInterpreter::let_to_graph(SE_List* s, AM* space, Env *env,
 }
 
 // A tuple-style letfed has the following behavior:
-// 1. its MUX outputs a tuple
-// 2. it decomposes said tuple to bind children
-// returns true if binding's OK
-bool bind_letfed_vars(SExpr* s, Field* val, AM* space, Env* env) {
-  bool ok=false;
-  if(s->isSymbol()) { // base case: just bind the variable
-    env->bind(dynamic_cast<SE_Symbol &>(*s).name,val); ok=true;
-  } else if(s->isList()) { // tuple variable?
-    SE_List *sl = &dynamic_cast<SE_List &>(*s);
-    if(sl->op()->isSymbol()
-       && dynamic_cast<SE_Symbol &>(*sl->op()).name=="tup") {
-      ok=true;
-      for(int i=1;i<sl->len();i++) {
-        // make element accessor
-        DFG* dfg = space->container;
-        OI* accessor = new OperatorInstance(s,Env::core_op("elt"),space);
-        accessor->add_input(val);
-        accessor->add_input(dfg->add_literal(new ProtoScalar(i-1),space,s));
-        // recurse binding process
-        ok &= bind_letfed_vars((*sl)[i],accessor->output,space,env);
+// 1. its MUX outputs a tuple, and
+// 2. it decomposes said tuple to bind children.
+
+static void
+bind_letfed_pattern(SExpr *pattern, Field *field, AM *space, Env *env)
+{
+  if (pattern->isSymbol()) {
+    env->bind(dynamic_cast<SE_Symbol &>(*pattern).name, field);
+  } else if (pattern->isList()) {
+    SE_List *list = &dynamic_cast<SE_List &>(*pattern);
+    if (list->op()->isSymbol()
+        && dynamic_cast<SE_Symbol &>(*list->op()).name == "tup") {
+      for (size_t i = 1; i < list->len(); i++) {
+        // Make element accessor.
+        DFG *dfg = space->container;
+        OI *accessor = new OI(pattern, Env::core_op("elt"), space);
+        accessor->add_input(field);
+        accessor->add_input
+          (dfg->add_literal(new ProtoScalar(i - 1), space, pattern));
+        // Recursively bind.
+        bind_letfed_pattern((*list)[i], accessor->output, space, env);
       }
     }
-  } // unhandled = not OK
-  return ok; 
+  } else {
+    ierror("Invalid letfed pattern: " + pattern->to_str());
+  }
+}
+
+static bool
+letfed_pattern_p(SExpr *sexpr)
+{
+  if (sexpr->isSymbol()) {
+    return true;
+  } else if (sexpr->isList()) {
+    SE_List *list = &dynamic_cast<SE_List &>(*sexpr);
+    for (size_t i = 0; i < list->len(); i++)
+      if (!letfed_pattern_p((*list)[i]))
+        return false;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 Field *
 ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
     bool no_init)
 {
-  if ((s->len() < 3) || !s->children[1]->isList())
-    return field_err(s, space, "Malformed letfed statement: " + s->to_str());
+  // Parse the input with the beautiful pattern matching language that
+  // C++ affords us.
+  if (! ((s->len() >= 3) & (*s)[1]->isList()))
+    return field_err(s, space, "Malformed letfed expression: " + s->to_str());
 
-  Env *child = new Env(env), *delayed = new Env(env);
+  vector<SExpr *>::const_iterator iterator = s->args();
+  SE_List *bindings = &dynamic_cast<SE_List &>(*(*iterator++));
+  size_t n = bindings->len();
 
-  // Unless no_init, make the two forks: init and update.
-  OI *dchange;
-  AM *init, *update;
+  vector<SExpr *> patterns;
+  vector<SExpr *> initial_expressions;
+  vector<SExpr *> update_expressions;
+
+  for (size_t i = 0; i < n; i++) {
+    SExpr *binding = (*bindings)[i];
+    if (!binding->isList())
+      compile_error(binding, "Malformed letfed binding: " + binding->to_str());
+    SE_List *binding_list = &dynamic_cast<SE_List &>(*binding);
+    if (binding_list->len() != 3)
+      compile_error(binding, "Malformed letfed binding: " + binding->to_str());
+    SExpr *pattern = (*binding_list)[0];
+    if (!letfed_pattern_p(pattern))
+      compile_error(pattern, "Malformed letfed pattern: " + pattern->to_str());
+    patterns.push_back(pattern);
+    initial_expressions.push_back((*binding_list)[1]);
+    update_expressions.push_back((*binding_list)[2]);
+  }
+
+  // Create the environments, conditional OIs, and subspaces.
+  Env *body_env = new Env(env), *update_env = new Env(env);
+  OI *true_if_change, *false_if_change;
+  AM *initial_space, *update_space;
 
   if (!no_init) {
-    dchange = new OperatorInstance(s, Env::core_op("dchange"), space);
-    init = new AM(s, space, dchange->output);
-    OI *unchange = new OperatorInstance(s, Env::core_op("not"), space);
-    unchange->add_input(dchange->output);
-    update = new AM(s, space, unchange->output);
-    V4 << "Created feedback spaces:\n";
-    V4 << "- Init: " << ce2s(init) <<" Update: " << ce2s(update) << endl;
+    true_if_change = new OI(s, Env::core_op("dchange"), space);
+    false_if_change = new OI(s, Env::core_op("not"), space);
+    false_if_change->add_input(true_if_change->output);
+    initial_space = new AM(s, space, true_if_change->output);
+    update_space = new AM(s, space, false_if_change->output);
   } else {
-    dchange = NULL;
-    // ??? new OI(s, new Literal(s, new ProtoBoolean(false)), space);
-    init = update = space;
+    true_if_change = false_if_change = 0;
+    initial_space = update_space = 0;
   }
 
-  // First pass: collect & bind variables; verify syntax; evaluate
-  // initial expressions.
-  vector<SExpr *>::iterator let_exps = s->args();
-  SE_List *decls = &dynamic_cast<SE_List &>(*(*let_exps++));
-  vector<OperatorInstance *> vars;
+  // Evaluate the initial expressions.
+  vector<OI *> ois;
+  for (size_t i = 0; i < n; i++) {
+    SExpr *binding = (*bindings)[i];
+    SExpr *pattern = patterns[i];
+    SExpr *initial_expression = initial_expressions[i];
 
-  for (int i = 0; i < decls->len(); i++) {
-    if ((*decls)[i]->isList()
-        && (dynamic_cast<SE_List &>(*(*decls)[i]).len() == 3)) {
-      SE_List *d = &dynamic_cast<SE_List &>(*(*decls)[i]);
-      V4 << "Creating feedback variable " << ce2s((*d)[0]) << endl;
+    // FIXME: Move the common initialization of delay to here, and
+    // update the tests to reflect the cosmetic changes that incurs.
+    OI *delay;
 
-      // Create the variable & bind it.
-      OI *varmux, *delay;
-      if (!no_init) {
-        varmux = new OperatorInstance(d, Env::core_op("mux"), space);
-        varmux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
-        varmux->add_input(dchange->output);
-
-        // Create the delayed version.
-        delay = new OperatorInstance(d, Env::core_op("delay"), update);
-        delay->add_input(varmux->output);
-      } else {
-        delay = varmux
-          = new OperatorInstance(d, Env::core_op("delay"), update);
-      }
-      vars.push_back(varmux);
-
-      // Bind the variables.
-      if (!bind_letfed_vars(d->op(), delay->output, update, delayed))
-        compile_error(d, "Malformed letfed variable: " + d->op()->to_str());
-
-      // Evaluate initial expression.
-      if (!no_init) {
-        varmux->add_input(sexp_to_graph((*d)[1], init, env));
-      } else {
-        delay->output->range = sexp_to_type((*d)[1]);
-        // ???
-        // varmux->add_input
-        //   (dfg->add_literal(new ProtoBoolean(false), space, s));
-      }
-    } else {
-      compile_error((*decls)[i],
-          "Malformed letfed statement: " + (*decls)[i]->to_str());
-    }
-  }
-
-  // Second pass:  Evalute update expressions.
-  for (int i = 0; i < decls->len(); i++) {
-    SE_List *d = &dynamic_cast<SE_List &>(*(*decls)[i]);
-    Field *up_value = sexp_to_graph((*d)[2], update, delayed);
     if (!no_init) {
-      bind_letfed_vars(d->op(), vars[i]->output, space, child);
-      vars[i]->add_input(up_value);
+      OI *mux = new OI(binding, Env::core_op("mux"), space);
+      delay = new OI(binding, Env::core_op("delay"), update_space);
+      // Bind the pattern variables to the delayed fields in the
+      // environment for the update expression.
+      bind_letfed_pattern(pattern, delay->output, update_space, update_env);
+      mux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
+      mux->add_input(true_if_change->output);
+      mux->add_input(sexp_to_graph(initial_expression, initial_space, env));
+      delay->add_input(mux->output);
+      ois.push_back(mux);
     } else {
-      bind_letfed_vars(d->op(), up_value, space, child);
-      vars[i]->add_input(up_value);
+      delay = new OI(binding, Env::core_op("delay"), update_space);
+      bind_letfed_pattern(pattern, delay->output, update_space, update_env);
+      delay->output->range = sexp_to_type(initial_expression);
+      ois.push_back(delay);
     }
+
+    // FIXME: Move the common binding of the pattern to here, and
+    // update the tests to reflect the cosmetic changes that incurs.
   }
 
-  // Evaluate body in child environment, returning last output.
-  Field *out = 0;
-  for (; let_exps < s->children.end(); ++let_exps)
-    out = sexp_to_graph(*let_exps, space, child);
-  return out;
+  // Evaluate the update expressions.
+  for (size_t i = 0; i < n; i++) {
+    SExpr *binding = (*bindings)[i];
+    SExpr *pattern = patterns[i];
+    SExpr *update_expression = update_expressions[i];
+
+    Field *update = sexp_to_graph(update_expression, update_space, update_env);
+    Field *field;
+
+    if (!no_init)
+      field = ois[i]->output;
+    else
+      field = update;
+
+    // Bind the pattern variables to the actual field in the body.
+    bind_letfed_pattern(pattern, field, space, body_env);
+
+    // Feed the update field back into the mux/delay OI.
+    ois[i]->add_input(update);
+  }
+
+  // Evaluate the body.
+  Field *field = 0;
+  while (iterator != s->children.end())
+    field = sexp_to_graph(*iterator++, space, body_env);
+
+  return field;
 }
 
 Field* ProtoInterpreter::restrict_to_graph(SE_List* s, AM* space, Env *env){
