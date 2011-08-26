@@ -959,13 +959,13 @@ is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
 is 7 _   Foxtrot: Delta --> <Local>
 is 8 _   Golf: Alfa --> <Local>
-is 9 _   Hotel: Delta --> <Any>
-is 10 _   India: Delta --> <Scalar 0>
-is 11 _   Juliet: Delta --> <Any>
-is 12 _   Kilo: Delta --> <Scalar 1>
-is 13 _   Lima: Bravo --> <Tuple<Any>...>
-is 14 _   Mike: Bravo --> <Scalar 7>
-is 15 _   November: Bravo --> <Scalar 8>
+is 9 _   Hotel: Bravo --> <Tuple<Any>...>
+is 10 _   India: Bravo --> <Scalar 7>
+is 11 _   Juliet: Bravo --> <Scalar 8>
+is 12 _   Kilo: Delta --> <Any>
+is 13 _   Lima: Delta --> <Scalar 0>
+is 14 _   Mike: Delta --> <Any>
+is 15 _   November: Delta --> <Scalar 1>
 is 16 _   Oscar: Delta --> <Tuple<Any>...>
 is 17 _   Papa: Delta --> <Number>
 is 18 _   Quebec: Delta --> <Scalar 1>
@@ -979,18 +979,18 @@ is 25 _ Operator Instances:
 is 26 _   [dchange] --> Charlie<Boolean>
 is 27 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
 is 28 _   Golf<Local> --> [delay] --> Foxtrot<Local>
-is 29 _   Charlie<Boolean>, Lima<Tuple<Any>...>, Oscar<Tuple<Any>...> --> [mux] --> Golf<Local>
-is 30 _   Foxtrot<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
-is 31 _   [Lit: <Scalar 0>] --> India<Scalar 0>
-is 32 _   Foxtrot<Local>, Kilo<Scalar 1> --> [elt] --> Juliet<Any>
-is 33 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
-is 34 _   Mike<Scalar 7>, November<Scalar 8> --> [tup] --> Lima<Tuple<Any>...>
-is 35 _   [Lit: <Scalar 7>] --> Mike<Scalar 7>
-is 36 _   [Lit: <Scalar 8>] --> November<Scalar 8>
+is 29 _   Charlie<Boolean>, Hotel<Tuple<Any>...>, Oscar<Tuple<Any>...> --> [mux] --> Golf<Local>
+is 30 _   India<Scalar 7>, Juliet<Scalar 8> --> [tup] --> Hotel<Tuple<Any>...>
+is 31 _   [Lit: <Scalar 7>] --> India<Scalar 7>
+is 32 _   [Lit: <Scalar 8>] --> Juliet<Scalar 8>
+is 33 _   Foxtrot<Local>, Lima<Scalar 0> --> [elt] --> Kilo<Any>
+is 34 _   [Lit: <Scalar 0>] --> Lima<Scalar 0>
+is 35 _   Foxtrot<Local>, November<Scalar 1> --> [elt] --> Mike<Any>
+is 36 _   [Lit: <Scalar 1>] --> November<Scalar 1>
 is 37 _   Papa<Number>, Romeo<Number> --> [tup] --> Oscar<Tuple<Any>...>
-is 38 _   Hotel<Any>, Quebec<Scalar 1> --> [+] --> Papa<Number>
+is 38 _   Kilo<Any>, Quebec<Scalar 1> --> [+] --> Papa<Number>
 is 39 _   [Lit: <Scalar 1>] --> Quebec<Scalar 1>
-is 40 _   Juliet<Any>, Hotel<Any> --> [*] --> Romeo<Number>
+is 40 _   Mike<Any>, Kilo<Any> --> [*] --> Romeo<Number>
 is 41 _   Golf<Local>, Tango<Scalar 0> --> [elt] --> Sierra<Any>
 is 42 _   [Lit: <Scalar 0>] --> Tango<Scalar 0>
 is 43 _   Golf<Local>, Victor<Scalar 1> --> [elt] --> Uniform<Any>
@@ -1007,19 +1007,19 @@ is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
 is 7 _   Foxtrot: Delta --> <Local>
 is 8 _   Golf: Alfa --> <Local>
-is 9 _   Hotel: Delta --> <Any>
-is 10 _   India: Delta --> <Scalar 0>
-is 11 _   Juliet: Delta --> <Any>
-is 12 _   Kilo: Delta --> <Scalar 0>
-is 13 _   Lima: Delta --> <Any>
-is 14 _   Mike: Delta --> <Scalar 1>
-is 15 _   November: Delta --> <Any>
-is 16 _   Oscar: Delta --> <Scalar 1>
-is 17 _   Papa: Bravo --> <Tuple<Any>...>
-is 18 _   Quebec: Bravo --> <Tuple<Any>...>
-is 19 _   Romeo: Bravo --> <Scalar 2>
-is 20 _   Sierra: Bravo --> <Scalar 3>
-is 21 _   Tango: Bravo --> <Scalar 4>
+is 9 _   Hotel: Bravo --> <Tuple<Any>...>
+is 10 _   India: Bravo --> <Tuple<Any>...>
+is 11 _   Juliet: Bravo --> <Scalar 2>
+is 12 _   Kilo: Bravo --> <Scalar 3>
+is 13 _   Lima: Bravo --> <Scalar 4>
+is 14 _   Mike: Delta --> <Any>
+is 15 _   November: Delta --> <Scalar 0>
+is 16 _   Oscar: Delta --> <Any>
+is 17 _   Papa: Delta --> <Scalar 0>
+is 18 _   Quebec: Delta --> <Any>
+is 19 _   Romeo: Delta --> <Scalar 1>
+is 20 _   Sierra: Delta --> <Any>
+is 21 _   Tango: Delta --> <Scalar 1>
 is 22 _   Uniform: Delta --> <Tuple<Any>...>
 is 23 _   Victor: Delta --> <Tuple<Any>...>
 is 24 _   Whiskey: Alfa --> <Any>
@@ -1034,22 +1034,22 @@ is 32 _ Operator Instances:
 is 33 _   [dchange] --> Charlie<Boolean>
 is 34 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
 is 35 _   Golf<Local> --> [delay] --> Foxtrot<Local>
-is 36 _   Charlie<Boolean>, Papa<Tuple<Any>...>, Uniform<Tuple<Any>...> --> [mux] --> Golf<Local>
-is 37 _   Foxtrot<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
-is 38 _   [Lit: <Scalar 0>] --> India<Scalar 0>
-is 39 _   Hotel<Any>, Kilo<Scalar 0> --> [elt] --> Juliet<Any>
-is 40 _   [Lit: <Scalar 0>] --> Kilo<Scalar 0>
-is 41 _   Hotel<Any>, Mike<Scalar 1> --> [elt] --> Lima<Any>
-is 42 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
-is 43 _   Foxtrot<Local>, Oscar<Scalar 1> --> [elt] --> November<Any>
-is 44 _   [Lit: <Scalar 1>] --> Oscar<Scalar 1>
-is 45 _   Quebec<Tuple<Any>...>, Tango<Scalar 4> --> [tup] --> Papa<Tuple<Any>...>
-is 46 _   Romeo<Scalar 2>, Sierra<Scalar 3> --> [tup] --> Quebec<Tuple<Any>...>
-is 47 _   [Lit: <Scalar 2>] --> Romeo<Scalar 2>
-is 48 _   [Lit: <Scalar 3>] --> Sierra<Scalar 3>
-is 49 _   [Lit: <Scalar 4>] --> Tango<Scalar 4>
-is 50 _   Victor<Tuple<Any>...>, Lima<Any> --> [tup] --> Uniform<Tuple<Any>...>
-is 51 _   Juliet<Any>, November<Any> --> [tup] --> Victor<Tuple<Any>...>
+is 36 _   Charlie<Boolean>, Hotel<Tuple<Any>...>, Uniform<Tuple<Any>...> --> [mux] --> Golf<Local>
+is 37 _   India<Tuple<Any>...>, Lima<Scalar 4> --> [tup] --> Hotel<Tuple<Any>...>
+is 38 _   Juliet<Scalar 2>, Kilo<Scalar 3> --> [tup] --> India<Tuple<Any>...>
+is 39 _   [Lit: <Scalar 2>] --> Juliet<Scalar 2>
+is 40 _   [Lit: <Scalar 3>] --> Kilo<Scalar 3>
+is 41 _   [Lit: <Scalar 4>] --> Lima<Scalar 4>
+is 42 _   Foxtrot<Local>, November<Scalar 0> --> [elt] --> Mike<Any>
+is 43 _   [Lit: <Scalar 0>] --> November<Scalar 0>
+is 44 _   Mike<Any>, Papa<Scalar 0> --> [elt] --> Oscar<Any>
+is 45 _   [Lit: <Scalar 0>] --> Papa<Scalar 0>
+is 46 _   Mike<Any>, Romeo<Scalar 1> --> [elt] --> Quebec<Any>
+is 47 _   [Lit: <Scalar 1>] --> Romeo<Scalar 1>
+is 48 _   Foxtrot<Local>, Tango<Scalar 1> --> [elt] --> Sierra<Any>
+is 49 _   [Lit: <Scalar 1>] --> Tango<Scalar 1>
+is 50 _   Victor<Tuple<Any>...>, Quebec<Any> --> [tup] --> Uniform<Tuple<Any>...>
+is 51 _   Oscar<Any>, Sierra<Any> --> [tup] --> Victor<Tuple<Any>...>
 is 52 _   Golf<Local>, Xray<Scalar 0> --> [elt] --> Whiskey<Any>
 is 53 _   [Lit: <Scalar 0>] --> Xray<Scalar 0>
 is 54 _   Whiskey<Any>, Zulu<Scalar 0> --> [elt] --> Yankee<Any>

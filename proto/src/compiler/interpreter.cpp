@@ -664,22 +664,19 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
 
     if (!no_init) {
       OI *mux = new OI(binding, Env::core_op("mux"), space);
-      // Bind the pattern variables to the delayed fields in the
-      // environment for the update expression.
-      bind_letfed_pattern(pattern, delay->output, update_space, update_env);
       mux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
       mux->add_input(true_if_change->output);
       mux->add_input(sexp_to_graph(initial_expression, initial_space, env));
       delay->add_input(mux->output);
       ois.push_back(mux);
     } else {
-      bind_letfed_pattern(pattern, delay->output, update_space, update_env);
       delay->output->range = sexp_to_type(initial_expression);
       ois.push_back(delay);
     }
 
-    // FIXME: Move the common binding of the pattern to here, and
-    // update the tests to reflect the cosmetic changes that incurs.
+    // Bind the pattern variables to the delayed fields in the
+    // environment for the update expression.
+    bind_letfed_pattern(pattern, delay->output, update_space, update_env);
   }
 
   // Evaluate the update expressions.
