@@ -96,7 +96,7 @@ class ProtoInterpreter {
   /// compiler special-form handlers
   Field* let_to_graph(SE_List* s, AM* space, Env *env,bool incremental);
   /// compiler special-form handlers
-  Field* letfed_to_graph(SE_List* s, AM* space, Env *env,bool no_init);
+  Field* letfed_to_graph(SE_List* s, AM* space, Env *env,bool init);
   /// compiler special-form handlers
   Field* restrict_to_graph(SE_List* s, AM* space, Env *env);
 };

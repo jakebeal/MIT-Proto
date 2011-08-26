@@ -607,7 +607,7 @@ letfed_pattern_p(SExpr *sexpr)
 
 Field *
 ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
-    bool no_init)
+    bool init)
 {
   // Parse the input with the beautiful pattern matching language that
   // C++ affords us.
@@ -642,7 +642,7 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
   OI *true_if_change, *false_if_change;
   AM *initial_space, *update_space;
 
-  if (!no_init) {
+  if (init) {
     true_if_change = new OI(s, Env::core_op("dchange"), space);
     false_if_change = new OI(s, Env::core_op("not"), space);
     false_if_change->add_input(true_if_change->output);
@@ -662,7 +662,7 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
 
     OI *delay = new OI(binding, Env::core_op("delay"), update_space);
 
-    if (!no_init) {
+    if (init) {
       OI *mux = new OI(binding, Env::core_op("mux"), space);
       mux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
       mux->add_input(true_if_change->output);
@@ -688,7 +688,7 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
     Field *update = sexp_to_graph(update_expression, update_space, update_env);
     Field *field;
 
-    if (!no_init)
+    if (init)
       field = ois[i]->output;
     else
       field = update;
@@ -822,7 +822,7 @@ Field* ProtoInterpreter::sexp_to_graph(SExpr* s, AM* space, Env *env) {
         }
         return NULL; // annotations are like primitives: nothing returned
       } else if(opname=="letfed" || opname=="letfed+") {
-        return letfed_to_graph(sl,space,env,opname=="letfed+");
+        return letfed_to_graph(sl,space,env,opname=="letfed");
       } else if(opname=="macro") {
         V4 << "Defining macro\n";
         sexp_to_macro(sl,env);
