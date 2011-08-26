@@ -587,76 +587,97 @@ bool bind_letfed_vars(SExpr* s, Field* val, AM* space, Env* env) {
   return ok; 
 }
 
-Field* ProtoInterpreter::letfed_to_graph(SE_List* s, AM* space, Env *env,
-                                         bool no_init) {
-  if(s->len()<3 || !s->children[1]->isList())
-    return field_err(s,space,"Malformed letfed statement: "+s->to_str());
+Field *
+ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
+    bool no_init)
+{
+  if ((s->len() < 3) || !s->children[1]->isList())
+    return field_err(s, space, "Malformed letfed statement: " + s->to_str());
+
   Env *child = new Env(env), *delayed = new Env(env);
-  // unless no_init, make the two forks: init and update
-  OI *dchange; AM *init, *update;
-  if(!no_init) {
-    dchange = new OperatorInstance(s,Env::core_op("dchange"),space);
-    init = new AM(s,space,dchange->output);
-    OI *unchange = new OperatorInstance(s,Env::core_op("not"),space);
+
+  // Unless no_init, make the two forks: init and update.
+  OI *dchange;
+  AM *init, *update;
+
+  if (!no_init) {
+    dchange = new OperatorInstance(s, Env::core_op("dchange"), space);
+    init = new AM(s, space, dchange->output);
+    OI *unchange = new OperatorInstance(s, Env::core_op("not"), space);
     unchange->add_input(dchange->output);
-    update = new AM(s,space,unchange->output);
+    update = new AM(s, space, unchange->output);
     V4 << "Created feedback spaces:\n";
-    V4 <<"- Init: "<<ce2s(init) <<" Update: "<<ce2s(update)<<endl;
+    V4 << "- Init: " << ce2s(init) <<" Update: " << ce2s(update) << endl;
   } else {
-    dchange = NULL;//new OI(s,new Literal(s,new ProtoBoolean(false)),space);
+    dchange = NULL;
+    // ??? new OI(s, new Literal(s, new ProtoBoolean(false)), space);
     init = update = space;
   }
-  // collect & bind let declarations, verify syntax
-  vector<SExpr*>::iterator let_exps = s->args();
-  SE_List* decls = &dynamic_cast<SE_List &>(*(*let_exps++));
-  vector<OperatorInstance*> vars;
-  for(int i=0;i<decls->len();i++) {
-    if((*decls)[i]->isList()
-       && dynamic_cast<SE_List &>(*(*decls)[i]).len()==3) {
-      SE_List* d = &dynamic_cast<SE_List &>(*(*decls)[i]);
-      V4 << "Creating feedback variable "<<ce2s((*d)[0])<<endl;
-      // create the variable & bind it
+
+  // First pass: collect & bind variables; verify syntax; evaluate
+  // initial expressions.
+  vector<SExpr *>::iterator let_exps = s->args();
+  SE_List *decls = &dynamic_cast<SE_List &>(*(*let_exps++));
+  vector<OperatorInstance *> vars;
+
+  for (int i = 0; i < decls->len(); i++) {
+    if ((*decls)[i]->isList()
+        && (dynamic_cast<SE_List &>(*(*decls)[i]).len() == 3)) {
+      SE_List *d = &dynamic_cast<SE_List &>(*(*decls)[i]);
+      V4 << "Creating feedback variable " << ce2s((*d)[0]) << endl;
+
+      // Create the variable & bind it.
       OI *varmux, *delay;
-      if(!no_init) {
-        varmux = new OperatorInstance(d,Env::core_op("mux"),space);
+      if (!no_init) {
+        varmux = new OperatorInstance(d, Env::core_op("mux"), space);
         varmux->attributes["LETFED-MUX"] = new MarkerAttribute(true);
         varmux->add_input(dchange->output);
-        // create the delayed version
-        delay = new OperatorInstance(d,Env::core_op("delay"),update);
+
+        // Create the delayed version.
+        delay = new OperatorInstance(d, Env::core_op("delay"), update);
         delay->add_input(varmux->output);
       } else {
-        delay = varmux = new OperatorInstance(d,Env::core_op("delay"),update);
+        delay = varmux
+          = new OperatorInstance(d, Env::core_op("delay"), update);
       }
       vars.push_back(varmux);
-      // bind the variables
-      if(!bind_letfed_vars(d->op(),delay->output,update,delayed))
-        compile_error(d,"Malformed letfed variable: "+d->op()->to_str());
-      // evaluate & connect the init
-      if(!no_init) {
-        varmux->add_input(sexp_to_graph((*d)[1],init,env));
+
+      // Bind the variables.
+      if (!bind_letfed_vars(d->op(), delay->output, update, delayed))
+        compile_error(d, "Malformed letfed variable: " + d->op()->to_str());
+
+      // Evaluate initial expression.
+      if (!no_init) {
+        varmux->add_input(sexp_to_graph((*d)[1], init, env));
       } else {
         delay->output->range = sexp_to_type((*d)[1]);
-        //varmux->add_input(dfg->add_literal(new ProtoBoolean(false),space,s));
+        // ???
+        // varmux->add_input
+        //   (dfg->add_literal(new ProtoBoolean(false), space, s));
       }
-    } else compile_error((*decls)[i],"Malformed letfed statement: "+
-                         (*decls)[i]->to_str());
+    } else {
+      compile_error((*decls)[i],
+          "Malformed letfed statement: " + (*decls)[i]->to_str());
+    }
   }
-  // second pass to evalute update expressions
-  for(int i=0;i<decls->len();i++) {
-    SE_List* d = &dynamic_cast<SE_List &>(*(*decls)[i]);
-    Field* up_value = sexp_to_graph((*d)[2],update,delayed);
-    if(!no_init) {
-      bind_letfed_vars(d->op(),vars[i]->output,space,child);
+
+  // Second pass:  Evalute update expressions.
+  for (int i = 0; i < decls->len(); i++) {
+    SE_List *d = &dynamic_cast<SE_List &>(*(*decls)[i]);
+    Field *up_value = sexp_to_graph((*d)[2], update, delayed);
+    if (!no_init) {
+      bind_letfed_vars(d->op(), vars[i]->output, space, child);
       vars[i]->add_input(up_value);
     } else {
-      bind_letfed_vars(d->op(),up_value,space,child);
+      bind_letfed_vars(d->op(), up_value, space, child);
       vars[i]->add_input(up_value);
     }
   }
-  // evaluate body in child environment, returning last output
-  Field* out=NULL;
-  for(; let_exps<s->children.end(); let_exps++)
-    out = sexp_to_graph(*let_exps,space,child);
+
+  // Evaluate body in child environment, returning last output.
+  Field *out = 0;
+  for (; let_exps < s->children.end(); ++let_exps)
+    out = sexp_to_graph(*let_exps, space, child);
   return out;
 }
 
