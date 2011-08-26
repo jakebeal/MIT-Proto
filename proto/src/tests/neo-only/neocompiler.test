@@ -759,11 +759,11 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <Local>
-is 8 _   Golf: Delta --> <Local>
+is 7 _   Foxtrot: Delta --> <Local>
+is 8 _   Golf: Alfa --> <Local>
 is 9 _   Hotel: Bravo --> <Scalar 3>
-is 10 _   India: Alfa --> <Local>
-is 11 _   Juliet: Delta --> <Local>
+is 10 _   India: Delta --> <Local>
+is 11 _   Juliet: Alfa --> <Local>
 is 12 _   Kilo: Bravo --> <Scalar 2>
 is 13 _   Lima: Delta --> <Number>
 is 14 _   Mike: Delta --> <Scalar 1>
@@ -773,17 +773,17 @@ is 17 _   Papa: Alfa --> <Number> OUTPUT
 is 18 _ Operator Instances:
 is 19 _   [dchange] --> Charlie<Boolean>
 is 20 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 21 _   Charlie<Boolean>, Hotel<Scalar 3>, Lima<Number> --> [mux] --> Foxtrot<Local>
-is 22 _   Foxtrot<Local> --> [delay] --> Golf<Local>
+is 21 _   Golf<Local> --> [delay] --> Foxtrot<Local>
+is 22 _   Charlie<Boolean>, Hotel<Scalar 3>, Lima<Number> --> [mux] --> Golf<Local>
 is 23 _   [Lit: <Scalar 3>] --> Hotel<Scalar 3>
-is 24 _   Charlie<Boolean>, Kilo<Scalar 2>, November<Number> --> [mux] --> India<Local>
-is 25 _   India<Local> --> [delay] --> Juliet<Local>
+is 24 _   Juliet<Local> --> [delay] --> India<Local>
+is 25 _   Charlie<Boolean>, Kilo<Scalar 2>, November<Number> --> [mux] --> Juliet<Local>
 is 26 _   [Lit: <Scalar 2>] --> Kilo<Scalar 2>
-is 27 _   Golf<Local>, Juliet<Local>, Mike<Scalar 1> --> [+] --> Lima<Number>
+is 27 _   Foxtrot<Local>, India<Local>, Mike<Scalar 1> --> [+] --> Lima<Number>
 is 28 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
-is 29 _   Golf<Local>, Oscar<Scalar 3> --> [*] --> November<Number>
+is 29 _   Foxtrot<Local>, Oscar<Scalar 3> --> [*] --> November<Number>
 is 30 _   [Lit: <Scalar 3>] --> Oscar<Scalar 3>
-is 31 _   Foxtrot<Local>, India<Local> --> [-] --> Papa<Number> OUTPUT
+is 31 _   Golf<Local>, Juliet<Local> --> [-] --> Papa<Number> OUTPUT
 
 test: $(P2B) -CDall "(rep t 0 (+ t (dt)))"
 is 0 _ Amorphous Mediums:
@@ -793,18 +793,18 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <Local> OUTPUT
-is 8 _   Golf: Delta --> <Local>
+is 7 _   Foxtrot: Delta --> <Local>
+is 8 _   Golf: Alfa --> <Local> OUTPUT
 is 9 _   Hotel: Bravo --> <Scalar 0>
 is 10 _   India: Delta --> <Number>
 is 11 _   Juliet: Delta --> <Scalar>
 is 12 _ Operator Instances:
 is 13 _   [dchange] --> Charlie<Boolean>
 is 14 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 15 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Foxtrot<Local> OUTPUT
-is 16 _   Foxtrot<Local> --> [delay] --> Golf<Local>
+is 15 _   Golf<Local> --> [delay] --> Foxtrot<Local>
+is 16 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Golf<Local> OUTPUT
 is 17 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 18 _   Golf<Local>, Juliet<Scalar> --> [+] --> India<Number>
+is 18 _   Foxtrot<Local>, Juliet<Scalar> --> [+] --> India<Number>
 is 19 _   [dt] --> Juliet<Scalar>
 is 20 _ Amorphous Mediums:
 is 21 _   [Medium: Alfa = root]
@@ -813,18 +813,18 @@ is 23 _   [Medium: Delta = Alfa | Echo]
 is 24 _ Fields:
 is 25 _   Charlie: Alfa --> <Boolean>
 is 26 _   Echo: Alfa --> <Boolean>
-is 27 _   Foxtrot: Alfa --> <Scalar> OUTPUT
-is 28 _   Golf: Delta --> <Scalar>
+is 27 _   Foxtrot: Delta --> <Scalar>
+is 28 _   Golf: Alfa --> <Scalar> OUTPUT
 is 29 _   Hotel: Bravo --> <Scalar 0>
 is 30 _   India: Delta --> <Scalar>
 is 31 _   Juliet: Delta --> <Scalar>
 is 32 _ Operator Instances:
 is 33 _   [dchange] --> Charlie<Boolean>
 is 34 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 35 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Scalar> --> [mux] --> Foxtrot<Scalar> OUTPUT
-is 36 _   Foxtrot<Scalar> --> [delay] --> Golf<Scalar>
+is 35 _   Golf<Scalar> --> [delay] --> Foxtrot<Scalar>
+is 36 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Scalar> --> [mux] --> Golf<Scalar> OUTPUT
 is 37 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 38 _   Golf<Scalar>, Juliet<Scalar> --> [+] --> India<Scalar>
+is 38 _   Foxtrot<Scalar>, Juliet<Scalar> --> [+] --> India<Scalar>
 is 39 _   [dt] --> Juliet<Scalar>
 
 test: $(P2B) -CDall "(min-hood (+ 1 (nbr 2)))"
@@ -859,18 +859,18 @@ is 4 _     [Medium: Delta = Alfa | Echo]
 is 5 _   Fields:
 is 6 _     Charlie: Alfa --> <Boolean>
 is 7 _     Echo: Alfa --> <Boolean>
-is 8 _     Foxtrot: Alfa --> <Local> OUTPUT
-is 9 _     Golf: Delta --> <Local>
+is 8 _     Foxtrot: Delta --> <Local>
+is 9 _     Golf: Alfa --> <Local> OUTPUT
 is 10 _     Hotel: Bravo --> <Scalar 0>
 is 11 _     India: Delta --> <Number>
 is 12 _     Juliet: Delta --> <Scalar>
 is 13 _   Operator Instances:
 is 14 _     [dchange] --> Charlie<Boolean>
 is 15 _     Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 16 _     Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Foxtrot<Local> OUTPUT
-is 17 _     Foxtrot<Local> --> [delay] --> Golf<Local>
+is 16 _     Golf<Local> --> [delay] --> Foxtrot<Local>
+is 17 _     Charlie<Boolean>, Hotel<Scalar 0>, India<Number> --> [mux] --> Golf<Local> OUTPUT
 is 18 _     [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 19 _     Golf<Local>, Juliet<Scalar> --> [+] --> India<Number>
+is 19 _     Foxtrot<Local>, Juliet<Scalar> --> [+] --> India<Number>
 is 20 _     [dt] --> Juliet<Scalar>
 is 21 _ Amorphous Mediums:
 is 22 _   [Medium: Kilo = root]
@@ -957,8 +957,8 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <Local>
-is 8 _   Golf: Delta --> <Local>
+is 7 _   Foxtrot: Delta --> <Local>
+is 8 _   Golf: Alfa --> <Local>
 is 9 _   Hotel: Delta --> <Any>
 is 10 _   India: Delta --> <Scalar 0>
 is 11 _   Juliet: Delta --> <Any>
@@ -978,11 +978,11 @@ is 24 _   Whiskey: Alfa --> <Scalar> OUTPUT
 is 25 _ Operator Instances:
 is 26 _   [dchange] --> Charlie<Boolean>
 is 27 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 28 _   Charlie<Boolean>, Lima<Tuple<Any>...>, Oscar<Tuple<Any>...> --> [mux] --> Foxtrot<Local>
-is 29 _   Foxtrot<Local> --> [delay] --> Golf<Local>
-is 30 _   Golf<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
+is 28 _   Golf<Local> --> [delay] --> Foxtrot<Local>
+is 29 _   Charlie<Boolean>, Lima<Tuple<Any>...>, Oscar<Tuple<Any>...> --> [mux] --> Golf<Local>
+is 30 _   Foxtrot<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
 is 31 _   [Lit: <Scalar 0>] --> India<Scalar 0>
-is 32 _   Golf<Local>, Kilo<Scalar 1> --> [elt] --> Juliet<Any>
+is 32 _   Foxtrot<Local>, Kilo<Scalar 1> --> [elt] --> Juliet<Any>
 is 33 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
 is 34 _   Mike<Scalar 7>, November<Scalar 8> --> [tup] --> Lima<Tuple<Any>...>
 is 35 _   [Lit: <Scalar 7>] --> Mike<Scalar 7>
@@ -991,12 +991,11 @@ is 37 _   Papa<Number>, Romeo<Number> --> [tup] --> Oscar<Tuple<Any>...>
 is 38 _   Hotel<Any>, Quebec<Scalar 1> --> [+] --> Papa<Number>
 is 39 _   [Lit: <Scalar 1>] --> Quebec<Scalar 1>
 is 40 _   Juliet<Any>, Hotel<Any> --> [*] --> Romeo<Number>
-is 41 _   Foxtrot<Local>, Tango<Scalar 0> --> [elt] --> Sierra<Any>
+is 41 _   Golf<Local>, Tango<Scalar 0> --> [elt] --> Sierra<Any>
 is 42 _   [Lit: <Scalar 0>] --> Tango<Scalar 0>
-is 43 _   Foxtrot<Local>, Victor<Scalar 1> --> [elt] --> Uniform<Any>
+is 43 _   Golf<Local>, Victor<Scalar 1> --> [elt] --> Uniform<Any>
 is 44 _   [Lit: <Scalar 1>] --> Victor<Scalar 1>
 is 45 _   Sierra<Any>, Uniform<Any> --> [pow] --> Whiskey<Scalar> OUTPUT
-
 
 test: $(P2B) -CDall "(letfed (((tup (tup a b) c) (tup (tup 2 3) 4) (tup (tup a c) b))) c)"
 is 0 _ Amorphous Mediums:
@@ -1006,8 +1005,8 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <Local>
-is 8 _   Golf: Delta --> <Local>
+is 7 _   Foxtrot: Delta --> <Local>
+is 8 _   Golf: Alfa --> <Local>
 is 9 _   Hotel: Delta --> <Any>
 is 10 _   India: Delta --> <Scalar 0>
 is 11 _   Juliet: Delta --> <Any>
@@ -1034,15 +1033,15 @@ is 31 _   Sow: Alfa --> <Scalar 1>
 is 32 _ Operator Instances:
 is 33 _   [dchange] --> Charlie<Boolean>
 is 34 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 35 _   Charlie<Boolean>, Papa<Tuple<Any>...>, Uniform<Tuple<Any>...> --> [mux] --> Foxtrot<Local>
-is 36 _   Foxtrot<Local> --> [delay] --> Golf<Local>
-is 37 _   Golf<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
+is 35 _   Golf<Local> --> [delay] --> Foxtrot<Local>
+is 36 _   Charlie<Boolean>, Papa<Tuple<Any>...>, Uniform<Tuple<Any>...> --> [mux] --> Golf<Local>
+is 37 _   Foxtrot<Local>, India<Scalar 0> --> [elt] --> Hotel<Any>
 is 38 _   [Lit: <Scalar 0>] --> India<Scalar 0>
 is 39 _   Hotel<Any>, Kilo<Scalar 0> --> [elt] --> Juliet<Any>
 is 40 _   [Lit: <Scalar 0>] --> Kilo<Scalar 0>
 is 41 _   Hotel<Any>, Mike<Scalar 1> --> [elt] --> Lima<Any>
 is 42 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
-is 43 _   Golf<Local>, Oscar<Scalar 1> --> [elt] --> November<Any>
+is 43 _   Foxtrot<Local>, Oscar<Scalar 1> --> [elt] --> November<Any>
 is 44 _   [Lit: <Scalar 1>] --> Oscar<Scalar 1>
 is 45 _   Quebec<Tuple<Any>...>, Tango<Scalar 4> --> [tup] --> Papa<Tuple<Any>...>
 is 46 _   Romeo<Scalar 2>, Sierra<Scalar 3> --> [tup] --> Quebec<Tuple<Any>...>
@@ -1051,13 +1050,13 @@ is 48 _   [Lit: <Scalar 3>] --> Sierra<Scalar 3>
 is 49 _   [Lit: <Scalar 4>] --> Tango<Scalar 4>
 is 50 _   Victor<Tuple<Any>...>, Lima<Any> --> [tup] --> Uniform<Tuple<Any>...>
 is 51 _   Juliet<Any>, November<Any> --> [tup] --> Victor<Tuple<Any>...>
-is 52 _   Foxtrot<Local>, Xray<Scalar 0> --> [elt] --> Whiskey<Any>
+is 52 _   Golf<Local>, Xray<Scalar 0> --> [elt] --> Whiskey<Any>
 is 53 _   [Lit: <Scalar 0>] --> Xray<Scalar 0>
 is 54 _   Whiskey<Any>, Zulu<Scalar 0> --> [elt] --> Yankee<Any>
 is 55 _   [Lit: <Scalar 0>] --> Zulu<Scalar 0>
 is 56 _   Whiskey<Any>, Beak<Scalar 1> --> [elt] --> Plural<Any>
 is 57 _   [Lit: <Scalar 1>] --> Beak<Scalar 1>
-is 58 _   Foxtrot<Local>, Sow<Scalar 1> --> [elt] --> Pronunciation<Any> OUTPUT
+is 58 _   Golf<Local>, Sow<Scalar 1> --> [elt] --> Pronunciation<Any> OUTPUT
 is 59 _   [Lit: <Scalar 1>] --> Sow<Scalar 1>
 
 
@@ -1140,8 +1139,8 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <Scalar> OUTPUT
-is 8 _   Golf: Delta --> <Scalar>
+is 7 _   Foxtrot: Delta --> <Scalar>
+is 8 _   Golf: Alfa --> <Scalar> OUTPUT
 is 9 _   Hotel: Bravo --> <Scalar 3>
 is 10 _   India: Delta --> <Scalar>
 is 11 _   Juliet: Delta --> <2-Vector<Scalar>,<Scalar 7>>
@@ -1150,11 +1149,11 @@ is 13 _   Lima: Delta --> <Scalar 0>
 is 14 _ Operator Instances:
 is 15 _   [dchange] --> Charlie<Boolean>
 is 16 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 17 _   Charlie<Boolean>, Hotel<Scalar 3>, India<Scalar> --> [mux] --> Foxtrot<Scalar> OUTPUT
-is 18 _   Foxtrot<Scalar> --> [delay] --> Golf<Scalar>
+is 17 _   Golf<Scalar> --> [delay] --> Foxtrot<Scalar>
+is 18 _   Charlie<Boolean>, Hotel<Scalar 3>, India<Scalar> --> [mux] --> Golf<Scalar> OUTPUT
 is 19 _   [Lit: <Scalar 3>] --> Hotel<Scalar 3>
 is 20 _   Juliet<2-Vector<Scalar>,<Scalar 7>>, Lima<Scalar 0> --> [elt] --> India<Scalar>
-is 21 _   Golf<Scalar>, Kilo<Scalar 7> --> [tup] --> Juliet<2-Vector<Scalar>,<Scalar 7>>
+is 21 _   Foxtrot<Scalar>, Kilo<Scalar 7> --> [tup] --> Juliet<2-Vector<Scalar>,<Scalar 7>>
 is 22 _   [Lit: <Scalar 7>] --> Kilo<Scalar 7>
 is 23 _   [Lit: <Scalar 0>] --> Lima<Scalar 0>
 
@@ -1247,8 +1246,8 @@ is 3 _   [Medium: Delta = Alfa | Echo]
 is 4 _ Fields:
 is 5 _   Charlie: Alfa --> <Boolean>
 is 6 _   Echo: Alfa --> <Boolean>
-is 7 _   Foxtrot: Alfa --> <Scalar>
-is 8 _   Golf: Delta --> <Scalar>
+is 7 _   Foxtrot: Delta --> <Scalar>
+is 8 _   Golf: Alfa --> <Scalar>
 is 9 _   Hotel: Bravo --> <Scalar 0>
 is 10 _   India: Delta --> <Scalar>
 is 11 _   Juliet: Delta --> <Scalar 1>
@@ -1258,13 +1257,13 @@ is 14 _   Mike: Alfa --> <Scalar 3>
 is 15 _ Operator Instances:
 is 16 _   [dchange] --> Charlie<Boolean>
 is 17 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
-is 18 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Scalar> --> [mux] --> Foxtrot<Scalar>
-is 19 _   Foxtrot<Scalar> --> [delay] --> Golf<Scalar>
+is 18 _   Golf<Scalar> --> [delay] --> Foxtrot<Scalar>
+is 19 _   Charlie<Boolean>, Hotel<Scalar 0>, India<Scalar> --> [mux] --> Golf<Scalar>
 is 20 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 21 _   Juliet<Scalar 1>, Golf<Scalar> --> [-] --> India<Scalar>
+is 21 _   Juliet<Scalar 1>, Foxtrot<Scalar> --> [-] --> India<Scalar>
 is 22 _   [Lit: <Scalar 1>] --> Juliet<Scalar 1>
-is 23 _   Foxtrot<Scalar> --> [set-dt] --> Kilo<Scalar>
-is 24 _   Foxtrot<Scalar>, Mike<Scalar 3> --> [-] --> Lima<Scalar> OUTPUT
+is 23 _   Golf<Scalar> --> [set-dt] --> Kilo<Scalar>
+is 24 _   Golf<Scalar>, Mike<Scalar 3> --> [-] --> Lima<Scalar> OUTPUT
 is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 
 // Testing propagation in & out of funcall

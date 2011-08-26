@@ -660,13 +660,10 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
     SExpr *pattern = patterns[i];
     SExpr *initial_expression = initial_expressions[i];
 
-    // FIXME: Move the common initialization of delay to here, and
-    // update the tests to reflect the cosmetic changes that incurs.
-    OI *delay;
+    OI *delay = new OI(binding, Env::core_op("delay"), update_space);
 
     if (!no_init) {
       OI *mux = new OI(binding, Env::core_op("mux"), space);
-      delay = new OI(binding, Env::core_op("delay"), update_space);
       // Bind the pattern variables to the delayed fields in the
       // environment for the update expression.
       bind_letfed_pattern(pattern, delay->output, update_space, update_env);
@@ -676,7 +673,6 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
       delay->add_input(mux->output);
       ois.push_back(mux);
     } else {
-      delay = new OI(binding, Env::core_op("delay"), update_space);
       bind_letfed_pattern(pattern, delay->output, update_space, update_env);
       delay->output->range = sexp_to_type(initial_expression);
       ois.push_back(delay);
