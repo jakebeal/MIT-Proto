@@ -1809,7 +1809,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 
 void clear_pkt_tracker(){
   MACHINE *m = machine;
-  uint8_t i;
+  size_t i;
   for(i = 0; i< NUM_SCRIPT_PKTS; i++){
     ATOMIC {
       m->pkt_tracker[i] = m->pkt_listner[i] = 0;
