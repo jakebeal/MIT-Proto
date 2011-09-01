@@ -1,5 +1,7 @@
 -*- Mode: Outline -*-
 
+2011-08-30
+
 Notes on Proto plugins -- what they must do and how to do it.
 
 * Requirements
