@@ -7,7 +7,9 @@ the following semantics:
 Given a node n and an integer i, let t_n(i) be the time of n's ith
 computation step.  Let s be a node that sends a message at computation
 step i, and let r be a node that receives the message some time
-between its computation steps j and j+1.
+between its computation steps j and j+1.  Let d_s be the field
+(nbr-delay) as seen by s, and let l_r be the field (nbr-lag) as seen
+by r.
 
      s           r
      .           .
@@ -45,28 +47,28 @@ dt { |           |
      .           .
 
 
-Evaluating (nbr-delay) on s at step i gives the observed duration from
-t_s(i-1) to when the message was sent, i.e. t0, plus the expected
-duration from when r receives the message to the next computation
-round, which is 1/2 dt assuming that the distribution of message
-reception times over the intervals of time between computation steps
-is uniform.  That is, (nbr-delay) gives
+Evaluating d_s(r) at step i gives the observed duration from t_s(i-1)
+to when the message was sent, i.e. t0, plus the expected duration from
+when r receives the message to the next computation round, which is
+1/2 dt assuming that the distribution of message reception times over
+the intervals of time between computation steps is uniform.  That is,
+it gives
 
    t0 + 1/2 dt.
 
-This approximates for s how old the messages its neighbours receives
-from it will be when they can next compute.
+Thus, the field (nbr-delay) approximates for s how old the messages
+its neighbours receives from its last computation round will be when
+they can next compute.
 
-Evaluating (nbr-lag) on r at step j gives the observed duration from
-when the message was received to t_r(j), i.e. t1, plus the expected
-duration from the computation step on s that decided to send the
-message to the time s actually sent the message, i.e. 1/2 dt.  Tnhat
-is, (nbr-lag) gives
+Evaluating l_r(s) at step j gives the observed duration from when the
+message was received to t_r(j), i.e. t1, plus the expected duration
+from the computation step on s that decided to send the message to the
+time s actually sent the message, i.e. 1/2 dt.  That is, it gives
 
    1/2 dt + t1.
 
-This approximates for r how old the messages its neighbours most
-recently sent to it are.
+Thus, the field (nbr-lag) approximates for r how old the messages its
+neighbours most recently sent to it are.
 
 * From bugzilla
 
@@ -99,7 +101,7 @@ it, ignoring any transit delay.
 There is no mechanism for measuring transit delay -- there are no
 round-trip messages or anything.  Of course, if the devices are nearby
 and communicate by radio waves which propagate approximately at the
-speed of light, that may be legligible.
+speed of light, that may be negligible.
 
 The current implementation of NBR-LAG gives the observed duration
 since we last received a message from n, without adding dt/2.  This
