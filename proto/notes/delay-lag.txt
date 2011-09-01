@@ -1,6 +1,8 @@
 Currently the Proto kernel supports an operation called NBR-LAG, which
-does the wrong thing.  There should be two operations, NBR-LAG and
-NBR-DELAY, with the following semantics:
+does the wrong thing.  However, I believe the kernel doesn't currently
+record everything it needs to implement NBR-LAG correctly.  Further,
+there should be two separate operations, NBR-LAG and NBR-DELAY, with
+the following semantics:
 
 Given a node n and an integer i, let t_n(i) be the time of n's ith
 computation step.  Let s be a node that sends a message at computation
@@ -65,3 +67,57 @@ is, (nbr-lag) gives
 
 This approximates for r how old the messages its neighbours most
 recently sent to it are.
+
+* From bugzilla
+
+Let dt be the period, i.e. the duration between computation rounds,
+which is assumed to be common to the network of devices.  Assume a
+nice (e.g., uniform) distribution on message transmission times
+between computation rounds, and on the skew between devices' clocks.
+dt/2 is the expectation value of the durations
+
+(a) between when a device finishes a computation round and when it
+transmits messages resulting from that computation round, and
+
+(b) between when a device receives a message and when it begins the
+next computation round that can use the message.
+
+Suppose we are computing on a machine m, and we evaluate the field in
+question at a neighbour n.
+
+. NBR-LAG is supposed to give dt/2 plus the observed duration since we
+last received a message from n.  In other words, it estimates the
+duration since the computation round on n that computed the last
+message we received from n, ignoring any transit delay.
+
+. NBR-DELAY is supposed to give dt/2 plus the observed duration
+between our last computation round on m and when we last transmitted a
+message to n.[**]  In other words, it estimates the duration from the
+last computation round to the time n will receive any information from
+it, ignoring any transit delay.
+
+There is no mechanism for measuring transit delay -- there are no
+round-trip messages or anything.  Of course, if the devices are nearby
+and communicate by radio waves which propagate approximately at the
+speed of light, that may be legligible.
+
+The current implementation of NBR-LAG gives the observed duration
+since we last received a message from n, without adding dt/2.  This
+should be straightforward to fix: simply add machine->period to the
+formula.
+
+To implement NBR-DELAY, the kernel must know when the hardware last
+transmitted a message to n, but this doesn't appear to be recorded,
+and implementing it will probably require extending the interface
+between the kernel and the hardware.
+
+Since the names are slightly confusing, how about NBR-TRANSMIT-DELAY
+for what we currently call NBR-DELAY, and NBR-RECEIVE-DELAY for what
+we currently call NBR-LAG, or something like that?
+
+[*] Assuming that the distribution of transmission times is weighted
+so that the expectation value actually lies in the centre of the
+interval of time between computation rounds.
+
+[**] Assuming we did actually transmit a message to n -- I'm not sure
+whether this is implicit in the code structure of the kernel.
