@@ -16,14 +16,14 @@ between its computation steps j and j+1.  Let d_s be the field
 by r.
 
      s           r
+     .           .              dt      computation period, i.e.
+     .           .                      duration between steps
      .           .
-     .           .
-     .           .
-     |           |
-     |           - j-2
+     |           |              t0      observed duration from step
+     |           - j-2                  i-1 to when s transmits msg
  i-1 -           |
-    /|           |
- t0 \|_msg sent  |
+    /|           |              t1      observed duration from when r
+ t0 \|_msg sent  |                      receives msg to step j
      |\          | } dt
 dt { | \         |
      |  \        |
