@@ -1,3 +1,7 @@
+-*- Mode: Outline -*-
+
+2011-09-01
+
 Currently the Proto kernel supports an operation called NBR-LAG, which
 does the wrong thing.  However, I believe the kernel doesn't currently
 record everything it needs to implement NBR-LAG correctly.  Further,
