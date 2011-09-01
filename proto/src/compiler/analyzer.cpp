@@ -1789,26 +1789,6 @@ HoodToFolder::nbr_op_to_folder(OperatorInstance *oi)
 // 1. find complementary AM selector pairs
 // 2. turn each sub-AM into a no-argument function
 // 3. hook these functions into a branch operator and delete the old
-//
-// FIXME: This assumes each true/false AM pair feeds into only a
-// single mux, and cannot handle the more general case produced by a
-// multi-variable letfed.  Probably the easiest way to fix this would
-// be to replace
-//
-//   (letfed ((x0 (f0) (g0 x0 x1))
-//            (x1 (f1) (g1 x0 x1)))
-//     ...)
-//
-// by
-//
-//   (letfed (((tup x0 x1)
-//             (tup (f0) (f1))
-//             (tup (g0 x0 x1) (g1 x0 x1))))
-//     ...)
-//
-// early on, and not to bother with handling a more general case of
-// the control flow graph -- but something else might bite us with a
-// more general graph anyway.
 
 class RestrictToBranch : public IRPropagator {
 public:
@@ -1839,7 +1819,8 @@ public:
 
   void act(OperatorInstance* oi) {
     // properly formed muxes are candidates for if patterns
-    if(oi->op==Env::core_op("mux") && oi->inputs.size()==3) {
+    if(oi->op==Env::core_op("mux") && oi->inputs.size()==3
+       && !oi->attributes.count("LETFED-MUX")) {
       V3 << "Considering If->Branch candidate:\n   "<<oi->to_str()<<endl;
       OI *join; Field *test, *testnot; AM *trueAM, *falseAM; AM* space;
       // fill in blanks
