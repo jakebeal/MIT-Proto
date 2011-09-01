@@ -596,7 +596,11 @@ letfed_pattern_p(SExpr *sexpr)
     return true;
   } else if (sexpr->isList()) {
     SE_List *list = &dynamic_cast<SE_List &>(*sexpr);
-    for (size_t i = 0; i < list->len(); i++)
+    if (!list->op()->isSymbol())
+      return false;
+    if (dynamic_cast<SE_Symbol &>(*list->op()).name != "tup")
+      return false;
+    for (size_t i = 1; i < list->len(); i++)
       if (!letfed_pattern_p((*list)[i]))
         return false;
     return true;
