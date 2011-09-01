@@ -1,0 +1,67 @@
+Currently the Proto kernel supports an operation called NBR-LAG, which
+does the wrong thing.  There should be two operations, NBR-LAG and
+NBR-DELAY, with the following semantics:
+
+Given a node n and an integer i, let t_n(i) be the time of n's ith
+computation step.  Let s be a node that sends a message at computation
+step i, and let r be a node that receives the message some time
+between its computation steps j and j+1.
+
+     s           r
+     .           .
+     .           .
+     .           .
+     |           |
+     |           - j-2
+ i-1 -           |
+    /|           |
+ t0 \|_msg sent  |
+     |\          | } dt
+dt { | \         |
+     |  \        |
+     |   \       |
+     |    \      - j-1
+   i -     \     |
+     |      \    |
+     |       \   |
+     |        \  | } dt
+     |         \ |
+     | msg rcvd_\|
+     |           |} t1
+     |           - j
+ i+1 -           |
+     |           |
+     |           |
+     |           | } dt
+dt { |           |
+     |           |
+     |           |
+     |           - j+1
+ i+2 -           |
+     .           .
+     .           .
+     .           .
+
+
+Evaluating (nbr-delay) on s at step i gives the observed duration from
+t_s(i-1) to when the message was sent, i.e. t0, plus the expected
+duration from when r receives the message to the next computation
+round, which is 1/2 dt assuming that the distribution of message
+reception times over the intervals of time between computation steps
+is uniform.  That is, (nbr-delay) gives
+
+   t0 + 1/2 dt.
+
+This approximates for s how old the messages its neighbours receives
+from it will be when they can next compute.
+
+Evaluating (nbr-lag) on r at step j gives the observed duration from
+when the message was received to t_r(j), i.e. t1, plus the expected
+duration from the computation step on s that decided to send the
+message to the time s actually sent the message, i.e. 1/2 dt.  Tnhat
+is, (nbr-lag) gives
+
+   1/2 dt + t1.
+
+This approximates for r how old the messages its neighbours most
+recently sent to it are.
