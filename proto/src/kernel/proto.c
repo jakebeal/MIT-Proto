@@ -95,7 +95,8 @@ static DATA *new_num(NUM_VAL i) {
 }
 
 MAYBE_INLINE DATA* init_vec (DATA* x, int n, int cap, DATA *f) {
-  int i, len = sizeof(VEC_VAL)+cap*sizeof(DATA);
+  size_t i;
+  int len = sizeof(VEC_VAL)+cap*sizeof(DATA);
   VEC_VAL *dat = (VEC_VAL*)PMALLOC(len);
   dat->n   = n;
   dat->cap = cap;
@@ -775,7 +776,7 @@ void radio_receive_script_pkt (uint8_t version, uint16_t n, uint8_t pkt_num, uin
 
 void export_script (VOID) {
   MACHINE *m = machine;
-  uint8_t i;
+  size_t i;
   //  char OutputMsg[80];
 
 /*   ++trickle_passed_time; */
@@ -1810,7 +1811,7 @@ DATA *eval(DATA *res, FUN_VAL fun) {
 void clear_pkt_tracker(){
   MACHINE *m = machine;
   size_t i;
-  for(i = 0; i< NUM_SCRIPT_PKTS; i++){
+  for(i = 0; i< NUM_SCRIPT_PKTS + 1; i++){
     ATOMIC {
       m->pkt_tracker[i] = m->pkt_listner[i] = 0;
     }
@@ -1835,7 +1836,7 @@ uint8_t add_pkt(uint8_t pkt_num){
 int script_export_needed(VOID) {
   MACHINE *m = machine;
   if(!m->scripts[m->cur_script].is_complete) return 1;
-  uint8_t i;
+  size_t i;
   SCRIPT *nxt_script;
   // code ripped from export_script
   if (m->scripts[(m->cur_script+1)%MAX_SCRIPTS].version > m->scripts[m->cur_script].version)
@@ -1845,7 +1846,9 @@ int script_export_needed(VOID) {
   for (i = 0; i < num_pkts(nxt_script->len); i++) {
     uint8_t major = i / 8;
     uint8_t minor = i % 8;
-    if (m->pkt_listner[major] & (1 << minor)) { return 1; }
+    if (m->pkt_listner[major] & (1 << minor)) {
+    	return 1;
+    }
   }
   return 0;
 }
@@ -1854,7 +1857,8 @@ int is_script_complete(VOID) {
   MACHINE *m = machine;
   SCRIPT *script = &m->scripts[(m->cur_script+1)%MAX_SCRIPTS];
   uint8_t npkts = num_pkts(script->len);
-  uint8_t i, major, minor;
+  size_t i;
+  uint8_t major, minor;
 
   major = npkts / 8;
   minor = npkts % 8;
@@ -1905,7 +1909,7 @@ void link_script (MACHINE *m) {
 
 void install_script(MACHINE *m, uint8_t *script, uint8_t slot, uint16_t len, uint8_t version) {
   SCRIPT *s = &m->scripts[slot];
-  int i;
+  size_t i;
   if (len > MAX_SCRIPT_LEN)
     uerror("SCRIPT TOO BIG %d > %d -- INCREASE MAX_SCRIPT_LEN\n", 
       len, MAX_SCRIPT_LEN);
