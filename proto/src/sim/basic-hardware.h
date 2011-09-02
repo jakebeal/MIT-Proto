@@ -49,11 +49,11 @@ public:
   void set_r_led (NUM_VAL val);
   void set_g_led (NUM_VAL val);
   void set_b_led (NUM_VAL val);
-  NUM_VAL read_sensor (uint8_t n); // for "user" sensors
+  NUM_VAL read_sensor (uint8_t n); // for "user" sensors                                       
 
  public:
   void register_colors();
-  static Color *USER_SENSOR_1, *USER_SENSOR_2, *USER_SENSOR_3, *RGB_LED,
+  static Color *USER_SENSOR_1, *USER_SENSOR_2, *USER_SENSOR_3, *USER_SENSOR_4, *RGB_LED,
     *RED_LED, *GREEN_LED, *BLUE_LED, *DEVICE_PROBES;
 };
 
