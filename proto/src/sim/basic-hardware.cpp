@@ -84,12 +84,12 @@ void DebugLayer::rgb_op(MACHINE* machine) {
 }
 
 // CLIP forces the number x into the range [min,max]
-#define CLIP(x, min, max) MAX(min, MIN(max, x))
+#define CLIP(x, minimum, maximum) max((minimum), min((maximum), (x)))
 
 // Convert hue/saturation/value to red/green/blue.  Output returned in args.
 void my_hsv_to_rgb (flo h, flo s, flo v, flo *r, flo *g, flo *b) {
   flo rt, gt, bt;
-  s = CLIP(s, 0, 1);
+  s = CLIP(s, static_cast<flo>(0), static_cast<flo>(1));
   if (s == 0.0) {
     rt = gt = bt = v;
   } else {
