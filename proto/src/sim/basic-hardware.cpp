@@ -38,13 +38,14 @@ DebugLayer::DebugLayer(Args* args, SpatialComputer* p) : Layer(p) {
 }
 
 Color *DebugLayer::USER_SENSOR_1, *DebugLayer::USER_SENSOR_2, 
-  *DebugLayer::USER_SENSOR_3, *DebugLayer::RGB_LED, *DebugLayer::RED_LED,
+  *DebugLayer::USER_SENSOR_3, *DebugLayer::USER_SENSOR_4, *DebugLayer::RGB_LED, *DebugLayer::RED_LED,          
   *DebugLayer::GREEN_LED, *DebugLayer::BLUE_LED, *DebugLayer::DEVICE_PROBES;
 void DebugLayer::register_colors() {
 #ifdef WANT_GLUT
   USER_SENSOR_1 = palette->register_color("USER_SENSOR_1", 1.0, 0.5, 0, 0.8);
   USER_SENSOR_2 = palette->register_color("USER_SENSOR_2", 0.5, 0, 1.0, 0.8);
   USER_SENSOR_3 = palette->register_color("USER_SENSOR_3", 1.0, 0, 0.5, 0.8);
+  USER_SENSOR_4 = palette->register_color("USER_SENSOR_4", 0, 1, 0.5, 0.8);                               
   RGB_LED = palette->register_color("RGB_LED", 1, 1, 1, 0.8);
   RED_LED = palette->register_color("RED_LED", 1, 0, 0, 0.8);
   GREEN_LED = palette->register_color("GREEN_LED", 0, 1, 0, 0.8);
@@ -83,12 +84,12 @@ void DebugLayer::rgb_op(MACHINE* machine) {
 }
 
 // CLIP forces the number x into the range [min,max]
-#define CLIP(x, minimum, maximum) max((minimum), min((maximum), (x)))
+#define CLIP(x, min, max) MAX(min, MIN(max, x))
 
 // Convert hue/saturation/value to red/green/blue.  Output returned in args.
 void my_hsv_to_rgb (flo h, flo s, flo v, flo *r, flo *g, flo *b) {
   flo rt, gt, bt;
-  s = CLIP(s, static_cast<flo>(0), static_cast<flo>(1));
+  s = CLIP(s, 0, 1);
   if (s == 0.0) {
     rt = gt = bt = v;
   } else {
@@ -129,7 +130,7 @@ void DebugLayer::hsv_op(MACHINE* machine) {
   NPOP(1); VEC_PUSH(rgb);
 }
 
-void DebugLayer::sense_op(MACHINE* machine) {
+void DebugLayer::sense_op(MACHINE* machine) {                                                 
   NUM_PUSH(read_sensor((uint8_t) NUM_POP()));
 }  
 
@@ -155,10 +156,11 @@ void DebugLayer::dump_header(FILE* out) {
     // there was another sensor here, but it's been removed
     if(dumpmask & 0x02) fprintf(out," \"USER1\"");
     if(dumpmask & 0x04) fprintf(out," \"USER2\"");
-    if(dumpmask & 0x08) fprintf(out," \"USER3\"");
-    if(dumpmask & 0x10) fprintf(out," \"R_LED\"");
-    if(dumpmask & 0x20) fprintf(out," \"G_LED\"");
-    if(dumpmask & 0x40) fprintf(out," \"B_LED\"");
+    if(dumpmask & 0x08) fprintf(out," \"USER3\"");                          
+    if(dumpmask & 0x10) fprintf(out," \"USER4\"");
+    if(dumpmask & 0x20) fprintf(out," \"R_LED\"");
+    if(dumpmask & 0x40) fprintf(out," \"G_LED\"");
+    if(dumpmask & 0x80) fprintf(out," \"B_LED\"");
   }
 }
 
@@ -188,13 +190,14 @@ void DebugDevice::dump_state(FILE* out, int verbosity) {
     if(dumpmask & 0x02) fprintf(out," %.2f",m->sensors[1]);
     if(dumpmask & 0x04) fprintf(out," %.2f",m->sensors[2]);
     if(dumpmask & 0x08) fprintf(out," %.2f",m->sensors[3]);
-    if(dumpmask & 0x10) fprintf(out," %.3f",m->actuators[R_LED]);
-    if(dumpmask & 0x20) fprintf(out," %.3f",m->actuators[G_LED]);
-    if(dumpmask & 0x40) fprintf(out," %.3f",m->actuators[B_LED]);
+    if(dumpmask & 0x10) fprintf(out," %.2f",m->sensors[4]);                                  
+    if(dumpmask & 0x20) fprintf(out," %.3f",m->actuators[R_LED]);                         
+    if(dumpmask & 0x40) fprintf(out," %.3f",m->actuators[G_LED]);
+    if(dumpmask & 0x80) fprintf(out," %.3f",m->actuators[B_LED]);
     // probes can't be output gracefully since we don't know what they contain
   } else {
-    fprintf(out,"Sensors: User-1=%.2f User-2=%.2f User-3=%.2f\n",
-            m->sensors[1], m->sensors[2], m->sensors[3]);
+    fprintf(out,"Sensors: User-1=%.2f User-2=%.2f User-3=%.2f User-4=%.2f\n",
+            m->sensors[1], m->sensors[2], m->sensors[3], m->sensors[4]);
     fprintf(out,"LEDs: R=%.3f G=%.3f B=%.3f\n", m->actuators[R_LED],
             m->actuators[G_LED], m->actuators[B_LED]);
     fprintf(out,"Probes:");
@@ -215,6 +218,8 @@ BOOL DebugDevice::handle_key(KeyEvent* key) {
       container->vm->sensors[2] = container->vm->sensors[2] ? 0:1; return TRUE;
     case 'u': 
       container->vm->sensors[3] = container->vm->sensors[3] ? 0:1; return TRUE;
+    case 'o':
+      container->vm->sensors[4] = container->vm->sensors[4] ? 0:1; return TRUE;
     }
   }
   return FALSE;
@@ -228,11 +233,11 @@ void DebugDevice::preupdate() {
 void DebugDevice::visualize() {
 #ifdef WANT_GLUT
   MACHINE* vm = container->vm;
-  static Color* user[3] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
-                           DebugLayer::USER_SENSOR_3};
+  static Color* user[4] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
+                           DebugLayer::USER_SENSOR_3, DebugLayer::USER_SENSOR_4}; 
   flo rad = container->body->display_radius();
   // draw user sensors
-  for(int i=0;i<3;i++) {
+  for(int i=0;i<4;i++) {
     if(vm->sensors[i+1] > 0) { 
       palette->use_color(user[i]);
       draw_disk(rad*SENSOR_RADIUS_FACTOR);
