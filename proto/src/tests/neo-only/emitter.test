@@ -454,6 +454,50 @@ is 7 _ uint16_t script_len = 53;
 = 13 3 7
 
 
+test: $(PROTO) '(min-hood (+ (nbr 3) (nbr 4)))'
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, DEF_FUN_3_OP,
+is 1 _   LIT8_OP, 7, RET_OP, EXIT_OP };
+is 2 _ uint16_t script_len = 14;
+= 4 3 7
+= 5 3 7
+= 6 3 7
+= 7 3 7
+
+// Fails with a `nbr-range' localization problem.
+//
+// test: $(PROTO) '(min-hood+ (* (+ (mid) 1) (nbr (mid))))'
+// is 0 _ lose
+
+test: $(PROTO) '(let ((v (+ 2 (nbr (mid))))) (* (max-hood (+ v v)) (min-hood (- v 1))))'
+is 0 _ uint8_t script[] = { DEF_VM_OP, 2, 2, 0, 5, 0, 0, 9, 6,
+is 1 _   DEF_FUN_OP, 9, LIT_2_OP, REF_0_OP, ADD_OP, LET_1_OP, REF_0_OP,
+is 2 _   REF_0_OP, POP_LET_1_OP, ADD_OP, RET_OP, DEF_FUN_6_OP, LIT_2_OP,
+is 3 _   REF_0_OP, ADD_OP, LIT_1_OP, SUB_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP,
+is 4 _   REF_1_OP, MAX_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP,
+is 5 _   RET_OP, DEF_FUN_OP, 15, GLO_REF_2_OP, GLO_REF_0_OP, MID_OP,
+is 6 _   LET_1_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, GLO_REF_3_OP,
+is 7 _   GLO_REF_1_OP, REF_3_OP, POP_LET_1_OP, FOLD_HOOD_PLUS_OP, 1, MUL_OP,
+is 8 _   RET_OP, EXIT_OP };
+is 9 _ uint16_t script_len = 55;
+
+// Fails type check.  Hmm.  Looks like (tup x y) got turned into (tup
+// (tup x y)) when it shouldn't have.
+//
+// test: $(PROTO) '(any-hood (muxor (= (nbr (mid)) 0) (= (nbr (mid)) 1)))
+// is 0 _ lose
+
+// Fails with a `nbr-range' localization problem.
+//
+// test: $(PROTO) '(min-hood (nbr-range))'
+// is 0 _ lose
+
+// test: $(PROTO) '(max-hood (tup (tup (nbr (mid)) 2) 3))'
+// is 0 _ lose
+
+// test: $(PROTO) '(fold-hood + 0 (mid))'
+// is 0 _ lose
+
+
 //Testing function emission:
 test: $(PROTO) "(def kfoo (x y) (- x y)) (kfoo (mid) (speed))" --function-inlining-threshold 0
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, DEF_FUN_4_OP, 
