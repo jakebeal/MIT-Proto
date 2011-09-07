@@ -1388,7 +1388,9 @@ ProtoKernelEmitter::standard_primitive_instruction(OperatorInstance *oi)
   Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
   ProtoType *output_type = oi->output->range;
 
-  if (output_type->isA("ProtoTuple"))
+  // MOV_OP is an exception, in that it just peeks at the vector, rather
+  // than actually computing an placing a new vector.
+  if (output_type->isA("ProtoTuple") && primitive2op[p->name]!=MOV_OP)
     return new Reference(primitive2op[p->name], vec_op_store(output_type), oi);
   else
     return new Instruction(primitive2op[p->name]);

@@ -48,6 +48,14 @@ is 1 _ uint16_t script_len = 27;
 is_nan 3 3 NaN
 = 4 3 1385.46
 
+// Ensure that special-case handling of MOV_OP emission is done correctly
+test: $(PROTO) "(mov (tup 1 2 3))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 0, DEF_FUN_OP, X, LIT_1_OP, LIT_2_OP, LIT_3_OP, TUP_OP, 0, 3, MOV_OP, RET_OP, EXIT_OP };
+is 1 _ uint16_t script_len = 22;
+= 4 3 1
+= 4 4 2
+= 4 5 3
+
 // stack depth depends on nesting structure:
 test: $(PROTO) "(pow (atan2 (mod 1e6 (mid)) 10000) 100)"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 3, 0, DEF_FUN_OP, 15, LIT_FLO_OP, 0, 36, 116, 73, MID_OP, MOD_OP, LIT16_OP, 39, 16, ATAN2_OP, LIT8_OP, 100, POW_OP, RET_OP, EXIT_OP };
