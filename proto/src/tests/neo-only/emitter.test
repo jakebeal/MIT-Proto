@@ -49,9 +49,9 @@ is_nan 3 3 NaN
 = 4 3 1385.46
 
 // Ensure that special-case handling of MOV_OP emission is done correctly
-test: $(PROTO) "(mov (tup 1 2 3))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 0, DEF_FUN_OP, X, LIT_1_OP, LIT_2_OP, LIT_3_OP, TUP_OP, 0, 3, MOV_OP, RET_OP, EXIT_OP };
-is 1 _ uint16_t script_len = 22;
+test: $(PROTO) "(mov (tup (mid) 2 3))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 0, DEF_NUM_VEC_3_OP, DEF_FUN_OP, 8, MID_OP, LIT_2_OP, LIT_3_OP, TUP_OP, 0, 3, MOV_OP, RET_OP, EXIT_OP };
+is 1 _ uint16_t script_len = 21;
 = 4 3 1
 = 4 4 2
 = 4 5 3
