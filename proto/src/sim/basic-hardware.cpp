@@ -130,7 +130,7 @@ void DebugLayer::hsv_op(MACHINE* machine) {
   NPOP(1); VEC_PUSH(rgb);
 }
 
-void DebugLayer::sense_op(MACHINE* machine) {                                                 
+void DebugLayer::sense_op(MACHINE* machine) {
   NUM_PUSH(read_sensor((uint8_t) NUM_POP()));
 }  
 
@@ -230,14 +230,15 @@ void DebugDevice::preupdate() {
 }
 
 #define SENSOR_RADIUS_FACTOR 4
+#define N_USER_SENSORS 4
 void DebugDevice::visualize() {
 #ifdef WANT_GLUT
   MACHINE* vm = container->vm;
-  static Color* user[4] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
+  static Color* user[N_USER_SENSORS] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
                            DebugLayer::USER_SENSOR_3, DebugLayer::USER_SENSOR_4}; 
   flo rad = container->body->display_radius();
   // draw user sensors
-  for(int i=0;i<4;i++) {
+  for(int i=0;i<N_USER_SENSORS;i++) {
     if(vm->sensors[i+1] > 0) { 
       palette->use_color(user[i]);
       draw_disk(rad*SENSOR_RADIUS_FACTOR);
