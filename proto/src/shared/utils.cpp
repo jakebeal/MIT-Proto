@@ -408,7 +408,6 @@ Population::add(void *member)
   if (recycled_.empty()) {
     i = vector_.size();
     vector_.push_back(member);
-    population_size_++;
   } else {
     i = recycled_.front();
     recycled_.pop();
