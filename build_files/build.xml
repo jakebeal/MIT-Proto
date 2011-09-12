@@ -120,9 +120,16 @@
         <arg line="-j clean" />
      </exec>
    </target>
+  
+   <target name="clean-tests" >
+     <echo>Starting make clean-test for Proto/tests</echo>
+     <exec dir="${proto-dir}/src/tests" executable="${makepath}" failonerror="true" >
+        <arg line="-j clean-tests"/>
+     </exec>
+   </target>
 
 
-   <target name="test" depends="init">
+   <target name="test" depends="init, clean-tests">
      <echo>Starting Proto tests.....</echo>
      <antcall target="universal-tests" />
      <antcall target="neo-only-tests" />
