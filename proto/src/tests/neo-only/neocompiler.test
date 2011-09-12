@@ -2290,41 +2290,41 @@ is 33 _ Stopping before emission
 
 // Test localization cache:
 test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 // Local variables and a common-subexpression export:
 test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 // Multiple exports (turned into a tuple)
 //test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 44 _ Stopping before emission
 
 // Test multi-use exports, tuplized exports
 //test: $(P2B) -CDlocalized "(let ((x (nbr (mid))) (y (speed))) (any-hood (+ x x (nbr y) (nbr y))))"
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 44 _ Stopping before emission
 
 // Tuple operations within a neighborhood
 test: $(P2B) -CDlocalized "(max-hood (tup (tup (nbr (mid)) 2) 3))"
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 // Using fold-hood directly:
 test: $(P2B) -CDlocalized "(fold-hood + 0 (mid))"
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 // How to handle nbr references	within subfunctions?
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (mid)))" --function-inlining-threshold 0
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (nbr (mid))))" --function-inlining-threshold 0
-//is 0 _ TEST NOT DEFINED YET
+//is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 
@@ -2339,11 +2339,3 @@ test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (nbr (
 // test: $(P2B) -CDall "(def addz (a b &optional (c 3)) (+ a b c)) (addz 1 2)"
 
 // test: $(P2B) -CDanalyzed "(def foo (&rest x) (apply + x)) (+ (foo (mid) 3 4) (foo 1 5))" --function-inlining-threshold 0
-
-
-// test: (def bar (z) (let ((x (* (mid) z))) (def foo () (+ x z)) (+ (foo) x (let ((y (speed))) (+ (foo) y y))))) (* (bar 3) (bar 4))
-// I expect this to return:   | It's actually returning:
-//    mid=0 -> 48             |     mid=0 -> 48
-//    mid=1 -> 300            |     mid=1 -> 300
-//    mid=2 -> 960            |     mid=2 -> 768
-//    mid=3 -> 1716           |     mid=3 -> 1452

@@ -202,23 +202,14 @@
 ;  (unlit (nth (inputs arg0) 0)) 
 ;  :space :time
 ;  :type-constraints
-(primitive fold-hood (lambda local local) local :space :time
-  :type-constraints ((= (inputs arg0) (tupof arg1 arg2))
+(primitive fold-hood (lambda base|local export|local) local :space :time
+  :type-constraints ((= (inputs arg0) (tupof base export))
                      (= (output arg0) (unlit (inputs arg0)))
-                     (= arg1 (unlit (nth (inputs arg0) 0)))
-                     (= arg2 (unlit (nth (inputs arg0) 1)))
+                     (= base (unlit (nth (inputs arg0) 0)))
+                     (= export (unlit (nth (inputs arg0) 1)))
+		     (= value (unlit base))
                      (= value (unlit (nth (inputs arg0) 0)))))
-;(primitive fold-hood* ((lambda (local local) (unlit arg0))
-;	   	       (lambda (local) (unlit (nth (inputs arg0) 1)))
-;		       (unlit (nth (inputs arg1) 0)))
-;  (unlit (nth (inputs arg0) 0)) :space :time)
 
-(primitive fold-hood* (lambda local local) local :space :time
-  :type-constraints ((= (inputs arg0) (tupof arg1 arg2))
-                     (= (output arg0) (unlit (inputs arg0)))
-                     (= arg1 (unlit (nth (inputs arg0) 0)))
-                     (= arg2 (unlit (nth (inputs arg0) 1)))
-                     (= value (unlit (nth (inputs arg0) 0)))))
 ;(primitive fold-hood-plus ((lambda (local local) (unlit (nth (inputs arg0) 0)))
 ;	   		   (lambda (local) (unlit (nth (inputs arg0) 1)))
 ;			   (unlit (nth (inputs arg1) 0)))

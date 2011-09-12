@@ -210,6 +210,20 @@ is 8 _ uint16_t script_len = 52;
 = 21 3 2
 
 // Challenges for functions:
+// complicated function
+test: $(PROTO) "(def bar (z) (let ((x (* (mid) z))) (def foo () (+ x z)) (+ (foo) x (let ((y (speed))) (+ (foo) y y))))) (* (bar 3) (bar 4))"
+= 12 3 48
+= 13 3 300
+= 14 3 768
+= 15 3 1452
+
+// Test is currently broken:
+//test: $(PROTO) "(def bar (z) (let ((x (* (mid) z))) (def foo () (+ x z)) (+ (foo) x (let ((y (speed))) (+ (foo) y y))))) (* (bar 3) (bar 4))" --function-inlining-threshold 0
+//= 3 3 48
+//= 4 3 300
+//= 5 3 768
+//= 6 3 1452
+
 // function defined in-line
 test: $(PROTO) "((lambda (x) (set-dt x)) 5)" --function-inlining-threshold 0
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 3, 1, DEF_FUN_4_OP, 
