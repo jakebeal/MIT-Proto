@@ -13,6 +13,8 @@
 
    <!-- the install directory can be overriden on the command line using -Dinstall-dir=<location> -->
    <property name="install-dir" location="/opt/hudson/jobs/Proto/workspace/bin/"/>
+
+   <property name="removePluginTests" value="false"/>
  
    <target name="main" depends="build,test">
      <echo>Starting Ant main target...</echo>
@@ -26,6 +28,9 @@
      </condition>
      <condition property="isNeo">
        <equals arg1="${isNeoCompiler}" arg2="true"/>
+     </condition>
+     <condition property="isRemovePluginTests">
+       <equals arg1="${removePluginTests}" arg2="true"/>
      </condition>
    </target>  
 
@@ -128,12 +133,19 @@
      </exec>
    </target>
 
+   <target name="remove-plugin-test-results" if="isRemovePluginTests">
+     <echo>Removing tests involving plugins</echo>
+     <delete file="${proto-dir}/src/tests/neo-only/xml/plugins.test.xml"/>
+     <delete file="${proto-dir}/src/tests/paleo-only/xml/plugins.test.xml"/>
+     <delete file="${proto-dir}/src/tests/paleo-only/xml/complex.test.xml"/>
+   </target>   
 
    <target name="test" depends="init, clean-tests">
      <echo>Starting Proto tests.....</echo>
      <antcall target="universal-tests" />
      <antcall target="neo-only-tests" />
      <antcall target="paleo-only-tests" />
+     <antcall target="remove-plugin-test-results" />
    </target>
 
   <target name="universal-tests">
