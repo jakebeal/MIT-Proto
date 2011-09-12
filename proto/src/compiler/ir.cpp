@@ -706,11 +706,18 @@ void DFG::make_op_inline(OperatorInstance* target) {
       if((*i)->output==nop->output) nop->output = newsrc;
       relocate_consumers((*i)->output,newsrc); delete_node(*i);
     } else if((*i)->op==Env::core_op("restrict") && (*i)->inputs.size()==1) {
-      if((*i)->inputs[0]->domain != target->output->domain)
-        ierror("Inlining doesn't know how to handle third-party refs yet");
-      // External variables are accessed directly
-      if((*i)->output==nop->output) nop->output = (*i)->inputs[0];
-      relocate_consumers((*i)->output,(*i)->inputs[0]); delete_node(*i);
+      if((*i)->inputs[0]->domain == target->output->domain) {
+        // References to variables from inlining target domain are
+        // accessed directly.
+        if((*i)->output==nop->output) nop->output = (*i)->inputs[0];
+        relocate_consumers((*i)->output,(*i)->inputs[0]); delete_node(*i);
+      } else if(target->output->domain->child_of((*i)->inputs[0]->domain)) {
+        // References to variables from a parent of the target domain
+        // gain a second input
+        (*i)->add_input(target->output->domain->selector);
+      } else {
+        // References to variables from other functions are simply left as is
+      }
     }
   }
   relocate_consumers(target->output,nop->output);
@@ -726,9 +733,11 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
     cop->signature->required_inputs.push_back((*in)[i]->range);
   
   // create parameters
-  for(int i=0;i<in->size();i++)
+  for(int i=0;i<in->size();i++) {
     fmap[(*in)[i]] =
       add_parameter(cop,make_gensym("arg")->name,i,cop->body,(*in)[i]);
+    fmap[(*in)[i]]->range = (*in)[i]->range; // set the range
+  }
   
   // copy AMs & OIs
   amap[space]=cop->body;
@@ -782,9 +791,9 @@ void DFG::print(ostream* out) {
     CompoundOp* op = (*i)->bodyOf;
     if(op) {
       int n = funcalls[op].size();
-      *cpout<<"Function: "<<op->name<<" "<<ce2s(op->signature)<<" called "
+      *out<<"Function: "<<op->name<<" "<<ce2s(op->signature)<<" called "
             <<n<<" times\n";
-      pp_push(2); dfg_print_function(cpout,*i,op->output); pp_pop();
+      pp_push(2); dfg_print_function(out,*i,op->output); pp_pop();
     }
   }
   dfg_print_function(out,output->domain->root(),output);
@@ -793,6 +802,16 @@ void DFG::print(ostream* out) {
 void DFG::printdot(ostream* out, bool field_nodes) {
   pastSteps = "";
   dot_print_function(out,output->domain->root(),output,field_nodes);
+}
+
+void CompoundOp::printbody(ostream* out) {
+  if(body==NULL) ierror("Can't print CompoundOp: body is NULL");
+  DFG* dfg = body->container;
+  if(dfg==NULL) ierror("Can't print CompoundOp: body container is NULL");
+  int n = dfg->funcalls[this].size();
+  if(signature==NULL) ierror("Can't print CompoundOp: signature is NULL");
+  *out<<"Function: "<<name<<" "<<ce2s(signature)<<" called "<<n<<" times\n";
+  pp_push(2); dfg_print_function(out,body,output); pp_pop();
 }
 
 /*****************************************************************************

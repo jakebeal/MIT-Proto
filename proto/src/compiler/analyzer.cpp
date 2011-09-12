@@ -997,7 +997,7 @@ class TypePropagator : public IRPropagator {
         return true; // in any case, don't fail out now
       }
     }
-    
+
     V4<<"no matching repairs"<< endl;
     return false; // repair has failed
   }
@@ -1024,7 +1024,12 @@ class TypePropagator : public IRPropagator {
     V3 << "Considering field "<<ce2s(f)<<endl;
     // Ignore old type (it may change) [except Parameter]; use producer type
     ProtoType* tmp = f->producer->op->signature->output;
-    if(f->producer->op->isA("Parameter")) tmp=f->range;
+    if(f->producer->op->isA("Parameter")) {
+      Parameter* p = (Parameter*)f->producer->op;
+      tmp=ProtoType::gcs(f->range,p->container->signature->nth_type(p->index));
+      V4<<"Parameter: "<<p->to_str()<<" range "<<f->range->to_str()<<" sigtype "
+        <<p->container->signature->nth_type(p->index)->to_str()<<endl;
+    }
     // GCS against current value
     ProtoType* newtmp = ProtoType::gcs(tmp,f->range);
     if(!newtmp) {
@@ -1597,6 +1602,7 @@ private:
   CompoundOp *localize_compound_op(CompoundOp *cop);
   CompoundOp *make_nbr_subroutine(OperatorInstance *oi, Field **exportf);
   Operator *nbr_op_to_folder(OperatorInstance *oi);
+  void restrict_elements(OIset* elts,vector<Field *>* exports, AM* am,OI* summary_op);
 };
 
 void
@@ -1695,6 +1701,87 @@ HoodToFolder::localize_compound_op(CompoundOp *cop)
   return new_cop;
 }
 
+/// If any elements in OIset* have domains in am's parents, 
+/// replace them with copies restricted to am.  Likewise,
+/// change exports to reference restricted versions
+void
+HoodToFolder::restrict_elements(OIset* elts,vector<Field *>* exports,AM* am,OI* summary_op) {
+  CEmap(OI*,OI*) omap; // remapped OIs
+  CEmap(Field*,Field*) fmap; // remapped fields
+
+  // create all replacements
+  for_set(OI*,*elts,oi) {
+    if((*oi)->op==Env::core_op("restrict")) {
+      omap[*oi] = NULL;  // Restrictions are simply elided
+    } else if((*oi)->output->domain == am || 
+              (*oi)->output->domain->child_of(am)) {
+      continue; // ignore elements that don't need restriction
+    } else if(am->child_of((*oi)->output->domain)) {
+      // remap elements computed with a larger domain to a new instance
+      omap[*oi] = new OperatorInstance(*oi,(*oi)->op,am);
+      omap[*oi]->output->range = (*oi)->output->range;
+      fmap[(*oi)->output] = omap[*oi]->output;
+      for(int i=0;i<(*oi)->inputs.size();i++)
+        omap[*oi]->add_input((*oi)->inputs[i]);
+    } else {
+      ierror("Can't restrict "+(*oi)->output->to_str()+" to "+am->to_str());
+    }
+  }
+
+  // remap restriction outputs
+  for_set(OI*,*elts,oi) {
+    if((*oi)->op==Env::core_op("restrict")) {
+      // search upstream for a non-restrict input
+      OI* src = *oi; 
+      while(src->op==Env::core_op("restrict")) { src=src->inputs[0]->producer; }
+      // ensure this is part of the restricted set (it should always be)
+      if(!elts->count(src) || !omap.count(src)) 
+        ierror("Restrict leads out of expected neighborhood computation ops");
+      fmap[(*oi)->output] = fmap[src->output];
+    }
+  }
+
+  // change contents of elts
+  for_map(OI*,OI*,omap,i) {
+    elts->erase(i->first);
+    if(i->second!=NULL) { elts->insert(i->second); }
+  }
+  // remap all input fields (outputs have been handled by OI copying)
+  for_set(OI*,*elts,oi) {
+    for(int i=0;i<(*oi)->inputs.size();i++)
+      if(fmap.count((*oi)->inputs[i]))
+        root->relocate_source(*oi,i,fmap[(*oi)->inputs[i]]);
+  }
+  // swap output if appropriate
+  if(fmap.count(summary_op->inputs[0]))
+    root->relocate_source(summary_op,0,fmap[summary_op->inputs[0]]);
+
+  // Now walk through the exports, restricting and replacing as needed
+  for(int i=0;i<exports->size();i++) {
+    Field* ef = (*exports)[i];
+    if(ef->domain == am || ef->domain->child_of(am)) {
+      continue; // ignore elements that don't need restriction
+    } else if(am->child_of(ef->domain)) {
+      // create a new restriction
+      OI* restrict = new OperatorInstance(ef,Env::core_op("restrict"),am);
+      restrict->add_input(ef); 
+      restrict->add_input(am->selector); // selector known to be non-null
+      restrict->output->range = ef->range; // copy range
+      // remap elements that used the old export to the new restricted one
+      for_set(OI*,*elts,oi) {
+        for(int j=0;j<(*oi)->inputs.size();j++) {
+          if((*oi)->inputs[j] == ef) 
+            root->relocate_source(*oi,j,restrict->output);
+        }
+      }
+      // change the export
+      (*exports)[i] = restrict->output;
+    } else {
+      ierror("Can't restrict export "+ef->to_str()+" to "+am->to_str());
+    }    
+  }
+}
+
 CompoundOp *
 HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
 {
@@ -1724,7 +1811,24 @@ HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
     }
   }
   V3 << "Found " << elts.size() << " elements" << endl;
+  for_set(OI*,elts,e) { V5 << (*e)->to_str() << endl; }
   V3 << "Found " << exports.size() << " exports" << endl;
+  for(int i=0;i<exports.size();i++) { V5 << exports[i]->to_str() << endl; }
+
+  // Some of the computation elements may have been computed on a
+  // larger AM, and need to be restricted.  This cannot happen in the
+  // compound op form.  However, since there are no "if" ops allowed
+  // within a neighborhood computation, it is safe to map all elements
+  // of the neighborhood computation into restricted copies; computation
+  // that would have happened on other neighbors would just be discarded
+  // In practice, what happens here is that any "restrict" is bubbled up
+  // to be be at the exports instead.
+  restrict_elements(&elts,&exports,oi->output->domain,oi);
+  V3 << "Restricted elements" << endl;
+  for_set(OI*,elts,e) { V5 << (*e)->to_str() << endl; }
+  V3 << "Restricted exports" << endl;
+  for(int i=0;i<exports.size();i++) { V5 << exports[i]->to_str() << endl; }
+  V5 << "Summary is now: " << oi->to_str() << endl;
 
   // Create the compound op.
   V4 << "Creating compound operator from elements" << endl;

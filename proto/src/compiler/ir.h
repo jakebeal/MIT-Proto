@@ -263,6 +263,7 @@ struct CompoundOp : public Operator { reflection_sub(CompoundOp,Operator);
   CompoundOp(CompoundOp* src);
   bool compute_side_effects(); // marks self & returns
   virtual void print(std::ostream* out=0)  {*out << "[Fun: " << name << "]";}
+  virtual void printbody(std::ostream* out=0);
 };
 
  // something input to a function
