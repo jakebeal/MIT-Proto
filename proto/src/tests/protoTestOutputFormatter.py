@@ -24,6 +24,7 @@ class TestCase:
         self.name = name
         self.time = "0.0"
         self.failMessage = ""
+	self.errorMessage = ""
         self.failContent = ""
         self.dumpFilePath = ""
         self.argStr = ""
@@ -51,9 +52,9 @@ class TestSuite:
         self.hostname = ""
         
     def __str__(self):
-        output = "TestSuite: " + self.name + " " + \
-              str(self.failures) + " " + str(self.tests) + " \n" + \
-              self.protoVersion + "\n"
+        output = "TestSuite: " + self.name + " Failures: " + \
+              str(self.failures) + " Errors: " + str(self.errors) + \
+	      " " + str(self.tests) + " \n" + self.protoVersion + "\n"
               
         return output
 # Each one of these objects will correspond to a singe RESULTS file.
@@ -68,7 +69,7 @@ class ResultFileObject:
         
     def createXML(self):
         root = ET.Element("testsuite")
-        root.set("errors", "0")
+        root.set("errors", str(self.testSuite.errors))
         root.set("failures",str(self.testSuite.failures))
         root.set("hostname", "")
         root.set("name", self.testSuite.name)
@@ -106,6 +107,11 @@ class ResultFileObject:
                 failure.set("message", item.failMessage)
                 failure.set("type", "failure")
                 failure.text = item.failContent
+	    if len(item.errorMessage) > 0:
+		error = ET.SubElement(testcase, "error")
+		error.set("message", "PROTO test error")
+		error.set("type", "error")
+		error.text = item.errorMessage
                 
         
         systemout = ET.SubElement(root,"system-out")
@@ -231,8 +237,13 @@ class ProcessFiles:
             testCase.failMessage = failMessage
             for i in range(1,len(failLinePos)):
                testCase.failContent += lines[failLinePos[i]]
-            
-      
+
+	errorLinePos = self.getLineIndexes(lines, "Proto terminated with a non-zero")
+	if len(errorLinePos) > 0:
+            protoOutput = self.getLineIndexes(lines, "***PROTO OUTPUT***")
+	    for i in range(protoOutput[0], errorLinePos[0]):
+	       testCase.errorMessage += lines[i]
+	  
         return testCase
      
      
@@ -246,10 +257,13 @@ class ProcessFiles:
         
         if firstLine.startswith("All"):
             testSuite.failures = 0
+	    testSuite.errors = 0
             testSuite.tests = self.getNumLinesStartWith(inputLines,"Test")
         elif firstLine.startswith("Passed"):
             testSuite.tests = int(firstLine.split()[4])
+	    passed = int(firstLine.split()[1])
             testSuite.failures = self.getNumLinesStartWith(inputLines,"FAIL: Failed")
+	    testSuite.errors = testSuite.tests - testSuite.failures - passed
     
         return testSuite
         
