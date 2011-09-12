@@ -954,7 +954,8 @@ class TypePropagator : public IRPropagator {
           OI* foi = new OperatorInstance(f->producer,fo,f->domain);
           root->relocate_source(c.first,c.second,foi->output);
           note_change(foi); return true; // let constraint retry later...
-        } else if(f->producer->inputs.size() >= 3 &&
+        } else if(f->producer->op == Env::core_op("mux") &&
+                  f->producer->inputs.size() >= 3 &&
                   f->producer->domain() != f->producer->inputs[1]->domain &&
                   f->producer->domain() != f->producer->inputs[2]->domain ) {
           // Compilation error if a field crosses OUT of an AM boundary

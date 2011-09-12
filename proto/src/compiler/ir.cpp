@@ -780,9 +780,18 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
       }
     }
   }
+
+  // Assign the output
+  if(fmap.count(out)) {
+    cop->output = fmap[out]; // always in root AM
+  } else {
+    // if the output is not in the fmap, then insert a new reference
+    OI* restrict = new OI(out,Env::core_op("restrict"),cop->body);
+    restrict->add_input(out); restrict->output->range = out->range;
+    cop->output = restrict->output;
+  }
   
   // complete!
-  cop->output = fmap[out]; // always in root AM
   return cop;
 }
 
