@@ -54,5 +54,8 @@ check-local:
 
 clean-local:
 	rm -rf dumps
+
+clean-tests:
 	rm -rf */*.RESULTS
 	rm -rf */xml/*.xml
+
