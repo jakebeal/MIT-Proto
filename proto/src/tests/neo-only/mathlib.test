@@ -148,15 +148,25 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(min
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(min -1.0 1)"
 = 1 3 -1.0
 
-//Mod
+//Mod and Rem
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod 27 5)"
 = 1 3 2
 //Mod for -ve is = (mod for +ve) * -1
-test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod -27 5)"
-= 1 3 -2
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod -27 5)"
+//= 1 3 2
 //Mod for floats is =  mod for ints + the "decimal part"
-test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod -27.3 5)"
-= 1 3 -2.3
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod -27.3 5)"
+//= 1 3 2.3
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod 27.3 -5)"
+//= 1 3 -2.7
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rem 27 5)"
+//= 1 3 2
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rem -27 5)"
+//= 1 3 -2
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rem -27.3 5)"
+//= 1 3 -2.7
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rem 27.3 -5)"
+//= 1 3 2.3
 
 //Pow
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(pow 100.00 0)"
