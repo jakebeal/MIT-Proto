@@ -1,0 +1,9 @@
+def grad-value (src, f):
+    d = gradient(src)
+    feedback(v) init {
+        f 
+    } update {
+        newval = fold-hood(fun(r,x) { if(1st(x) < 1st(r)) x else r }, \
+			   tup(inf,f), tup(d,v))
+        mux(src, f, 2nd(newval))
+    } 
