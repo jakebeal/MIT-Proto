@@ -1671,11 +1671,14 @@ DATA *eval(DATA *res, FUN_VAL fun) {
       case ADD_OP: {
    NUM_VAL val = NUM_PEEK(1) + NUM_PEEK(0); NPOP(2); NUM_PUSH(val); break; }
       case MOD_OP: {
+        //TODO: this is also implemented in compiler/analyzer.cpp,
+        //      merge these implementations!
         NUM_VAL dividend = NUM_PEEK(1);
         NUM_VAL divisor = NUM_PEEK(0); 
         NUM_VAL val = fmod(fabs(dividend), fabs(divisor)); 
-        if(dividend < 0) { val = divisor - val; }
-        if(divisor < 0) { val += divisor; }
+        if(divisor < 0 && dividend < 0) val *= -1;
+        else if(dividend < 0) val = divisor - val;
+        else if(divisor < 0) val += divisor;
           NPOP(2); NUM_PUSH(val); break; 
       }
       case REM_OP: {

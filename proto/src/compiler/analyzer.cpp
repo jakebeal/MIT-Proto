@@ -1333,6 +1333,15 @@ class ConstantFolder : public IRPropagator {
     } else if(name=="round") {
       maybe_set_output(oi,new ProtoScalar(rint(nth_scalar(oi,0))));
     } else if(name=="mod") {
+      //TODO: this is also implemented in kernel/proto.c,
+      //      merge these implementations!
+      double dividend = nth_scalar(oi,0), divisor = nth_scalar(oi,1);
+      double val = fmod(fabs(dividend), fabs(divisor)); 
+      if(divisor < 0 && dividend < 0) val *= -1;
+      else if(dividend < 0) val = divisor - val;
+      else if(divisor < 0) val += divisor;
+      maybe_set_output(oi,new ProtoScalar(val));
+    } else if(name=="rem") {
       double a = nth_scalar(oi,0), b = nth_scalar(oi,1);
       maybe_set_output(oi,new ProtoScalar(fmod(a,b)));
     } else if(name=="pow") {
