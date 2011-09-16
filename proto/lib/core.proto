@@ -72,6 +72,7 @@
 (def pos? (x) (> x 0))
 
 (primitive mod (num|scalar divisor|scalar) scalar)
+(primitive rem (num|scalar divisor|scalar) scalar)
 (primitive pow (base|scalar exponent|scalar) scalar)
 (primitive sqrt (scalar) scalar)
 (primitive log (scalar) scalar)

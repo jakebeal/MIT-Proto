@@ -74,6 +74,7 @@
  (CEIL_OP 0 ceil)
  (ROUND_OP 0 round)
  (MOD_OP -1 mod)
+ (REM_OP -1 rem)
  (POW_OP -1 pow)
  (LOG_OP 0 log)
  (SQRT_OP 0 sqrt)

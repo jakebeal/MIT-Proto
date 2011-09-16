@@ -72,6 +72,7 @@
  X(CEIL_OP)
  X(ROUND_OP)
  X(MOD_OP)
+ X(REM_OP)
  X(POW_OP)
  X(LOG_OP)
  X(SQRT_OP)

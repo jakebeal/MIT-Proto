@@ -1533,6 +1533,7 @@ void init_ops () {
   add_op("MAX", MAX_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
   add_op("MIN", MIN_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
   add_op("MOD", MOD_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
+  add_op("REM", REM_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
   add_op("POW", POW_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,NUMT,0));
   add_op("SQRT", SQRT_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
   add_op("LOG", LOG_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
