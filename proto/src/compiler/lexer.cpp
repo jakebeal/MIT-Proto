@@ -2008,7 +2008,7 @@ void yyfree (void * ptr )
 
 SExpr* read_sexpr(const string &name, const string &in)
 { return read_sexpr(name,new istringstream(in)); }
-SExpr* read_sexpr(const string &name, istream* in, ostream* out) {
+SExpr* read_sexpr(const string &name, istream* in, ostream* out) { 
   SExprLexer lex(name,in,out); cur = &lex;
   SExpr* sexp = lex.tokenize();
   yylex_destroy(); // reset state

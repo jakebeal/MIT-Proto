@@ -18,11 +18,11 @@ using namespace std;
 // globals managed by set_vm_context
 SimulatedHardware* hardware=NULL;
 Device* device=NULL;
+Machine* machine=NULL;
 
 Device* current_device() { return device; }
 SimulatedHardware* current_hardware() { return hardware; }
-MACHINE* current_machine() { return machine; }
-
+Machine* current_machine() { return machine; }
 
 SimulatedHardware::SimulatedHardware() {
 //    std::cout << "SimulatedHardware base ptr: " << &base << std::endl;
@@ -91,15 +91,14 @@ void SimulatedHardware::dumpPatchTable()
   }
 }
 
-// The kernel lives in C on a single device
 // This function sets the globals that connect it to a simulated device.
 void SimulatedHardware::set_vm_context(Device* d) {
   hardware = this;
   device = d;
   machine = d->vm;
-  is_debugging_val = is_kernel_debug && d->debug();
+  /*is_debugging_val = is_kernel_debug && d->debug();
   is_tracing_val = is_kernel_trace && d->debug();
-  is_script_debug_val = is_kernel_debug_script && d->debug();
+  is_script_debug_val = is_kernel_debug_script && d->debug();*/
 }
 
 /*****************************************************************************
@@ -119,27 +118,26 @@ int is_script_debug_val = 0;
 
 void reinitHardware(void) { return; }
 
-void mov (VEC_VAL *val)
+void mov (Tuple val)
 { hardware->patch_table[MOV_FN]->mov(val); }
-void flex (NUM_VAL val) 
+void flex (Number val) 
 { hardware->patch_table[FLEX_FN]->flex(val); }
-void set_probe (DATA* d, uint8_t p) 
+void set_probe (Data d, uint8_t p) 
 { hardware->patch_table[SET_PROBE_FN]->set_probe(d,p); }
 
-void set_dt (NUM_VAL dt)
+void set_dt (Number dt)
 { hardware->patch_table[SET_DT_FN]->set_dt(dt);}
 
-NUM_VAL read_radio_range (VOID) 
+Number read_radio_range () 
 { return hardware->patch_table[READ_RADIO_RANGE_FN]->read_radio_range(); }
-NUM_VAL read_bearing (VOID) 
+Number read_bearing () 
 { return hardware->patch_table[READ_BEARING_FN]->read_bearing(); }
-NUM_VAL read_speed (VOID) 
+Number read_speed () 
 { return hardware->patch_table[READ_SPEED_FN]->read_speed(); }
 
-int radio_send_export (uint8_t version, uint8_t timeout, uint8_t n, 
-                       uint8_t len, COM_DATA *buf) {
+int radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data) {
   return hardware->patch_table[RADIO_SEND_EXPORT_FN]->
-    radio_send_export(version,timeout,n,len,buf); 
+    radio_send_export(version,timeout,data); 
 }
 int radio_send_script_pkt (uint8_t version, uint16_t n, uint8_t pkt_num, 
                            uint8_t *script) {
@@ -157,6 +155,7 @@ void platform_operation(uint8_t op) { my_platform_operation(op); }
 /*****************************************************************************
  *  MEMORY MANAGEMENT                                                        *
  *****************************************************************************/
+/*
 // the simulator grants only a fixed-size block of memory to each machine
 int MAX_MEM_SIZE = 4*4096;
 uint8_t* MEM_CONS(MACHINE *m) {
@@ -177,10 +176,11 @@ void deallocate_machine(MACHINE** vm) {
   FREE(&(*vm)->membuf); 
   FREE(vm);
 }
-
+*/
 /*****************************************************************************
  *  PRETTY-PRINTING                                                          *
  *****************************************************************************/
+/*
 void post_data_to2 (char *str, DATA *d, int verbosity) {
   char buf[100];
   if (d->is_dead) { // Note: we should never see "DEAD" markers
@@ -221,4 +221,44 @@ void post_data (DATA *d) {
   char buf[256];
   post_data_to(buf, d);
   post(buf);
+}*/
+
+void post_data_to2(char * str, Data data, int verbosity) {
+	switch(data.type()){
+		case Data::Type_undefined:
+			strcpy(str, "(UNDEFINED)");
+			break;
+		case Data::Type_number:
+			sprintf(str, "%.2f", data.asNumber());
+			break;
+		case Data::Type_tuple: {
+			char buf[100];
+			strcpy(str, verbosity ? "[" : "");
+			for(size_t i = 0; i < data.asTuple().size(); i++){
+				if (i) strcat(str, " ");
+				post_data_to2(buf, data.asTuple()[i], verbosity);
+				strcat(str, buf);
+			}
+			if (verbosity) strcat(str, "]");
+			break;
+		}
+		case Data::Type_address:
+			strcpy(str, "(Address)");
+			break;
+	}
 }
+
+void post_data_to(char * str, Data data) {
+	post_data_to2(str, data, 1);
+}
+
+void post_stripped_data_to(char * str, Data data) {
+	post_data_to2(str, data, 0);
+}
+
+void post_data(Data data) {
+	char buf[256];
+	post_data_to(buf, data);
+	post(buf);
+}
+

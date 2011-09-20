@@ -10,7 +10,6 @@ in the file LICENSE in the MIT Proto distribution's top directory.  */
 #include "config.h"
 #include "stop-when.h"
 #include "visualizer.h"
-#include "proto_vm.h"
 
 StopWhen::StopWhen(Args *args, SpatialComputer *parent) : Layer(parent) {
   stop_pct = (args->extract_switch("-stop-pct"))?args->pop_number():1.0;
@@ -27,8 +26,8 @@ void StopWhen::add_device(Device *d) {
   n_devices++;
 }
 
-void StopWhen::stop_op(MACHINE* machine) {
-  NUM_VAL val = NUM_PEEK(0);
+void StopWhen::stop_op(Machine* machine) {
+  Number val = machine->stack.peek().asNumber();
   if(val!=0) {
     probed.insert(device);
     if(probed.size() > n_devices * stop_pct
@@ -65,6 +64,4 @@ extern "C" {
   const char* get_proto_plugin_inventory()
   { return (new string(StopWhenPlugin::inventory()))->c_str(); }
 }
-
-
 

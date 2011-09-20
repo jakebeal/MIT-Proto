@@ -6,10 +6,13 @@ This file is part of MIT Proto, and is distributed under the terms of
 the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
+#include <machine.hpp>
+
 #include "config.h"
 #include "basic-hardware.h"
 #include "visualizer.h"
-#include "proto_vm.h"
+
+extern Machine * machine;
 
 /*****************************************************************************
  *  DEBUG                                                                    *
@@ -54,33 +57,30 @@ void DebugLayer::register_colors() {
 #endif
 }
 
-void DebugLayer::leds_op(MACHINE* machine) {
-  NUM_VAL val = NUM_PEEK(0);
+void DebugLayer::leds_op(Machine* machine) {
+  Number val = machine->stack.peek().asNumber();
   set_b_led((val > 0.25) != 0 ? 1.0 : 0);
   set_g_led((val > 0.50) != 0 ? 1.0 : 0);
   set_r_led((val > 0.75) != 0 ? 1.0 : 0);
 }
 
-void DebugLayer::red_op(MACHINE* machine) {
-  NUM_VAL val = NUM_PEEK(0);
-  set_r_led(val);
+void DebugLayer::red_op(Machine* machine) {
+  set_r_led(machine->stack.peek().asNumber());;
 }
 
-void DebugLayer::green_op(MACHINE* machine) {
-  NUM_VAL val = NUM_PEEK(0);
-  set_g_led(val);
+void DebugLayer::green_op(Machine* machine) {
+  set_g_led(machine->stack.peek().asNumber());;
 }
 
-void DebugLayer::blue_op(MACHINE* machine) {
-  NUM_VAL val = NUM_PEEK(0);
-  set_b_led(val);
+void DebugLayer::blue_op(Machine* machine) {
+  set_b_led(machine->stack.peek().asNumber());;
 }
 
-void DebugLayer::rgb_op(MACHINE* machine) {
-  VEC_VAL *vec = VEC_PEEK(0);
-  set_r_led(num_vec_elt(vec, 0));
-  set_g_led(num_vec_elt(vec, 1));
-  set_b_led(num_vec_elt(vec, 2));
+void DebugLayer::rgb_op(Machine* machine) {
+  Tuple t = machine->stack.peek().asTuple();
+  set_r_led(t[0].asNumber());
+  set_g_led(t[1].asNumber());
+  set_b_led(t[2].asNumber());
 }
 
 // CLIP forces the number x into the range [min,max]
@@ -118,23 +118,23 @@ void my_hsv_to_rgb (flo h, flo s, flo v, flo *r, flo *g, flo *b) {
   *r = rt*255; *g = gt*255; *b = bt*255;
 }
 
-void DebugLayer::hsv_op(MACHINE* machine) {
-  int off = NXT_OP(machine);
-  VEC_VAL *rgb = VEC_GET(GLO_GET(off));
-  VEC_VAL *hsv = VEC_PEEK(0);
+void DebugLayer::hsv_op(Machine* machine) {
+  machine->nextInt8();
+  Tuple hsv = machine->stack.popTuple();
   flo r, g, b;
-  my_hsv_to_rgb(num_vec_elt(hsv, 0), num_vec_elt(hsv, 1), num_vec_elt(hsv, 2), &r, &g, &b);
-  num_vec_elt_set(rgb, 0, r);
-  num_vec_elt_set(rgb, 1, g);
-  num_vec_elt_set(rgb, 2, b);
-  NPOP(1); VEC_PUSH(rgb);
+  my_hsv_to_rgb(hsv[0].asNumber(), hsv[1].asNumber(), hsv[2].asNumber(), &r, &g, &b);
+  Tuple rgb(3);
+  rgb.push(r);
+  rgb.push(g);
+  rgb.push(b);
+  machine->stack.push(rgb);
 }
 
-void DebugLayer::sense_op(MACHINE* machine) {
-  NUM_PUSH(read_sensor((uint8_t) NUM_POP()));
+void DebugLayer::sense_op(Machine* machine) {
+  machine->stack.push(read_sensor((uint8_t) machine->stack.popNumber()));
 }  
 
-BOOL DebugLayer::handle_key(KeyEvent* key) {
+bool DebugLayer::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
     case 'p': n_probes = (n_probes + 1)%(MAX_PROBES+1); return TRUE;
@@ -165,25 +165,25 @@ void DebugLayer::dump_header(FILE* out) {
 }
 
 // actuators
-void DebugLayer::set_probe (DATA* val, uint8_t index) { 
+void DebugLayer::set_probe (Data val, uint8_t index) { 
   if(index >= MAX_PROBES) return; // sanity check index
-  DATA_SET(&((DebugDevice*)device->layers[id])->probes[index], val); 
+   ((DebugDevice*)device->layers[id])->probes[index] = val;
 }
-void DebugLayer::set_r_led (NUM_VAL val) { machine->actuators[R_LED] = val; }
-void DebugLayer::set_g_led (NUM_VAL val) { machine->actuators[G_LED] = val; }
-void DebugLayer::set_b_led (NUM_VAL val) { machine->actuators[B_LED] = val; }
-NUM_VAL DebugLayer::read_sensor (uint8_t n) {
+void DebugLayer::set_r_led (Number val) { machine->actuators[R_LED] = val; }
+void DebugLayer::set_g_led (Number val) { machine->actuators[G_LED] = val; }
+void DebugLayer::set_b_led (Number val) { machine->actuators[B_LED] = val; }
+Number DebugLayer::read_sensor (uint8_t n) {
   return (n<N_SENSORS) ? machine->sensors[n] : NAN;
 }
 
 // per-device interface, used primarily for visualization
 DebugDevice::DebugDevice(DebugLayer* parent, Device* d) : DeviceLayer(d) {
-  for(int i=0;i<MAX_PROBES;i++) NUM_SET(&probes[i], 0); // probes start clear
+  for(int i=0;i<MAX_PROBES;i++) probes[i] = 0; // probes start clear
   this->parent = parent;
 }
 
 void DebugDevice::dump_state(FILE* out, int verbosity) {
-  MACHINE* m = container->vm;
+  Machine* m = container->vm;
   if(verbosity==0) {
     uint32_t dumpmask = parent->dumpmask; // shorten the name
     // there was another sensor here, but it's been removed
@@ -203,13 +203,13 @@ void DebugDevice::dump_state(FILE* out, int verbosity) {
     fprintf(out,"Probes:");
     char buf[1000];
     for(int i=0;i<MAX_PROBES;i++) {
-      post_data_to(buf,&probes[i]); fprintf(out,"%s ",buf);
+      post_data_to(buf,probes[i]); fprintf(out,"%s ",buf);
     }
     fprintf(out,"\n");
   }
 }
 
-BOOL DebugDevice::handle_key(KeyEvent* key) {
+bool DebugDevice::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
     case 't': 
@@ -226,14 +226,14 @@ BOOL DebugDevice::handle_key(KeyEvent* key) {
 }
 
 void DebugDevice::preupdate() {
-  for(int i=0;i<MAX_PROBES;i++) { NUM_SET(&probes[i],0); }
+  for(int i=0;i<MAX_PROBES;i++) { probes[i] = 0; }
 }
 
 #define SENSOR_RADIUS_FACTOR 4
 #define N_USER_SENSORS 4
 void DebugDevice::visualize() {
 #ifdef WANT_GLUT
-  MACHINE* vm = container->vm;
+  Machine* vm = container->vm;
   static Color* user[N_USER_SENSORS] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
                            DebugLayer::USER_SENSOR_3, DebugLayer::USER_SENSOR_4}; 
   flo rad = container->body->display_radius();
@@ -283,7 +283,7 @@ void DebugDevice::visualize() {
     char buf[1024];
     glTranslatef(0, 0.5625, 0);
     for (int i = 0; i < parent->n_probes; i++) {
-      post_data_to(buf, &probes[i]);
+      post_data_to(buf, probes[i]);
       palette->use_color(DebugLayer::DEVICE_PROBES);
       draw_text(1, 1, buf);
       glTranslatef(1.125, 0, 0);
@@ -303,8 +303,8 @@ PerfectLocalizer::PerfectLocalizer(SpatialComputer* parent) : Layer(parent) {
   parent->hardware.patch(this,READ_SPEED_FN);
 }
 
-void PerfectLocalizer::coord_op(MACHINE* machine) {
-  VEC_PUSH(read_coord_sensor());
+void PerfectLocalizer::coord_op(Machine* machine) {
+  machine->stack.push(read_coord_sensor());
 }
 
 vector<HardwareFunction> PerfectLocalizer::getImplementedHardwareFunctions()
@@ -318,17 +318,21 @@ void PerfectLocalizer::add_device(Device* d) {
   d->layers[id] = new PerfectLocalizerDevice(d);
 }
 
-VEC_VAL* PerfectLocalizer::read_coord_sensor(VOID) {
+Tuple PerfectLocalizer::read_coord_sensor() {
   PerfectLocalizerDevice* d = (PerfectLocalizerDevice*)device->layers[id];
-  if(d->coord_sense==NULL) {
-    DATA num; d->coord_sense = new_tup(3, init_num(&num, 0.0));
+  if(!d->coord_sense.isSet()) {
+    Tuple c(3);
+    c.push(0);
+    c.push(0);
+    c.push(0);
+    d->coord_sense = c;
   }
   const METERS* p = device->body->position();
-  for(int i=0;i<3;i++) NUM_SET(&VEC_GET(d->coord_sense)->elts[i], p[i]);
-  return VEC_GET(d->coord_sense);
+  for(int i=0;i<3;i++) d->coord_sense.asTuple()[i] = p[i];
+  return d->coord_sense.asTuple();
 }
 
-NUM_VAL PerfectLocalizer::read_speed(VOID) {
+Number PerfectLocalizer::read_speed() {
   const METERS* v = device->body->velocity();
   return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
@@ -341,7 +345,7 @@ NUM_VAL PerfectLocalizer::read_speed(VOID) {
 // Currently unused.
 
 LeftoverLayer::LeftoverLayer(SpatialComputer* parent) : Layer(parent) {
-  parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::ranger_op, "ranger (vector 3)"));
+/*  parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::ranger_op, "ranger (vector 3)"));
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::mouse_op, "mouse (vector 3)"));
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::local_fold_op, "local-fold scalar scalar scalar"));
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::fold_complete_op, "fold-complete scalar boolean"));
@@ -349,20 +353,20 @@ LeftoverLayer::LeftoverLayer(SpatialComputer* parent) : Layer(parent) {
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::drip_op, "drip scalar scalar scalar"));
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::concentration_op, "concentration scalar scalar"));
   parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::channel_grad_op, "channel-grad (vector 3) scalar"));
-  parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::cam_op, "cam scalar scalar"));
+  parent->hardware.registerOpcode(new OpHandler<LeftoverLayer>(this, &LeftoverLayer::cam_op, "cam scalar scalar"));*/
+}
+/*
+void LeftoverLayer::ranger_op(Machine* machine) {
+  machine->stack.push(read_ranger());
 }
 
-void LeftoverLayer::ranger_op(MACHINE* machine) {
-  VEC_PUSH(read_ranger());
-}
-
-void LeftoverLayer::mouse_op(MACHINE* machine) {
-  VEC_PUSH(read_mouse_sensor());
+void LeftoverLayer::mouse_op(Machine* machine) {
+  machine->stack.push(read_mouse_sensor());
 }
 
 void LeftoverLayer::local_fold_op(MACHINE* machine) {
   int k = (int)NUM_PEEK(0);
-  int val = (BOOL)NUM_PEEK(1);
+  int val = (bool)NUM_PEEK(1);
   set_is_folding((int) NUM_PEEK(1), k);
   NPOP(2);
   NUM_PUSH(val);
@@ -381,8 +385,8 @@ void LeftoverLayer::channel_op(MACHINE* machine) {
 }
 
 void LeftoverLayer::drip_op(MACHINE* machine) {
-  NUM_VAL a = NUM_PEEK(1);
-  NUM_VAL c = NUM_PEEK(0);
+  Number a = NUM_PEEK(1);
+  Number c = NUM_PEEK(0);
   NPOP(2);
   NUM_PUSH(drip_channel((int)a, (int) c));
 }
@@ -399,38 +403,38 @@ void LeftoverLayer::cam_op(MACHINE* machine) {
   NUM_PUSH(cam_get((int) NUM_POP()));
 }
 
-VEC_VAL* LeftoverLayer::read_ranger() {
+Tuple LeftoverLayer::read_ranger() {
   hardware_error("read_ranger");
 }
 
-VEC_VAL* LeftoverLayer::read_mouse_sensor() {
+Tuple LeftoverLayer::read_mouse_sensor() {
   hardware_error("read_mouse_sensor");
 }
 
-BOOL LeftoverLayer::set_is_folding(int n, int k) {
+bool LeftoverLayer::set_is_folding(int n, int k) {
   hardware_error("set_is_folding");
 }
 
-BOOL LeftoverLayer::read_fold_complete(int n) {
+bool LeftoverLayer::read_fold_complete(int n) {
   hardware_error("read_fold_complete");
 }
 
-NUM_VAL LeftoverLayer::set_channel(int n, int k) {
+Number LeftoverLayer::set_channel(int n, int k) {
   hardware_error("set_channel");
 }
 
-NUM_VAL LeftoverLayer::drip_channel(int n, int k) {
+Number LeftoverLayer::drip_channel(int n, int k) {
   hardware_error("drip_channel");
 }
 
-NUM_VAL LeftoverLayer::read_channel(int n) {
+Number LeftoverLayer::read_channel(int n) {
   hardware_error("drip_channel");
 }
 
-VEC_VAL* LeftoverLayer::grad_channel(int n) {
+Tuple LeftoverLayer::grad_channel(int n) {
   hardware_error("drip_channel");
 }
 
-NUM_VAL LeftoverLayer::cam_get(int n) {
+Number LeftoverLayer::cam_get(int n) {
   hardware_error("drip_channel");
-}
+}*/

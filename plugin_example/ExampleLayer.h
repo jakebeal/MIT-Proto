@@ -12,7 +12,7 @@ class FooLayer : public Layer, public HardwarePatch {
   void add_device(Device* d); // call to make per-device instances
   void dump_header(FILE* out); // print list of fields to log file "out"
  private:
-  void foo_op(MACHINE* machine);
+  void foo_op(Machine* machine);
 };
 
 // This is the per-device instance for a FooLayer

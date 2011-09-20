@@ -36,7 +36,6 @@ UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(a
   is_show_logical_nbrs = args->extract_switch("-lc");
   is_show_radio = args->extract_switch("-show-radio");
   is_fast_prune_hood = !args->extract_switch("-no-motion-pruning");
-  is_throttling = args->extract_switch("-radio-backoff");
   is_debug_radio = args->extract_switch("-debug-radio");
   args->undefault(&can_dump,"-Dradio","-NDradio");
   // register hardware patches
@@ -92,8 +91,6 @@ BOOL UnitDiscRadio::handle_key(KeyEvent* key) {
       switch(key->key) {
       case 3:  // Ctrl-C = logical neighbors
         is_show_logical_nbrs = !is_show_logical_nbrs; return TRUE;
-      case 24: // Ctrl-X = radio transmission backoff
-        is_throttling = !is_throttling; return TRUE;
       }
     } else {
       switch(key->key) {
@@ -220,8 +217,8 @@ void UnitDiscRadio::add_device(Device* d) {
   d->layers[id] = new UnitDiscDevice(this,d);
   connect_device(d);
 }
-
-inline int find_nbr_index (MACHINE *m, uint16_t src_id) {
+/*
+inline int find_nbr_index (Machine *m, uint16_t src_id) {
   int left  = 0;
   int right = m->n_hood-1;
   // POST("M%d LOOKING UP NBR %d N_HOOD %d: ", m->id, src_id, m->n_hood);
@@ -241,41 +238,39 @@ inline int find_nbr_index (MACHINE *m, uint16_t src_id) {
   // POST("M%d LOST NBR %d\n", m->id, src_id);
   return -1;
 }
-
+*/
 void UnitDiscRadio::device_moved(Device* d) {
   // now do the actual neighborhood update
   disconnect_device(d); connect_device(d);
   if(is_fast_prune_hood) { // delete the VM hood entries that are lost
-    BOOL live[d->vm->n_hood];
-    for(int i=0;i<d->vm->n_hood;i++) live[i]=FALSE;
+    for(NeighbourHood::iterator i = d->vm->hood.begin(); i != d->vm->hood.end(); i++){
+      i->in_range = false;
+    }
+    d->vm->thisMachine().in_range = true;
     UnitDiscDevice* udd = (UnitDiscDevice*)d->layers[id];
     for(int i=0;i<udd->neighbors.max_id();i++) {
       NbrRecord* nr = (NbrRecord*)udd->neighbors.get(i);
       if(nr) {
-        int loc = find_nbr_index(d->vm,nr->nbr->container->uid);
-        if(loc>=0) live[loc]=TRUE;
+        MachineId nid = nr->nbr->container->uid;
+        d->vm->hood[nid].in_range = true;
       }
     }
-    int offset=0;
-    for(int i=0;i<(d->vm->n_hood-offset); ) {
-      if(live[i+offset]) { 
-        d->vm->hood[i]=d->vm->hood[i+offset]; i++; 
+    for(NeighbourHood::iterator i = d->vm->hood.begin(); i != d->vm->hood.end(); ){
+      if (i->in_range) {
+        i++;
       } else {
-        d->vm->hood[i+offset]->stamp = -1; // mark as invalid
-        offset++;
+        i = d->vm->hood.remove(i);
       }
     }
-    d->vm->n_hood -= offset;
   }
 }
 
 /*****************************************************************************
  *  HARDWARE EMULATION                                                       *
  *****************************************************************************/
-NUM_VAL UnitDiscRadio::read_radio_range (VOID) { return range; }
+Number UnitDiscRadio::read_radio_range () { return range; }
 
-int UnitDiscRadio::radio_send_export (uint8_t version, uint8_t timeout,
-                                      uint8_t n, uint8_t len, COM_DATA *buf) {
+int UnitDiscRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data) {
   if(!try_tx())  // transmission failure
     return 0;
 
@@ -286,17 +281,22 @@ int UnitDiscRadio::radio_send_export (uint8_t version, uint8_t timeout,
   for(int i=0;i<udd->neighbors.max_id();i++) {
     NbrRecord* nr = (NbrRecord*)udd->neighbors.get(i);
     if(nr && try_rx()) { // non-failing receive
-      hardware->set_vm_context(nr->nbr->container);
-      radio_receive_export(src_id, version, timeout, -nr->dp[0], -nr->dp[1],
-                           -nr->dp[2], n, buf);
+      // hardware->set_vm_context(nr->nbr->container);
+      /*radio_receive_export(src_id, version, timeout, -nr->dp[0], -nr->dp[1],
+                           -nr->dp[2], n, buf);*/
+      Neighbour & nbr = nr->nbr->container->vm->hood[src_id];
+      for(Size i = 0; i < data.size(); i++) nbr.imports[i] = data[i];
+      nbr.x = -nr->dp[0];
+      nbr.y = -nr->dp[1];
+      nbr.z = -nr->dp[2];
     }
   }
-  hardware->set_vm_context(udd->container); // restore context
+  // hardware->set_vm_context(udd->container); // restore context
 }
 
 int UnitDiscRadio::radio_send_script_pkt (uint8_t version, uint16_t n, 
                                           uint8_t pkt_num, uint8_t *script) {
-  if(!try_tx())  // transmission failure
+/*  if(!try_tx())  // transmission failure
     return 0;
 
   // walk neighbors
@@ -305,16 +305,16 @@ int UnitDiscRadio::radio_send_script_pkt (uint8_t version, uint16_t n,
     NbrRecord* nr = (NbrRecord*)udd->neighbors.get(i);
     if(nr && try_rx()) { // non-failing receive
       hardware->set_vm_context(nr->nbr->container);
-      radio_receive_script_pkt(version, n, pkt_num, script);
+      //radio_receive_script_pkt(version, n, pkt_num, script);
     }
   }
   hardware->set_vm_context(udd->container); // restore context
-  script_pkt_callback(pkt_num);
+  //script_pkt_callback(pkt_num); */
 }
 
 int UnitDiscRadio::radio_send_digest (uint8_t version, uint16_t script_len, 
                                       uint8_t *digest) {
-  if(!try_tx())
+/*  if(!try_tx())
     return 0;
 
   // walk neighbors
@@ -323,10 +323,10 @@ int UnitDiscRadio::radio_send_digest (uint8_t version, uint16_t script_len,
     NbrRecord* nr = (NbrRecord*)udd->neighbors.get(i);
     if(nr && try_rx()) { // non-failing receive
       hardware->set_vm_context(nr->nbr->container);
-      radio_receive_digest(version, script_len, digest);
+      //radio_receive_digest(version, script_len, digest);
     }
   }
-  hardware->set_vm_context(udd->container); // restore context
+  hardware->set_vm_context(udd->container); // restore context*/
 }
 
 /*****************************************************************************
@@ -341,14 +341,10 @@ UnitDiscDevice::~UnitDiscDevice() {
     for(int i=0;i<neighbors.max_id();i++) {
       NbrRecord* nr = (NbrRecord*)neighbors.get(i);
       if(nr) {
-	MACHINE* nvm = nr->nbr->container->vm;
-        int loc = find_nbr_index(nvm,container->uid);
-	if(loc<0) continue;
-	nvm->hood[loc]->stamp = -1; // mark as invalid
-	nvm->n_hood--;
-	for(int i=loc;i<nvm->n_hood; i++)
-	  nvm->hood[i] = nvm->hood[i+1];
-      }
+	Machine* nvm = nr->nbr->container->vm;
+	NeighbourHood::iterator i = nvm->hood.find(container->uid);
+	if (i != nvm->hood.end()) nvm->hood.remove(i);
+	  }
     }
   }
   parent->disconnect_device(container);
@@ -371,7 +367,7 @@ void UnitDiscDevice::visualize() {
     container->text_scale(); // prepare to draw text
     char buf[20];
     palette->use_color(UnitDiscRadio::RADIO_BACKOFF);
-    sprintf(buf, "%d", container->vm->timeout);
+    sprintf(buf, "N/A");
     draw_text(1, 1, buf);
     glPopMatrix();
   }
@@ -412,10 +408,10 @@ void UnitDiscDevice::visualize() {
     glLineWidth(2);
     palette->use_color(UnitDiscRadio::NET_CONNECTION_LOGICAL);
     glBegin(GL_LINES);
-    MACHINE* m = container->vm;
-    for(int i=0; i<m->n_hood; i++) {
-      glVertex3f(0,0,0);
-      glVertex3f(m->hood[i]->x,m->hood[i]->y,m->hood[i]->z);
+    Machine * m = container->vm;
+    for(NeighbourHood::iterator i = m->hood.begin(); i != m->hood.end(); i++){
+    	glVertex3f(0,0,0);
+    	glVertex3f(i->x, i->y, i->z);
     }
     glLineWidth(1);
     glEnd();

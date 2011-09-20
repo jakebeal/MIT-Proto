@@ -17,7 +17,9 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "paleocompiler.h"
 #endif
 #include "plugin_manager.h"
+#define Instruction InstructionX
 #include "DefaultsPlugin.h"
+#undef Instruction
 
 void run_test_suite(); // testing kludge
 

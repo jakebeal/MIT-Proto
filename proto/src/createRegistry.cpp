@@ -32,7 +32,7 @@ using namespace std;
 // Dummy declarations to fill in simulator names required to dlopen plugins.
 Device *device = 0;
 SimulatedHardware *hardware = 0;
-MACHINE *machine = 0;
+Machine *machine = 0;
 void *palette = 0;
 
 // Touch a neocompiler element to ensure it gets linked in.

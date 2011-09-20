@@ -48,7 +48,8 @@ DeviceTimer* FixedIntervalTime::next_timer(SECONDS* start_lag) {
     new FixedTimer(max(static_cast<flo>(0), p), max(static_cast<flo>(0), ip));
 }
 
-NUM_VAL FixedIntervalTime::set_dt (NUM_VAL dt) {
+Number FixedIntervalTime::set_dt (Number dt) {
+	//TODO/Delft: Let the VM scheduler handle this instead.
   ((FixedTimer*)device->timer)->set_internal_dt(dt);
   return dt;
 }

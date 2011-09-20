@@ -3,7 +3,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/shared \
 	-I$(top_srcdir)/src/compiler \
 	-I$(top_srcdir)/src/sim \
-	-I$(top_srcdir)/src/kernel
+	-I$(top_srcdir)/src/vm
 
 defops_DATA = \
 	platform_ops.proto \

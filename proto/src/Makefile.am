@@ -2,9 +2,9 @@
 SUBDIRS = \
 	shared \
 	compiler \
-	kernel \
 	motelink \
 	sim \
+	vm \
 	core_plugins \
 	tests \
 	.
@@ -15,7 +15,8 @@ INCLUDES = \
 	-I$(top_srcdir)/src/kernel \
 	-I$(top_srcdir)/src/compiler \
 	-I$(top_srcdir)/src/motelink \
-	-I$(top_srcdir)/src/sim
+	-I$(top_srcdir)/src/sim \
+	-I$(top_srcdir)/src/vm
 
 bin_PROGRAMS = \
 	proto \
@@ -27,7 +28,6 @@ proto_SOURCES = \
 # FIXME: have to list libkernel twice here, due to circular dependency
 # with libsim...
 proto_LDADD = \
-	kernel/libkernel.la \
 	shared/libshared.la \
 	compiler/libcompiler.la \
 	motelink/libmotelink.la \
@@ -35,7 +35,6 @@ proto_LDADD = \
 	sim/libprotosimplugin.la \
 	sim/libdefaultplugin.la \
 	shared/libshared.la \
-	kernel/libkernel.la \
 	compiler/libcompiler.la
 
 proto_LDFLAGS = \

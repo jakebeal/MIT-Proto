@@ -24,4 +24,3 @@ public:
 };
 
 #endif	// _RADIOMODELSPLUGIN_
-

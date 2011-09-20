@@ -25,23 +25,23 @@ class MoteIO : public Layer, public HardwarePatch {
   static Color* BUTTON_COLOR;
   virtual void register_colors();
  private:
-  void speak_op(MACHINE* machine);
-  void light_op(MACHINE* machine);
-  void sound_op(MACHINE* machine);
-  void temp_op(MACHINE* machine);
-  void conductive_op(MACHINE* machine);
-  void button_op(MACHINE* machine);
-  void slider_op(MACHINE* machine);
+  void speak_op(Machine* machine);
+  void light_op(Machine* machine);
+  void sound_op(Machine* machine);
+  void temp_op(Machine* machine);
+  void conductive_op(Machine* machine);
+  void button_op(Machine* machine);
+  void slider_op(Machine* machine);
 
   // hardware emulation
-  void set_speak (NUM_VAL period);
-  NUM_VAL read_light_sensor(VOID);
-  NUM_VAL read_microphone (VOID);
-  NUM_VAL read_temp (VOID);
-  NUM_VAL read_short (VOID);       // test for conductivity
-  NUM_VAL read_button (uint8_t n);
-  NUM_VAL read_slider (uint8_t ikey, uint8_t dkey, NUM_VAL init, // frob knob
-		       NUM_VAL incr, NUM_VAL min, NUM_VAL max);
+  void set_speak (Number period);
+  Number read_light_sensor();
+  Number read_microphone ();
+  Number read_temp ();
+  Number read_short ();       // test for conductivity
+  Number read_button (uint8_t n);
+  Number read_slider (uint8_t ikey, uint8_t dkey, Number init, // frob knob
+		       Number incr, Number min, Number max);
 };
 
 class DeviceMoteIO : public DeviceLayer {
@@ -67,4 +67,3 @@ public:
 };
 
 #endif	// _MICA2MOTEPLUGIN_
-

@@ -66,13 +66,12 @@ void WormHoleRadio::connect_devices(WormHoleRadioDevice *d1, WormHoleRadioDevice
   d2->nbrs.insert(d1);
 }
 
-NUM_VAL WormHoleRadio::read_radio_range (VOID) {
+Number WormHoleRadio::read_radio_range () {
   /* FIXME There isn't really a reasonable value to return here.*/
   return 10;
 }
 
-int WormHoleRadio::radio_send_export (uint8_t version, uint8_t timeout, uint8_t n,
-                                      uint8_t len, COM_DATA *buf) {
+int WormHoleRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data){
   if(!try_tx())  // transmission failure
     return 0;
 
@@ -85,10 +84,11 @@ int WormHoleRadio::radio_send_export (uint8_t version, uint8_t timeout, uint8_t 
     if(try_rx()) {
       const flo *them = o->container->body->position();
 
-      hardware->set_vm_context(o->container);
-      radio_receive_export(src_id, version, timeout,
-                           me[0]-them[0], me[1]-them[1], me[2]-them[2],
-                           n, buf);
+      Neighbour & nbr = o->container->vm->hood[src_id];
+      nbr.x = me[0]-them[0];
+      nbr.y = me[1]-them[1];
+      nbr.z = me[2]-them[2];
+      nbr.imports = data;
     }
   }
 
@@ -97,7 +97,7 @@ int WormHoleRadio::radio_send_export (uint8_t version, uint8_t timeout, uint8_t 
 
 int WormHoleRadio::radio_send_script_pkt (uint8_t version, uint16_t n,
                                           uint8_t pkt_num, uint8_t *script) {
-  if(!try_tx())  // transmission failure
+/*  if(!try_tx())  // transmission failure
     return 0;
 
   int src_id = device->uid;
@@ -111,12 +111,12 @@ int WormHoleRadio::radio_send_script_pkt (uint8_t version, uint16_t n,
     }
   }
 
-  hardware->set_vm_context(dev->container);
+  hardware->set_vm_context(dev->container);*/
 }
 
 int WormHoleRadio::radio_send_digest (uint8_t version, uint16_t script_len,
                                       uint8_t *digest) {
-  if(!try_tx())  // transmission failure
+/*  if(!try_tx())  // transmission failure
     return 0;
 
   int src_id = device->uid;
@@ -130,7 +130,7 @@ int WormHoleRadio::radio_send_digest (uint8_t version, uint16_t script_len,
     }
   }
 
-  hardware->set_vm_context(dev->container);
+  hardware->set_vm_context(dev->container);-*/
 }
 
 WormHoleRadioDevice::WormHoleRadioDevice(WormHoleRadio *parent, Device *container)
@@ -149,7 +149,7 @@ void WormHoleRadioDevice::visualize() {
     container->text_scale(); // prepare to draw text
     char buf[20];
     palette->use_color(RadioSim::RADIO_BACKOFF);
-    sprintf(buf, "%d", container->vm->timeout);
+    sprintf(buf, "N/A");
     draw_text(1, 1, buf);
     glPopMatrix();
   }

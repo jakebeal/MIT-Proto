@@ -38,7 +38,7 @@ public:
   DeviceTimer* next_timer(SECONDS* start_lag);
 
   SECONDS cycle_time() { return dt; }
-  NUM_VAL set_dt (NUM_VAL dt);
+  Number set_dt (Number dt);
 
 };
 

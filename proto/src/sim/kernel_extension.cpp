@@ -8,8 +8,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "config.h"
 #include <stdlib.h>
-#include "proto.h"
-#include "proto_vm.h"
 #include "sim-hardware.h"
 
 void my_platform_operation(uint8_t op) {

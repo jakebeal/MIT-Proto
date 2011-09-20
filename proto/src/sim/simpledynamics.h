@@ -70,23 +70,23 @@ class SimpleDynamics : public BodyDynamics, HardwarePatch {
   Point walls[N_WALLS];
 
  public:
-  BOOL is_show_heading; // heading direction tick
-  BOOL is_walls; // put force boundaries on area
-  BOOL is_hard_floor; // put a hard floor at Z=0
-  BOOL is_show_bot; // display this layer at all
-  BOOL is_mobile; // evolve layer forward
+  bool is_show_heading; // heading direction tick
+  bool is_walls; // put force boundaries on area
+  bool is_hard_floor; // put a hard floor at Z=0
+  bool is_show_bot; // display this layer at all
+  bool is_mobile; // evolve layer forward
   flo speed_lim; // maximum speed (defaults to infinity)
   uint32_t dumpmask;
   
   SimpleDynamics(Args* args, SpatialComputer* parent,int n);
-  BOOL evolve(SECONDS dt);
-  BOOL handle_key(KeyEvent* key);
+  bool evolve(SECONDS dt);
+  bool handle_key(KeyEvent* key);
   void visualize();
   Body* new_body(Device* d, flo x, flo y, flo z);
   void dump_header(FILE* out); // list log-file fields
 
   // hardware emulation
-  void mov(VEC_VAL *val);
+  void mov(Tuple val);
 
   // returns a list of function  that it patches/ provides impementation for
   static vector<HardwareFunction> getImplementedHardwareFunctions();
@@ -94,14 +94,14 @@ class SimpleDynamics : public BodyDynamics, HardwarePatch {
   static Color* SIMPLE_BODY;
   virtual void register_colors();
  private:
-  void radius_set_op(MACHINE* machine);
-  void radius_get_op(MACHINE* machine);
-  NUM_VAL radius_set (NUM_VAL val);
-  NUM_VAL radius_get (VOID);
+  void radius_set_op(Machine* machine);
+  void radius_get_op(Machine* machine);
+  Number radius_set (Number val);
+  Number radius_get ();
   
   // not yet implemented:
-  //VEC_VAL *read_ranger (VOID);
-  //NUM_VAL read_bump (VOID);
+  //Tuple read_ranger (VOID);
+  //Number read_bump (VOID);
 };
 
 #endif //__SIMPLEDYNAMICS__

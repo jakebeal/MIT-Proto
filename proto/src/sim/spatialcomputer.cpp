@@ -12,6 +12,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <algorithm>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <machine.hpp>
 #include "spatialcomputer.h"
 #include "visualizer.h"
 #include "plugin_manager.h"
@@ -33,7 +34,8 @@ Device::Device(SpatialComputer* parent, METERS *loc, DeviceTimer *timer) {
   layers = (DeviceLayer**)calloc(num_layers,sizeof(DeviceLayer*));
   for(int i=0;i<num_layers;i++) 
     { Layer* l = (Layer*)parent->dynamics.get(i); if(l) l->add_device(this); }
-  vm = allocate_machine(); // unusable until script is loaded
+  //vm = allocate_machine(); // unusable until script is loaded
+  vm = new Machine();
   is_selected=FALSE; is_debug=FALSE;
 }
 
@@ -43,14 +45,18 @@ Device* Device::clone_device(METERS *loc) {
 
   //void Device::load_script(uint8_t* script, int len) {
   //  new_machine(vm, uid, 0, 0, 0, 1, script, len);
-  uint8_t *copy_src = vm->membuf, *copy_dst = new_d->vm->membuf;
-  for(int i=0;i<vm->memlen;i++) { copy_dst[i]=copy_src[i]; }
-  new_d->load_script(vm->script,vm->scripts[vm->cur_script].len);
+  //uint8_t *copy_src = vm->membuf, *copy_dst = new_d->vm->membuf;
+  //for(int i=0;i<vm->memlen;i++) { copy_dst[i]=copy_src[i]; }
+  new_d->load_script(vm->currentScript(),vm->currentScript().size());
   // copy over state
   
-  new_d->vm->time = vm->time;  new_d->vm->last_time = vm->last_time;
+  //new_d->vm->time = vm->time;  new_d->vm->last_time = vm->last_time;
+  for(size_t i = 0; i < new_d->vm->threads.size(); i++) {
+    new_d->vm->threads[i] = vm->threads[i];
+  }
+  
   new_d->run_time=run_time; new_d->is_selected=is_selected; 
-  new_d->is_debug=is_debug;
+  //new_d->is_debug=is_debug;
   for(int i=0;i<num_layers;i++) {
     DeviceLayer *d = layers[i], *nd = new_d->layers[i]; 
     if(d && nd) nd->copy_state(d);
@@ -64,7 +70,8 @@ Device::~Device() {
   for(int i=0;i<num_layers;i++)
     { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) delete d; }
   free(layers);
-  deallocate_machine(&vm);
+  //deallocate_machine(&vm);
+  delete vm;
 }
 
 // dump function should produce matlab-readable data at verbosity 0
@@ -72,11 +79,11 @@ Device::~Device() {
 void Device::dump_state(FILE* out, int verbosity) {
   // dump heading information
   if(verbosity==0) {
-    fprintf(out,"%d %.2f %.2f",uid,vm->ticks,vm->time);
+    fprintf(out,"%d %.2f %.2f",uid,1.0f/*ticks*/,vm->startTime());
   } else {
     fprintf(out,"Device %d ",uid);
     if(verbosity>=2) fprintf(out,"[in slot %d]",backptr);
-    fprintf(out,"(Internal time: %.2f %.2f)\n",vm->ticks,vm->time);
+    fprintf(out,"(Internal time: %.2f %.2f)\n",1.0f/*ticks*/,vm->startTime());
     if(verbosity>=2) 
       fprintf(out,"Selected = %s, Debug = %s\n",bool2str(is_selected),
               bool2str(is_debug));
@@ -89,13 +96,14 @@ void Device::dump_state(FILE* out, int verbosity) {
     if(d && l->can_dump) d->dump_state(out,verbosity);
   }
   // dump output
+  
   if(parent->is_dump_value) {
     char buf[1000];
     if(verbosity==0) {
-      post_stripped_data_to(buf, &vm->res);
+      post_stripped_data_to(buf, vm->threads[0].result);
       fprintf(out," %s",buf);
     } else {
-      post_data_to(buf, &vm->res);
+      post_data_to(buf, vm->threads[0].result);
       fprintf(out,"Output %s\n",buf);
     }
   }
@@ -104,32 +112,31 @@ void Device::dump_state(FILE* out, int verbosity) {
   if(verbosity>=1 && parent->is_dump_hood) {
     char buf[1000];
     fprintf(out,"Export Values: "); // first export values
-    for(int i=0;i<vm->n_hood_vals;i++) {
-      post_data_to(buf,&vm->hood_exports[i]); fprintf(out,"%s ",buf);
+    for(int i=0;i<vm->thisMachine().imports.size();i++) {
+      post_data_to(buf,vm->thisMachine().imports[i]); fprintf(out,"%s ",buf);
     }
     fprintf(out,"\nNeighbor Values:\n"); // then neighbor data
-    for(int i=0;i<vm->n_hood;i++) {
-      NBR* nbr = vm->hood[i];
+    for(int i=0;i<vm->hood.size();i++) {
+      Neighbour const & nbr = vm->hood[i];
       fprintf(out,
-              "Neighbor %4d [X=%.2f, Y=%.2f, Z=%.2f, Range=%.2f, Time=%.2f]: ",
-              nbr->id, nbr->x, nbr->y, nbr->z,
-              sqrt(nbr->x*nbr->x + nbr->y*nbr->y + nbr->z*nbr->z),
-              nbr->stamp);
-      if(nbr->stamp==-1) { 
-	fprintf(out,"[INVALID]");
-      } else {
-	for(int j=0;j<vm->n_hood_vals;j++) {
-	  post_data_to(buf,&nbr->imports[j]); fprintf(out,"%s ",buf);
+              "Neighbor %4d [X=%.2f, Y=%.2f, Z=%.2f, Range=%.2f]: ",
+              nbr.id, nbr.x, nbr.y, nbr.z,
+              sqrt(nbr.x*nbr.x + nbr.y*nbr.y + nbr.z*nbr.z));
+	for(int j=0;j<vm->thisMachine().imports.size();j++) {
+	  post_data_to(buf,nbr.imports[j]); fprintf(out,"%s ",buf);
 	}
-      }
       fprintf(out,"\n");
     }
   }
+  
   if(verbosity==0) fprintf(out,"\n"); // terminate line
 }
 
-void Device::load_script(uint8_t* script, int len) {
-  new_machine(vm, uid, 0, 0, 0, 1, script, len);
+void Device::load_script(uint8_t const * script, int len) {
+  //new_machine(vm, uid, 0, 0, 0, 1, script, len);
+  vm->id = uid;
+  vm->install(Script(script,len));
+  while(!vm->finished()) vm->step();
 }
 
 // a convenient combined function
@@ -145,22 +152,27 @@ void Device::text_scale() {
 #endif // WANT_GLUT
 }
 
+extern void radio_send_export(uint8_t version, uint8_t timeout, Array<Data> const & data);
+
 void Device::internal_event(SECONDS time, DeviceEvent type) {
   switch(type) {
   case COMPUTE:
     body->preupdate(); // run the pre-compute update
     for(int i=0;i<num_layers;i++)
       { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) d->preupdate(); }
-    exec_machine(vm->ticks+1, time); // do the actual computation
+    //exec_machine(vm->ticks+1, time); // do the actual computation
+    vm->run(time);
+    while(!vm->finished()) vm->step();
     body->update(); // run the post-compute update
     for(int i=0;i<num_layers;i++)
       { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) d->update(); }
     break;
   case BROADCAST:
-    export_machine();
-    if(script_export_needed() || (((int)vm->ticks) % 10)==0) {
+    //export_machine();
+    /*if(script_export_needed() || (((int)vm->ticks) % 10)==0) {
       export_script(); // send script every 10 rounds, or as needed
-    }
+    }*/
+    radio_send_export(0,0,vm->thisMachine().imports);
     break;
   }
 }
@@ -196,18 +208,17 @@ void Device::visualize() {
   }
 
   if (vis_context->is_show_vec) {
-    DATA *dst = &vm->res;
+    Data dst = vm->threads[0].result;
     glPushMatrix();
     glLineWidth(4);
     glTranslatef(0, 0, 0);
-    switch (dst->tag) {
-    case VEC_TAG: {
-      VEC_VAL *v;
-      v = VEC_GET(dst);
-      if (v->n >= 2) {
-        flo x = NUM_GET(&v->elts[0]);
-        flo y = NUM_GET(&v->elts[1]);
-        flo z = v->n >= 3 ? NUM_GET(&v->elts[2]) : 0;
+    switch (dst.type()) {
+    case Data::Type_tuple: {
+      Tuple const & v = dst.asTuple();
+      if (v.size() >= 2) {
+        flo x = v[0].asNumber();
+        flo y = v[1].asNumber();
+        flo z = v.size() > 2 ? v[2].asNumber() : 0;
 	palette->use_color(SpatialComputer::VECTOR_BODY);
         glBegin(GL_LINE_STRIP);
         glVertex3f(0, 0, 0);
@@ -234,7 +245,7 @@ void Device::visualize() {
   }
 
   if(vis_context->is_show_val) {
-    DATA *dst = &vm->res;
+    Data dst = vm->threads[0].result;
     glPushMatrix();
     //glTranslatef(0, 0, 0);
     post_data_to(buf, dst);
@@ -246,8 +257,9 @@ void Device::visualize() {
   if(vis_context->is_show_version) {
     glPushMatrix();
     palette->use_color(SpatialComputer::DEVICE_ID);
-    sprintf(buf, "%2d:%s", vm->scripts[vm->cur_script].version,
-	    (vm->scripts[vm->cur_script].is_complete)?"OK":"wait");
+    //sprintf(buf, "%2d:%s", vm->scripts[vm->cur_script].version,
+	//    (vm->scripts[vm->cur_script].is_complete)?"OK":"wait");
+	strcpy(buf, "0:OK");
     draw_text(4, 4, buf);
     glPopMatrix();
   }
@@ -514,6 +526,7 @@ void SpatialComputer::load_script(uint8_t* script, int len) {
 }
 // install a script by injecting it as packets w. the next version
 void SpatialComputer::load_script_at_selection(uint8_t* script, int len) {
+	/*
   for(int i=0;i<selection.max_id();i++) {
     Device* d = (Device*)devices.get((long)selection.get(i));
     if(d) {
@@ -527,6 +540,7 @@ void SpatialComputer::load_script_at_selection(uint8_t* script, int len) {
       }
     }
   }
+  */
 }
 
 BOOL SpatialComputer::handle_key(KeyEvent* key) {

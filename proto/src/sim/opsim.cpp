@@ -19,9 +19,11 @@ char dump_name[1000]; // for controlling all outputs when test_mode is true
 
 map<string,uint8_t> create_opcode_map() {
    map<string,uint8_t> m;
-  #define X(a) m[#a] = a;
-  #include "opcodes.def"
-  #undef X
+  #define INSTRUCTION(name) m[#name] = name;
+  #define INSTRUCTION_N(name,n) m[#a "_" #n] = name<a>;
+  #include "delftproto.instructions"
+  #undef INSTRUCTION_N
+  #undef INSTRUCTION
    return m;
 }
 

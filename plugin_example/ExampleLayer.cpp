@@ -3,7 +3,6 @@
 */
 
 #include "ExampleLayer.h"
-#include "proto/proto_vm.h"
 
 #define FOO_OP "foo boolean scalar"
 
@@ -18,10 +17,10 @@ FooLayer::FooLayer(Args* args, SpatialComputer* p) : Layer(p) {
   parent->hardware.registerOpcode(new OpHandler<FooLayer>(this, &FooLayer::foo_op, FOO_OP));
 }
 
-void FooLayer::foo_op(MACHINE* machine) {
-  float want = NUM_POP(), val = -1;
+void FooLayer::foo_op(Machine* machine) {
+  float want = machine->stack.popNumber(), val = -1;
   if(want) val = ((FooDevice*)device->layers[id])->foo_timer;
-  NUM_PUSH(val);
+  machine->stack.push(val);
 }
 
 // Called by the simulator to initialize a new device

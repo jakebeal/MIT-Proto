@@ -17,22 +17,21 @@ class UnitDiscRadio : public RadioSim {
   // model options
   float range, r_sqr;        // radius of transmission (in meters) [and sq]
   // display options
-  BOOL is_show_logical_nbrs;
-  BOOL is_show_radio;
-  BOOL is_debug_radio;      // turn on radio debugging
-  BOOL is_fast_prune_hood;  // prune the VM neighborhood on movement?
+  bool is_show_logical_nbrs;
+  bool is_show_radio;
+  bool is_debug_radio;      // turn on radio debugging
+  bool is_fast_prune_hood;  // prune the VM neighborhood on movement?
   
  public:
   UnitDiscRadio(Args* args, SpatialComputer* parent, int n);
   ~UnitDiscRadio();
-  BOOL handle_key(KeyEvent* key);
+  bool handle_key(KeyEvent* key);
   void add_device(Device* d);
   void device_moved(Device* d);
 
   // hardware emulation
-  NUM_VAL read_radio_range (VOID);
-  int radio_send_export (uint8_t version, uint8_t timeout, uint8_t n, 
-			 uint8_t len, COM_DATA *buf);
+  Number read_radio_range ();
+  int radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data);
   int radio_send_script_pkt (uint8_t version, uint16_t n, 
 			     uint8_t pkt_num, uint8_t *script);
   int radio_send_digest (uint8_t version, uint16_t script_len, 

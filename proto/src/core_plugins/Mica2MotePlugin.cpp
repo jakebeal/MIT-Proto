@@ -9,7 +9,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <sstream>
 #include "config.h"
 #include "Mica2MotePlugin.h"
-#include "proto_vm.h"
 #include "visualizer.h"
 using namespace std;
 
@@ -44,38 +43,38 @@ void MoteIO::register_colors() {
 #endif
 }
 
-void MoteIO::speak_op(MACHINE* machine) {
-  set_speak(NUM_PEEK(0));
+void MoteIO::speak_op(Machine* machine) {
+  set_speak(machine->stack.peek().asNumber());
 }
 
-void MoteIO::light_op(MACHINE* machine) {
-  NUM_PUSH(read_light_sensor());
+void MoteIO::light_op(Machine* machine) {
+  machine->stack.push(read_light_sensor());
 }
 
-void MoteIO::sound_op(MACHINE* machine) {
-  NUM_PUSH(read_microphone());
+void MoteIO::sound_op(Machine* machine) {
+  machine->stack.push(read_microphone());
 }
 
-void MoteIO::temp_op(MACHINE* machine) {
-  NUM_PUSH(read_temp());
+void MoteIO::temp_op(Machine* machine) {
+  machine->stack.push(read_temp());
 }
 
-void MoteIO::conductive_op(MACHINE* machine) {
-  NUM_PUSH(read_short());
+void MoteIO::conductive_op(Machine* machine) {
+  machine->stack.push(read_short());
 }
 
-void MoteIO::button_op(MACHINE* machine) {
-  NUM_PUSH(read_button((int) NUM_POP()));
+void MoteIO::button_op(Machine* machine) {
+  machine->stack.push(read_button((int) machine->stack.popNumber()));
 }
 
-void MoteIO::slider_op(MACHINE* machine) {
-  int     dkey = (int)NUM_PEEK(5);
-  int     ikey = (int)NUM_PEEK(4);
-  NUM_VAL init = NUM_PEEK(3);
-  NUM_VAL incr = NUM_PEEK(2);
-  NUM_VAL min  = NUM_PEEK(1);
-  NUM_VAL max  = NUM_PEEK(0);
-  NPOP(6); NUM_PUSH(read_slider(dkey, ikey, init, incr, min, max));
+void MoteIO::slider_op(Machine* machine) {
+  Number max  = machine->stack.popNumber();
+  Number min  = machine->stack.popNumber();
+  Number incr = machine->stack.popNumber();
+  Number init = machine->stack.popNumber();
+  int     ikey = (int)machine->stack.popNumber();
+  int     dkey = (int)machine->stack.popNumber();
+  machine->stack.push(read_slider(dkey, ikey, init, incr, min, max));
 }
 
 void MoteIO::add_device(Device* d) {
@@ -90,23 +89,26 @@ void MoteIO::dump_header(FILE* out) {
 }
 
 // hardware emulation
-void MoteIO::set_speak (NUM_VAL period) {
+void MoteIO::set_speak (Number period) {
   // right now, setting the speaker does *nothing*, as in the old sim
 }
-NUM_VAL MoteIO::read_light_sensor(VOID) { return machine->sensors[LIGHT]; }
-NUM_VAL MoteIO::read_microphone (VOID) { return machine->sensors[SOUND]; }
-NUM_VAL MoteIO::read_temp (VOID) { return machine->sensors[TEMPERATURE]; }
-NUM_VAL MoteIO::read_short (VOID) { return 0; }
-NUM_VAL MoteIO::read_button (uint8_t n) {
+
+extern Machine * machine;
+
+Number MoteIO::read_light_sensor() { return machine->sensors[LIGHT]; }
+Number MoteIO::read_microphone () { return machine->sensors[SOUND]; }
+Number MoteIO::read_temp () { return machine->sensors[TEMPERATURE]; }
+Number MoteIO::read_short () { return 0; }
+Number MoteIO::read_button (uint8_t n) {
   return ((DeviceMoteIO*)device->layers[id])->button;
 }
-NUM_VAL MoteIO::read_slider (uint8_t ikey, uint8_t dkey, NUM_VAL init, 
-			     NUM_VAL incr, NUM_VAL min, NUM_VAL max) {
+Number MoteIO::read_slider (uint8_t ikey, uint8_t dkey, Number init, 
+			     Number incr, Number min, Number max) {
   // slider is not yet implemented
 }
 
 void DeviceMoteIO::dump_state(FILE* out, int verbosity) {
-  MACHINE* m = container->vm;
+  Machine* m = container->vm;
   if(verbosity==0) { 
     fprintf(out," %.2f %.2f %d", m->sensors[SOUND], m->sensors[TEMPERATURE], 
             button);

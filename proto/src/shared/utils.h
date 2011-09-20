@@ -70,13 +70,10 @@ struct Rect3 : public Rect {
 // uniform random numbers
 flo urnd(flo min, flo max);
 
-// FIXME: Eliminate BOOL, TRUE, and FALSE -- C++ has a standard
-// boolean type, and it's lowercase.
-
-typedef int BOOL;
+typedef bool BOOL;
 #ifndef TRUE
-#define TRUE (1)
-#define FALSE (0)
+#define TRUE true
+#define FALSE false
 #endif
 
 /*****************************************************************************

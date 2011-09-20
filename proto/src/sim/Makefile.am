@@ -1,12 +1,13 @@
 noinst_LTLIBRARIES = libsim.la libdefaultplugin.la
 lib_LTLIBRARIES = libprotosimplugin.la
-bin_PROGRAMS = opsim
+#bin_PROGRAMS = opsim //opsim doesn't work (yet?) with DelftProto
 
 INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/shared \
 	-I$(top_srcdir)/src/compiler \
-	-I$(top_srcdir)/src/kernel
+	-I$(top_srcdir)/src/sim \
+	-I$(top_srcdir)/src/vm
 
 libprotosimplugin_la_SOURCES = \
 	radio.cpp \
@@ -22,6 +23,7 @@ libdefaultplugin_la_SOURCES = \
 libdefaultplugin_la_LDFLAGS = -export-dynamic
 
 libsim_la_SOURCES = \
+	$(top_srcdir)/src/vm/instructions.cpp \
 	kernel_extension.cpp \
 	scheduler.cpp \
 	sim-hardware.cpp \
@@ -37,7 +39,6 @@ libsim_la_LIBADD = \
 # TODO: proto_platform.h should go in sim subdir
 pkginclude_HEADERS = \
 	basic-hardware.h \
-	proto_platform.h \
 	scheduler.h \
 	sim-hardware.h \
 	simpledynamics.h \
@@ -50,7 +51,6 @@ pkginclude_HEADERS = \
 opsim_SOURCES = opsim.cpp
 
 opsim_LDADD = \
-	../kernel/libkernel.la \
 	../shared/libshared.la \
 	../compiler/libcompiler.la \
 	../motelink/libmotelink.la \
@@ -58,7 +58,6 @@ opsim_LDADD = \
 	libprotosimplugin.la \
 	libdefaultplugin.la \
 	../shared/libshared.la \
-	../kernel/libkernel.la \
 	../compiler/libcompiler.la
 
 opsim_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}

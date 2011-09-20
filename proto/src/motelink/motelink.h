@@ -10,14 +10,15 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #ifndef __MOTELINK__
 #define __MOTELINK__
 
-#include "spatialcomputer.h"
+//#include "spatialcomputer.h"
 #include "visualizer.h"
 
+/*
 // a proxy body may behave differently than an ordinary one
 class ProxyBody : public Body {
   ProxyBody(Device* container) : Body(container) {}
 };
-
+*/
 /* class ProxyDevice : public Device { */
 /*   ProxyDevice(SpatialComputer* parent, METERS *loc, DeviceTimer *timer) */
   

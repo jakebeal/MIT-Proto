@@ -19,8 +19,9 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <dlfcn.h>
 #include "sim-hardware.h"
 #include "utils.h"
-#include "proto_platform.h"
 #include "scheduler.h"
+
+#define KERNEL_VERSION "DelftProto VM"
 
 // prototype classes
 class Device; class SpatialComputer;
@@ -38,7 +39,7 @@ class Distribution {
   Distribution(int n, Rect *volume); // subclasses often take an Args* too
   virtual ~Distribution() {}
   // puts location in *loc and returns whether a device should be made
-  virtual BOOL next_location(METERS *loc) { return FALSE; };// loc is a 3-vec
+  virtual bool next_location(METERS *loc) { return FALSE; };// loc is a 3-vec
 };
 
 class DeviceTimer {
@@ -61,13 +62,13 @@ class TimeModel {
 class Layer : public EventConsumer {
  public:
   int id;          // what number layer this is, for lookup during callbacks
-  BOOL can_dump;   // -ND[layer] is expected to turn off dumping for a layer
+  bool can_dump;   // -ND[layer] is expected to turn off dumping for a layer
   SpatialComputer* parent;
   Layer(SpatialComputer* p);
   virtual ~Layer() {} // make sure that destruction is passed to subclasses
-  virtual BOOL handle_key(KeyEvent* key) {return FALSE;}
+  virtual bool handle_key(KeyEvent* key) {return FALSE;}
   virtual void visualize() {}
-  virtual BOOL evolve(SECONDS dt) { return FALSE; }
+  virtual bool evolve(SECONDS dt) { return FALSE; }
   virtual void add_device(Device* d)=0;    // may add a DeviceLayer to Device
   virtual void device_moved(Device* d) {}  // adjust for device motion
   // removal, updates handled through DeviceLayer
@@ -83,7 +84,7 @@ class DeviceLayer : public EventConsumer {
   virtual void preupdate() {}  // to called before computation
   virtual void update() {}  // to called after a computation
   virtual void visualize() {} // to be called at visualization
-  virtual BOOL handle_key(KeyEvent* event) { return FALSE; }
+  virtual bool handle_key(KeyEvent* event) { return FALSE; }
   virtual void copy_state(DeviceLayer* src)=0; // to be called during cloning
   virtual void dump_state(FILE* out, int verbosity) {}; // print state to file
 };
@@ -92,7 +93,7 @@ class DeviceLayer : public EventConsumer {
 // specially because it tracks the position of the device in space.
 class Body : public DeviceLayer {
  public:
-  BOOL moved;
+  bool moved;
   Body(Device* container) : DeviceLayer(container) {}
   virtual ~Body() {}; // make sure destruction cascades correctly
   // on delete, a body should remove itself from the BodyDynamics
@@ -132,22 +133,23 @@ class Device : public EventConsumer {
   Body* body;                       // the physical part of the device
   int num_layers;                   // integration with dynamics
   DeviceLayer** layers;             // integration with dynamics
-  MACHINE* vm;                      // the Proto kernel
+  //MACHINE* vm;                    // the Proto kernel
+  Machine * vm;                     // the DelftProto Virtual Machine
   SpatialComputer* parent;          // upward track for the device
-  BOOL is_selected;                 // is this device currently selected?
-  BOOL is_debug;                    // is this device currently a debug focus?
+  bool is_selected;                 // is this device currently selected?
+  bool is_debug;                    // is this device currently a debug focus?
   
   Device(SpatialComputer* parent, METERS *loc, DeviceTimer *timer);
   ~Device();
   Device* clone_device(METERS *loc); // make a clone at location loc
   void internal_event(SECONDS time, DeviceEvent type); // broadcast or compute
   void text_scale();                // scale to display text about device
-  void load_script(uint8_t* script, int len);
-  BOOL handle_key(KeyEvent* key);
+  void load_script(uint8_t const * script, int len);
+  bool handle_key(KeyEvent* key);
   virtual void visualize();
   virtual void render_selection(); // render for selection
   virtual void dump_state(FILE* out, int verbosity);
-  BOOL debug();
+  bool debug();
 };
 
 // a request for cloning carries info about location and source, too
@@ -164,12 +166,12 @@ class Color;
 class SpatialComputer : public EventConsumer {
  public:
   // display variables
-  BOOL is_show_val, is_show_vec, is_show_id, is_show_version;
-  BOOL is_debug, is_dump_default, is_dump_hood, is_dump_value; 
+  bool is_show_val, is_show_vec, is_show_id, is_show_version;
+  bool is_debug, is_dump_default, is_dump_hood, is_dump_value; 
   flo display_mag; // magnifier for body display
   Population selection;     // the list of devices currently selected
   // dumping variables
-  BOOL is_dump, is_probe_filter, is_show_snaps, just_dumped, is_own_dump_file;
+  bool is_dump, is_probe_filter, is_show_snaps, just_dumped, is_own_dump_file;
   SECONDS dump_start, dump_period, next_dump, snap_vis_time;
   const char* dump_dir;  // directory where dumps will go
   const char* dump_stem; // start of the dump file name
@@ -197,10 +199,10 @@ class SpatialComputer : public EventConsumer {
   void load_script(uint8_t* script, int len);
   void load_script_at_selection(uint8_t* script, int len);
   // EventConsumer routines
-  BOOL handle_key(KeyEvent* key);
-  BOOL handle_mouse(MouseEvent* mouse);
+  bool handle_key(KeyEvent* key);
+  bool handle_mouse(MouseEvent* mouse);
   void visualize();
-  BOOL evolve(SECONDS limit);
+  bool evolve(SECONDS limit);
   // selection routines
   void update_selection();
   void render_selection(); // render for selection
@@ -209,9 +211,9 @@ class SpatialComputer : public EventConsumer {
   void dump_header(FILE* out); // print a header for a Matlab-style data file
   void dump_state(FILE* out); // print log info for all devices
   void dump_selection(FILE* out, int verbosity);
-  void dump_frame(SECONDS time, BOOL time_in_name);
+  void dump_frame(SECONDS time, bool time_in_name);
   // configuration routines
-  BOOL is_3d() { return volume->dimensions()>2; }
+  bool is_3d() { return volume->dimensions()>2; }
   void appendDefops(std::string& s);
 
   virtual void register_colors();

@@ -23,7 +23,7 @@ class StopWhen : public Layer, public HardwarePatch {
 
   void add_device(Device *d);
 
-  void stop_op(MACHINE* machine);
+  void stop_op(Machine* machine);
 
  private:
   int n_devices;

@@ -7,7 +7,6 @@ the GNU General Public License, with a linking exception, as described
 in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #include "SimpleLifeCyclePlugin.h"
-#include "proto_vm.h"
 
 #define DIE_OP "die scalar boolean"
 #define CLONE_OP "clone scalar boolean"
@@ -25,22 +24,22 @@ SimpleLifeCycle::SimpleLifeCycle(Args* args, SpatialComputer* p) : Layer(p) {
   parent->hardware.registerOpcode(new OpHandler<SimpleLifeCycle>(this, &SimpleLifeCycle::clone_op, CLONE_OP));
 }
 
-void SimpleLifeCycle::die_op(MACHINE* machine) {
-  die(NUM_PEEK(0));
+void SimpleLifeCycle::die_op(Machine* machine) {
+  die(machine->stack.peek().asNumber());
 }
 
-void SimpleLifeCycle::clone_op(MACHINE* machine) {
-  clone_machine(NUM_PEEK(0));
+void SimpleLifeCycle::clone_op(Machine* machine) {
+  clone_machine(machine->stack.peek().asNumber());
 }
 
 void SimpleLifeCycle::add_device(Device* d) {
   d->layers[id] = new SimpleLifeCycleDevice(this,d);
 }
 
-void SimpleLifeCycle::die (NUM_VAL val) {
+void SimpleLifeCycle::die (Number val) {
   if(val != 0) parent->death_q.push(device->backptr);
 }
-void SimpleLifeCycle::clone_machine (NUM_VAL val) {
+void SimpleLifeCycle::clone_machine (Number val) {
   if(val != 0) ((SimpleLifeCycleDevice*)device->layers[id])->clone_cmd=TRUE;
 }
 
@@ -76,10 +75,12 @@ void SimpleLifeCycleDevice::clone_me() {
   parent->parent->clone_q.push(cr);
 }
 
+extern Machine * machine;
+
 void SimpleLifeCycleDevice::update() {
   if(clone_cmd) {
     clone_cmd=FALSE;
-    if(clone_timer>0) { clone_timer -= (machine->time - machine->last_time); }
+    if(clone_timer>0) { clone_timer -= (machine->startTime() - machine->currentThread().last_time); }
     if(clone_timer<=0) {
       clone_me();
       while(clone_timer<=0) {clone_timer+=parent->clone_delay;} // reset timer

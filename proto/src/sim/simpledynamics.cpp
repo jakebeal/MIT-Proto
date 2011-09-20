@@ -9,7 +9,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "config.h"
 #include "simpledynamics.h"
 #include "visualizer.h"
-#include "proto_vm.h"
 
 /*****************************************************************************
  *  VEKTOR OPS                                                               *
@@ -253,12 +252,12 @@ void SimpleDynamics::register_colors() {
 #endif
 }
 
-void SimpleDynamics::radius_set_op(MACHINE* machine) {
-  radius_set(NUM_PEEK(0));
+void SimpleDynamics::radius_set_op(Machine* machine) {
+  radius_set(machine->stack.peek(0).asNumber());
 }
 
-void SimpleDynamics::radius_get_op(MACHINE* machine) {
-  NUM_PUSH(radius_get());
+void SimpleDynamics::radius_get_op(Machine* machine) {
+  machine->stack.push(radius_get());
 }
 
 vector<HardwareFunction> SimpleDynamics::getImplementedHardwareFunctions()
@@ -355,14 +354,14 @@ BOOL SimpleDynamics::evolve(SECONDS dt) {
 
 
 // There is no subtlety here: mov just sets velocity directly
-void SimpleDynamics::mov(VEC_VAL *v) {
-  flo x = NUM_GET(&v->elts[0]);
-  flo y = NUM_GET(&v->elts[1]);
-  flo z = v->n > 2 ? NUM_GET(&v->elts[2]) : 0.0;
+void SimpleDynamics::mov(Tuple v) {
+  flo x = v[0].asNumber();
+  flo y = v[1].asNumber();
+  flo z = v.size() > 2 ? v[2].asNumber() : 0;
   device->body->set_velocity(x,y,z);
 }
 // sensing & actuation of body radius
-NUM_VAL SimpleDynamics::radius_set (NUM_VAL val)
+Number SimpleDynamics::radius_set (Number val)
 { return ((SimpleBody*)device->body)->radius = val; }
-NUM_VAL SimpleDynamics::radius_get (VOID) 
+Number SimpleDynamics::radius_get () 
 { return ((SimpleBody*)device->body)->radius; }

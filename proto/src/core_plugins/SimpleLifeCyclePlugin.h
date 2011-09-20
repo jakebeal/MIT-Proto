@@ -24,10 +24,10 @@ class SimpleLifeCycle : public Layer, public HardwarePatch {
   // hardware patch functions
   void dump_header(FILE* out); // list log-file fields
  private:
-  void die_op(MACHINE* machine);
-  void clone_op(MACHINE* machine);
-  void die (NUM_VAL val);
-  void clone_machine (NUM_VAL val);
+  void die_op(Machine* machine);
+  void clone_op(Machine* machine);
+  void die (Number val);
+  void clone_machine (Number val);
 };
 
 class SimpleLifeCycleDevice : public DeviceLayer {

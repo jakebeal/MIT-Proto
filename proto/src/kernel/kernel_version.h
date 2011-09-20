@@ -1,1 +1,0 @@
-#define KERNEL_VERSION "374"
