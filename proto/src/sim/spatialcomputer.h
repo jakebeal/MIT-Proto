@@ -21,7 +21,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "utils.h"
 #include "scheduler.h"
 
-#define KERNEL_VERSION "DelftProto VM"
+#include "kernelversion.h"
 
 // prototype classes
 class Device; class SpatialComputer;
