@@ -125,13 +125,6 @@ struct Context : Attribute { reflection_sub(Context, Attribute);
     places[file_name] = std::make_pair<int, int>(line, line);
   }
 
-  // Deep copy constructor.
-  Context(const Context &src) {
-    std::map<std::string, std::pair<int, int> >::const_iterator i;
-    for (i = src.places.begin(); i != src.places.end(); ++i)
-      places[i->first] = i->second;
-  }
-
   Attribute *inherited() { return new Context(*this); }
 
   void merge(Attribute *_addition) {
