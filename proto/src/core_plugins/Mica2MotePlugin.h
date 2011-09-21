@@ -19,7 +19,7 @@ class MoteIO : public Layer, public HardwarePatch {
  public:
   MoteIO(Args* args, SpatialComputer* parent);
   void add_device(Device* d);
-  BOOL handle_key(KeyEvent* event);
+  bool handle_key(KeyEvent* event);
   void dump_header(FILE* out); // list log-file fields
 
   static Color* BUTTON_COLOR;
@@ -47,11 +47,11 @@ class MoteIO : public Layer, public HardwarePatch {
 class DeviceMoteIO : public DeviceLayer {
   MoteIO* parent;
  public:
-  BOOL button;
+  bool button;
   DeviceMoteIO(MoteIO* parent, Device* d) : DeviceLayer(d)
-    { this->parent=parent; button=FALSE; }
+    { this->parent=parent; button=false; }
   void visualize(Device* d);
-  BOOL handle_key(KeyEvent* event);
+  bool handle_key(KeyEvent* event);
   void copy_state(DeviceLayer* src) {} // to be called during cloning
   void dump_state(FILE* out, int verbosity); // print state to file
 };

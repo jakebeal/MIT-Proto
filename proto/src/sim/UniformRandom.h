@@ -15,14 +15,14 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 class UniformRandom : public Distribution {
 public:
   UniformRandom(int n, Rect* volume) : Distribution(n,volume) {}
-  virtual BOOL next_location(METERS *loc) {
+  virtual bool next_location(METERS *loc) {
     loc[0] = urnd(volume->l,volume->r);
     loc[1] = urnd(volume->b,volume->t);
     if(volume->dimensions()==3) {
       Rect3* r = (Rect3*)volume;
       loc[2] = urnd(r->f,r->c);
     } else loc[2]=0;
-    return TRUE;
+    return true;
   }
 };
 

@@ -18,22 +18,22 @@ class RadioSim : public Layer, public HardwarePatch {
   float tx_error;            // probability of failure on transmit
   float rx_error;            // probability of failure before reception
   // display options
-  BOOL is_show_connectivity;
-  BOOL is_show_backoff;
+  bool is_show_connectivity;
+  bool is_show_backoff;
   int connect_display_mode; // fuzzy=0, locally sharp=1, or sharp=2
 
   RadioSim(Args *args, SpatialComputer *parent);
   virtual ~RadioSim();
   
-  virtual BOOL handle_key(KeyEvent* key);
+  virtual bool handle_key(KeyEvent* key);
 
   static Color *NET_CONNECTION_FUZZY, *NET_CONNECTION_SHARP, 
     *NET_CONNECTION_LOGICAL, *RADIO_BACKOFF;
   virtual void register_colors();
   
 protected:
-  BOOL try_tx();
-  BOOL try_rx();
+  bool try_tx();
+  bool try_rx();
 };
 
 #endif

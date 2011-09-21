@@ -47,7 +47,7 @@ class SimpleBody : public Body {
   
   SimpleBody(SimpleDynamics *parent, Device* container, flo x, flo y, 
              flo z, flo r) : Body(container) { 
-    this->parent=parent; moved=FALSE;
+    this->parent=parent; moved=false;
     set_position(x,y,z); set_velocity(0,0,0); radius=r;
   }
   ~SimpleBody();

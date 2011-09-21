@@ -10,11 +10,11 @@
 #include <iostream>
 #include <algorithm>
 
-#define DEFAULT_HEADLESS TRUE
+#define DEFAULT_HEADLESS true
 
 SpatialComputer* computer = NULL;
 
-BOOL test_mode = FALSE;
+bool test_mode = false;
 char dump_name[1000]; // for controlling all outputs when test_mode is true
 
 map<string,uint8_t> create_opcode_map() {
@@ -86,9 +86,9 @@ void FATAL(string err) {
    exit(1);
 }
 
-BOOL is_sim_throttling = FALSE; // when true, use time_ratio
-BOOL is_stepping = FALSE; // is time advancement frozen?
-BOOL is_step = FALSE; // if in stepping mode, take a single step
+bool is_sim_throttling = false; // when true, use time_ratio
+bool is_stepping = false; // is time advancement frozen?
+bool is_step = false; // if in stepping mode, take a single step
 double time_ratio = 1.0; // sim_time/real_time
 double step_size = 0.01; // default is 100 fps
 double sim_time = 0.0; // elapsed simulated time
@@ -96,10 +96,10 @@ double last_real = 0.0; // last real time
 double last_sim_time = 0.0; // previous advancement of time
 double last_inflection_sim = 0.0; // simulator time of last ratio change
 double last_inflection_real = 0.0; // real time of last ratio change
-BOOL evolution_lagging = FALSE; // is the simulator keeping up or not?
+bool evolution_lagging = false; // is the simulator keeping up or not?
 #define FPS_DECAY 0.95
 double fps=1.0; // frames-per-second measurement
-BOOL show_time=FALSE;
+bool show_time=false;
 double stop_time = INFINITY; // by default, the simulator runs forever
 
 void print_exit_notes() {
@@ -112,13 +112,13 @@ void shutdown_app() {
 }
 
 void advance_time() {
-  BOOL changed = computer->evolve(sim_time);
+  bool changed = computer->evolve(sim_time);
 }
 
 void idle () {
   if(sim_time>stop_time) shutdown_app(); // quit when time runs out
   if(is_step || !is_stepping) {
-    is_step=FALSE;
+    is_step=false;
     double new_real = get_real_secs();
     if(is_sim_throttling) {
       // time math avoids incremental deltas to limit error accumulation
@@ -164,7 +164,7 @@ int main (int argc, char *argv[]) {
      computer->load_script(s,len);
   cout << "DONE load_script." << endl;
   // and start!
-  BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
+  bool headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(args->extract_switch("-stop-after")) stop_time = args->pop_number();
   computer->is_dump = true;
   computer->is_debug = true;

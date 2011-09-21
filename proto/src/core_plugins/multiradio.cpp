@@ -49,13 +49,13 @@ void MultiRadio::update_patches() {
   parent->hardware.patch(this,RADIO_SEND_DIGEST_FN);
 }
 
-BOOL MultiRadio::handle_key(KeyEvent *key) {
-  BOOL handled = FALSE;
+bool MultiRadio::handle_key(KeyEvent *key) {
+  bool handled = false;
   typeof(radios.begin()) it;
 
   for(it = radios.begin(); it != radios.end(); it++) {
     if((*it)->handle_key(key)) {
-      handled = TRUE;
+      handled = true;
     }
   }
 

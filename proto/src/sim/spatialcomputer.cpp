@@ -36,7 +36,7 @@ Device::Device(SpatialComputer* parent, METERS *loc, DeviceTimer *timer) {
     { Layer* l = (Layer*)parent->dynamics.get(i); if(l) l->add_device(this); }
   //vm = allocate_machine(); // unusable until script is loaded
   vm = new Machine();
-  is_selected=FALSE; is_debug=FALSE;
+  is_selected=false; is_debug=false;
 }
 
 // copy all state
@@ -140,7 +140,7 @@ void Device::load_script(uint8_t const * script, int len) {
 }
 
 // a convenient combined function
-BOOL Device::debug() { return is_debug && parent->is_debug; }
+bool Device::debug() { return is_debug && parent->is_debug; }
 
 // scale the display to draw text labels for a device
 #define TEXT_SCALE 3.75 // arbitrary constant for text sizing
@@ -177,12 +177,12 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
   }
 }
 
-BOOL Device::handle_key(KeyEvent* key) {
+bool Device::handle_key(KeyEvent* key) {
   for(int i=0;i<num_layers;i++) {
     DeviceLayer* d = (DeviceLayer*)layers[i]; 
-    if(d && d->handle_key(key)) return TRUE;
+    if(d && d->handle_key(key)) return true;
   }
-  return FALSE;
+  return false;
 }
 
 void Device::visualize() {
@@ -358,7 +358,7 @@ SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
   sim_time=0;
   int n=(args->extract_switch("-n"))?(int)args->pop_number():100; // # devices
   // load dumping variables
-  is_dump_default=TRUE;
+  is_dump_default=true;
   args->undefault(&is_dump_default,"-Dall","-NDall");
   is_dump_hood=is_dump_default;
   args->undefault(&is_dump_hood,"-Dhood","-NDhood");
@@ -374,7 +374,7 @@ SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
     dump_dir = args->extract_switch("-dump-dir") ? args->pop_next() : "dumps";
     dump_stem = args->extract_switch("-dump-stem") ? args->pop_next() : "dump";
   }
-  just_dumped=FALSE; next_dump = dump_start; snap_vis_time=0;
+  just_dumped=false; next_dump = dump_start; snap_vis_time=0;
   // setup customization
   get_volume(args, n);
   initialize_plugins(args, n);
@@ -543,47 +543,47 @@ void SpatialComputer::load_script_at_selection(uint8_t* script, int len) {
   */
 }
 
-BOOL SpatialComputer::handle_key(KeyEvent* key) {
+bool SpatialComputer::handle_key(KeyEvent* key) {
   // is this a key recognized internally?
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'i': is_show_id = !is_show_id; return TRUE;
-    case 'v': is_show_vec = !is_show_vec; return TRUE;
-    case 'n': is_show_val = !is_show_val; return TRUE;
-    case 'j': is_show_version = !is_show_version; return TRUE;
-    case 'U': selection.clear(); update_selection(); return TRUE;
-    case 'a': hardware.is_kernel_trace = !hardware.is_kernel_trace; return TRUE;
-    case 'd': is_debug = !is_debug; return TRUE;
+    case 'i': is_show_id = !is_show_id; return true;
+    case 'v': is_show_vec = !is_show_vec; return true;
+    case 'n': is_show_val = !is_show_val; return true;
+    case 'j': is_show_version = !is_show_version; return true;
+    case 'U': selection.clear(); update_selection(); return true;
+    case 'a': hardware.is_kernel_trace = !hardware.is_kernel_trace; return true;
+    case 'd': is_debug = !is_debug; return true;
     case 'D':
       for(int i=0;i<selection.max_id();i++) {
         Device* d = (Device*)devices.get((long)selection.get(i));
         if(d) d->is_debug = !d->is_debug;
       }
-      return TRUE;
-    case '8': is_probe_filter=TRUE; is_dump = TRUE; return TRUE;
-    case '9': is_probe_filter=FALSE; is_dump = TRUE; return TRUE;
-    case '0': is_dump = FALSE; return TRUE;
-    case 'Z': dump_frame(sim_time,TRUE); return TRUE;
+      return true;
+    case '8': is_probe_filter=true; is_dump = true; return true;
+    case '9': is_probe_filter=false; is_dump = true; return true;
+    case '0': is_dump = false; return true;
+    case 'Z': dump_frame(sim_time,true); return true;
     break;
     }
   }
   // is this key recognized by the selected nodes?
   // try it in the various sensor/actuator layers
-  if(physics->handle_key(key)) return TRUE;
+  if(physics->handle_key(key)) return true;
   for(int i=0;i<dynamics.max_id();i++) {
     Layer* d = (Layer*)dynamics.get(i);
-    if(d && d->handle_key(key)) return TRUE;
+    if(d && d->handle_key(key)) return true;
   }
-  BOOL in_selection = FALSE;
+  bool in_selection = false;
   for(int i=0;i<selection.max_id();i++) {
     Device* d = (Device*)devices.get((long)selection.get(i));
     if(d) in_selection |= d->handle_key(key);
   }
-  return FALSE;
+  return false;
 }
 
-BOOL SpatialComputer::handle_mouse(MouseEvent* mouse) {
-  return FALSE;
+bool SpatialComputer::handle_mouse(MouseEvent* mouse) {
+  return false;
 }
 
 SpatialComputer* vis_context;
@@ -599,8 +599,8 @@ void SpatialComputer::visualize() {
     { Device* d = (Device*)devices.get(i); if(d) d->visualize(); }
   // show "photo flashes" when dumps have occured
   SECONDS time = get_real_secs();
-  if(just_dumped) { just_dumped=FALSE; snap_vis_time = time; }
-  BOOL flash = is_show_snaps && (time-snap_vis_time) < FLASH_TIME;
+  if(just_dumped) { just_dumped=false; snap_vis_time = time; }
+  bool flash = is_show_snaps && (time-snap_vis_time) < FLASH_TIME;
   palette->set_background(flash ? PHOTO_FLASH : BACKGROUND);
 #endif // WANT_GLUT
 }
@@ -613,11 +613,11 @@ void SpatialComputer::render_selection() {
 }
 void SpatialComputer::update_selection() {
   for(int i=0;i<devices.max_id();i++) // clear old selection bits
-    { Device* d = (Device*)devices.get(i); if(d) d->is_selected=FALSE; }
+    { Device* d = (Device*)devices.get(i); if(d) d->is_selected=false; }
   for(int i=0;i<selection.max_id();i++) { // set new selection bits
     int n = (long)selection.get(i);
     Device* d = (Device*)devices.get(n); 
-    if(d) d->is_selected=TRUE;
+    if(d) d->is_selected=true;
   }
 }
 void SpatialComputer::drag_selection(flo* delta) {
@@ -637,7 +637,7 @@ void SpatialComputer::drag_selection(flo* delta) {
   }
 }
 
-BOOL SpatialComputer::evolve(SECONDS limit) {
+bool SpatialComputer::evolve(SECONDS limit) {
   SECONDS dt = limit-sim_time;
   // evolve world
   physics->evolve(dt);
@@ -646,7 +646,7 @@ BOOL SpatialComputer::evolve(SECONDS limit) {
     if(d && d->body->moved) {
       for(int j=0;j<dynamics.max_id();j++) 
         { Layer* dyn = (Layer*)dynamics.get(j); if(dyn) dyn->device_moved(d); }
-      d->body->moved=FALSE;
+      d->body->moved=false;
     }
   }
   // evolve other layers
@@ -709,11 +709,11 @@ BOOL SpatialComputer::evolve(SECONDS limit) {
   
   // dump if needed
   if(is_dump && sim_time >= dump_start && sim_time >= next_dump) {
-    dump_frame(next_dump,FALSE);
+    dump_frame(next_dump,false);
     while(next_dump <= sim_time) next_dump+=dump_period;
   }
   
-  return TRUE;
+  return true;
 }
 
 /*****************************************************************************
@@ -741,7 +741,7 @@ void SpatialComputer::dump_header(FILE* out) {
   fprintf(out,"\n");
 }
 
-void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
+void SpatialComputer::dump_frame(SECONDS time, bool time_in_name) {
   if(is_own_dump_file) { // manage the file ourselves
     char buf[1000];
 #ifdef _WIN32  
@@ -768,7 +768,7 @@ void SpatialComputer::dump_frame(SECONDS time, BOOL time_in_name) {
   if(is_own_dump_file) {
     fclose(dump_file); // close the file
   }
-  just_dumped = TRUE; // prime drawing to flash
+  just_dumped = true; // prime drawing to flash
 }
 
 void SpatialComputer::appendDefops(string& s) {

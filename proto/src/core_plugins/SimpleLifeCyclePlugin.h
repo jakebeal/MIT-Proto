@@ -33,11 +33,11 @@ class SimpleLifeCycle : public Layer, public HardwarePatch {
 class SimpleLifeCycleDevice : public DeviceLayer {
  public:
   SimpleLifeCycle* parent;
-  BOOL clone_cmd;            // request for cloning is active
+  bool clone_cmd;            // request for cloning is active
   flo clone_timer;           // timer for delay between clonings
   SimpleLifeCycleDevice(SimpleLifeCycle* parent, Device* container);
   void update();
-  BOOL handle_key(KeyEvent* event);
+  bool handle_key(KeyEvent* event);
   void clone_me();
   void copy_state(DeviceLayer* src) {} // to be called during cloning
   void dump_state(FILE* out, int verbosity); // print state to file

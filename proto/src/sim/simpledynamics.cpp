@@ -221,7 +221,7 @@ SimpleDynamics::SimpleDynamics(Args* args, SpatialComputer* parent, int n)
   is_show_heading = args->extract_switch("-h"); // heading direction tick
   speed_lim = (args->extract_switch("-S"))?args->pop_number():MAX_V;
   is_walls = ((args->extract_switch("-w") & !args->extract_switch("-nw")))
-    ? TRUE : FALSE;
+    ? true : false;
   is_hard_floor = args->extract_switch("-floor"); // equiv to "stalk"
   is_mobile = args->extract_switch("-m");
   is_show_bot = !args->extract_switch("-hide-body");
@@ -267,16 +267,16 @@ vector<HardwareFunction> SimpleDynamics::getImplementedHardwareFunctions()
     return hardwareFunctions;
 }
 
-BOOL SimpleDynamics::handle_key(KeyEvent* key) {
+bool SimpleDynamics::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'w': is_walls = !is_walls; return TRUE;
-    case 'b': is_show_bot = !is_show_bot; return TRUE;
-    case 'm': is_mobile = !is_mobile; return TRUE;
-    case 'h': is_show_heading = !is_show_heading; return TRUE;
+    case 'w': is_walls = !is_walls; return true;
+    case 'b': is_show_bot = !is_show_bot; return true;
+    case 'm': is_mobile = !is_mobile; return true;
+    case 'h': is_show_heading = !is_show_heading; return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 void SimpleDynamics::visualize() {
@@ -311,8 +311,8 @@ void SimpleDynamics::dump_header(FILE* out) {
 
 // in simple dynamics, just step based on velocity and position
 #define K_BOUND   0.75  // restoring force from walls
-BOOL SimpleDynamics::evolve(SECONDS dt) {
-  if(!is_mobile) return FALSE;
+bool SimpleDynamics::evolve(SECONDS dt) {
+  if(!is_mobile) return false;
   for(int i=0;i<bodies.max_id();i++) {
     Body* b = (Body*)bodies.get(i);
     if(b) { 
@@ -345,11 +345,11 @@ BOOL SimpleDynamics::evolve(SECONDS dt) {
       vek_add(&pos,&dp);
       if(parent->volume->dimensions()==2) { pos.z=0; }
       // Hard floor at z=0: if the calculated pos has z < 0, reset to 0
-      else if(is_hard_floor && pos.z<0) { pos.z=0; b->moved=TRUE; }
+      else if(is_hard_floor && pos.z<0) { pos.z=0; b->moved=true; }
       b->set_position(pos.x,pos.y,pos.z);
     }
   }
-  return TRUE;
+  return true;
 }
 
 

@@ -23,10 +23,10 @@ extern void dump_instructions(int is_c, int n, uint8_t *bytes);
 
 class PaleoCompiler : public Compiler {
  public:
-  BOOL is_show_code;
-  BOOL is_dump_code;
-  BOOL is_dump_ast;
-  BOOL is_echo_defops;
+  bool is_show_code;
+  bool is_dump_code;
+  bool is_dump_ast;
+  bool is_echo_defops;
   const char *last_script;
 
   PaleoCompiler(Args *args);
@@ -34,7 +34,7 @@ class PaleoCompiler : public Compiler {
   void init_standalone(Args *args); // setup output files as standalone app
   uint8_t *compile(const char *str, int* len); // len is filled in w. output length
   void visualize();
-  BOOL handle_key(KeyEvent *key);
+  bool handle_key(KeyEvent *key);
   void set_platform(const std::string &path) { uerror("Set platform not used any more in paleocompiler."); }
   void setDefops(const std::string &defops);
 };

@@ -43,7 +43,7 @@ Visualizer::Visualizer(Args* args)
   // use the default palette, register our colors, and patch files
   palette = Palette::default_palette;
   ensure_colors_registered("Visualizer");
-  while(args->extract_switch("-palette",FALSE)) { // may use many palette files
+  while(args->extract_switch("-palette",false)) { // may use many palette files
     palette->overlay_from_file(args->pop_next()); // patch the palette
   }
   
@@ -103,12 +103,12 @@ void Visualizer::resize(int width, int height) {
   view_width=width; view_height=height;
 }
 
-BOOL Visualizer::handle_key(KeyEvent* key) {
+bool Visualizer::handle_key(KeyEvent* key) {
   if(key->normal) {
     if(key->ctrl) {
       switch(key->key) {
-      case 24: /* zoom_out(2.0); */ return TRUE; // X = zoom out
-      case 26: /* zoom_in(2.0); */ return TRUE; // Z = zoom in
+      case 24: /* zoom_out(2.0); */ return true; // X = zoom out
+      case 26: /* zoom_in(2.0); */ return true; // Z = zoom in
       }
     } else {
       switch(key->key) {
@@ -122,8 +122,8 @@ BOOL Visualizer::handle_key(KeyEvent* key) {
 	  glutPositionWindow(left, top);
 	  glutReshapeWindow(width, height);
 	}
-	return TRUE;
-      case 'z': reset_view(); return TRUE;
+	return true;
+      case 'z': reset_view(); return true;
       }
     }
   } else {
@@ -142,39 +142,39 @@ BOOL Visualizer::handle_key(KeyEvent* key) {
 }
 
 // Left-Drag rotates the display, Right-Drag zooms the display
-BOOL Visualizer::handle_mouse(MouseEvent* mouse) {
+bool Visualizer::handle_mouse(MouseEvent* mouse) {
   if(!mouse->shift) {
     if(mouse->button==GLUT_LEFT_BUTTON) { // drag = rotate
       switch(mouse->state) {
       case 1: // drag start
 	on_left_button_down(mouse->x,mouse->y);
-	return TRUE;
+	return true;
       case 2: // drag continue
 	on_mouse_move(mouse->x,mouse->y);
-	return TRUE;
+	return true;
       case 3: // drag end
 	on_left_button_up(mouse->x,mouse->y);
-	return TRUE;
+	return true;
       }
     } else if(mouse->button==GLUT_RIGHT_BUTTON) { // drag = zoom
       switch(mouse->state) {
       case 1: // drag start
 	on_right_button_down(mouse->x,mouse->y);
-	return TRUE;
+	return true;
       case 2: // drag continue
 	on_mouse_move(mouse->x,mouse->y);
-	return TRUE;
+	return true;
       case 3: // drag end
 	on_right_button_up(mouse->x,mouse->y);
-	return TRUE;
+	return true;
       }
     } else if (mouse->button == GLUT_WHEEL_UP) {
-      on_key_zoom(5); return TRUE;
+      on_key_zoom(5); return true;
     } else if (mouse->button == GLUT_WHEEL_DOWN) {
-      on_key_zoom(-5); return TRUE;
+      on_key_zoom(-5); return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 /*****************************************************************************

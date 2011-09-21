@@ -30,7 +30,7 @@ WormHoleRadio::~WormHoleRadio() {
   
 }
 
-BOOL WormHoleRadio::handle_key(KeyEvent *key) {
+bool WormHoleRadio::handle_key(KeyEvent *key) {
   return RadioSim::handle_key(key);
 }
 
@@ -156,7 +156,7 @@ void WormHoleRadioDevice::visualize() {
 
   if(parent->is_show_connectivity) { // draw network connections
     // setup line properties
-    BOOL local_sharp=(parent->connect_display_mode==1 && 
+    bool local_sharp=(parent->connect_display_mode==1 && 
                       container->is_selected);
     if(parent->connect_display_mode==2 || local_sharp) {
       palette->use_color(RadioSim::NET_CONNECTION_SHARP);

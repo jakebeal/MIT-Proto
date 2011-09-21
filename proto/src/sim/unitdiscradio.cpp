@@ -85,16 +85,16 @@ UnitDiscRadio::~UnitDiscRadio() {
   free(cells);
 }
 
-BOOL UnitDiscRadio::handle_key(KeyEvent* key) {
+bool UnitDiscRadio::handle_key(KeyEvent* key) {
   if(key->normal) {
     if(key->ctrl) {
       switch(key->key) {
       case 3:  // Ctrl-C = logical neighbors
-        is_show_logical_nbrs = !is_show_logical_nbrs; return TRUE;
+        is_show_logical_nbrs = !is_show_logical_nbrs; return true;
       }
     } else {
       switch(key->key) {
-      case 'r': is_show_radio = !is_show_radio; return TRUE;
+      case 'r': is_show_radio = !is_show_radio; return true;
       }
     }
   }
@@ -138,7 +138,7 @@ void UnitDiscRadio::connect_to_cell(Device* d,int cell_id) {
   Population* c = cells[cell_id];
   UnitDiscDevice* udd = (UnitDiscDevice*)d->layers[id];
   const flo* p = d->body->position();
-  BOOL debug = is_debug_radio && d->debug();
+  bool debug = is_debug_radio && d->debug();
   for(int i=0;i<c->max_id();i++) {
     Device* nbrd = (Device*)c->get(i);
     if(nbrd) {
@@ -163,7 +163,7 @@ void UnitDiscRadio::connect_to_cell(Device* d,int cell_id) {
 // of the world, but that should not greatly increase cost unless many
 // nodes are outside the original boundaries
 void UnitDiscRadio::connect_device2(Device* d, int base) { 
-  BOOL debug = is_debug_radio && d->debug();
+  bool debug = is_debug_radio && d->debug();
   const flo* p = d->body->position();
   if(debug) post("id=%d Pos=[%f,%f,%f], in cell %d [of %d x %d x %d] , check:",
                  base,cell_rows,cell_cols,cell_lvls,d->uid,p[0],p[1],p[2]);
@@ -378,7 +378,7 @@ void UnitDiscDevice::visualize() {
   }
   if(parent->is_show_connectivity) { // draw network connections
     // setup line properties
-    BOOL local_sharp=(parent->connect_display_mode==1 && 
+    bool local_sharp=(parent->connect_display_mode==1 && 
                       container->is_selected);
     if(parent->connect_display_mode==2 || local_sharp) {
       palette->use_color(UnitDiscRadio::NET_CONNECTION_SHARP);

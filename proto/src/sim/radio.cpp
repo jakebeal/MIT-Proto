@@ -42,23 +42,23 @@ RadioSim::~RadioSim() {
   
 }
 
-BOOL RadioSim::handle_key(KeyEvent* key) {
+bool RadioSim::handle_key(KeyEvent* key) {
   if(key->normal) {
     if(!key->ctrl) {
       switch(key->key) {
-      case 'c': is_show_connectivity = !is_show_connectivity; return TRUE;
-      case 'C': connect_display_mode = (connect_display_mode+1)%3; return TRUE;
-      case 'S': is_show_backoff = !is_show_backoff; return TRUE;
+      case 'c': is_show_connectivity = !is_show_connectivity; return true;
+      case 'C': connect_display_mode = (connect_display_mode+1)%3; return true;
+      case 'S': is_show_backoff = !is_show_backoff; return true;
       }
     }
   }
-  return FALSE;
+  return false;
 }
 
-BOOL RadioSim::try_tx() {
+bool RadioSim::try_tx() {
   return tx_error==0 || urnd(0,1) > tx_error;
 }
 
-BOOL RadioSim::try_rx() {
+bool RadioSim::try_rx() {
   return rx_error==0 || urnd(0,1) > rx_error;
 }

@@ -23,9 +23,9 @@ class DebugLayer : public Layer, public HardwarePatch {
   int n_probes;               // how many debug probes to show?
   bool is_show_leds;           // should LEDs be drawn?
   bool is_led_rgb;            // true: 1 LED of mixed color; false: 3 LEDs
-  bool is_led_ghost_mode;     // if rgb=FALSE, LED value sets alpha channel
-  bool is_led_3d_motion;      // if rgb=FALSE, LED value sets Z displacement
-  // is_led_fixed_stacking applies only when rgb=FALSE:
+  bool is_led_ghost_mode;     // if rgb=false, LED value sets alpha channel
+  bool is_led_3d_motion;      // if rgb=false, LED value sets Z displacement
+  // is_led_fixed_stacking applies only when rgb=false:
   // 0: LED Z displacement is relative to prev LED
   // 1: LED Z displacement starts at 0,1,2;  2: LED Z displacement starts at 0
   int is_led_fixed_stacking;

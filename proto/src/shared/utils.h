@@ -70,12 +70,6 @@ struct Rect3 : public Rect {
 // uniform random numbers
 flo urnd(flo min, flo max);
 
-typedef bool BOOL;
-#ifndef TRUE
-#define TRUE true
-#define FALSE false
-#endif
-
 /*****************************************************************************
  *  SMALL MISC EXTENSIONS                                                    *
  *****************************************************************************/
@@ -166,7 +160,7 @@ class Args {
   void remove(size_t i);
 
   // Modify a default switch.
-  void undefault(BOOL *value, const char *positive, const char *negative);
+  void undefault(bool *value, const char *positive, const char *negative);
 
   // Save the current pointer for later recall.
   void save_ptr();
@@ -307,17 +301,17 @@ class EventConsumer {
   virtual ~EventConsumer() {}
 
   // Returns true iff event consumed.
-  virtual BOOL handle_key(KeyEvent *key) { return FALSE; }
+  virtual bool handle_key(KeyEvent *key) { return false; }
 
   // Returns true iff event consumed.
-  virtual BOOL handle_mouse(MouseEvent *mouse) { return FALSE; }
+  virtual bool handle_mouse(MouseEvent *mouse) { return false; }
 
   // Draw, assuming a prepared OpenGL context.
   virtual void visualize() {}
 
   // Move state forward in time to the absolute time limit.  Returns
   // true iff state changed.  FIXME: This can't be right...
-  virtual BOOL evolve(SECONDS limit) {};
+  virtual bool evolve(SECONDS limit) {};
 
   // Visualizer utility: color management for static variables.
   void ensure_colors_registered(const std::string &classname);

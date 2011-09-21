@@ -343,7 +343,7 @@ typedef struct {
   int  n_exports;
   int  export_len;
   int  n_channels;
-  BOOL is_fun_lift;
+  bool is_fun_lift;
 } LIFT_DATA;
 
 AST *ast_lift (AST *ast, LIFT_DATA *data) {
@@ -3080,11 +3080,11 @@ void PaleoCompiler::visualize() {
   }
 }
 
-BOOL PaleoCompiler::handle_key(KeyEvent* key) {
+bool PaleoCompiler::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'k': is_show_code = !is_show_code; return TRUE;
+    case 'k': is_show_code = !is_show_code; return true;
     }
   }
-  return FALSE;
+  return false;
 }

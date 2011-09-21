@@ -20,7 +20,7 @@ public:
 
   void add_radio(RadioSim *r);
 
-  BOOL handle_key(KeyEvent* key);
+  bool handle_key(KeyEvent* key);
   void add_device(Device* d);
   void device_moved(Device *d);
 

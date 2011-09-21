@@ -32,17 +32,17 @@ FixedPoint::FixedPoint(Args* args, int n, Rect* volume):UniformRandom(n,volume){
     loc[0]=args->pop_number(); loc[1]=args->pop_number();
     loc[2]= (str_is_number(args->peek_next()) ? args->pop_number() : 0);
     fixes.add(loc);
-  } while(args->extract_switch("-fixedpt",FALSE));
+  } while(args->extract_switch("-fixedpt",false));
 }
 FixedPoint::~FixedPoint() {
   for(int i=0;i<n_fixes;i++) { free(fixes.get(i)); }
 }
-BOOL FixedPoint::next_location(METERS *loc) {
+bool FixedPoint::next_location(METERS *loc) {
   if(fixed<n_fixes) {
     METERS* src = (METERS*)fixes.get(fixed);
     for(int i=0;i<3;i++) loc[i]=src[i];
     fixed++;
-    return TRUE;
+    return true;
   } else {
     return UniformRandom::next_location(loc);
   }
@@ -61,13 +61,13 @@ Grid::Grid(int n, Rect* volume) : Distribution(n,volume) {
     layers = 1;
   }
 }
-BOOL Grid::next_location(METERS *loc) {
+bool Grid::next_location(METERS *loc) {
   int l = (i%layers), r = (i/layers)%rows, c = (i/(layers*rows));
   loc[0] = volume->l + c*width/columns;
   loc[1] = volume->b + r*height/rows;
   loc[2] = (volume->dimensions()==3)?(((Rect3*)volume)->f+l*depth/layers):0;
   i++;
-  return TRUE;
+  return true;
 }
 
 
@@ -84,13 +84,13 @@ XGrid::XGrid(int n, Rect* volume) : Distribution(n,volume) {
     layers = 1;
   }
 }
-BOOL XGrid::next_location(METERS *loc) {
+bool XGrid::next_location(METERS *loc) {
   int l = (i%layers), r = (i/layers)%rows, c = (i/(layers*rows));
   loc[0] = volume->l + c*width/columns;
   loc[1] = urnd(volume->b,volume->t);
   loc[2] = (volume->dimensions()==3)?(((Rect3*)volume)->f+l*depth/layers):0;
   i++;
-  return TRUE;
+  return true;
 }
 
 
@@ -98,12 +98,12 @@ BOOL XGrid::next_location(METERS *loc) {
 GridRandom::GridRandom(Args* args, int n, Rect* volume) : Grid(n,volume) {
   epsilon = args->pop_number();
 }
-BOOL GridRandom::next_location(METERS *loc) {
+bool GridRandom::next_location(METERS *loc) {
   Grid::next_location(loc);
   loc[0] += epsilon*((rand()%1000/1000.0) - 0.5);
   loc[1] += epsilon*((rand()%1000/1000.0) - 0.5);
   if(volume->dimensions()==3) loc[2] += epsilon*((rand()%1000/1000.0) - 0.5);
-  return TRUE;
+  return true;
 }
 
 
@@ -121,7 +121,7 @@ HexGrid::HexGrid(int n, Rect* volume) : Distribution(n,volume) {
   }
   unit = ((flo)height)/rows;
 }
-BOOL HexGrid::next_location(METERS *loc) {
+bool HexGrid::next_location(METERS *loc) {
   int l = (i%layers), r = (i/layers)%rows, c = (i/(layers*rows));
   bool odd = c%2; // hexgrid is offset by 1/2 in odd columns
   bool lodd = l%2; // hexgrid is offset by 1/2 in odd columns
@@ -131,17 +131,17 @@ BOOL HexGrid::next_location(METERS *loc) {
   loc[1] = volume->b + (r+offset+zoffset)*unit;
   loc[2] = (volume->dimensions()==3)?(((Rect3*)volume)->f+l*depth/layers):0;
   i++;
-  return TRUE;
+  return true;
 }
 
 
 Cylinder::Cylinder(int n, Rect* volume) : Distribution(n,volume) {r = height/2;}
-BOOL Cylinder::next_location(METERS *loc) {
+bool Cylinder::next_location(METERS *loc) {
   loc[0] = urnd(volume->l,volume->r);
   flo theta = urnd(0, 2 * 3.14159);
   loc[1] = r * sin(theta);
   loc[2] = r * cos(theta);
-  return TRUE;
+  return true;
 }
 
 
@@ -151,7 +151,7 @@ Torus::Torus(Args* args, int n, Rect *volume) : Distribution(n, volume) {
   r = ratio * outer;
   r_inner = outer - r;
 }
-BOOL Torus::next_location(METERS *loc) {
+bool Torus::next_location(METERS *loc) {
   flo theta = urnd(0, 2*M_PI);
   if(volume->dimensions() == 3) {
     flo phi = urnd(0, 2*M_PI);

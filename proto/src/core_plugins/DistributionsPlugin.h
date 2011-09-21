@@ -21,7 +21,7 @@ public:
   Population fixes;
   FixedPoint(Args* args, int n, Rect* volume);
   virtual ~FixedPoint();
-  BOOL next_location(METERS *loc); 
+  bool next_location(METERS *loc); 
 };
 
 class Grid : public Distribution {
@@ -29,7 +29,7 @@ public:
   int rows,columns,layers;
   int i;
   Grid(int n, Rect* volume) ;
-  virtual BOOL next_location(METERS *loc) ;
+  virtual bool next_location(METERS *loc) ;
 };
 
 class XGrid : public Distribution {
@@ -37,14 +37,14 @@ public:
   int rows,columns,layers;
   int i;
   XGrid(int n, Rect* volume);
-  BOOL next_location(METERS *loc);
+  bool next_location(METERS *loc);
 };
 
 class GridRandom : public Grid {
 public:
   METERS epsilon;
   GridRandom(Args* args, int n, Rect* volume);
-  BOOL next_location(METERS *loc);
+  bool next_location(METERS *loc);
 };
 
 class HexGrid : public Distribution {
@@ -52,14 +52,14 @@ public:
   int rows,columns,layers;
   int i; flo unit;
   HexGrid(int n, Rect* volume) ;
-  virtual BOOL next_location(METERS *loc) ;
+  virtual bool next_location(METERS *loc) ;
 };
 
 class Cylinder : public Distribution {
 public:
   METERS r;
   Cylinder(int n, Rect* volume);
-  BOOL next_location(METERS *loc);
+  bool next_location(METERS *loc);
 };
 
 class Torus : public Distribution {
@@ -67,7 +67,7 @@ public:
   METERS r, r_inner;
   Torus(Args* args, int n, Rect *volume);
 
-  BOOL next_location(METERS *loc); 
+  bool next_location(METERS *loc); 
 };
 
 

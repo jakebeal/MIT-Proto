@@ -26,7 +26,7 @@ public:
   WormHoleRadio(Args *args, SpatialComputer *parent, int n);
   ~WormHoleRadio();
 
-  BOOL handle_key(KeyEvent* key);
+  bool handle_key(KeyEvent* key);
   void add_device(Device* d);
 
   Number read_radio_range ();

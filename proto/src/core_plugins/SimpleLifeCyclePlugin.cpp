@@ -40,7 +40,7 @@ void SimpleLifeCycle::die (Number val) {
   if(val != 0) parent->death_q.push(device->backptr);
 }
 void SimpleLifeCycle::clone_machine (Number val) {
-  if(val != 0) ((SimpleLifeCycleDevice*)device->layers[id])->clone_cmd=TRUE;
+  if(val != 0) ((SimpleLifeCycleDevice*)device->layers[id])->clone_cmd=true;
 }
 
 void SimpleLifeCycle::dump_header(FILE* out) {
@@ -52,7 +52,7 @@ void SimpleLifeCycle::dump_header(FILE* out) {
 SimpleLifeCycleDevice::SimpleLifeCycleDevice(SimpleLifeCycle* parent,
                                              Device* d) : DeviceLayer(d) {
   this->parent=parent;
-  clone_timer=parent->clone_delay; clone_cmd=FALSE; // start unready to clone
+  clone_timer=parent->clone_delay; clone_cmd=false; // start unready to clone
 }
 
 void SimpleLifeCycleDevice::dump_state(FILE* out, int verbosity) {
@@ -79,7 +79,7 @@ extern Machine * machine;
 
 void SimpleLifeCycleDevice::update() {
   if(clone_cmd) {
-    clone_cmd=FALSE;
+    clone_cmd=false;
     if(clone_timer>0) { clone_timer -= (machine->startTime() - machine->currentThread().last_time); }
     if(clone_timer<=0) {
       clone_me();
@@ -88,15 +88,15 @@ void SimpleLifeCycleDevice::update() {
   }
 }
 
-BOOL SimpleLifeCycleDevice::handle_key(KeyEvent* key) {
+bool SimpleLifeCycleDevice::handle_key(KeyEvent* key) {
   // is this a key recognized internally?
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'B': clone_me(); return TRUE;
-    case 'K': parent->parent->death_q.push(container->backptr); return TRUE;
+    case 'B': clone_me(); return true;
+    case 'K': parent->parent->death_q.push(container->backptr); return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 

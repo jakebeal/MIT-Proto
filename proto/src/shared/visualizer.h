@@ -25,7 +25,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 extern Palette* palette; // current palette
 
 class Visualizer : public EventConsumer {
-  BOOL is_full_screen; // is the window in fullscreen mode?
+  bool is_full_screen; // is the window in fullscreen mode?
   int window; // identifier for window
   flo aspect_ratio;
   Rect bounds; // area expected to be filled by computer
@@ -40,8 +40,8 @@ class Visualizer : public EventConsumer {
   void set_bounds(Rect* r) { 
     bounds.t=r->t; bounds.l=r->l; bounds.b=r->b; bounds.r=r->r; }
   void resize(int width, int height);
-  BOOL handle_key(KeyEvent* key);
-  BOOL handle_mouse(MouseEvent* mouse); // handle clicks and drags
+  bool handle_key(KeyEvent* key);
+  bool handle_mouse(MouseEvent* mouse); // handle clicks and drags
   void visualize(); // visualizer's contribution to frame
   
   void prepare_frame(); // start drawing a frame

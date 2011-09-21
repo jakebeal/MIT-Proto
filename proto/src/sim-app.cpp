@@ -41,16 +41,16 @@ SpatialComputer* computer = NULL;
 MoteLink* motelink = NULL;
 Visualizer* vis = NULL;
 
-BOOL test_mode = FALSE;
+bool test_mode = false;
 char dump_name[1000]; // for controlling all outputs when test_mode is true
 
 /*****************************************************************************
  *  TIMING AND UPDATE LOOP                                                   *
  *****************************************************************************/
 double stop_time = INFINITY; // by default, the simulator runs forever
-BOOL is_sim_throttling = FALSE; // when true, use time_ratio
-BOOL is_stepping = FALSE; // is time advancement frozen?
-BOOL is_step = FALSE; // if in stepping mode, take a single step
+bool is_sim_throttling = false; // when true, use time_ratio
+bool is_stepping = false; // is time advancement frozen?
+bool is_step = false; // if in stepping mode, take a single step
 double time_ratio = 1.0; // sim_time/real_time
 double step_size = 0.01; // default is 100 fps
 double sim_time = 0.0; // elapsed simulated time
@@ -58,16 +58,16 @@ double last_real = 0.0; // last real time
 double last_sim_time = 0.0; // previous advancement of time
 double last_inflection_sim = 0.0; // simulator time of last ratio change
 double last_inflection_real = 0.0; // real time of last ratio change
-BOOL evolution_lagging = FALSE; // is the simulator keeping up or not?
+bool evolution_lagging = false; // is the simulator keeping up or not?
 #define FPS_DECAY 0.95
 double fps=1.0; // frames-per-second measurement
-BOOL show_time=FALSE;
+bool show_time=false;
 
 
 
 // evolve all top-level items
 void advance_time() {
-  BOOL changed = FALSE;
+  bool changed = false;
   changed |= compiler->evolve(sim_time);
   changed |= (vis && vis->evolve(sim_time));
   changed |= computer->evolve(sim_time);
@@ -81,7 +81,7 @@ void advance_time() {
 void idle () {
   if(sim_time>stop_time) shutdown_app(); // quit when time runs out
   if(is_step || !is_stepping) {
-    is_step=FALSE;
+    is_step=false;
     double new_real = get_real_secs();
     if(is_sim_throttling) {
       // time math avoids incremental deltas to limit error accumulation
@@ -127,10 +127,10 @@ void select_region(flo min_x, flo min_y, flo max_x, flo max_y) {
 #endif // WANT_GLUT
 }
 
-BOOL selecting = FALSE;
+bool selecting = false;
 static double drag_anchor[3], drag_current[3];
 
-BOOL app_handle_mouse(MouseEvent *mouse) {
+bool app_handle_mouse(MouseEvent *mouse) {
 #ifdef WANT_GLUT
   if(!mouse->shift) { // left click selects, right click prints too
     if(mouse->button==GLUT_LEFT_BUTTON || mouse->button==GLUT_RIGHT_BUTTON) {
@@ -140,47 +140,47 @@ BOOL app_handle_mouse(MouseEvent *mouse) {
         if(mouse->button==GLUT_RIGHT_BUTTON) {
           computer->dump_selection(stdout,1); // print what's been clicked on
         }
-        return TRUE;
+        return true;
       }
     }
   } else { // shift left drag selects a region
     if(mouse->button==GLUT_LEFT_BUTTON) {
       switch(mouse->state) {
       case 1: // drag start
-        selecting = TRUE;
+        selecting = true;
         drag_anchor[0]=drag_current[0]=mouse->x;
         drag_anchor[1]=drag_current[1]=mouse->y;
         drag_anchor[2]=drag_current[2]=0;
-        return TRUE;
+        return true;
       case 2: // drag continue
         drag_current[0]=mouse->x; drag_current[1]=mouse->y;
-        return TRUE;
+        return true;
       case 3: // drag end
         drag_current[0]=mouse->x; drag_current[1]=mouse->y;
         select_region(min(drag_anchor[0], drag_current[0]),
                       min(drag_anchor[1], drag_current[1]),
                       max(drag_anchor[0], drag_current[0]),
                       max(drag_anchor[1], drag_current[1]));
-        selecting = FALSE;
-        return TRUE;
+        selecting = false;
+        return true;
       }
     } else if(mouse->button==GLUT_RIGHT_BUTTON) { // shift-right-drag = move
       switch(mouse->state) {
       case 1: // drag start
         vis->click_3d(mouse->x,mouse->y,drag_anchor);
         //post("MM: %f, %f, %f\n",drag_anchor[0],drag_anchor[1],drag_anchor[2]);
-        return TRUE;
+        return true;
       case 2: // drag continue
       case 3: // draw end
         vis->click_3d(mouse->x,mouse->y,drag_current);
         flo dp[3]; for(int i=0;i<3;i++) dp[i]=drag_current[i]-drag_anchor[i];
         computer->drag_selection(dp);
         for(int i=0;i<3;i++) drag_anchor[i]=drag_current[i];
-        return TRUE;
+        return true;
       }
     }
   }
-  return FALSE;
+  return false;
 #endif // WANT_GLUT
 }
 
@@ -190,7 +190,7 @@ BOOL app_handle_mouse(MouseEvent *mouse) {
 // selections), we'll check it first
 void dispatch_mouse_event() {
 #ifdef WANT_GLUT
-  BOOL handled = 
+  bool handled = 
     app_handle_mouse(&mouse) || computer->handle_mouse(&mouse)
     || vis->handle_mouse(&mouse);
   if(handled) glutPostRedisplay();
@@ -202,7 +202,7 @@ void dispatch_mouse_event() {
 #define TIME_RATIO_STEP 1.1892 // 2^1/4
 #define MINIMUM_RATIO 0.001 // no slower than 1ms sim per real second
 #define MAXIMUM_RATIO 1000 // no faster than 1000 seconds sim per real second
-BOOL app_handle_key(KeyEvent *key) {
+bool app_handle_key(KeyEvent *key) {
   if(key->normal) {
     if(key->ctrl) {
       switch(key->key) {
@@ -212,19 +212,19 @@ BOOL app_handle_key(KeyEvent *key) {
         }
         last_inflection_sim=sim_time;
         last_inflection_real=get_real_secs();
-        return TRUE;
+        return true;
       case 1: // Ctrl-A = speed up
         if(time_ratio > MINIMUM_RATIO) {
           time_ratio /= TIME_RATIO_STEP; step_size *= TIME_RATIO_STEP;
         }
         last_inflection_sim=sim_time;
         last_inflection_real=get_real_secs();
-        return TRUE;
+        return true;
       case 4: // Ctrl-D = real-time
         step_size *= time_ratio; time_ratio = 1;
         last_inflection_sim=sim_time;
         last_inflection_real=get_real_secs();
-        return TRUE;
+        return true;
       }
     } else {
       switch(key->key) {
@@ -232,35 +232,35 @@ BOOL app_handle_key(KeyEvent *key) {
       case 's':
         is_stepping = 1;
         is_step = 1;
-        return TRUE;
+        return true;
       case 'x':
         is_stepping = 0;
         is_step = 0;
         last_inflection_sim=sim_time;
         last_inflection_real=get_real_secs();
-        return TRUE;
+        return true;
       case 'T': 
         show_time=!show_time;
-        return TRUE;
+        return true;
       case 'X':
         is_sim_throttling = !is_sim_throttling;
         last_inflection_sim=sim_time;
         last_inflection_real=get_real_secs();
-        return TRUE;
+        return true;
       case 'l':
         int len; uint8_t* s = compiler->compile(compiler->last_script,&len);
         computer->load_script_at_selection(s,len);
-        return TRUE;
+        return true;
       }
     }
   }
-  return FALSE;
+  return false;
 }
 
 // A key event may go to any of the top-level objects
 void dispatch_key_event() {
 #ifdef WANT_GLUT
-  BOOL handled = 
+  bool handled = 
     app_handle_key(&key) ||
     computer->handle_key(&key) ||
     vis->handle_key(&key) || // visualizer always there for GLUT events
@@ -336,7 +336,7 @@ void render () {
 #endif // WANT_GLUT
 }
 // there should be something that blinks when the simulator can't keep up
-// with the time demands of its throttle [evolution_lagging==TRUE]
+// with the time demands of its throttle [evolution_lagging==true]
 
 
 // Callback for button events
@@ -384,14 +384,14 @@ void on_mouse_motion( int x, int y ) {
 // X and Y are mouse locations, and thus ignored
 void keyboard_handler( unsigned char key_id, int x, int y ) {
 #ifdef WANT_GLUT
-  key.normal=TRUE; key.key = key_id;
+  key.normal=true; key.key = key_id;
   key.ctrl = glutGetModifiers() & GLUT_ACTIVE_CTRL;
   dispatch_key_event();
 #endif // WANT_GLUT
 }
 void special_handler( int key_id, int x, int y ) {
 #ifdef WANT_GLUT
-  key.normal=FALSE; key.special = key_id;
+  key.normal=false; key.special = key_id;
   key.ctrl = glutGetModifiers() & GLUT_ACTIVE_CTRL;
   dispatch_key_event();
 #endif // WANT_GLUT
@@ -412,9 +412,9 @@ void shutdown_app() {
 }
 
 #ifndef WANT_GLUT
-#define DEFAULT_HEADLESS TRUE
+#define DEFAULT_HEADLESS true
 #else
-#define DEFAULT_HEADLESS FALSE
+#define DEFAULT_HEADLESS false
 #endif
 
 // handle command-line arguments for top-level application
@@ -491,7 +491,7 @@ int main (int argc, char *argv[]) {
   srand(seed);
 
   process_app_args(args);
-  BOOL headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
+  bool headless = args->extract_switch("-headless") || DEFAULT_HEADLESS;
   if(!headless) {
     vis = new Visualizer(args); // start visualizer
   } else {

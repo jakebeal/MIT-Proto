@@ -39,7 +39,7 @@ class Distribution {
   Distribution(int n, Rect *volume); // subclasses often take an Args* too
   virtual ~Distribution() {}
   // puts location in *loc and returns whether a device should be made
-  virtual bool next_location(METERS *loc) { return FALSE; };// loc is a 3-vec
+  virtual bool next_location(METERS *loc) { return false; };// loc is a 3-vec
 };
 
 class DeviceTimer {
@@ -66,9 +66,9 @@ class Layer : public EventConsumer {
   SpatialComputer* parent;
   Layer(SpatialComputer* p);
   virtual ~Layer() {} // make sure that destruction is passed to subclasses
-  virtual bool handle_key(KeyEvent* key) {return FALSE;}
+  virtual bool handle_key(KeyEvent* key) {return false;}
   virtual void visualize() {}
-  virtual bool evolve(SECONDS dt) { return FALSE; }
+  virtual bool evolve(SECONDS dt) { return false; }
   virtual void add_device(Device* d)=0;    // may add a DeviceLayer to Device
   virtual void device_moved(Device* d) {}  // adjust for device motion
   // removal, updates handled through DeviceLayer
@@ -84,7 +84,7 @@ class DeviceLayer : public EventConsumer {
   virtual void preupdate() {}  // to called before computation
   virtual void update() {}  // to called after a computation
   virtual void visualize() {} // to be called at visualization
-  virtual bool handle_key(KeyEvent* event) { return FALSE; }
+  virtual bool handle_key(KeyEvent* event) { return false; }
   virtual void copy_state(DeviceLayer* src)=0; // to be called during cloning
   virtual void dump_state(FILE* out, int verbosity) {}; // print state to file
 };

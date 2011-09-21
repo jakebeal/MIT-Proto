@@ -80,8 +80,8 @@ void MoteIO::slider_op(Machine* machine) {
 void MoteIO::add_device(Device* d) {
   d->layers[id] = new DeviceMoteIO(this,d);
 }
-BOOL MoteIO::handle_key(KeyEvent* event) {
-  return FALSE; // right now, there's no keys that affect these globally
+bool MoteIO::handle_key(KeyEvent* event) {
+  return false; // right now, there's no keys that affect these globally
 }
 
 void MoteIO::dump_header(FILE* out) {
@@ -119,14 +119,14 @@ void DeviceMoteIO::dump_state(FILE* out, int verbosity) {
 }
 
 // individual device implementations
-BOOL DeviceMoteIO::handle_key(KeyEvent* key) {
+bool DeviceMoteIO::handle_key(KeyEvent* key) {
   // I think that the slider is supposed to consume keys too
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'N': button = !button; return TRUE;
+    case 'N': button = !button; return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 #define SENSOR_RADIUS_FACTOR 4

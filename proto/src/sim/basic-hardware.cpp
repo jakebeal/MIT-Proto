@@ -137,15 +137,15 @@ void DebugLayer::sense_op(Machine* machine) {
 bool DebugLayer::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'p': n_probes = (n_probes + 1)%(MAX_PROBES+1); return TRUE;
-    case 'L': is_show_leds = !is_show_leds; return TRUE;
-    case '1': is_led_ghost_mode = !is_led_ghost_mode; return TRUE;
-    case '2': is_led_3d_motion = !is_led_3d_motion; return TRUE;
-    case '3': is_led_fixed_stacking = (is_led_fixed_stacking+1)%3; return TRUE;
-    case '4': is_led_rgb = !is_led_rgb; return TRUE;
+    case 'p': n_probes = (n_probes + 1)%(MAX_PROBES+1); return true;
+    case 'L': is_show_leds = !is_show_leds; return true;
+    case '1': is_led_ghost_mode = !is_led_ghost_mode; return true;
+    case '2': is_led_3d_motion = !is_led_3d_motion; return true;
+    case '3': is_led_fixed_stacking = (is_led_fixed_stacking+1)%3; return true;
+    case '4': is_led_rgb = !is_led_rgb; return true;
     }
   }
-  return FALSE;
+  return false;
 }
 void DebugLayer::add_device(Device* d) {
   d->layers[id] = new DebugDevice(this,d);
@@ -213,16 +213,16 @@ bool DebugDevice::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
     case 't': 
-      container->vm->sensors[1] = container->vm->sensors[1] ? 0:1; return TRUE;
+      container->vm->sensors[1] = container->vm->sensors[1] ? 0:1; return true;
     case 'y': 
-      container->vm->sensors[2] = container->vm->sensors[2] ? 0:1; return TRUE;
+      container->vm->sensors[2] = container->vm->sensors[2] ? 0:1; return true;
     case 'u': 
-      container->vm->sensors[3] = container->vm->sensors[3] ? 0:1; return TRUE;
+      container->vm->sensors[3] = container->vm->sensors[3] ? 0:1; return true;
     case 'o':
-      container->vm->sensors[4] = container->vm->sensors[4] ? 0:1; return TRUE;
+      container->vm->sensors[4] = container->vm->sensors[4] ? 0:1; return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 void DebugDevice::preupdate() {

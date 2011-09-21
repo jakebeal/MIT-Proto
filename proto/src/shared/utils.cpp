@@ -114,7 +114,7 @@ Args::remove(size_t i)
 
 // ARG_SAFE is used to check if two different things modules request the
 // same argument
-#define ARG_SAFE TRUE
+#define ARG_SAFE true
 #define MAX_SWITCHES 200
 
 static int num_switch_tests = 0;
@@ -209,13 +209,13 @@ Args::pop_int()
 // . If both, value is set to false.
 // FIXME: Why not just return it?
 void
-Args::undefault(BOOL *value, const char *positive, const char *negative)
+Args::undefault(bool *value, const char *positive, const char *negative)
 {
   bool pp = extract_switch(positive), np = extract_switch(negative);
   if (pp)
     *value = !np;
   else if (np)
-    *value = FALSE;
+    *value = false;
 }
 
 void
@@ -340,7 +340,7 @@ str_is_number(const char *str)
 const char *
 bool2str(bool b)
 {
-  return b ? "TRUE" : "FALSE";
+  return b ? "true" : "false";
 }
 
 const char *

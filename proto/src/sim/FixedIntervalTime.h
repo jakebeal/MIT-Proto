@@ -28,7 +28,7 @@ public:
 };
 
 class FixedIntervalTime : public TimeModel, public HardwarePatch {
-  BOOL sync;
+  bool sync;
   flo dt; flo var;
   flo ratio; flo rvar;  // ratio is internal/true time
 public:
