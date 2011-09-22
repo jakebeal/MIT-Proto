@@ -73,7 +73,18 @@ struct Script {
   void add(uint8_t v1,uint8_t v2) {addN(2,v1,v2);}
   void add(uint8_t v1,uint8_t v2,uint8_t v3) {addN(3,v1,v2,v3);}
   void add(uint8_t v1,uint8_t v2,uint8_t v3,uint8_t v4) {addN(4,v1,v2,v3,v4);}
-  void add_op16(OPCODE op,uint16_t v) { addN(3, op, v >> 8, v & 0xff); }
+  void add_op(OPCODE op, unsigned int argument) {
+  	add(op);
+  	uint8_t a[5];
+  	a[0] = 0x80 | ((argument >> 28) & 0x7F);
+  	a[1] = 0x80 | ((argument >> 21) & 0x7F);
+  	a[2] = 0x80 | ((argument >> 14) & 0x7F);
+  	a[3] = 0x80 | ((argument >>  7) & 0x7F);
+  	a[4] =          argument        & 0x7F ;
+  	size_t i = 0;
+  	while(a[i] == 0x80) i++;
+  	for(;i<5;i++) add(a[i]);
+  }
   void addN(int n, ...) {
     va_list v; va_start(v,n); 
     for(int i=0;i<n;i++) { contents.push_back(va_arg(v,int)); } 
@@ -388,7 +399,7 @@ void clerror (const char* name, list<AST*> *args, const char* message, ...) {
 
 
 /**** AST_LIT ****/
-typedef enum { LIT_INT8, LIT_INT16, LIT_FLO, LIT_TUP, LIT_VEC } LIT_KIND;
+typedef enum { LIT_INT, LIT_FLO, LIT_TUP, LIT_VEC } LIT_KIND;
 typedef union { flo val; uint8_t bytes[4]; } FLO_BYTES;
 
 struct AST_LIT : public AST{
@@ -398,8 +409,8 @@ struct AST_LIT : public AST{
   AST_LIT(flo num) {
     val = num; name="LIT";
     type = new ONE_NUM_TYPE(num);
-    int n = (int)num;
-    kind = (n == num && (n >= 0 && n < 128)) ? LIT_INT8 : LIT_FLO;
+    unsigned int n = (unsigned int)num;
+    kind = (n == num && (n >= 0 && n <= 0xffffffff)) ? LIT_INT : LIT_FLO;
   }
 
   void print() { fprintf(error_log(),"%.1f", val); }
@@ -408,10 +419,9 @@ struct AST_LIT : public AST{
   void emit(Script* script) {
     // post("EMIT LIT %d %f\n", ast->kind, num);
     switch (kind) {
-    case LIT_INT8: { 
+    case LIT_INT: { 
       if (val >= 0 && val < MAX_LIT_OPS) { script->add(LIT_0_OP+(uint8_t)val);
-      } else if (val >= 0 && val < 128) { script->add(LIT8_OP,(uint8_t)val); 
-      } else cerror(this,"Number %d cannot be a LIT_INT8",val);
+      } else { script->add_op(LIT_OP,(unsigned int)val); }
       break; }
     case LIT_FLO: {
       FLO_BYTES f; f.val=val;
@@ -510,8 +520,7 @@ struct AST_GLO_REF : public AST {
 
 void AST_GLO_REF::emit(Script* script) {
   if(offset < MAX_GLO_REF_OPS) script->add(GLO_REF_OP+offset+1);
-  else if(offset < 256) script->add(GLO_REF_OP,offset);
-  else script->add_op16(GLO_REF16_OP,offset);
+  else script->add_op(GLO_REF_OP,offset);
 }
 
 /**** AST_OP, AST_GOP ****/
@@ -747,8 +756,7 @@ AST *ast_fun_lift_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
 
 void emit_def_fun_op (int n, Script* script) {
   if(n > 1 && n <= MAX_DEF_FUN_OPS) script->add(DEF_FUN_2_OP+(n-2));
-  else if(n < 256) script->add(DEF_FUN_OP, n);
-  else script->add_op16(DEF_FUN16_OP, n);
+  else script->add_op(DEF_FUN_OP, n);
 }
 
 AST_FUN::AST_FUN(const char *name, list<VAR*> *vars, Obj *body, AST *ast_body) {
@@ -1115,21 +1123,12 @@ void ast_if_emit(AST_OP_CALL* ast, Script* script) {
   (*it++)->emit(&if_script);
   (*it++)->emit(&then_script);
   (*it++)->emit(&jmp_script);
-
-  uint16_t then_offset = jmp_script.size()+2;
-  uint16_t done_offset = then_script.size();
-  if(done_offset > 255) then_offset++;
-
+  
+  jmp_script.add_op(JMP_OP,then_script.size());
+  
   script->append(&if_script);
-  if(then_offset > 255)
-    script->add_op16(IF_16_OP,then_offset);
-  else
-    script->add(IF_OP,then_offset);
+  script->add_op(IF_OP,jmp_script.size());
   script->append(&jmp_script);
-  if(done_offset > 255)
-    script->add_op16(JMP_16_OP,done_offset);
-  else
-    script->add(JMP_OP,done_offset);
   script->append(&then_script);
 }
 
@@ -1621,7 +1620,7 @@ void init_ops () {
     add_op_typed("VMUX", VMUX_OP, 1, 0, 
                  new FUN_TYPE(ANYT,NUMT,ANYT,ANYT,0), &mux_type_infer);
   if_op = 
-    add_op_typed("IF", IF_OP, 1, 0, 
+    add_op_typed("IF", IF_OP, -1, 0, 
                  new FUN_TYPE(ANYT,NUMT,ANYT,ANYT,0), &mux_type_infer);
   def_op_alias("WHERE", if_op);
   if_op->emit_fn = &ast_if_emit;
@@ -1640,13 +1639,10 @@ void init_ops () {
 
   // LOW LEVEL
 
-  add_op("JMP", JMP_OP, 1, 0, new FUN_TYPE(ANYT,0));
-  add_op_typed("IF16", IF_16_OP, 2, 0, 
-               new FUN_TYPE(ANYT,NUMT,ANYT,ANYT,0), &mux_type_infer);
-  add_op("JMP16", JMP_16_OP, 2, 0, new FUN_TYPE(ANYT,0));
+  add_op("JMP", JMP_OP, -1, 0, new FUN_TYPE(ANYT,0));
   add_op("RET", RET_OP, 0, 0, new FUN_TYPE(ANYT,0));
   add_op("EXIT", EXIT_OP, 0, 0, new FUN_TYPE(ANYT,0));
-  add_op("LIT8", LIT8_OP, 1, 0, new FUN_TYPE(NUMT,0));
+  add_op("LIT", LIT_OP, -1, 0, new FUN_TYPE(NUMT,0));
   add_op("LIT-FLO", LIT_FLO_OP, 4, 0, new FUN_TYPE(NUMT,0));
   fab_tup_op
     = add_op_typed("FAB-TUP", FAB_TUP_OP, 0, 1, new FUN_TYPE(VECT,ANYT,0), &tup_type_infer);
@@ -1668,23 +1664,21 @@ void init_ops () {
     = add_op("DEF",     DEF_OP, 0, 0, new FUN_TYPE(ANYT,ANYT,0));
   for (i = 0; i < MAX_LIT_OPS; i++) {
     sprintf(name, "LIT-%d", i);
-    add_op(cpy_str(name), (OPCODE)(LIT8_OP+i+1), 0, 0, new FUN_TYPE(NUMT,0));
+    add_op(cpy_str(name), (OPCODE)(LIT_0_OP+i), 0, 0, new FUN_TYPE(NUMT,0));
   }
-  add_op("LIT16", LIT16_OP, 2, 0, new FUN_TYPE(NUMT,0));
-  add_op("REF", REF_OP, 1, 0, new FUN_TYPE(NUMT,0));
+  add_op("REF", REF_OP, -1, 0, new FUN_TYPE(NUMT,0));
   for (i = 0; i < MAX_REF_OPS; i++) {
     sprintf(name, "REF-%d", i);
     add_op(cpy_str(name), (OPCODE)(REF_OP+i+1), 0, 0, new FUN_TYPE(NUMT,0));
   }
   add_op("DEF-VM", DEF_VM_OP, 8, 0, new FUN_TYPE(NUMT,0));
-  add_op("GLO-REF16", GLO_REF16_OP, 2, 0, new FUN_TYPE(NUMT,0));
-  add_op("GLO-REF", GLO_REF_OP, 1, 0, new FUN_TYPE(NUMT,0));
+  add_op("GLO-REF", GLO_REF_OP, -1, 0, new FUN_TYPE(NUMT,0));
   for (i = 0; i < MAX_GLO_REF_OPS; i++) {
     sprintf(name, "GLO-REF-%d", i);
     add_op(cpy_str(name), (OPCODE)(GLO_REF_OP+i+1), 0, 0, new FUN_TYPE(NUMT,0));
   }
-  add_op("LET", LET_OP, 1, 0, new FUN_TYPE(NUMT,0));
-  add_op("POP-LET", POP_LET_OP, 1, 0, new FUN_TYPE(NUMT,0));
+  add_op("LET", LET_OP, -1, 0, new FUN_TYPE(NUMT,0));
+  add_op("POP-LET", POP_LET_OP, -1, 0, new FUN_TYPE(NUMT,0));
   for (i = 1; i <= MAX_LET_OPS; i++) {
     sprintf(name, "LET-%d", i);
     add_op(cpy_str(name), (OPCODE)(LET_OP+i), 0, 0, new FUN_TYPE(NUMT,0));
@@ -1695,8 +1689,7 @@ void init_ops () {
     sprintf(name, "DEF-FUN-%d", i+2);
     add_op(cpy_str(name), (OPCODE)(DEF_FUN_2_OP+i), 0, 0, new FUN_TYPE(NUMT,0));
   }
-  add_op("DEF-FUN", DEF_FUN_OP, 1, 0, new FUN_TYPE(NUMT,0));
-  add_op("DEF-FUN16", DEF_FUN16_OP, 2, 0, new FUN_TYPE(NUMT,0));
+  add_op("DEF-FUN", DEF_FUN_OP, -1, 0, new FUN_TYPE(NUMT,0));
   init_feedback_op =
     add_op_typed("INIT-FEEDBACK", INIT_FEEDBACK_OP, 1, 0, 
                  new FUN_TYPE(ANYT,ANYT,0), &init_feedback_type_infer);
@@ -2813,10 +2806,19 @@ void dump_instructions (int is_c, int n, uint8_t *bytes) {
     if (op == NULL) uerror("NULL OP %d", code);
     if (is_c && j != 0) fprintf(dump_target,",");
     fprintf(dump_target," %s", is_c ? xlate_opname(opname, name) : name);
-    for (i = 0; i < op->arity+op->is_nary; i++) {
-      if (is_c) fprintf(dump_target,",");
-      j += 1;
-      fprintf(dump_target," %d", bytes[j]);
+    if (op->arity < 0) {
+      for (i = 0; i < (-op->arity)+op->is_nary;) {
+        if (is_c) fprintf(dump_target,",");
+        j += 1;
+        fprintf(dump_target," %d", bytes[j]);
+        if (!(bytes[j] & 0x80)) i++;
+      }
+    } else {
+      for (i = 0; i < op->arity+op->is_nary; i++) {
+        if (is_c) fprintf(dump_target,",");
+        j += 1;
+        fprintf(dump_target," %d", bytes[j]);
+      }
     }
   }
   if (is_c) { fprintf(dump_target," };\n"); fprintf(dump_target,"uint16_t script_len = %d;", n); }
@@ -2832,11 +2834,18 @@ void dump_code (int n, uint8_t *bytes) {
     AST_OP* op = lookup_op_by_code(code, &name);
     if (op == NULL) uerror("NULL OP %d", code);
     fprintf(dump_target,"%3d: %s", j, name);
-    for (i = 0; i < op->arity+op->is_nary; i++) {
-      j += 1;
-      fprintf(dump_target," %d", bytes[j]);
+    if (op->arity < 0) {
+      for (i = 0; i < (-op->arity)+op->is_nary; ) {
+        j += 1;
+        fprintf(dump_target," %d", bytes[j]);
+        if (!(bytes[j] & 0x80)) i++;
+      }
+    } else {
+      for (i = 0; i < op->arity+op->is_nary; i++) {
+        j += 1;
+        fprintf(dump_target," %d", bytes[j]);
+      }
     }
-    fprintf(dump_target,"\n");
   }
 }
 

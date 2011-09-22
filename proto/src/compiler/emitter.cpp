@@ -83,8 +83,26 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   virtual int net_stack_delta() { return stack_delta; }
   virtual int max_stack_delta() { return max(0, stack_delta); }
 
-  int padd(uint8_t param) { parameters.push_back(param); }
-  int padd16(uint16_t param) { padd(param>>8); padd(param & 0xFF); }
+  void padd8(uint8_t param) {
+  	  parameters.push_back(param);
+  }
+  
+  void padd16(uint16_t param) {
+  	  parameters.push_back(param >> 8);
+  	  parameters.push_back(param & 0xFF);
+  }
+  
+  void padd(unsigned int param) {
+  	uint8_t a[5];
+  	a[0] = 0x80 | ((param >> 28) & 0x7F);
+  	a[1] = 0x80 | ((param >> 21) & 0x7F);
+  	a[2] = 0x80 | ((param >> 14) & 0x7F);
+  	a[3] = 0x80 | ((param >>  7) & 0x7F);
+  	a[4] =          param        & 0x7F ;
+  	size_t i = 0;
+  	while(a[i] == 0x80) i++;
+  	for(;i<5;i++) parameters.push_back(a[i]);
+  }
 };
 
 /// A block is a sequence of instructions
@@ -249,8 +267,8 @@ struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
              && max_stack>=0 && max_env>=0 && Instruction::resolved(); 
   }
   virtual void output(uint8_t* buf) {
-    padd(export_len); padd(n_exports); padd16(n_globals); padd(n_states);
-    padd16(max_stack+1); padd(max_env); // +1 for enclosing function call
+    padd8(export_len); padd8(n_exports); padd16(n_globals); padd8(n_states);
+    padd16(max_stack+1); padd8(max_env); // +1 for enclosing function call
     Instruction::output(buf);
   }
   virtual void print(ostream* out=0) {
@@ -286,12 +304,10 @@ struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
     if(!literal) { // change to DEF_NUM_VEC_OP
       stack_delta = 0;
       if(size <= MAX_DEF_NUM_VEC_OPS) { op = DEF_NUM_VEC_OP + size;
-      } else if(size < 256) { op = DEF_NUM_VEC_OP; padd(size);
-      } else ierror("Tuple too large: "+i2s(size)+" > 255");
+      } else { op = DEF_NUM_VEC_OP; padd(size); }
     } else { // keep as DEF_TUP_OP
       stack_delta = -size;
-      if(size < 256) { padd(size);
-      } else ierror("Tuple too large: "+i2s(size)+" > 255");
+      padd(size);
     }
   }
 };
@@ -323,7 +339,7 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
     attributes["~Ref~Target"] = new CEAttr(source);
     if(!store->isA("Global")) ierror("Vector reference to non-global");
     this->store=store; store->dependents.insert(this);
-    offset=-1; padd(255); vec_op=true;
+    offset=-1; padd8(255); vec_op=true;
   }
   bool resolved() { return offset>=0 && Instruction::resolved(); }
   int size() { return (offset<0) ? -1 : Instruction::size(); }
@@ -335,14 +351,11 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
     } else if(store->isA("Global")) {
       parameters.clear();
       if(o < MAX_GLO_REF_OPS) { op = GLO_REF_0_OP + o;
-      } else if(o < 256) { op = GLO_REF_OP; padd(o);
-      } else if(o < 65536) { op = GLO_REF16_OP; padd16(o);
-      } else ierror("Global reference too large: "+i2s(o));
+      } else { op = GLO_REF_OP; padd(o); }
     } else {
       parameters.clear();
       if(o < MAX_REF_OPS) { op = REF_0_OP + o;
-      } else if(o < 256) { op = REF_OP; padd(o);
-      } else ierror("Environment reference too large: "+i2s(o));
+      } else  { op = REF_OP; padd(o); }
     }
   }
 };
@@ -359,9 +372,7 @@ struct Branch : public Instruction { reflection_sub(Branch,Instruction);
   void set_offset(int o) {
     offset = o;
     parameters.clear();
-    if(o < 256) { op = (jmp_op?JMP_OP:IF_OP); padd(o);
-    } else if(o < 65536) { op = (jmp_op?JMP_16_OP:IF_16_OP); padd16(o);
-    } else ierror("Branch reference too large: "+i2s(o));
+    op = (jmp_op?JMP_OP:IF_OP); padd(o);
   }
 };
 
@@ -889,11 +900,8 @@ public:
         // now adjust the op
         if(df->fun_size>1 && df->fun_size<=MAX_DEF_FUN_OPS) 
           df->op=(DEF_FUN_2_OP+(df->fun_size-2));
-        else if(df->fun_size < 256)
+        else
           { df->op = DEF_FUN_OP; df->padd(df->fun_size); }
-        else if(df->fun_size < 65536) 
-          { df->op = DEF_FUN16_OP; df->padd16(df->fun_size); }
-        else ierror("Function size too large: "+df->fun_size);
         note_change(i);
       }
     }
@@ -1245,36 +1253,33 @@ ProtoKernelEmitter::literal_to_instruction(ProtoType *literal, OI *context)
 }
 
 static bool
-float_representable_as_uint16_p(float value)
+float_representable_as_uint_p(float value)
 {
   return
     ((0 <= value)
-     && (value <= 0x8000)
-     && (value == static_cast<float>(static_cast<int>(value))));
+     && (value <= 0xffffffff)
+     && (value == static_cast<float>(static_cast<unsigned int>(value))));
 }
 
 Instruction *
 ProtoKernelEmitter::scalar_literal_instruction(ProtoScalar *scalar)
 {
   float value = scalar->value;
-  if (float_representable_as_uint16_p(value))
-    return integer_literal_instruction(static_cast<uint16_t>(value));
+  if (float_representable_as_uint_p(value))
+    return integer_literal_instruction(static_cast<unsigned int>(value));
   else
     return float_literal_instruction(value);
 }
 
 Instruction *
-ProtoKernelEmitter::integer_literal_instruction(uint16_t value)
+ProtoKernelEmitter::integer_literal_instruction(unsigned int value)
 {
   Instruction *i;
   if (value < MAX_LIT_OPS) {
     i = new Instruction(LIT_0_OP + value);
-  } else if (value < 0x80) {
-    i = new Instruction(LIT8_OP);
+  } else {
+    i = new Instruction(LIT_OP);
     i->padd(value);
-  } else /* if (value < 0x8000) */ {
-    i = new Instruction(LIT16_OP);
-    i->padd16(value);
   }
   return i;
 }
@@ -1285,7 +1290,7 @@ ProtoKernelEmitter::float_literal_instruction(float value)
   union { float f; uint8_t b[4]; } u;
   u.f = value;
   Instruction *i = new Instruction(LIT_FLO_OP);
-  i->padd(u.b[0]); i->padd(u.b[1]); i->padd(u.b[2]); i->padd(u.b[3]);
+  i->padd8(u.b[0]); i->padd8(u.b[1]); i->padd8(u.b[2]); i->padd8(u.b[3]);
   return i;
 }
 

@@ -199,7 +199,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction *branch_primitive_instruction(OperatorInstance *oi);
   Instruction *literal_to_instruction(ProtoType *l, OperatorInstance *context);
   Instruction *scalar_literal_instruction(ProtoScalar *scalar);
-  Instruction *integer_literal_instruction(uint16_t value);
+  Instruction *integer_literal_instruction(unsigned int value);
   Instruction *float_literal_instruction(float value);
   Instruction *tuple_literal_instruction(ProtoTuple *tuple,
       OperatorInstance *context);

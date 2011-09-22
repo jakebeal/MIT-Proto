@@ -3,13 +3,12 @@
 ;; Start w. low-level opcodes
 ((RET_OP -1)
  (EXIT_OP 0)
- (LIT8_OP 1)
+ (LIT_OP 1)
  (LIT_0_OP 1)
  (LIT_1_OP 1)
  (LIT_2_OP 1)
  (LIT_3_OP 1)
  (LIT_4_OP 1)
- (LIT16_OP 1)
  (LIT_FLO_OP 1)
  (NUL_TUP_OP 1)
  (FAB_TUP_OP variable)
@@ -28,7 +27,6 @@
  (REF_2_OP 1)
  (REF_3_OP 1)
  (DEF_VM_OP 0)
- (GLO_REF16_OP 1)
  (GLO_REF_OP 1)
  (GLO_REF_0_OP 1)
  (GLO_REF_1_OP 1)
@@ -124,7 +122,6 @@
  (DEF_FUN_6_OP 0)
  (DEF_FUN_7_OP 0)
  (DEF_FUN_OP 0)
- (DEF_FUN16_OP 0)
  (FOLD_HOOD_OP -2)
  (VFOLD_HOOD_OP -2)
  (FOLD_HOOD_PLUS_OP -2)
@@ -137,9 +134,7 @@
  (MUX_OP -2) ;; type-dependent
  (VMUX_OP -2) ;; type-dependent
  (IF_OP -1)
- (IF_16_OP -1)
  (JMP_OP 0)
- (JMP_16_OP 0)
  (FUNCALL_0_OP variable)  ;; stack_delta=0
  (FUNCALL_1_OP variable)  ;; stack_delta=-1
  (FUNCALL_2_OP variable)  ;; stack_delta=-2
