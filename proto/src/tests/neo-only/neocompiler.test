@@ -1,7 +1,9 @@
-// a place to put some complex, composed programs
-
+////////////////////////////////////////////////////////////////////////////
+// Don't do localization
 $(P2B_ARGS) = --no-localization
+////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) --test
 is 0 _ foo: Attributes [2]
 is 1 _   CONTEXT: sample:2-5, simple:7-8, wimple:3
@@ -21,7 +23,7 @@ is 13 _ Parse failed!
 is 15 _ Parse failed!
 is 16 _ (all this | is | bar | separated)
 
-
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) --internal-tests
 is 0 _ Testing type relations:
 is 1 _ Generic types:
@@ -151,12 +153,14 @@ is 124 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Vector<Scalar>,<Scalar
 is 125 _ GCS(<Symbol foo>,<Symbol bar>) = NULL; inverse match = TRUE
 is 126 _ GCS(<Field <3-Tuple<Scalar 3>,<Any>,<Scalar 5>>>,<Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>) = <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>; inverse match = TRUE
 
-
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall '(+ ,) zeros 3 4, `)'
 is 0 _ command-line:1: Wrapper macro comma is not applied to anything
 is 1 _ command-line:1: Missing right parenthesis
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// int scalar
 test: $(P2B) -CDall '3'
 is 0 _ Amorphous Mediums:
 is 1 _ [Medium: Alfa = root]
@@ -171,6 +175,8 @@ is 9 _   Bravo: Alfa --> <Scalar 3> OUTPUT
 is 10 _ Operator Instances:
 is 11 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// negative float scalar
 test: $(P2B) -CDanalyzed '-1.7'
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -179,6 +185,8 @@ is 3 _   Bravo: Alfa --> <Scalar -1.7> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar -1.7>] --> Bravo<Scalar -1.7> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// scientific notation
 test: $(P2B) -CDanalyzed "0.09e-4"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -187,6 +195,8 @@ is 3 _   Bravo: Alfa --> <Scalar 9e-06> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 9e-06>] --> Bravo<Scalar 9e-06> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// integer addition
 test: $(P2B) -CDall "(+ 3 4)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -205,22 +215,29 @@ is 13 _   Echo: Alfa --> <Scalar 7> OUTPUT
 is 14 _ Operator Instances:
 is 15 _   [Lit: <Scalar 7>] --> Echo<Scalar 7> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// error - undefined function
 test: $(P2B) -CDall "(foo 3 4)" 
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Couldn't find definition of Operator foo
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - not an operator
 test: $(P2B) -CDall "(2 3 4)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: 2 is not an Operator
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - must name function params
 test: $(P2B) "(def foo () (def xy (tuple) 3)) (foo)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Function parameters must be named: tuple
 is 2 _ command-line:1 Error: Function has no content
 is 3 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
 // Operator annotation:
 // With side-effect annotation, sin call is preserved; without, is optimized out
 test: $(P2B) "(annotate sin :side-effect) (all (sin (mid)) 3)" -CDanalyzed
@@ -235,6 +252,8 @@ is 7 _   Charlie<Scalar> --> [sin] --> Bravo<Scalar>
 is 8 _   [mid] --> Charlie<Scalar>
 is 9 _   [Lit: <Scalar 3>] --> Delta<Scalar 3> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// no side-effect gets optimized-out
 test: $(P2B) "(all (sin (mid)) 3)" -CDanalyzed
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -243,12 +262,15 @@ is 3 _   Bravo: Alfa --> <Scalar 3> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// annotation
 test: $(P2B) "(annotate or :foo) (or 1 2)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Can't annotate 'or': not a primitive
 is 2 _ Compilation failed.
 
-
+////////////////////////////////////////////////////////////////////////////
+// chain addition
 test: $(P2B) -CDall "(+ 1 (+ (+ 2 3) (+ 4)) 5)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -279,6 +301,8 @@ is 25 _   Kilo: Alfa --> <Scalar 15> OUTPUT
 is 26 _ Operator Instances:
 is 27 _   [Lit: <Scalar 15>] --> Kilo<Scalar 15> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// simple let
 test: $(P2B) -CDall "(let ((x 3) (y 4)) (+ x y))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -291,6 +315,8 @@ is 7 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
 is 8 _   [Lit: <Scalar 4>] --> Charlie<Scalar 4>
 is 9 _   Bravo<Scalar 3>, Charlie<Scalar 4> --> [+] --> Delta<Number> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// implicit all in let
 test: $(P2B) -CDall "(let () 2 3 4)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -303,6 +329,8 @@ is 7 _   [Lit: <Scalar 2>] --> Bravo<Scalar 2>
 is 8 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 is 9 _   [Lit: <Scalar 4>] --> Delta<Scalar 4> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// error - malformed let statements
 test: $(P2B) -CDall "(let (a (3 4) (() 5) (b 6 7)) x)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Malformed let statement: a
@@ -312,16 +340,22 @@ is 4 _ command-line:1 Error: Malformed let statement: (b 6 7)
 is 5 _ command-line:1 Error: Couldn't find definition of x
 is 6 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - malformed let
 test: $(P2B) -CDall "(let ((x 3)))"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Malformed let statement: (let ((x 3)))
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - malformed let
 test: $(P2B) -CDall "(let 2 3)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Malformed let statement: (let 2 3)
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// nested lets
 test: $(P2B) -CDall "(let ((x 5)) (let ((y 2)) (+ x x y)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -334,6 +368,8 @@ is 7 _   [Lit: <Scalar 5>] --> Bravo<Scalar 5>
 is 8 _   [Lit: <Scalar 2>] --> Charlie<Scalar 2>
 is 9 _   Bravo<Scalar 5>, Bravo<Scalar 5>, Charlie<Scalar 2> --> [+] --> Delta<Number> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// optimize-out restrict
 test: $(P2B) -CDall "(restrict (+ 3 4) 1)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -349,6 +385,7 @@ is 10 _   Echo<Scalar 3>, Foxtrot<Scalar 4> --> [+] --> Delta<Number> OUTPUT
 is 11 _   [Lit: <Scalar 3>] --> Echo<Scalar 3>
 is 12 _   [Lit: <Scalar 4>] --> Foxtrot<Scalar 4>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(let ((x 3)) (restrict x 0))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -362,6 +399,8 @@ is 8 _   [Lit: <Scalar 3>] --> Delta<Scalar 3>
 is 9 _   [Lit: <Scalar 0>] --> Charlie<Scalar 0>
 is 10 _   Delta<Scalar 3>, Charlie<Scalar 0> --> [restrict] --> Echo<Any> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// def for literals
 test: $(P2B) -CDall "(def x 3) (+ x 4)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -374,7 +413,8 @@ is 7 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
 is 8 _   Bravo<Scalar 3>, Delta<Scalar 4> --> [+] --> Charlie<Number> OUTPUT
 is 9 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 
-// tests lambda types & simplification of apply
+////////////////////////////////////////////////////////////////////////////
+// simplification of apply
 test: $(P2B) -CDall "(apply * (apply + 3 4) (mid))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -405,6 +445,8 @@ is 25 _   [mid] --> Hotel<Scalar>
 is 26 _   Juliet<Scalar 7>, Hotel<Scalar> --> [*] --> India<Scalar> OUTPUT
 is 27 _   [Lit: <Scalar 7>] --> Juliet<Scalar 7>
 
+////////////////////////////////////////////////////////////////////////////
+// lambda execution
 test: $(P2B) -CDall "((lambda () (+ 2 3)))"
 is 0 _ Function: lambda~4 [Signature:  --> <Any>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -430,6 +472,8 @@ is 20 _   Golf: Echo --> <Scalar 5> OUTPUT
 is 21 _ Operator Instances:
 is 22 _   [Lit: <Scalar 5>] --> Golf<Scalar 5> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// parameter typing
 test: $(P2B) -CDall "(def double (x|scalar) (+ x x)) (double (double 3))" --function-inlining-threshold 0
 is 0 _ Function: double [Signature: <Scalar> --> <Any>] called 2 times
 is 1 _   Amorphous Mediums:
@@ -451,6 +495,8 @@ is 16 _   Foxtrot<Any> --> [Fun: double] --> Echo<Any> OUTPUT
 is 17 _   Golf<Scalar 3> --> [Fun: double] --> Foxtrot<Any>
 is 18 _   [Lit: <Scalar 3>] --> Golf<Scalar 3>
 
+////////////////////////////////////////////////////////////////////////////
+// optional parameters
 test: $(P2B) -CDall "(def froz (x &optional y) (+ x (mid))) (- (froz) (froz 1 2 3) (sin 2 3))"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Called [Fun: froz] with 0 arguments; it requires from 1 to 2
@@ -458,6 +504,7 @@ is 2 _ command-line:1 Error: Called [Fun: froz] with 3 arguments; it requires fr
 is 3 _ command-line:1 Error: Called [sin] with 2 arguments; it requires exactly 1
 is 4 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(def fooloop (y) (+ y (restrict (fooloop (+ y -1)) (> y 0) ))) (fooloop 3)" --function-inlining-threshold 2
 is 0 _ Function: fooloop [Signature: <Any> --> <Any>] called 2 times
 is 1 _   Amorphous Mediums:
@@ -491,11 +538,15 @@ is 28 _   Mike<Scalar 3> --> [Fun: fooloop] --> Lima<Any> OUTPUT
 is 29 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 is 30 _ Function: fooloop [Signature: <Any> --> <Number>] called 2 times
 
+////////////////////////////////////////////////////////////////////////////
+// error - cannot bind, already bound
 test: $(P2B) -CDall "(let ((x 3) (x 4)) x)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Cannot bind 'x': already bound
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// function overriding
 test: $(P2B) -CDall "(def foo 3) (def foo 4) foo"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -506,6 +557,8 @@ is 5 _ Operator Instances:
 is 6 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
 is 7 _   [Lit: <Scalar 4>] --> Charlie<Scalar 4> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// error - reserved symbols
 test: $(P2B) -CDall "(let ((restrict 3) (all 4) (let 5)) 6)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Cannot bind 'restrict': symbol is reserved
@@ -513,27 +566,37 @@ is 2 _ command-line:1 Error: Cannot bind 'all': symbol is reserved
 is 3 _ command-line:1 Error: Cannot bind 'let': symbol is reserved
 is 4 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - cannot bind, already bound
 test: $(P2B) -CDall "(lambda (y y) y)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Cannot bind 'y': already bound
 is 2 _ command-line:1 Error: Cannot bind 'y': already bound
 is 3 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - invalid parameter
 test: $(P2B) -CDall "(lambda (x 3) 4)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Function parameters must be named: 3
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - lambda syntax
 test: $(P2B) -CDall "(lambda x 4)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Signature not a list: x
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// error - invalid parameter
 test: $(P2B) -CDall "(lambda (&rest x y) 4)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: No signature past '&rest' variable: (&rest x y)
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// special scalars
 test: $(P2B) -CDall "(+ NaN -Inf inf pi e)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -558,6 +621,8 @@ is 19 _   Hotel: Alfa --> <Scalar nan> OUTPUT
 is 20 _ Operator Instances:
 is 21 _   [Lit: <Scalar nan>] --> Hotel<Scalar nan> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// xor
 test: $(P2B) -CDall "(xor true false)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -579,6 +644,7 @@ is 16 _ Operator Instances:
 is 17 _   [Lit: <Boolean true>] --> Foxtrot<Boolean true> OUTPUT
 is 18 _ Stopping before localization
 
+////////////////////////////////////////////////////////////////////////////
 // Make sure that extra function calls are ignored by "relevant" count
 test: $(P2B) "(def foo () (mid)) (def bar () (* (foo) (foo))) (foo)" -CDanalyzed --function-inlining-threshold 0
 is 0 _ Function: foo [Signature:  --> <Scalar>] called 1 times
@@ -595,6 +661,8 @@ is 10 _   Delta: Charlie --> <Scalar> OUTPUT
 is 11 _ Operator Instances:
 is 12 _   [Fun: foo] --> Delta<Scalar> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// error - let does not work like let*
 test: $(P2B) -CDall "(let ((a 3) (b (+ a 1)) (c (+ a b))) c)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Couldn't find definition of a
@@ -602,6 +670,8 @@ is 2 _ command-line:1 Error: Couldn't find definition of a
 is 3 _ command-line:1 Error: Couldn't find definition of b
 is 4 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// let* allows previously defined literals
 test: $(P2B) -CDall "(let* ((a 3) (b (+ a 1)) (c (+ a b))) c)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -616,6 +686,8 @@ is 9 _   Bravo<Scalar 3>, Delta<Scalar 1> --> [+] --> Charlie<Number>
 is 10 _   [Lit: <Scalar 1>] --> Delta<Scalar 1>
 is 11 _   Bravo<Scalar 3>, Charlie<Number> --> [+] --> Echo<Number> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// macro
 test: $(P2B) -CDall "(macro foo (x y) (+ ,x ,y ,x)) (foo 3 4)" 
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -630,12 +702,15 @@ is 9 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 is 10 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 is 11 _   [Lit: <Scalar 3>] --> Echo<Scalar 3>
 
+////////////////////////////////////////////////////////////////////////////
+// error - undefined SExpr
 test: $(P2B) -CDall "(macro foo (x y) (+ ,x ,y ,z)) (foo 3 4)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Couldn't find definition of SExpr z
 is 2 _ command-line:1 Error: Macro expansion failed on (foo 3 4)
 is 3 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(macro foo (x) (+ 2 ,@x)) (foo (4 5))" 
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -650,6 +725,7 @@ is 9 _   [Lit: <Scalar 2>] --> Charlie<Scalar 2>
 is 10 _   [Lit: <Scalar 4>] --> Delta<Scalar 4>
 is 11 _   [Lit: <Scalar 5>] --> Echo<Scalar 5>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(macro foo (x) (let ((?x ,x)) (+ ?x ?x))) (foo 3)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -660,6 +736,8 @@ is 5 _ Operator Instances:
 is 6 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3>
 is 7 _   Bravo<Scalar 3>, Bravo<Scalar 3> --> [+] --> Charlie<Number> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// if construct
 test: $(P2B) -CDall "(if 2 3 4)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -678,6 +756,7 @@ is 13 _   [Lit: <Scalar 3>] --> Golf<Scalar 3>
 is 14 _   Charlie<Scalar 2> --> [not] --> Echo<Boolean>
 is 15 _   [Lit: <Scalar 4>] --> Hotel<Scalar 4>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(macro addpi (x) (+ ,@x pi)) (macro dup2 (x) (addpi (,x ,x))) (dup2 5)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -692,6 +771,7 @@ is 9 _   [Lit: <Scalar 5>] --> Charlie<Scalar 5>
 is 10 _   [Lit: <Scalar 5>] --> Delta<Scalar 5>
 is 11 _   [Lit: <Scalar 3.14159>] --> Echo<Scalar 3.14159>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(macro addx (x) (lambda (y) (+ ,x y))) ((addx 4) 5)"
 is 0 _ Function: lambda~4 [Signature: <Any> --> <Any>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -713,24 +793,29 @@ is 16 _ Operator Instances:
 is 17 _   Golf<Scalar 5> --> [Fun: lambda~4] --> Foxtrot<Any> OUTPUT
 is 18 _   [Lit: <Scalar 5>] --> Golf<Scalar 5>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall "(primitive foo (zip|((baz) bar)) zap|zog)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Compound type must start with symbol: ((baz) bar)
 is 2 _ command-line:1 Error: Unknown type zog
 is 3 _ Compilation failed.
 
-// This checks ability to have no content to output & arg parsing
+////////////////////////////////////////////////////////////////////////////
+// Error - This checks ability to have no content to output & arg parsing
 test: $(P2B) -CDall "(primitive foo (args) arg2)"
 is 0 _ Error during interpretation:
 is 1 _  Error: Program has no content.
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// Error - checks that fields cannot have non-local types
 test: $(P2B) -CDall "(primitive foo ((field (field scalar))) scalar)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Field type must have a local subtype
 is 2 _ Compilation failed.
 
-// This test checks handling of malformed type constraints
+////////////////////////////////////////////////////////////////////////////
+// Error - checks handling of malformed type constraints
 test: $(P2B) "(primitive zog (any) any :type-constraints foo) (primitive foo (field) any :type-constraints (bluff)) (foo (zog 3))"
 is 0 _ Error during analysis:
 is 1 _ command-line:1 Error: Expected type constraint to be a list: bluff
@@ -740,7 +825,8 @@ is 4 _ command-line:1 Error: Empty type constraint
 is 5 _ command-line:1 Error: Expected type constraint set to be a list: foo
 is 6 _ Compilation failed.
 
-
+////////////////////////////////////////////////////////////////////////////
+// Creating field
 test: $(P2B) -CDall "(nbr 3)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -751,6 +837,8 @@ is 5 _ Operator Instances:
 is 6 _   Charlie<Scalar 3> --> [nbr] --> Bravo<Field <Any>> OUTPUT
 is 7 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 
+////////////////////////////////////////////////////////////////////////////
+// Letfed construct
 test: $(P2B) -CDall "(letfed ((x 3 (+ x y 1)) (y 2 (* x 3))) (- x y))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -785,6 +873,8 @@ is 29 _   Foxtrot<Local>, Oscar<Scalar 3> --> [*] --> November<Number>
 is 30 _   [Lit: <Scalar 3>] --> Oscar<Scalar 3>
 is 31 _   Golf<Local>, Juliet<Local> --> [-] --> Papa<Number> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// Rep construct (timer)
 test: $(P2B) -CDall "(rep t 0 (+ t (dt)))"
 is 0 _ Amorphous Mediums:
 is 1 _  [Medium: Alfa = root]
@@ -827,6 +917,8 @@ is 37 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
 is 38 _   Foxtrot<Scalar>, Juliet<Scalar> --> [+] --> India<Scalar>
 is 39 _   [dt] --> Juliet<Scalar>
 
+////////////////////////////////////////////////////////////////////////////
+// summary function, type coersion, and operator field-ification
 test: $(P2B) -CDall "(min-hood (+ 1 (nbr 2)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -849,6 +941,7 @@ is 17 _   Golf: Alfa --> <Scalar 3> OUTPUT
 is 18 _ Operator Instances:
 is 19 _   [Lit: <Scalar 3>] --> Golf<Scalar 3> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // Testing function call resolving on path; also inlining
 test: $(P2B) -CDall "(timer)"
 is 0 _ Function: timer [Signature:  --> <Any>] called 1 times
@@ -899,6 +992,8 @@ is 44 _   Quebec<Scalar> --> [delay] --> Sierra<Scalar>
 is 45 _   Sierra<Scalar>, Uniform<Scalar> --> [+] --> Tango<Scalar>
 is 46 _   [dt] --> Uniform<Scalar>
 
+////////////////////////////////////////////////////////////////////////////
+// Tuple length
 test: $(P2B) -CDall "(len (tup 3 4))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -913,6 +1008,8 @@ is 9 _   Delta<Scalar 3>, Echo<Scalar 4> --> [tup] --> Charlie<Tuple<Any>...>
 is 10 _  [Lit: <Scalar 3>] --> Delta<Scalar 3>
 is 11 _  [Lit: <Scalar 4>] --> Echo<Scalar 4>
 
+////////////////////////////////////////////////////////////////////////////
+// primitive returning a vector of an unknown-number of literals
 test: $(P2B) -CDall "(primitive tupzer ((tuple 3 any)) (vector &rest 4)) (tupzer (tup 3 (nbr 5)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -929,11 +1026,15 @@ is 11 _   [Lit: <Scalar 3>] --> Delta<Scalar 3>
 is 12 _   Foxtrot<Scalar 5> --> [nbr] --> Echo<Field <Any>>
 is 13 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
+////////////////////////////////////////////////////////////////////////////
+// error - vectors can only contain scalars
 test: $(P2B) -CDall "(primitive tupzer ((tuple 3 any)) (vector &rest number)) (tupzer (tup 3 (nbr 5)))"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Vectors must contain only scalars
 is 2 _ Compilation failed.
 
+////////////////////////////////////////////////////////////////////////////
+// primitive returns a lambda
 test: $(P2B) -CDall "(primitive ltest () (lambda (scalar &rest field) local)) (sin (apply (ltest) 2))" --no-analysis
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -949,6 +1050,8 @@ is 10 _   [ltest] --> Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> -
 is 11 _   [Lit: <Scalar 2>] --> Echo<Scalar 2>
 is 12 _ Stopping before analysis
 
+////////////////////////////////////////////////////////////////////////////
+// letfed updating a tuple
 test: $(P2B) -CDall "(letfed (((tup a b) (tup 7 8) (tup (+ a 1) (* b a)))) (pow a b))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -997,6 +1100,8 @@ is 43 _   Golf<Local>, Victor<Scalar 1> --> [elt] --> Uniform<Any>
 is 44 _   [Lit: <Scalar 1>] --> Victor<Scalar 1>
 is 45 _   Sierra<Any>, Uniform<Any> --> [pow] --> Whiskey<Scalar> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// letfed updating a tuple of tuples
 test: $(P2B) -CDall "(letfed (((tup (tup a b) c) (tup (tup 2 3) 4) (tup (tup a c) b))) c)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1059,7 +1164,8 @@ is 57 _   [Lit: <Scalar 1>] --> Beak<Scalar 1>
 is 58 _   Golf<Local>, Sow<Scalar 1> --> [elt] --> Pronunciation<Any> OUTPUT
 is 59 _   [Lit: <Scalar 1>] --> Sow<Scalar 1>
 
-
+////////////////////////////////////////////////////////////////////////////
+// setting time interval (set-dt)
 test: $(P2B) -CDanalyzed "(set-dt (restrict (all (probe (all 3) 1)) 2))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1077,6 +1183,8 @@ is 12 _   Foxtrot<Scalar 3>, Golf<Scalar 1> --> [probe] --> Echo<Scalar 3>
 is 13 _   [Lit: <Scalar 3>] --> Foxtrot<Scalar 3>
 is 14 _   [Lit: <Scalar 1>] --> Golf<Scalar 1>
 
+////////////////////////////////////////////////////////////////////////////
+// Tuple division
 test: $(P2B) -CDanalyzed "(/ (/ (tup 3 4) 5) (rnd 0 1))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1093,6 +1201,8 @@ is 11 _   [Lit: <Scalar 0>] --> Delta<Scalar 0>
 is 12 _   [Lit: <Scalar 1>] --> Echo<Scalar 1>
 is 13 _   [Lit: <2-Vector<Scalar 0.6>,<Scalar 0.8>>] --> Foxtrot<2-Vector<Scalar 0.6>,<Scalar 0.8>>
 
+////////////////////////////////////////////////////////////////////////////
+// Pull an item out of a tuple
 test: $(P2B) -CDanalyzed "(elt (tup 3 4) 0)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1101,12 +1211,15 @@ is 3 _   Bravo: Alfa --> <Scalar 3> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// error - elt wrong number of args
 test: $(P2B) -CDanalyzed "(elt 7)"
 is 0 _ Error during interpretation:
 is 1 _ command-line:1 Error: Called [elt] with 1 arguments; it requires exactly 2
 is 2 _ Compilation failed.
 
-
+////////////////////////////////////////////////////////////////////////////
+// pointwise math done by the compiler
 test: $(P2B) -CDanalyzed "(+ 2 (sqrt 3) 4 (> 5 6))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1115,6 +1228,8 @@ is 3 _   Bravo: Alfa --> <Scalar 7.73205> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 7.73205>] --> Bravo<Scalar 7.73205> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// type coersion to a tuple and comparison of tuples
 test: $(P2B) -CDanalyzed "(> (tup 1 0 0 -4) 1)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1123,6 +1238,8 @@ is 3 _   Bravo: Alfa --> <Boolean false> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Boolean false>] --> Bravo<Boolean false> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// compiler can pull values out of a tuple, only the ones that it knows about
 test: $(P2B) -CDanalyzed "(elt '(3 (1 val) 5) (elt '(2 2 2) (rnd 1 2)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1131,6 +1248,7 @@ is 3 _   Bravo: Alfa --> <Scalar 5> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 5>] --> Bravo<Scalar 5> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDanalyzed "(rep x 3 (elt (tup x 7) 0))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1157,6 +1275,7 @@ is 21 _   Foxtrot<Scalar>, Kilo<Scalar 7> --> [tup] --> Juliet<2-Vector<Scalar>,
 is 22 _   [Lit: <Scalar 7>] --> Kilo<Scalar 7>
 is 23 _   [Lit: <Scalar 0>] --> Lima<Scalar 0>
 
+////////////////////////////////////////////////////////////////////////////
 // Test all-folding
 test: $(P2B) -CDanalyzed "(all 1 (all (set-dt 2) (all 3)))"
 is 0 _ Amorphous Mediums:
@@ -1170,6 +1289,7 @@ is 7 _   Charlie<Scalar 2> --> [set-dt] --> Bravo<Scalar 2>
 is 8 _   [Lit: <Scalar 2>] --> Charlie<Scalar 2>
 is 9 _   [Lit: <Scalar 3>] --> Delta<Scalar 3> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // Test dead-code elimination
 test: $(P2B) -CDanalyzed "(let ((x (* 7 (mov '(2 3))))) 4)"
 is 0 _ Amorphous Mediums:
@@ -1183,6 +1303,7 @@ is 7 _   Charlie<2-Vector<Scalar 2>,<Scalar 3>> --> [mov] --> Bravo<2-Vector<Sca
 is 8 _   [Lit: <2-Vector<Scalar 2>,<Scalar 3>>] --> Charlie<2-Vector<Scalar 2>,<Scalar 3>>
 is 9 _   [Lit: <Scalar 4>] --> Delta<Scalar 4> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // Test unused space elimination
 test: $(P2B) -CDanalyzed "(if 1 2 2)"
 is 0 _ Amorphous Mediums:
@@ -1192,6 +1313,7 @@ is 3 _   Bravo: Alfa --> <Scalar 2> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 2>] --> Bravo<Scalar 2> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // Basic funcall handling & simplification:
 test: $(P2B) -CDanalyzed "(muxand true false)"
 is 0 _ Amorphous Mediums:
@@ -1201,6 +1323,7 @@ is 3 _   Bravo: Alfa --> <Boolean false> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Boolean false>] --> Bravo<Boolean false> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // funcall usage tracking:
 test: $(P2B) -CDanalyzed "(def foo () (mid)) (def bar (x) (+ 3 x)) (nbr (tup foo bar (tup foo)))"
 is 0 _ Function: foo [Signature:  --> <Scalar>] called 1 times
@@ -1228,6 +1351,7 @@ is 21 _   Hotel: Golf --> <Field <3-Tuple<Lambda [Fun: foo]>,<Lambda [Fun: bar]>
 is 22 _ Operator Instances:
 is 23 _   [Lit: <Field <3-Tuple<Lambda [Fun: foo]>,<Lambda [Fun: bar]>,<1-Tuple<Lambda [Fun: foo]>>>>] --> Hotel<Field <3-Tuple<Lambda [Fun: foo]>,<Lambda [Fun: bar]>,<1-Tuple<Lambda [Fun: foo]>>>> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // funcall propagation & backpropagation
 test: $(P2B) -CDanalyzed "(+ ((lambda (x) 2) 4) ((lambda (x y) (mux (dt) x y)) 3 3))"
 is 0 _ Amorphous Mediums:
@@ -1237,6 +1361,7 @@ is 3 _   Bravo: Alfa --> <Scalar 5> OUTPUT
 is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 5>] --> Bravo<Scalar 5> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // letfed w. multiple statements, some of which are pruned
 test: $(P2B) -CDanalyzed "(letfed ((x 0 (- 1 x))) (set-dt x) 2 (- x 3))"
 is 0 _ Amorphous Mediums:
@@ -1266,6 +1391,7 @@ is 23 _   Golf<Scalar> --> [set-dt] --> Kilo<Scalar>
 is 24 _   Golf<Scalar>, Mike<Scalar 3> --> [-] --> Lima<Scalar> OUTPUT
 is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 
+////////////////////////////////////////////////////////////////////////////
 // Testing propagation in & out of funcall
 test: $(P2B) -CDanalyzed "((lambda (x) (set-dt x)) 5)" --function-inlining-threshold 0
 is 0 _ Function: lambda~4 [Signature: <Any> --> <Scalar 5>] called 1 times
@@ -1286,6 +1412,7 @@ is 14 _ Operator Instances:
 is 15 _   Foxtrot<Scalar 5> --> [Fun: lambda~4] --> Echo<Scalar 5> OUTPUT
 is 16 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
+////////////////////////////////////////////////////////////////////////////
 // should end up with 1 timer call
 test: $(P2B) -CDanalyzed "(all (timer) (timer))" --function-inlining-threshold 0
 is 0 _  Function: timer [Signature:  --> <Scalar>] called 1 times
@@ -1296,14 +1423,19 @@ is 24 _   Lima: Kilo --> <Scalar> OUTPUT
 is 25 _ Operator Instances:
 is 26 _   [Fun: timer] --> Lima<Scalar> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
+// multiple arguments to DIV
 test: $(P2B) -CDanalyzed "(/ 2 3 4)"
 is 5 _   [Lit: <Scalar 0.166667>] --> Bravo<Scalar 0.166667> OUTPUT
 is 6 _ Stopping before localization
 
+////////////////////////////////////////////////////////////////////////////
+// conditional optimization: both branches return the same thing
 test: $(P2B) -CDanalyzed "(if (rnd 0 1) (if true 3 5) (if (mid) 3 3))"
 is 5 _   [Lit: <Scalar 3>] --> Bravo<Scalar 3> OUTPUT
 is 6 _ Stopping before localization
 
+////////////////////////////////////////////////////////////////////////////
 // promotion of pointwise to field ops
 test: $(P2B) -CDanalyzed "(sin (nbr 3))"
 is 0 _ Amorphous Mediums:
@@ -1314,6 +1446,8 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Field <Scalar 0.14112>>] --> Bravo<Field <Scalar 0.14112>> OUTPUT
 is 6 _ Stopping before localization
 
+////////////////////////////////////////////////////////////////////////////
+// compiler optimization for neighborhood computation
 test: $(P2B) -CDanalyzed "(min-hood (sin (nbr 3)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1323,10 +1457,13 @@ is 4 _ Operator Instances:
 is 5 _   [Lit: <Scalar 0.14112>] --> Bravo<Scalar 0.14112> OUTPUT
 is 6 _ Stopping before localization
 
+////////////////////////////////////////////////////////////////////////////
 // Do localization, but not emission
 $(P2B_ARGS) = --no-emission
+////////////////////////////////////////////////////////////////////////////
 
-// Test inlining
+////////////////////////////////////////////////////////////////////////////
+// Function inlining
 test: $(P2B) -CDanalyzed "(def foo (x) (+ 1 x)) (def bar (x y) (* x y)) (bar (foo (foo (mid))) (bar (foo (mid)) (foo 3)))" --function-inlining-threshold -1
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1355,6 +1492,7 @@ is 23 _   Kilo<Scalar 1>, Charlie<Scalar> --> [+] --> Juliet<Scalar>
 is 24 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
 is 25 _   [Lit: <Scalar 4>] --> Lima<Scalar 4>
 
+////////////////////////////////////////////////////////////////////////////
 // Test nested inlining
 test: $(P2B) -CDanalyzed "(def foo (x) (sqrt x)) (def bar (x) (+ (foo x) (foo x))) (def qux (x) (* (foo x) (bar x) (foo x))) (qux (mid))" --function-inlining-threshold -1
 is 0 _ Amorphous Mediums:
@@ -1376,8 +1514,7 @@ is 15 _   Bravo<Scalar> --> [sqrt] --> Foxtrot<Scalar>
 is 16 _   Bravo<Scalar> --> [sqrt] --> Golf<Scalar>
 is 17 _   Bravo<Scalar> --> [sqrt] --> Hotel<Scalar>
 
-
-
+////////////////////////////////////////////////////////////////////////////
 // make sure restrictions happen on cross-domain boundaries
 test: $(P2B) -CDanalyzed "(let ((x (+ (mid) 1))) (if (rnd 0 1) x 3))"
 is 0 _ Amorphous Mediums:
@@ -1407,6 +1544,7 @@ is 23 _   Foxtrot<Scalar>, Charlie<Scalar> --> [restrict] --> Lima<Scalar>
 is 24 _   Charlie<Scalar> --> [not] --> Echo<Boolean>
 is 25 _   [Lit: <Scalar 3>] --> Mike<Scalar 3>
 
+////////////////////////////////////////////////////////////////////////////
 // references in lambdas to external variables
 test: $(P2B) -CDinterpreted -CDanalyzed "(let ((x (+ (mid) 1))) ((lambda (y) (* x y)) 3))"
 is 0 _ Function: lambda~4 [Signature: <Any> --> <Any>] called 1 times
@@ -1449,7 +1587,7 @@ is 36 _   [Lit: <Scalar 1>] --> Hotel<Scalar 1>
 is 37 _   Echo<Scalar>, Lima<Scalar 3> --> [*] --> Kilo<Scalar> OUTPUT
 is 38 _   [Lit: <Scalar 3>] --> Lima<Scalar 3>
 
-
+////////////////////////////////////////////////////////////////////////////
 // Function bare references
 test: $(P2B) -CDinterpreted "(let ((x (mid))) (apply (fun () x)))"
 is 0 _ Function: lambda~4 [Signature:  --> <Any>] called 1 times
@@ -1470,6 +1608,7 @@ is 14 _   [mid] --> Charlie<Scalar>
 is 15 _   Foxtrot<Lambda [Fun: lambda~4]> --> [apply] --> Echo<Any> OUTPUT
 is 16 _   [Lit: <Lambda [Fun: lambda~4]>] --> Foxtrot<Lambda [Fun: lambda~4]>
 
+////////////////////////////////////////////////////////////////////////////
 // Reference from within branch
 test: $(P2B) -CDanalyzed "(let ((x (speed))) (if (mid) (+ x 3) 4))"
 is 0 _ Amorphous Mediums:
@@ -1495,6 +1634,7 @@ is 19 _   [Lit: <Scalar 3>] --> Juliet<Scalar 3>
 is 20 _   Charlie<Scalar> --> [not] --> Echo<Boolean>
 is 21 _   [Lit: <Scalar 4>] --> Kilo<Scalar 4>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDinterpreted -CDanalyzed "(let ((m (mid))) (apply (fun (x) (if m 2 m)) 3))"
 is 0 _ Function: lambda~4 [Signature: <Any> --> <Any>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -1544,7 +1684,7 @@ is 44 _   Juliet<Scalar> --> [not] --> Quebec<Boolean>
 is 45 _   [Lit: <Scalar 2>] --> Sierra<Scalar 2>
 is 46 _   Juliet<Scalar>, Quebec<Boolean> --> [restrict] --> Tango<Scalar>
 
-
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDanalyzed "(def foo (x) (+ x (mid))) (apply foo (- (mid) 1))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1561,6 +1701,7 @@ is 11 _   [Lit: <Scalar 1>] --> Delta<Scalar 1>
 is 12 _   Bravo<Scalar>, Foxtrot<Scalar> --> [+] --> Echo<Scalar> OUTPUT
 is 13 _   [mid] --> Foxtrot<Scalar>
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDinterpreted -CDanalyzed "(apply / '(8 12) 2 3)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1583,7 +1724,11 @@ is 17 _   Golf: Alfa --> <2-Vector<Scalar 1.33333>,<Scalar 2>> OUTPUT
 is 18 _ Operator Instances:
 is 19 _   [Lit: <2-Vector<Scalar 1.33333>,<Scalar 2>>] --> Golf<2-Vector<Scalar 1.33333>,<Scalar 2>> OUTPUT
 
+////////////////////////////////////////////////////////////////////////////
 // NEIGHORHOOD OPERATIONS
+////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////
 // Simple neighborhood:
 test: $(P2B) -CDanalyzed -CDlocalized "(max-hood (nbr (= (mid) 0)))"
 is 0 _ Amorphous Mediums:
@@ -1625,6 +1770,7 @@ is 35 _   [Lit: <Lambda [max]>] --> Juliet<Lambda [max]>
 is 36 _   [Lit: <Lambda [Fun: lambda~6]>] --> Kilo<Lambda [Fun: lambda~6]>
 is 37 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(any-hood (sin (nbr (mid))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -1649,6 +1795,7 @@ is 19 _   [Lit: <Lambda [max]>] --> Golf<Lambda [max]>
 is 20 _   [Lit: <Lambda [Fun: lambda~6]>] --> Hotel<Lambda [Fun: lambda~6]>
 is 21 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Basic neighborhood localization test:
 test: $(P2B) -CDlocalized "(all-hood (+ 2 (nbr (mid))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -1676,6 +1823,7 @@ is 21 _   [Lit: <Lambda [min]>] --> Hotel<Lambda [min]>
 is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
 is 23 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -1702,6 +1850,7 @@ is 21 _   [Lit: <Lambda [min]>] --> Hotel<Lambda [min]>
 is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
 is 23 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Test zero exports:
 test: $(P2B) -CDlocalized "(int-hood (nbr-range))"
 is 0 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
@@ -1729,6 +1878,7 @@ is 21 _   [Lit: <Lambda [+]>] --> Hotel<Lambda [+]>
 is 22 _   [Lit: <Lambda [Fun: lambda~5]>] --> India<Lambda [Fun: lambda~5]>
 is 23 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // insertion of "local" ops
 test: $(P2B) -CDanalyzed -CDlocalized "(int-hood 1)"
 is 0 _ Amorphous Mediums:
@@ -1764,6 +1914,7 @@ is 29 _   [Lit: <Lambda [+]>] --> Juliet<Lambda [+]>
 is 30 _   [Lit: <Lambda [Fun: lambda~5]>] --> Kilo<Lambda [Fun: lambda~5]>
 is 31 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDanalyzed -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1804,6 +1955,7 @@ is 35 _   [Lit: <Lambda [min]>] --> Lima<Lambda [min]>
 is 36 _   [Lit: <Lambda [Fun: lambda~6]>] --> Mike<Lambda [Fun: lambda~6]>
 is 37 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDanalyzed -CDlocalized "(max-hood (* (mid) (+ (nbr (speed)) 1)))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -1852,6 +2004,7 @@ is 43 _   [Lit: <Lambda [max]>] --> Papa<Lambda [max]>
 is 44 _   [Lit: <Lambda [Fun: lambda~6]>] --> Quebec<Lambda [Fun: lambda~6]>
 is 45 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Test multi-use fields:
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (nbr (mid))))) (+ (min-hood (+ x x)) (max-hood x)))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -1900,6 +2053,7 @@ is 42 _   [Lit: <Lambda [max]>] --> Quebec<Lambda [max]>
 is 43 _   [Lit: <Lambda [Fun: lambda~9]>] --> Romeo<Lambda [Fun: lambda~9]>
 is 44 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Neighborhood variables:
 test: $(P2B) -CDlocalized "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -1929,6 +2083,7 @@ is 23 _   [Lit: <Lambda [min]>] --> India<Lambda [min]>
 is 24 _   [Lit: <Lambda [Fun: lambda~6]>] --> Juliet<Lambda [Fun: lambda~6]>
 is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Neighborhood variables: 
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -1962,11 +2117,13 @@ is 27 _   [Lit: <Lambda [min]>] --> Kilo<Lambda [min]>
 is 28 _   [Lit: <Lambda [Fun: lambda~6]>] --> Lima<Lambda [Fun: lambda~6]>
 is 29 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Test handling of AMs within hood expression
 test: $(P2B) -CDanalyzed "(sum-hood (if (mid) 5 7))" --no-localization
 is 0 _ Error during analysis:
 is 1 _ Error: Cannot restrict (if) inside a neighborhood operation ([sum-hood])
 
+////////////////////////////////////////////////////////////////////////////
 // Test handling of AMs within hood expression, also no-content summary
 test: $(P2B) -CDanalyzed -CDlocalized "(sum-hood (mux (mid) 5 7))"
 is 0 _ Amorphous Mediums:
@@ -2014,6 +2171,7 @@ is 41 _   [Lit: <Lambda [+]>] --> Lima<Lambda [+]>
 is 42 _   [Lit: <Lambda [Fun: lambda~5]>] --> Mike<Lambda [Fun: lambda~5]>
 is 43 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(sum-hood (+ (nbr 1) (mux (mid) 5 7)))"
 is 0 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -2048,6 +2206,7 @@ is 29 _   [Lit: <Lambda [+]>] --> Lima<Lambda [+]>
 is 30 _   [Lit: <Lambda [Fun: lambda~5]>] --> Mike<Lambda [Fun: lambda~5]>
 is 31 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDanalyzed -CDlocalized "(let ((x (nbr (mid)))) (if (> (mid) 3) (any-hood x) 0))"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
@@ -2122,6 +2281,7 @@ is 69 _   [Lit: <Lambda [Fun: lambda~8]>] --> Xray<Lambda [Fun: lambda~8]>
 is 70 _   [Lit: <Lambda [Fun: lambda~9]>] --> Yankee<Lambda [Fun: lambda~9]>
 is 71 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Same as prior test, except one branch includes a function call
 test: $(P2B) -CDanalyzed -CDlocalized "(let ((x (nbr (mid)))) (if (> (mid) 3) (all (def foo () (any-hood x)) (foo)) 0))"
 is 0 _ Amorphous Mediums:
@@ -2153,6 +2313,7 @@ is 25 _   Foxtrot<Field <Scalar>>, Charlie<Boolean> --> [restrict] --> Mike<Fiel
 // Skip localized version, which is equivalent to prior test
 is 71 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(sum-hood (mux (nbr (mid)) 5 7))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
@@ -2181,6 +2342,7 @@ is 23 _   [Lit: <Lambda [+]>] --> India<Lambda [+]>
 is 24 _   [Lit: <Lambda [Fun: lambda~6]>] --> Juliet<Lambda [Fun: lambda~6]>
 is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Test locals
 test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -2208,6 +2370,7 @@ is 21 _   [Lit: <Lambda [max]>] --> Hotel<Lambda [max]>
 is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
 is 23 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
 is 0 _ Function: lambda~7 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -2251,6 +2414,7 @@ is 37 _   [Lit: <Lambda [min]>] --> Papa<Lambda [min]>
 is 38 _   [Lit: <Lambda [Fun: lambda~7]>] --> Quebec<Lambda [Fun: lambda~7]>
 is 39 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ (+ 1 x) (nbr x)))))"
 is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
@@ -2288,54 +2452,62 @@ is 31 _   [Lit: <Lambda [min]>] --> Mike<Lambda [min]>
 is 32 _   [Lit: <Lambda [Fun: lambda~6]>] --> November<Lambda [Fun: lambda~6]>
 is 33 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Test localization cache:
 test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
 test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Multiple exports (turned into a tuple)
 //test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 44 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Test multi-use exports, tuplized exports
 //test: $(P2B) -CDlocalized "(let ((x (nbr (mid))) (y (speed))) (any-hood (+ x x (nbr y) (nbr y))))"
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 44 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Tuple operations within a neighborhood
 test: $(P2B) -CDlocalized "(max-hood (tup (tup (nbr (mid)) 2) 3))"
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // Using fold-hood directly:
 test: $(P2B) -CDlocalized "(fold-hood + 0 (mid))"
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 // How to handle nbr references	within subfunctions?
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (mid)))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
+////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (nbr (mid))))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
-
-
-
+////////////////////////////////////////////////////////////////////////////
 // check pointwise computation allowing raising of compound op to field
 // demonstrate that space, time ops can't be raised to field ops
 // test scalar/vector-1 conversion
 
+////////////////////////////////////////////////////////////////////////////
 // For later:
 // Get "(rep x 3 (elt (tup x 7) 0))" to realize that it's got a constant output of 3
 // test: $(P2B) -CDall "(def addz (a b &optional (c 3)) (+ a b c)) (addz 1 2)"
 
+////////////////////////////////////////////////////////////////////////////
 // test: $(P2B) -CDanalyzed "(def foo (&rest x) (apply + x)) (+ (foo (mid) 3 4) (foo 1 5))" --function-inlining-threshold 0
