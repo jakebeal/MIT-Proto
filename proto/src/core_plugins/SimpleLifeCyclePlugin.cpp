@@ -52,12 +52,12 @@ void SimpleLifeCycle::dump_header(FILE* out) {
 SimpleLifeCycleDevice::SimpleLifeCycleDevice(SimpleLifeCycle* parent,
                                              Device* d) : DeviceLayer(d) {
   this->parent=parent;
-  clone_timer=parent->clone_delay; clone_cmd=false; // start unready to clone
+  clone_time=-1; clone_cmd=false; // start unready to clone
 }
 
 void SimpleLifeCycleDevice::dump_state(FILE* out, int verbosity) {
-  if(verbosity==0) { fprintf(out," %.2f", clone_timer);
-  } else { fprintf(out,"Time to cloning %.2f\n",clone_timer);
+  if(verbosity==0) { fprintf(out," %.2f", clone_time);
+  } else { fprintf(out,"Time to clone %.2f\n",clone_time);
   }
 }
 
@@ -79,11 +79,13 @@ extern Machine * machine;
 
 void SimpleLifeCycleDevice::update() {
   if(clone_cmd) {
-    clone_cmd=false;
-    if(clone_timer>0) { clone_timer -= (machine->startTime() - machine->currentThread().last_time); }
-    if(clone_timer<=0) {
+    if(clone_time<0) { 
+      clone_time = (machine->startTime() + parent->clone_delay); 
+    }
+    if(machine->startTime() >= clone_time) {
+      clone_cmd=false; // reset clone_cmd
+      clone_time=-1;   // reset clone_time
       clone_me();
-      while(clone_timer<=0) {clone_timer+=parent->clone_delay;} // reset timer
     }
   }
 }

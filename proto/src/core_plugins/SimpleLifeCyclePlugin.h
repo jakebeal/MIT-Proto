@@ -34,7 +34,7 @@ class SimpleLifeCycleDevice : public DeviceLayer {
  public:
   SimpleLifeCycle* parent;
   bool clone_cmd;            // request for cloning is active
-  flo clone_timer;           // timer for delay between clonings
+  flo clone_time;           // time (including delay) to trigger clone
   SimpleLifeCycleDevice(SimpleLifeCycle* parent, Device* container);
   void update();
   bool handle_key(KeyEvent* event);
