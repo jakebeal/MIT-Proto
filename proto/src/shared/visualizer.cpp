@@ -115,11 +115,10 @@ bool Visualizer::handle_key(KeyEvent* key) {
       case 'f':
 	is_full_screen = !is_full_screen;
 	if (is_full_screen) { // remember position and then fullscreen
-	  old_left=glutGet(GLUT_WINDOW_X); old_top=glutGet(GLUT_WINDOW_Y); 
-	  old_width=glutGet(GLUT_WINDOW_WIDTH); old_height=glutGet(GLUT_WINDOW_HEIGHT); 
+	  old_width=glutGet(GLUT_WINDOW_WIDTH); 
+     old_height=glutGet(GLUT_WINDOW_HEIGHT); 
 	  glutFullScreen();
 	} else { // restore pre-zoom window parameters
-	  glutPositionWindow(old_left, old_top);
 	  glutReshapeWindow(old_width, old_height);
 	}
 	return true;
