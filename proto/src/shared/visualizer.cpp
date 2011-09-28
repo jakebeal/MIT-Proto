@@ -95,7 +95,7 @@ void Visualizer::resize(int width, int height) {
   // set the rendering area to equal the new window size
   glViewport(0, 0, width, height);
   aspect_ratio = (flo)width/(flo)height;
-  if(!is_full_screen) { this->width=width; this->height=height; }
+  this->width=width; this->height=height;
 
   // patch kludge-connections to un-fixed files
   xscale = width  / (bounds.r-bounds.l);
@@ -115,12 +115,12 @@ bool Visualizer::handle_key(KeyEvent* key) {
       case 'f':
 	is_full_screen = !is_full_screen;
 	if (is_full_screen) { // remember position and then fullscreen
-	  left=glutGet(GLUT_WINDOW_X); top=glutGet(GLUT_WINDOW_Y); 
-	  width=glutGet(GLUT_WINDOW_WIDTH); height=glutGet(GLUT_WINDOW_HEIGHT); 
+	  old_left=glutGet(GLUT_WINDOW_X); old_top=glutGet(GLUT_WINDOW_Y); 
+	  old_width=glutGet(GLUT_WINDOW_WIDTH); old_height=glutGet(GLUT_WINDOW_HEIGHT); 
 	  glutFullScreen();
 	} else { // restore pre-zoom window parameters
-	  glutPositionWindow(left, top);
-	  glutReshapeWindow(width, height);
+	  glutPositionWindow(old_left, old_top);
+	  glutReshapeWindow(old_width, old_height);
 	}
 	return true;
       case 'z': reset_view(); return true;

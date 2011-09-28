@@ -29,9 +29,12 @@ class Visualizer : public EventConsumer {
   int window; // identifier for window
   flo aspect_ratio;
   Rect bounds; // area expected to be filled by computer
+  int old_left,old_top; // saved screen location of window
+  int old_width,old_height; // saved pixel size of window
   int left,top; // screen location of window
  public:
   int width,height; // pixel size of window
+
   
  public:
   Visualizer(Args* args);
