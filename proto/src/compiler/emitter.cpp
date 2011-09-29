@@ -1451,10 +1451,7 @@ ProtoKernelEmitter::fold_primitive_instruction(OperatorInstance *oi)
   Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
 
   if (oi->output->range->isA("ProtoTuple"))
-    ierror("Fold can't handle tuples yet!");
-  for (size_t i = 0; i < oi->inputs.size(); i++)
-    if (oi->inputs[i]->range->isA("ProtoTuple"))
-      ierror("Fold can't handle tuples yet!");
+    ierror("Fold can't handle output tuples yet!");
 
   OPCODE opcode = (*fold_ops.find(p->name)).second.first;
   CompoundOp *folder = fold_operand_cop(oi, 0);
