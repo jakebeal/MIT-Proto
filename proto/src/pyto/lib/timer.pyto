@@ -1,2 +1,0 @@
-def timer ():
-  feedback(t) init { t = 0 } update { t = t + dt }

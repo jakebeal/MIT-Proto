@@ -2,14 +2,15 @@
 ;; leader:   (flip 0.1 'follower 'leader)
 ;; follower: (if (< leader-grad threshold) (flip 0.1 'leader 'follower))
 
-def elect ():
-    feedback(s) init {
+function elect () {
+    rep s {
         flip(0.1, 'leader, 'follower)
     } update {
-        mux(s == 'leader, \
-            flip(0.001, 'follower, 'leader), \
-	    mux(gradient(s == 'leader) > 400, \
-		flip(0.001, 'follower, 'leader), \
-		'follower))
+        mux {
+            flip(0.001, 'follower, 'leader)
+        } and {
+	    flip(0.001, 'follower, 'leader) \ 'follower ? gradient(s == 'leader) > 400;
+        } select(s == 'leader);
     }
     s == 'leader
+}

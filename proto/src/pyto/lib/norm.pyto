@@ -1,2 +1,0 @@
-def norm (dlen, vec):
-    dlen / vlen(vec) * vec

@@ -17,9 +17,9 @@ The key insight (surely unoriginal) that will allow our
 transformation, is that assignment can be mapped onto let.  So, for
 example, the assignments:
 
-  a = 3 + x
-  b = a*(a+1)
-  c = b - sqrt(a)
+  a = 3 + x;
+  b = a*(a+1);
+  c = b - sqrt(a);
 
 can be rewritten in Proto as:
 
@@ -30,8 +30,8 @@ can be rewritten in Proto as:
         )))
 
 This can work for re-assignment too, using shadowing:
-  a = 3 + x
-  a = a + 1
+  a = 3 + x;
+  a = a + 1;
   
   can be rewritten as:
   (let ((a (+ 3 x)))
@@ -51,16 +51,44 @@ On this basis, we can build "Pyto" by doing the following:
 - other pointwise ops go: (op arg arg ...) -> op(arg,arg,...)
 - neighborhood operations are trated just like pointwise
 - (def name (arg arg ...) body) --> 
-  def name (arg, arg, ...):
-      body
-- (letfed ((var1 init1 update1) (var2 init2 update2) ...) body) -->
-  feedback(var1,var2,...) init {
-      var1 = init1
-      var2 = init2
-  } update {
-      var1 = update1
-      var2 = update2
+  function name (arg, arg, ...) {
+    body
   }
+- (letfed ((var1 init1 update1) (var2 init2 update2) ...) body) -->
+  feedback var1, var2, ... {
+      var1 = init1;
+      var2 = init2;
+  } update {
+      var1 = update1;
+      var2 = update2;
+  };
 - (if test expr1 expr2) -->
-  if(test) { expr1 } else { expr2 }
+  if(test) { expr1; } else { expr2; }
+  also the ternary: (test ? expr1 : expr2)
+- (mux test expr1 expr2) -->
+  mux { expr1; } and { expr2; } select(test);
+  also a ternary: (expr1 \ expr2 ? test)
 - the last statement in a block is always the return value
+- Tuple elements can be accessed with []
+  (elt mytuple 0) --> 
+  mytuple[0] 
+  also the old way: elt(mytuple,0)
+- Tuples can be constructed with {}
+  let((mytuple (tup 1 2 3))) -->
+  mytuple = {1, 2, 3};
+  also the old way: mytuple = tuple(1,2,3);
+
+
+We also need to change some things about symbols, since lisproto
+allows all sorts of things in symbols, but cpproto needs to
+reserve most of these symbols for infix notation.
+To that end, we will do the following:
+1) In cpproto, only alphanumeric and "_" are allowed in symbols.
+2) If a symbol starts with "$", then everything allowed by lisproto
+   until the next whitespace is taken as part of the symbol.
+3) cpproto symbols with "_" are implicitly converted to "-" when
+   referencing lisproto code.  A warning is emitted for this.
+4) The core library will have "_" as well as "-" versions of core ops.
+5) lisproto will have "." removed from legitimate symbol characters.
+
+The *-hood+ ops (e.g. min-hood+) still need a better name, though.

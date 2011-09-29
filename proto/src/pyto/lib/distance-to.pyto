@@ -1,3 +1,0 @@
-def distance-to (src):
-    gradient(src)
-

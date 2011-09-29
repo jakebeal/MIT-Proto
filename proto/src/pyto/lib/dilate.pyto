@@ -1,2 +1,0 @@
-def dilate (src, n):
-    gradient(src) <= n
