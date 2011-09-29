@@ -2460,15 +2460,102 @@ test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (ra
 
 ////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
-test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
+// test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
+// This should throw a proper compiler error can't have branch inside the nbrhood
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
+// Local variables and a common-subexpression export:
+test: $(P2B) -CDlocalized "(any-hood (muxor (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
+is 0 _ Function: lambda~8 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Boolean>] called 1 times
+is 1 _  Amorphous Mediums:
+is 2 _    [Medium: Alfa = root]
+is 3 _  Fields:
+is 4 _    Bravo: Alfa --> <Boolean>
+is 5 _    Charlie: Alfa --> <Boolean>
+is 6 _	  Delta: Alfa --> <Scalar 0>
+is 7 _    Echo: Alfa --> <Scalar 1>
+is 8 _    Foxtrot: Alfa --> <Boolean> OUTPUT
+is 9 _    Golf: Alfa --> <2-Vector<Scalar>,<Scalar>>
+is 10 _    Hotel: Alfa --> <Scalar>
+is 11 _    India: Alfa --> <Scalar 0>
+is 12 _    Juliet: Alfa --> <Scalar>
+is 13 _    Kilo: Alfa --> <Scalar 1>
+is 14 _  Operator Instances:
+is 15 _    Hotel<Scalar>, Delta<Scalar 0> --> [=] --> Bravo<Boolean>
+is 16 _    Juliet<Scalar>, Echo<Scalar 1> --> [=] --> Charlie<Boolean>
+is 17 _    [Lit: <Scalar 0>] --> Delta<Scalar 0>
+is 18 _    [Lit: <Scalar 1>] --> Echo<Scalar 1>
+is 19 _    Bravo<Boolean>, Bravo<Boolean>, Charlie<Boolean> --> [mux] --> Foxtrot<Boolean> OUTPUT
+is 20 _    [Parameter 0: tuparg~9] --> Golf<2-Vector<Scalar>,<Scalar>>
+is 21 _    Golf<2-Vector<Scalar>,<Scalar>>, India<Scalar 0> --> [elt] --> Hotel<Scalar>
+is 22 _    [Lit: <Scalar 0>] --> India<Scalar 0>
+is 23 _    Golf<2-Vector<Scalar>,<Scalar>>, Kilo<Scalar 1> --> [elt] --> Juliet<Scalar>
+is 24 _    [Lit: <Scalar 1>] --> Kilo<Scalar 1>
+is 25 _ Amorphous Mediums:
+is 26 _  [Medium: Lima = root]
+is 27 _ Fields:
+is 28 _   Mike: Lima --> <Scalar>
+is 29 _   November: Lima --> <Scalar>
+is 30 _   Oscar: Lima --> <2-Vector<Scalar>,<Scalar>>
+is 31 _   Papa: Lima --> <Boolean> OUTPUT
+is 32 _   Quebec: Lima --> <Lambda [max]>
+is 33 _   Romeo: Lima --> <Lambda [Fun: lambda~8]>
+is 34 _ Operator Instances:
+is 35 _   [mid] --> Mike<Scalar>
+is 36 _   [mid] --> November<Scalar>
+is 37 _	  Mike<Scalar>, November<Scalar> --> [tup] --> Oscar<2-Vector<Scalar>,<Scalar>>
+is 38 _   Quebec<Lambda [max]>, Romeo<Lambda [Fun: lambda~8]>, Oscar<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Papa<Boolean> OUTPUT
+is 39 _   [Lit: <Lambda [max]>] --> Quebec<Lambda [max]>
+is 40 _   [Lit: <Lambda [Fun: lambda~8]>] --> Romeo<Lambda [Fun: lambda~8]>
+is 41 _ Stopping before emission
+
+////////////////////////////////////////////////////////////////////////////
 // Multiple exports (turned into a tuple)
-//test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
-//is 0 _ TEST IS CURRENTLY FAILING
-//is 44 _ Stopping before emission
+test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
+is 0 _ Function: lambda~7 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Scalar>] called 1 times
+is 1 _  Amorphous Mediums:
+is 2 _    [Medium: Alfa = root]
+is 3 _  Fields:
+is 4 _    Bravo: Alfa --> <Scalar> OUTPUT
+is 5 _     Charlie: Alfa --> <Scalar>
+is 6 _     Delta: Alfa --> <Scalar 3>
+is 7 _     Echo: Alfa --> <2-Vector<Scalar>,<Scalar>>
+is 8 _     Foxtrot: Alfa --> <Scalar>
+is 9 _     Golf: Alfa --> <Scalar 0>
+is 10 _     Hotel: Alfa --> <Scalar>
+is 11 _     India: Alfa --> <Scalar 1>
+is 12 _   Operator Instances:
+is 13 _     Charlie<Scalar>, Foxtrot<Scalar> --> [+] --> Bravo<Scalar> OUTPUT
+is 14 _     Delta<Scalar 3>, Hotel<Scalar> --> [*] --> Charlie<Scalar>
+is 15 _     [Lit: <Scalar 3>] --> Delta<Scalar 3>
+is 16 _     [Parameter 0: tuparg~8] --> Echo<2-Vector<Scalar>,<Scalar>>
+is 17 _     Echo<2-Vector<Scalar>,<Scalar>>, Golf<Scalar 0> --> [elt] --> Foxtrot<Scalar>
+is 18 _     [Lit: <Scalar 0>] --> Golf<Scalar 0>
+is 19 _     Echo<2-Vector<Scalar>,<Scalar>>, India<Scalar 1> --> [elt] --> Hotel<Scalar>
+is 20 _     [Lit: <Scalar 1>] --> India<Scalar 1>
+is 21 _ Amorphous Mediums:
+is 22 _   [Medium: Juliet = root]
+is 23 _ Fields:
+is 24 _   Kilo: Juliet --> <Scalar>
+is 25 _   Lima: Juliet --> <Scalar>
+is 26 _   Mike: Juliet --> <Scalar>
+is 27 _   November: Juliet --> <Scalar 2>
+is 28 _   Oscar: Juliet --> <2-Vector<Scalar>,<Scalar>>
+is 29 _   Papa: Juliet --> <Scalar> OUTPUT
+is 30 _   Quebec: Juliet --> <Lambda [min]>
+is 31 _   Romeo: Juliet --> <Lambda [Fun: lambda~7]>
+is 32 _ Operator Instances:
+is 33 _  [mid] --> Kilo<Scalar>
+is 34 _   Mike<Scalar>, November<Scalar 2> --> [-] --> Lima<Scalar>
+is 35 _   [mid] --> Mike<Scalar>
+is 36 _   [Lit: <Scalar 2>] --> November<Scalar 2>
+is 37 _   Lima<Scalar>, Kilo<Scalar> --> [tup] --> Oscar<2-Vector<Scalar>,<Scalar>>
+is 38 _   Quebec<Lambda [min]>, Romeo<Lambda [Fun: lambda~7]>, Oscar<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Papa<Scalar> OUTPUT
+is 39 _   [Lit: <Lambda [min]>] --> Quebec<Lambda [min]>
+is 40 _   [Lit: <Lambda [Fun: lambda~7]>] --> Romeo<Lambda [Fun: lambda~7]>
+is 41 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test multi-use exports, tuplized exports
