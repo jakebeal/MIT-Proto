@@ -24,6 +24,8 @@ using namespace std;
 
 #define DEBUG_FUNCTION(...) V5<<"In function " << __VA_ARGS__ << endl;
 
+extern SE_Symbol *make_gensym(const string &root); // From interpreter
+
 /*****************************************************************************
  *  TYPE CONCRETENESS                                                        *
  *****************************************************************************/
@@ -1486,6 +1488,7 @@ class DeadCodeEliminator : public IRPropagator {
   }
   
   void act(Field* f) {
+	V5 << "Dead Code Elimilator examining field " << ce2s(f) << endl;
     if(!kill_f.count(f)) return; // only check the dead
     bool live=false; string reason = "";
     if(f->is_output()) { live=true; reason="output";} // output is live
@@ -1505,6 +1508,7 @@ class DeadCodeEliminator : public IRPropagator {
   }
   
   void act(AM* am) {
+	V5 << "Dead Code Eliminator examining AM " <<ce2s(am) << endl;
     if(!kill_a.count(am)) return; // only check the dead
     bool live=false;
     for_set(AM*,am->children,i)
@@ -1610,10 +1614,97 @@ private:
   CEmap(CompoundOp *, CompoundOp *) localization_cache;
   Operator *localize_operator(Operator *op);
   CompoundOp *localize_compound_op(CompoundOp *cop);
+  CompoundOp *tuplize_inputs(CompoundOp *cop);
+  CompoundOp *add_detuplization(CompoundOp *cop);
   CompoundOp *make_nbr_subroutine(OperatorInstance *oi, Field **exportf);
   Operator *nbr_op_to_folder(OperatorInstance *oi);
   void restrict_elements(OIset* elts,vector<Field *>* exports, AM* am,OI* summary_op);
 };
+
+/**
+ * Turn the inputs of this compound op into a tuple
+ * This is done when we change the output to a tuple and need the inputs to match,
+ *   since the function is used recursively
+ */
+CompoundOp *
+HoodToFolder::tuplize_inputs(CompoundOp *cop)
+{
+	Signature* sig = cop->signature;
+	V3 << "Signature before tuplize " << ce2s(sig) << endl;
+	ProtoTuple* ret = new ProtoTuple(!sig->rest_input);
+	for(int i=0; i<sig->n_fixed(); i++) {
+	   ProtoType* elt = ProtoType::clone(sig->nth_type(i));
+	   ret->add(elt);
+	}
+	 if(sig->rest_input!=NULL) // rest is unbounded end to tuple
+	   ret->add(sig->rest_input);
+
+    V3 << "Tuplize inputs tup ret " << ce2s(ret) << endl;
+
+	sig->required_inputs.clear();
+	sig->optional_inputs.clear();
+	sig->required_inputs.push_back(ret);
+	sig->rest_input = NULL;
+
+	V3 << "Tuplize inputs new Signature " << ce2s(sig) << endl;
+	return cop;
+}
+
+/**
+ * Detuplization:
+ *   Only called when the input is a tuple
+ *    Create a new parameter for the tuple input
+ *    Replace all Parameters with an elt
+ *      link the input to the elt to the tuple parameter
+ *      link anything that had the original parameter as an input to the output of the elt instead
+ */
+CompoundOp *
+HoodToFolder::add_detuplization(CompoundOp *cop)
+{
+	V3 << "Sig in add_detup " << ce2s(cop->signature) << endl;
+
+	Field* tupParam = NULL;
+
+	CEmap(OI*,OI*) paramMap;
+	OIset ois;
+	cop->body->all_ois(&ois);
+	int eltIndex = 0;
+
+	for_set(OI *, ois, i) {
+	  OI *oi = *i;
+	  V4 << "Examining operator " << ce2s(oi->op) << endl;
+	  if (oi->op->isA("Parameter")) {
+		  if (tupParam == NULL) {
+			tupParam = root->add_parameter(cop,make_gensym("tuparg")->name,eltIndex,cop->body,oi);
+			tupParam->range = new ProtoTuple();
+			V3 << "Adding new tup Parameter " << ce2s(tupParam) << endl;
+		  }
+		  OI* newElt = new OperatorInstance(cop, Env::core_op("elt"), cop->body);
+		  paramMap[oi] = newElt;
+		  newElt->output->range = oi->output->range;
+		  ProtoScalar* si = new ProtoScalar(eltIndex);
+		  Field* sField = root->add_literal(si, oi->domain(), oi);
+		  eltIndex++;
+		  newElt->add_input(tupParam);
+		  newElt->add_input(sField);
+		  V3 << "Adding new Elt " << ce2s(newElt) << endl;
+	  }
+	}
+
+	for_set(OI *, ois, i) {
+	   OI *oi = *i;
+	 
+	   for (int j=0; j<oi->inputs.size(); ++j) {
+		  Field* iField = oi->inputs[j];
+		  OI* mOi = paramMap[iField->producer];
+		  if (mOi != NULL) {
+			  V5 << "Relocating input " << j << " for " << ce2s(oi) << " to " << ce2s(mOi) << endl;
+			  root->relocate_source(oi, j, mOi->output);
+		  }
+	   }
+	}
+
+}
 
 void
 HoodToFolder::act(OperatorInstance *oi)
@@ -1689,10 +1780,10 @@ HoodToFolder::localize_compound_op(CompoundOp *cop)
   V5 << "Transforming op to local\n";
   CompoundOp *new_cop = new CompoundOp(cop);
   OIset ois;
-  new_cop->body->all_ois(&ois);
-  for_set(OI *, ois, i) {
-    OI *oi = *i;
-    if (oi->op == Env::core_op("nbr")) {
+   new_cop->body->all_ois(&ois);
+   for_set(OI *, ois, i) {
+     OI *oi = *i;
+     if (oi->op == Env::core_op("nbr")) {
       root->relocate_consumers(oi->output, oi->inputs[0]);
     } else if (oi->op == Env::core_op("local")) {
       ierror("No locals should be found in an extracted hood function");
@@ -1820,6 +1911,7 @@ HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
         { elts.insert(f->producer); q.insert(f->producer); }
     }
   }
+
   V3 << "Found " << elts.size() << " elements" << endl;
   for_set(OI*,elts,e) { V5 << (*e)->to_str() << endl; }
   V3 << "Found " << exports.size() << " exports" << endl;
@@ -1846,7 +1938,6 @@ HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
     = root->derive_op(&elts, oi->domain(), &exports, oi->inputs[0]);
   V5 << "Localizing new compound operator " << ce2s(cop) << endl;
   cop = localize_compound_op(cop);
-  //cop = tuplize_inputs(cop);
 
   // Construct input structure.
   if (exports.size() == 0) {
@@ -1865,7 +1956,12 @@ HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
     for (size_t i = 0; i < exports.size(); i++)
       tup->add_input(exports[i]);
     *exportf = tup->output;
+    tuplize_inputs(cop);
+    add_detuplization(cop);
+    V5 << "Cop signature after tuplize " << ce2s(cop->signature) << endl;
+    V5 << "Cop export after tuplize " << ce2s(tup->output) << endl;
   }
+
   vector<Field *> in;
   in.push_back(*exportf);
 
