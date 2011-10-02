@@ -190,8 +190,8 @@ void DebugDevice::dump_state(FILE* out, int verbosity) {
     if(dumpmask & 0x02) fprintf(out," %.2f",m->sensors[1]);
     if(dumpmask & 0x04) fprintf(out," %.2f",m->sensors[2]);
     if(dumpmask & 0x08) fprintf(out," %.2f",m->sensors[3]);
-    if(dumpmask & 0x10) fprintf(out," %.2f",m->sensors[4]);                                  
-    if(dumpmask & 0x20) fprintf(out," %.3f",m->actuators[R_LED]);                         
+    if(dumpmask & 0x10) fprintf(out," %.2f",m->sensors[4]);
+    if(dumpmask & 0x20) fprintf(out," %.3f",m->actuators[R_LED]);
     if(dumpmask & 0x40) fprintf(out," %.3f",m->actuators[G_LED]);
     if(dumpmask & 0x80) fprintf(out," %.3f",m->actuators[B_LED]);
     // probes can't be output gracefully since we don't know what they contain

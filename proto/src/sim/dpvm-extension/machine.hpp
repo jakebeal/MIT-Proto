@@ -14,6 +14,8 @@ enum Sensor {
 	TEMPERATURE,
 	USER_A,
 	USER_B,
+        USER_C,
+        USER_D,
 	N_SENSORS
 };
 
