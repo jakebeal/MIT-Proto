@@ -169,16 +169,20 @@ void DebugLayer::set_probe (Data val, uint8_t index) {
   if(index >= MAX_PROBES) return; // sanity check index
    ((DebugDevice*)device->layers[id])->probes[index] = val;
 }
-void DebugLayer::set_r_led (Number val) { machine->actuators[R_LED] = val; }
-void DebugLayer::set_g_led (Number val) { machine->actuators[G_LED] = val; }
-void DebugLayer::set_b_led (Number val) { machine->actuators[B_LED] = val; }
-Number DebugLayer::read_sensor (uint8_t n) {
-  return (n<N_SENSORS) ? machine->sensors[n] : NAN;
-}
+void DebugLayer::set_r_led (Number val) 
+{ ((DebugDevice*)device->layers[id])->actuators[R_LED] = val; }
+void DebugLayer::set_g_led (Number val)
+{ ((DebugDevice*)device->layers[id])->actuators[G_LED] = val; }
+void DebugLayer::set_b_led (Number val)
+{ ((DebugDevice*)device->layers[id])->actuators[B_LED] = val; }
+Number DebugLayer::read_sensor (uint8_t n)
+{ return (n<N_SENSORS) ? ((DebugDevice*)device->layers[id])->sensors[USER_A+n-1] : NAN;}
 
 // per-device interface, used primarily for visualization
 DebugDevice::DebugDevice(DebugLayer* parent, Device* d) : DeviceLayer(d) {
   for(int i=0;i<MAX_PROBES;i++) probes[i] = 0; // probes start clear
+  for(int i=0;i<N_ACTUATORS;i++) actuators[i] = 0; // actuators start clear
+  for(int i=0;i<N_SENSORS;i++) sensors[i] = 0; // sensors start clear
   this->parent = parent;
 }
 
@@ -187,19 +191,19 @@ void DebugDevice::dump_state(FILE* out, int verbosity) {
   if(verbosity==0) {
     uint32_t dumpmask = parent->dumpmask; // shorten the name
     // there was another sensor here, but it's been removed
-    if(dumpmask & 0x02) fprintf(out," %.2f",m->sensors[1]);
-    if(dumpmask & 0x04) fprintf(out," %.2f",m->sensors[2]);
-    if(dumpmask & 0x08) fprintf(out," %.2f",m->sensors[3]);
-    if(dumpmask & 0x10) fprintf(out," %.2f",m->sensors[4]);
-    if(dumpmask & 0x20) fprintf(out," %.3f",m->actuators[R_LED]);
-    if(dumpmask & 0x40) fprintf(out," %.3f",m->actuators[G_LED]);
-    if(dumpmask & 0x80) fprintf(out," %.3f",m->actuators[B_LED]);
+    if(dumpmask & 0x02) fprintf(out," %.2f",sensors[USER_A]);
+    if(dumpmask & 0x04) fprintf(out," %.2f",sensors[USER_B]);
+    if(dumpmask & 0x08) fprintf(out," %.2f",sensors[USER_C]);
+    if(dumpmask & 0x10) fprintf(out," %.2f",sensors[USER_D]);
+    if(dumpmask & 0x20) fprintf(out," %.3f",actuators[R_LED]);
+    if(dumpmask & 0x40) fprintf(out," %.3f",actuators[G_LED]);
+    if(dumpmask & 0x80) fprintf(out," %.3f",actuators[B_LED]);
     // probes can't be output gracefully since we don't know what they contain
   } else {
     fprintf(out,"Sensors: User-1=%.2f User-2=%.2f User-3=%.2f User-4=%.2f\n",
-            m->sensors[1], m->sensors[2], m->sensors[3], m->sensors[4]);
-    fprintf(out,"LEDs: R=%.3f G=%.3f B=%.3f\n", m->actuators[R_LED],
-            m->actuators[G_LED], m->actuators[B_LED]);
+            sensors[USER_A], sensors[USER_B], sensors[USER_C], sensors[USER_D]);
+    fprintf(out,"LEDs: R=%.3f G=%.3f B=%.3f\n", actuators[R_LED],
+            actuators[G_LED], actuators[B_LED]);
     fprintf(out,"Probes:");
     char buf[1000];
     for(int i=0;i<MAX_PROBES;i++) {
@@ -213,13 +217,13 @@ bool DebugDevice::handle_key(KeyEvent* key) {
   if(key->normal && !key->ctrl) {
     switch(key->key) {
     case 't': 
-      container->vm->sensors[1] = container->vm->sensors[1] ? 0:1; return true;
+      sensors[USER_A] = sensors[USER_A] ? 0:1; return true;
     case 'y': 
-      container->vm->sensors[2] = container->vm->sensors[2] ? 0:1; return true;
+      sensors[USER_B] = sensors[USER_B] ? 0:1; return true;
     case 'u': 
-      container->vm->sensors[3] = container->vm->sensors[3] ? 0:1; return true;
+      sensors[USER_C] = sensors[USER_C] ? 0:1; return true;
     case 'o':
-      container->vm->sensors[4] = container->vm->sensors[4] ? 0:1; return true;
+      sensors[USER_D] = sensors[USER_D] ? 0:1; return true;
     }
   }
   return false;
@@ -233,13 +237,12 @@ void DebugDevice::preupdate() {
 #define N_USER_SENSORS 4
 void DebugDevice::visualize() {
 #ifdef WANT_GLUT
-  Machine* vm = container->vm;
   static Color* user[N_USER_SENSORS] = {DebugLayer::USER_SENSOR_1, DebugLayer::USER_SENSOR_2,
                            DebugLayer::USER_SENSOR_3, DebugLayer::USER_SENSOR_4}; 
   flo rad = container->body->display_radius();
   // draw user sensors
   for(int i=0;i<N_USER_SENSORS;i++) {
-    if(vm->sensors[i+1] > 0) { 
+    if(sensors[USER_A+i] > 0) { 
       palette->use_color(user[i]);
       draw_disk(rad*SENSOR_RADIUS_FACTOR);
     }
@@ -248,8 +251,8 @@ void DebugDevice::visualize() {
   if (parent->is_show_leds) {
     static Color* led_color[3] = 
       {DebugLayer::RED_LED, DebugLayer::GREEN_LED, DebugLayer::BLUE_LED};
-    flo led[3] = { vm->actuators[R_LED], vm->actuators[G_LED],
-		   vm->actuators[B_LED] };
+    flo led[3] = { actuators[R_LED], actuators[G_LED],
+		   actuators[B_LED] };
     glPushMatrix();
     if (parent->is_led_rgb) {
       if (led[0] || led[1] || led[2]) {

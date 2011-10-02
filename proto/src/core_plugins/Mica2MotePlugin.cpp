@@ -95,9 +95,12 @@ void MoteIO::set_speak (Number period) {
 
 extern Machine * machine;
 
-Number MoteIO::read_light_sensor() { return machine->sensors[LIGHT]; }
-Number MoteIO::read_microphone () { return machine->sensors[SOUND]; }
-Number MoteIO::read_temp () { return machine->sensors[TEMPERATURE]; }
+Number MoteIO::read_light_sensor()
+{ return ((DeviceMoteIO*)device->layers[id])->light; }
+Number MoteIO::read_microphone ()
+{ return ((DeviceMoteIO*)device->layers[id])->sound; }
+Number MoteIO::read_temp ()
+{ return ((DeviceMoteIO*)device->layers[id])->temperature; }
 Number MoteIO::read_short () { return 0; }
 Number MoteIO::read_button (uint8_t n) {
   return ((DeviceMoteIO*)device->layers[id])->button;
@@ -110,11 +113,10 @@ Number MoteIO::read_slider (uint8_t ikey, uint8_t dkey, Number init,
 void DeviceMoteIO::dump_state(FILE* out, int verbosity) {
   Machine* m = container->vm;
   if(verbosity==0) { 
-    fprintf(out," %.2f %.2f %d", m->sensors[SOUND], m->sensors[TEMPERATURE], 
-            button);
+    fprintf(out," %.2f %.2f %d", sound, temperature, button);
   } else { 
-    fprintf(out,"Mic = %.2f, Temp = %.2f, Button = %s\n",m->sensors[SOUND], 
-            m->sensors[TEMPERATURE], bool2str(button));
+    fprintf(out,"Mic = %.2f, Temp = %.2f, Button = %s\n",sound,
+            temperature, bool2str(button));
   }
 }
 

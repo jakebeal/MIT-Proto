@@ -47,6 +47,7 @@ class MoteIO : public Layer, public HardwarePatch {
 class DeviceMoteIO : public DeviceLayer {
   MoteIO* parent;
  public:
+  Number light, sound, temperature;
   bool button;
   DeviceMoteIO(MoteIO* parent, Device* d) : DeviceLayer(d)
     { this->parent=parent; button=false; }

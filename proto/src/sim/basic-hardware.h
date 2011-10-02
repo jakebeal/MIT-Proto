@@ -59,10 +59,28 @@ public:
 
 #define MAX_PROBES 3
 
+enum Actuator {
+	R_LED,
+	G_LED,
+	B_LED,
+	N_ACTUATORS
+};
+
+enum Sensor {
+	USER_A,
+	USER_B,
+        USER_C,
+        USER_D,
+	N_SENSORS
+};
+
 class DebugDevice : public DeviceLayer {
   DebugLayer* parent;
 public:
   Data probes[MAX_PROBES];          // debugging probes
+  Number actuators[N_ACTUATORS];
+  Number sensors[N_SENSORS];
+  
   DebugDevice(DebugLayer* parent, Device* container);
   void preupdate();
   void visualize();
