@@ -115,9 +115,9 @@ void Device::dump_state(FILE* out, int verbosity) {
     for(int i=0;i<vm->thisMachine().imports.size();i++) {
       post_data_to(buf,vm->thisMachine().imports[i]); fprintf(out,"%s ",buf);
     }
-    fprintf(out,"\nNeighbor Values:\n"); // then neighbor data
-    for(int i=0;i<vm->hood.size();i++) {
-      Neighbour const & nbr = vm->hood[i];
+    fprintf(out,"\nNeighbor Values: (%d neighbors) \n",(int)vm->hood.size()); // then neighbor data
+    for(NeighbourHood::iterator i=vm->hood.begin(); i != vm->hood.end(); i++) {
+      Neighbour const & nbr = *i;
       fprintf(out,
               "Neighbor %4d [X=%.2f, Y=%.2f, Z=%.2f, Range=%.2f]: ",
               nbr.id, nbr.x, nbr.y, nbr.z,
