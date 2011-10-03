@@ -49,7 +49,7 @@ class DeviceMoteIO : public DeviceLayer {
  public:
   Number light, sound, temperature;
   bool button;
-  DeviceMoteIO(MoteIO* parent, Device* d) : DeviceLayer(d)
+  DeviceMoteIO(MoteIO* parent, Device* d) : DeviceLayer(d), light(0), sound(0), temperature(0)
     { this->parent=parent; button=false; }
   void visualize(Device* d);
   bool handle_key(KeyEvent* event);
