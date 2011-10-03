@@ -19,6 +19,7 @@ using namespace std;
 #define D_HEXGRID "hexgrid"
 #define D_FIXEDPT "fixedpt"
 #define D_CYLINDER "cylinder"
+#define D_OVOID "ovoid"
 #define D_TORUS "torus"
 
 /*************** Distribution Code ***************/
@@ -135,12 +136,28 @@ bool HexGrid::next_location(METERS *loc) {
 }
 
 
-Cylinder::Cylinder(int n, Rect* volume) : Distribution(n,volume) {r = height/2;}
+Cylinder::Cylinder(int n, Rect* volume) : Distribution(n,volume) {
+  r = min(width, height) / 2;
+}
 bool Cylinder::next_location(METERS *loc) {
   loc[0] = urnd(volume->l,volume->r);
   flo theta = urnd(0, 2 * 3.14159);
   loc[1] = r * sin(theta);
   loc[2] = r * cos(theta);
+  return true;
+}
+
+Ovoid::Ovoid(int n, Rect* volume) : Distribution(n,volume) {}
+bool Ovoid::next_location(METERS *loc) {
+  loc[0] = urnd(volume->l,volume->r);
+  loc[1] = urnd(volume->b,volume->t);
+  loc[2] = (volume->dimensions()==3) ? 
+    (urnd(((Rect3*)volume)->f,((Rect3*)volume)->c)) : 0;
+  
+  METERS sumsq = 4*loc[0]*loc[0]/width/width + 4*loc[1]*loc[1]/height/height;
+  if(volume->dimensions()==3) sumsq += 4*loc[2]*loc[2]/depth/depth;
+  if(sumsq > 1) next_location(loc);
+
   return true;
 }
 
@@ -182,6 +199,8 @@ void* DistributionsPlugin::get_sim_plugin(string type, string name, Args* args,
       return new FixedPoint(args,n,cpu->volume);
     if(name==D_CYLINDER)
       return new Cylinder(n,cpu->volume);
+    if(name==D_OVOID)
+      return new Ovoid(n,cpu->volume);
     if(name==D_TORUS)
       return new Torus(args,n,cpu->volume);
   } 
@@ -196,6 +215,7 @@ string DistributionsPlugin::inventory() {
   s += registry_entry(DISTRIBUTION_PLUGIN,D_HEXGRID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_FIXEDPT,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_CYLINDER,DLL_NAME);
+  s += registry_entry(DISTRIBUTION_PLUGIN,D_OVOID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_TORUS,DLL_NAME);
   return s;
 }

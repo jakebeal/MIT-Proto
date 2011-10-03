@@ -62,6 +62,12 @@ public:
   bool next_location(METERS *loc);
 };
 
+class Ovoid : public Distribution {
+public:
+  Ovoid(int n, Rect* volume);
+  bool next_location(METERS *loc);
+};
+
 class Torus : public Distribution {
 public:
   METERS r, r_inner;
