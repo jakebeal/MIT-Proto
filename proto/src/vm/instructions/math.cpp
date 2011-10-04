@@ -15,7 +15,7 @@
 #include <random.hpp>
 #include <machine.hpp>
 #include <instructions.hpp>
-#include <stdio.h>
+#include <cmath>
 
 namespace {
 	
