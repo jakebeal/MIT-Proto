@@ -34,7 +34,29 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(* 0
 is_nan 1 3 nan
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod 37 6)"
 = 1 3 1
+
+// Comparisons
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(= (inf) (+ 1 (inf))"
+= 1 3 1
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(= (/ 0 0) (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(< (/ 0 0) (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(<= (/ 0 0) (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(> (/ 0 0) (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(>= (/ 0 0) (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(>= (inf) (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(>= (/ 0 0) (inf))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(< 1 (/ 0 0))"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(< (/ 0 0) 1)"
+= 1 3 0
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(< (* -1 (inf)) (inf))"
 = 1 3 1
 
 // Vector arithmetic

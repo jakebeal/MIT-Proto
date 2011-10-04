@@ -15,6 +15,7 @@
 #include <random.hpp>
 #include <machine.hpp>
 #include <instructions.hpp>
+#include <stdio.h>
 
 namespace {
 	
@@ -27,10 +28,12 @@ namespace {
 		return d.asTuple();
 	}
 	
-	int compare(Data const & a, Data const & b) {
+	float compare(Data const & a, Data const & b) {
 		if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
 			Number aa = a.asNumber();
 			Number bb = b.asNumber();
+         if (isnan(aa) || isnan(bb)) // NaN
+            return NAN;
 			return aa == bb ? 0 : aa < bb ? -1 : 1;
 		} else {
 			Tuple aa = ensureTuple(a);
@@ -46,7 +49,7 @@ namespace {
 		}
 	}
 	
-	int compare(Machine & machine) {
+	float compare(Machine & machine) {
 		Data b = machine.stack.pop();
 		Data a = machine.stack.pop();
 		return compare(a, b);
@@ -94,7 +97,11 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void LT(Machine & machine){
-		machine.stack.push(compare(machine) == -1 ? 1 : 0);
+      float c = compare(machine);
+      if (isnan(c))
+         machine.stack.push(0);
+      else
+         machine.stack.push(c == -1 ? 1 : 0);
 	}
 	
 	/// Check if a number or vector is (lexicographically) less than or equal to another one.
@@ -106,7 +113,11 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void LTE(Machine & machine){
-		machine.stack.push(compare(machine) != 1 ? 1 : 0);
+      float c = compare(machine);
+      if (isnan(c))
+         machine.stack.push(0);
+      else
+         machine.stack.push(c != 1 ? 1 : 0);
 	}
 	
 	/// Check if a number or vector is (lexicographically) greater than another one.
@@ -118,7 +129,11 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void GT(Machine & machine){
-		machine.stack.push(compare(machine) == 1 ? 1 : 0);
+      float c = compare(machine);
+      if (isnan(c))
+         machine.stack.push(0);
+      else
+         machine.stack.push(c == 1 ? 1 : 0);
 	}
 	
 	/// Check if a number or vector is (lexicographically) greater than or equal to another one.
@@ -130,7 +145,11 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void GTE(Machine & machine){
-		machine.stack.push(compare(machine) != -1 ? 1 : 0);
+      float c = compare(machine);
+      if (isnan(c))
+         machine.stack.push(0);
+      else
+         machine.stack.push(c != -1 ? 1 : 0);
 	}
 	
 	/// Get the inverse boolean value of a number.
