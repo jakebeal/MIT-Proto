@@ -15,10 +15,14 @@
 #include <random.hpp>
 #include <machine.hpp>
 #include <instructions.hpp>
-#include <cmath>
 
 namespace {
 	
+   bool isNaN(float f) {
+      volatile float a = f;
+      return a != a;
+   }
+
 	Tuple ensureTuple(Data const & d) {
 		if (d.type() == Data::Type_number) {
 			Tuple t(1);
@@ -32,7 +36,7 @@ namespace {
 		if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
 			Number aa = a.asNumber();
 			Number bb = b.asNumber();
-         if (isnan(aa) || isnan(bb)) // NaN
+         if (isNaN(aa) || isNaN(bb)) // NaN
             return NAN;
 			return aa == bb ? 0 : aa < bb ? -1 : 1;
 		} else {
@@ -54,7 +58,7 @@ namespace {
 		Data a = machine.stack.pop();
 		return compare(a, b);
 	}
-	
+
 }
 
 namespace Instructions {
@@ -98,7 +102,7 @@ namespace Instructions {
 	 */
 	void LT(Machine & machine){
       float c = compare(machine);
-      if (isnan(c))
+      if (isNaN(c))
          machine.stack.push(0);
       else
          machine.stack.push(c == -1 ? 1 : 0);
@@ -114,7 +118,7 @@ namespace Instructions {
 	 */
 	void LTE(Machine & machine){
       float c = compare(machine);
-      if (isnan(c))
+      if (isNaN(c))
          machine.stack.push(0);
       else
          machine.stack.push(c != 1 ? 1 : 0);
@@ -130,7 +134,7 @@ namespace Instructions {
 	 */
 	void GT(Machine & machine){
       float c = compare(machine);
-      if (isnan(c))
+      if (isNaN(c))
          machine.stack.push(0);
       else
          machine.stack.push(c == 1 ? 1 : 0);
@@ -146,7 +150,7 @@ namespace Instructions {
 	 */
 	void GTE(Machine & machine){
       float c = compare(machine);
-      if (isnan(c))
+      if (isNaN(c))
          machine.stack.push(0);
       else
          machine.stack.push(c != -1 ? 1 : 0);
