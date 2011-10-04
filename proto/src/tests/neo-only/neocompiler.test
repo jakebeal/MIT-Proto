@@ -2456,12 +2456,13 @@ is 33 _ Stopping before emission
 // Test localization cache:
 test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
+// COMPILER INTERNAL ERROR: No locals should be found in an extracted hood function
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
 // test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
-// This should throw a proper compiler error can't have branch inside the nbrhood
+// This should throw a proper compiler error can't have branch inside the nbrhood, instead it gives obscure DFG conflict errors
 //is 0 _ TEST IS CURRENTLY FAILING
 //is 25 _ Stopping before emission
 
@@ -2559,31 +2560,69 @@ is 41 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test multi-use exports, tuplized exports
-//test: $(P2B) -CDlocalized "(let ((x (nbr (mid))) (y (speed))) (any-hood (+ x x (nbr y) (nbr y))))"
-//is 0 _ TEST IS CURRENTLY FAILING
-//is 44 _ Stopping before emission
+test: $(P2B) -CDlocalized "(let ((x (nbr (mid))) (y (speed))) (any-hood (+ x x (nbr y) (nbr y))))"
+is 0 _ Function: lambda~7 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Scalar>] called 1 times
+is 1 _  Amorphous Mediums:
+is 2 _    [Medium: Alfa = root]
+is 3 _  Fields:
+is 4 _    Bravo: Alfa --> <Scalar> OUTPUT
+is 5 _    Charlie: Alfa --> <2-Vector<Scalar>,<Scalar>>
+is 6 _    Delta: Alfa --> <Scalar>
+is 7 _    Echo: Alfa --> <Scalar 0>
+is 8 _    Foxtrot: Alfa --> <Scalar>
+is 9 _    Golf: Alfa --> <Scalar 1>
+is 10 _  Operator Instances:
+is 11 _    Delta<Scalar>, Delta<Scalar>, Foxtrot<Scalar>, Foxtrot<Scalar> --> [+] --> Bravo<Scalar> OUTPUT
+is 12 _    [Parameter 0: tuparg~8] --> Charlie<2-Vector<Scalar>,<Scalar>>
+is 13 _    Charlie<2-Vector<Scalar>,<Scalar>>, Echo<Scalar 0> --> [elt] --> Delta<Scalar>
+is 14 _    [Lit: <Scalar 0>] --> Echo<Scalar 0>
+is 15 _    Charlie<2-Vector<Scalar>,<Scalar>>, Golf<Scalar 1> --> [elt] --> Foxtrot<Scalar>
+is 16 _    [Lit: <Scalar 1>] --> Golf<Scalar 1>
+is 17 _ Amorphous Mediums:
+is 18 _   [Medium: Hotel = root]
+is 19 _ Fields:
+is 20 _   India: Hotel --> <Scalar>
+is 21 _   Juliet: Hotel --> <Scalar>
+is 22 _   Kilo: Hotel --> <2-Vector<Scalar>,<Scalar>>
+is 23 _   Lima: Hotel --> <Scalar> OUTPUT
+is 24 _   Mike: Hotel --> <Lambda [max]>
+is 25 _   November: Hotel --> <Lambda [Fun: lambda~7]>
+is 26 _ Operator Instances:
+is 27 _   [mid] --> India<Scalar>
+is 28 _   [speed] --> Juliet<Scalar>
+is 29 _   India<Scalar>, Juliet<Scalar> --> [tup] --> Kilo<2-Vector<Scalar>,<Scalar>>
+is 30 _   Mike<Lambda [max]>, November<Lambda [Fun: lambda~7]>, Kilo<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Lima<Scalar> OUTPUT
+is 31 _   [Lit: <Lambda [max]>] --> Mike<Lambda [max]>
+is 32 _   [Lit: <Lambda [Fun: lambda~7]>] --> November<Lambda [Fun: lambda~7]>
+is 33 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Tuple operations within a neighborhood
 test: $(P2B) -CDlocalized "(max-hood (tup (tup (nbr (mid)) 2) 3))"
 //is 0 _ TEST IS CURRENTLY FAILING
+// Constraint violation
+// Error: Type constraint (= (inputs folder) (tupof (unlit (output processor)) (unlit (output processor)))) violated: 
+/// <Tuple<Number>...> vs. <2-Tuple<2-Tuple<2-Tuple<Field <Scalar>>,<Scalar>>,<Scalar>>,<2-Tuple<2-Tuple<Field <Scalar>>,<Scalar>>,<Scalar>>>
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Using fold-hood directly:
 test: $(P2B) -CDlocalized "(fold-hood + 0 (mid))"
 //is 0 _ TEST IS CURRENTLY FAILING
+// COMPILER INTERNAL ERROR: Fold operand is not a lambda!
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // How to handle nbr references	within subfunctions?
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (mid)))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
+// COMPILER INTERNAL ERROR: No locals should be found in an extracted hood function
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(def r+x (x) (+ x (nbr-range))) (min-hood (r+x (nbr (mid))))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
+// DFG Error: type conflict for [Parameter 0: x] --> Alfa<Number>
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
