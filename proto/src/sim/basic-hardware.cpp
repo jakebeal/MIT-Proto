@@ -19,6 +19,9 @@ extern Machine * machine;
  *****************************************************************************/
 DebugLayer::DebugLayer(Args* args, SpatialComputer* p) : Layer(p) {
   // pull display options
+#ifdef WANT_GLUT
+  palette = Palette::default_palette;
+#endif
   ensure_colors_registered("DebugLayer");
   n_probes = args->extract_switch("-probes") ? (int)args->pop_number():0;
   is_show_leds = args->extract_switch("-l");
