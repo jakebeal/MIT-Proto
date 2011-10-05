@@ -58,6 +58,8 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(< (
 = 1 3 0
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(< (* -1 (inf)) (inf))"
 = 1 3 1
+test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(= (tup (/ 0 0)) (tup 0))"
+= 1 3 0
 
 // Vector arithmetic
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(+ (tup 1 2) (tup 3 4))"

@@ -46,7 +46,9 @@ namespace {
 			for(Index i = 0; i < size; i++){
 				Number a_element = i < aa.size() ? aa[i].asNumber() : 0;
 				Number b_element = i < bb.size() ? bb[i].asNumber() : 0;
-				if      (a_element < b_element) return -1;
+				if      (isNaN(a_element) 
+                       || isNaN(b_element)) return NAN;
+            else if (a_element < b_element) return -1;
 				else if (a_element > b_element) return  1;
 			}
 			return 0;
