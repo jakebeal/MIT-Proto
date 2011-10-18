@@ -1,1 +1,1 @@
-#define KERNEL_VERSION "DelftProto VM 8e59452"
+#define KERNEL_VERSION "DelftProto VM eb77c89"
