@@ -71,7 +71,7 @@ Number WormHoleRadio::read_radio_range () {
   return 10;
 }
 
-int WormHoleRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data){
+int WormHoleRadio::radio_send_export (uint8_t version, Array<Data> const & data){
   if(!try_tx())  // transmission failure
     return 0;
 
@@ -89,6 +89,7 @@ int WormHoleRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Da
       nbr.y = me[1]-them[1];
       nbr.z = me[2]-them[2];
       nbr.imports = data;
+      nbr.data_age = 0;
     }
   }
 

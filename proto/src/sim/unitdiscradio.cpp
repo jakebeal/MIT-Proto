@@ -252,7 +252,8 @@ void UnitDiscRadio::device_moved(Device* d) {
       NbrRecord* nr = (NbrRecord*)udd->neighbors.get(i);
       if(nr) {
         MachineId nid = nr->nbr->container->uid;
-        d->vm->hood[nid].in_range = true;
+        NeighbourHood::iterator nbr = d->vm->hood.find(nid);
+        if (nbr != d->vm->hood.end()) nbr->in_range = true;
       }
     }
     for(NeighbourHood::iterator i = d->vm->hood.begin(); i != d->vm->hood.end(); ){
@@ -270,7 +271,7 @@ void UnitDiscRadio::device_moved(Device* d) {
  *****************************************************************************/
 Number UnitDiscRadio::read_radio_range () { return range; }
 
-int UnitDiscRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data) {
+int UnitDiscRadio::radio_send_export (uint8_t version, Array<Data> const & data) {
   if(!try_tx())  // transmission failure
     return 0;
 
@@ -289,6 +290,7 @@ int UnitDiscRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Da
       nbr.x = -nr->dp[0];
       nbr.y = -nr->dp[1];
       nbr.z = -nr->dp[2];
+      nbr.data_age = 0;
     }
   }
   // hardware->set_vm_context(udd->container); // restore context

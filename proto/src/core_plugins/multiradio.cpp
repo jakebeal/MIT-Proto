@@ -66,10 +66,10 @@ void MultiRadio::add_device(Device *d) {}
 
 void MultiRadio::device_moved(Device *d) {}
 
-int MultiRadio::radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data){
+int MultiRadio::radio_send_export (uint8_t version, Array<Data> const & data){
   typeof(radios.begin()) it;
   for(it = radios.begin(); it != radios.end(); it++) {
-    (*it)->radio_send_export(version, timeout, data);
+    (*it)->radio_send_export(version, data);
   }
 }
 

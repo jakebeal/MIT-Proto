@@ -152,7 +152,7 @@ void Device::text_scale() {
 #endif // WANT_GLUT
 }
 
-extern void radio_send_export(uint8_t version, uint8_t timeout, Array<Data> const & data);
+extern void radio_send_export(uint8_t version, Array<Data> const & data);
 
 void Device::internal_event(SECONDS time, DeviceEvent type) {
   switch(type) {
@@ -160,7 +160,17 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
     body->preupdate(); // run the pre-compute update
     for(int i=0;i<num_layers;i++)
       { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) d->preupdate(); }
-    //exec_machine(vm->ticks+1, time); // do the actual computation
+    {
+      vm->thisMachine().data_age = 0;
+      for( NeighbourHood::iterator i = vm->hood.begin(); i != vm->hood.end(); ){
+        if (i->data_age > 1) {
+          i = vm->hood.remove(i);
+        } else {
+          i->data_age++;
+          ++i;
+        }
+      }
+    }
     vm->run(time);
     while(!vm->finished()) vm->step();
     body->update(); // run the post-compute update
@@ -172,7 +182,7 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
     /*if(script_export_needed() || (((int)vm->ticks) % 10)==0) {
       export_script(); // send script every 10 rounds, or as needed
     }*/
-    radio_send_export(0,0,vm->thisMachine().imports);
+    radio_send_export(0,vm->thisMachine().imports);
     break;
   }
 }

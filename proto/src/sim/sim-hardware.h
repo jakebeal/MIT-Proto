@@ -77,7 +77,7 @@ public:
                                Number incr, Number min, Number max) 
   { hardware_error("read_slider"); }
   
-  virtual int radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data)
+  virtual int radio_send_export (uint8_t version, Array<Data> const & data)
   { hardware_error("radio_send_export"); }
   virtual int radio_send_script_pkt (uint8_t version, uint16_t n, 
                                       uint8_t pkt_num, uint8_t *script) 

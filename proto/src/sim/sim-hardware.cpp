@@ -135,9 +135,9 @@ Number read_bearing ()
 Number read_speed () 
 { return hardware->patch_table[READ_SPEED_FN]->read_speed(); }
 
-int radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data) {
+int radio_send_export (uint8_t version, Array<Data> const & data) {
   return hardware->patch_table[RADIO_SEND_EXPORT_FN]->
-    radio_send_export(version,timeout,data); 
+    radio_send_export(version,data); 
 }
 int radio_send_script_pkt (uint8_t version, uint16_t n, uint8_t pkt_num, 
                            uint8_t *script) {

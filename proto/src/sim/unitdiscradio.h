@@ -31,7 +31,7 @@ class UnitDiscRadio : public RadioSim {
 
   // hardware emulation
   Number read_radio_range ();
-  int radio_send_export (uint8_t version, uint8_t timeout, Array<Data> const & data);
+  int radio_send_export (uint8_t version, Array<Data> const & data);
   int radio_send_script_pkt (uint8_t version, uint16_t n, 
 			     uint8_t pkt_num, uint8_t *script);
   int radio_send_digest (uint8_t version, uint16_t script_len, 
