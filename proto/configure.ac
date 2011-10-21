@@ -34,6 +34,7 @@ AX_WITH_PYTHON([echo "no python found"; exit 1; : ]) # only needed for tests
 
 PROTO_WITH_GLUT
 PROTO_WITH_NEOCOMPILER
+PROTO_WITHOUT_GC
 
 ## check for doxygen
 
