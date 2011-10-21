@@ -19,6 +19,7 @@
 #include <tuple.hpp>
 #include <address.hpp>
 #include <stack.hpp>
+#include "config.h"
 
 /// The main data type of the VM.
 /**
@@ -100,12 +101,14 @@ class Data {
 		
 		/// Reset the value to 'undefined' (ie. 'not set').
 		inline void reset() {
-			switch(value_type){
-				case Type_undefined:                 break;
-				case Type_number   : resetNumber (); break;
-				case Type_tuple    : resetTuple  (); break;
-				case Type_address  : resetAddress(); break;
-			}
+#ifdef GC_COMP
+		    switch(value_type){
+			  case Type_undefined:                 break;
+			  case Type_number   : resetNumber (); break;
+			  case Type_tuple    : resetTuple  (); break;
+			  case Type_address  : resetAddress(); break;
+		    }
+#endif
 		}
 		
 		inline void reset(Number  const & number ) { reset(); value_type = Type_number ; new (&value) Number (number ); } ///< Set the value to a Number.
