@@ -234,6 +234,7 @@ bool DebugDevice::handle_key(KeyEvent* key) {
 
 void DebugDevice::preupdate() {
   for(int i=0;i<MAX_PROBES;i++) { probes[i] = 0; }
+  for(int i=0;i<N_ACTUATORS;i++) { actuators[i] = 0; }
 }
 
 #define SENSOR_RADIUS_FACTOR 4
