@@ -932,6 +932,18 @@ class TypePropagator : public IRPropagator {
   // implicit type conversion or other modification to fix conflict
   // returns true if repair is successful
   bool repair_conflict(Field* f,Consumer c,ProtoType* ftype,ProtoType* ctype) {
+   
+   	if (c.first != NULL) {
+		OI *cfirst = c.first;
+        if(cfirst->op == Env::core_op("mux") &&
+           cfirst->inputs.size() >= 3 &&
+           cfirst->domain() != cfirst->inputs[1]->domain &&
+           cfirst->domain() != cfirst->inputs[2]->domain ) {
+          // Compilation error if a field crosses OUT of an AM boundary
+          compile_error("Cannot restrict (if) inside a neighborhood operation ("+ce2s(c.first->op)+")");
+        }
+	}
+	
     // if vector is needed and scalar is provided, convert to a size-1 vector
     if(ftype->isA("ProtoScalar") && ctype->isA("ProtoVector")) {
       V4<<"repair scalar->vector"<< endl;
@@ -946,23 +958,27 @@ class TypePropagator : public IRPropagator {
     // if source is local and user wants a field, add a "local" op
     // or replace no-argument source with a field op
     if(ftype->isA("ProtoLocal") && ctype->isA("ProtoField")) {
-      V4<<"repair local->field"<< endl;
+      V4<<"repair local->field "<< ce2s(ftype) << " " << ce2s(ctype) << endl;
+      V4 << "f->producer: " << ce2s(f->producer) << endl;
+      V4 << "f->producer-op: " << ce2s(f->producer->op) << endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       ProtoField* ft = &dynamic_cast<ProtoField &>(*ctype);
       if(ProtoType::gcs(ftype,ft->hoodtype)) {
         Operator* fo = FieldOp::get_field_op(f->producer);
-        if(f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
+
+        if(f->producer->op == Env::core_op("mux") &&
+                          f->producer->inputs.size() >= 3 &&
+                          f->producer->domain() != f->producer->inputs[1]->domain &&
+                          f->producer->domain() != f->producer->inputs[2]->domain ) {
+                  // Compilation error if a field crosses OUT of an AM boundary
+                  compile_error("Cannot restrict (if) inside a neighborhood operation ("+ce2s(c.first->op)+")");
+        } else if (f->producer->inputs.size()==0 && f->producer->pointwise()!=0 && fo) {
           V2<<"Fieldify pointwise: "<<ce2s(f->producer)<<endl;
           OI* foi = new OperatorInstance(f->producer,fo,f->domain);
           root->relocate_source(c.first,c.second,foi->output);
           note_change(foi); return true; // let constraint retry later...
-        } else if(f->producer->op == Env::core_op("mux") &&
-                  f->producer->inputs.size() >= 3 &&
-                  f->producer->domain() != f->producer->inputs[1]->domain &&
-                  f->producer->domain() != f->producer->inputs[2]->domain ) {
-          // Compilation error if a field crosses OUT of an AM boundary
-          compile_error("Cannot restrict (if) inside a neighborhood operation ("+ce2s(c.first->op)+")");
         } else {
+
           // Otherwise, insert a local
           V2<<"Inserting 'local' at "<<ce2s(f)<<endl;
           OI* local = new OI(f->producer,Env::core_op("local"),f->domain);
@@ -984,11 +1000,18 @@ class TypePropagator : public IRPropagator {
     
     // if source is field and user is pointwise, upgrade to field op
     if(ftype->isA("ProtoField") && ctype->isA("ProtoLocal")) {
-      V4<<"repair field->pointwise"<< endl;
+      V4<<"repair field->pointwise "<< c.first << endl;
       if(c.first==NULL) return true; // let it be repaired in Field action stage
       ProtoField* ft = &dynamic_cast<ProtoField &>(*ftype);
       int pw = c.first->pointwise();
       V4<<"pointwise? "<< pw << endl;
+      if(f->producer->op == Env::core_op("mux") &&
+         f->producer->inputs.size() >= 3 &&
+         f->producer->domain() != f->producer->inputs[1]->domain &&
+         f->producer->domain() != f->producer->inputs[2]->domain ) {
+         // Compilation error if a field crosses OUT of an AM boundary
+         compile_error("Cannot restrict (if) inside a neighborhood operation ("+ce2s(c.first->op)+")");
+      }
       if(pw!=0 && ProtoType::gcs(ctype,ft->hoodtype)) {
         Operator* fo = FieldOp::get_field_op(c.first); // might be upgradable
         V4<<"fieldop = "<< ce2s(fo) << endl;
@@ -1053,8 +1076,19 @@ class TypePropagator : public IRPropagator {
       if(!back_constraint(&tmp,f,*i)) return; // type problem handled within
     // GCS against selectors
     if(f->selectors.size()) {
-      tmp = ProtoType::gcs(tmp,new ProtoScalar());
-      if(!tmp) {type_err(f,"non-scalar selector "+f->to_str()); return;}
+      Operator *fop = f->producer->op;
+      ProtoType *fout = fop->signature->output;
+      if (fout->isA("ProtoField")) {
+    	  V4 << "FieldOps are ok now" << endl;
+    	  // check that its a field of scalars?
+      } else {
+    	  ProtoType *newtmp = ProtoType::gcs(tmp,new ProtoScalar());
+          if (newtmp) {
+    	     tmp = newtmp;
+          } else {
+    	     type_err(f,"non-scalar selector "+f->to_str()); return;
+          }
+      }
     }
     maybe_set_range(f,tmp);
     
