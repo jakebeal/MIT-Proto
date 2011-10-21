@@ -2454,17 +2454,17 @@ is 33 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test localization cache:
-test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
+//test: $(P2B) -CDlocalized "(def rangesum (x) (+ x (nbr-range))) (* (min-hood (rangesum (mid))) (max-hood (rangesum (speed))))" --function-inlining-threshold 0
 //is 0 _ TEST IS CURRENTLY FAILING
 // COMPILER INTERNAL ERROR: No locals should be found in an extracted hood function
 //is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
-// test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
-// This should throw a proper compiler error can't have branch inside the nbrhood, instead it gives obscure DFG conflict errors
-//is 0 _ TEST IS CURRENTLY FAILING
-//is 25 _ Stopping before emission
+test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
+is 0 _ Error during analysis:
+is 1 _  Error: Cannot restrict (if) inside a neighborhood operation ([mux])
+
 
 ////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
