@@ -1826,6 +1826,15 @@ HoodToFolder::localize_compound_op(CompoundOp *cop)
       OI *src = (oi->inputs[0] ? oi->inputs[0]->producer : 0);
       if (src != 0 && src->op == Env::core_op("local"))
         root->relocate_source(oi, 0, src->inputs[0]);
+    } else if (!oi->op->isA("FieldOp") && oi->op->isA("Primitive") && (oi->op->signature->output->isA("ProtoField"))) {
+    	V2 << "Output is a Field but this isn't a FieldOp, this must be a primitive field function" << endl;
+    	// We can localize it using localize_operator, but we want to keep the op name the same, since it will emit as the primitive
+    	string pName = oi->op->name;
+    	oi->op = localize_operator(oi->op);
+    	// Fix output.
+    	oi->output->range = oi->op->signature->output;
+    	// Set the name back
+    	oi->op->name = pName;
     } else {
       oi->op = localize_operator(oi->op);
       // Fix output.
