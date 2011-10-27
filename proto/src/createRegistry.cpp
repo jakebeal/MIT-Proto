@@ -110,7 +110,7 @@ register_plugin(const string &plugin_directory, const string &filename,
   scoped_lt_dlhandle handle(lt_dlopenext(pathname.c_str()));
   if (handle == 0) {
     string error(lt_dlerror());
-    cerr << "Unable to open plugin `" << filename << "': " << error << "\n";
+    cerr << "Unable to open plugin `" << pathname << "': " << error << "\n";
     return false;
   }
 
