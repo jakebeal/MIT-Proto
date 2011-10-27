@@ -7,7 +7,7 @@ class SimNeighbour : public Neighbour {
 		
 		bool in_range;
 		
-		SimNeighbour(MachineId const & id, Size imports) : Neighbour(id, imports) {}
+		SimNeighbour(MachineId const & id, Size imports) : Neighbour(id, imports) {x = 0; y = 0; z = 0; lag = 0; in_range = false;}
 };
 
 #undef Neighbour
