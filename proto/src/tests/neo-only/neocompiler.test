@@ -1835,7 +1835,7 @@ is 6 _     Delta: Alfa --> <Scalar>
 is 7 _   Operator Instances:
 is 8 _     [Parameter 0: arg~5] --> Bravo<Scalar>
 is 9 _     Delta<Scalar>, Bravo<Scalar> --> [+] --> Charlie<Scalar> OUTPUT
-is 10 _     [Local~~nbr-range] --> Delta<Scalar>
+is 10 _     [nbr-range] --> Delta<Scalar>
 is 11 _ Amorphous Mediums:
 is 12 _   [Medium: Echo = root]
 is 13 _ Fields:
@@ -1861,7 +1861,7 @@ is 4 _     Bravo: Alfa --> <Scalar>
 is 5 _     Charlie: Alfa --> <Scalar>
 is 6 _     Delta: Alfa --> <Scalar> OUTPUT
 is 7 _   Operator Instances:
-is 8 _     [Local~~nbr-range] --> Bravo<Scalar>
+is 8 _     [nbr-range] --> Bravo<Scalar>
 is 9 _     [infinitesimal] --> Charlie<Scalar>
 is 10 _     Charlie<Scalar>, Bravo<Scalar> --> [*] --> Delta<Scalar> OUTPUT
 is 11 _ Amorphous Mediums:
@@ -1940,7 +1940,7 @@ is 20 _     Juliet: Golf --> <Scalar>
 is 21 _   Operator Instances:
 is 22 _     [Parameter 0: arg~5] --> Hotel<Scalar>
 is 23 _     Juliet<Scalar>, Hotel<Scalar> --> [+] --> India<Scalar> OUTPUT
-is 24 _     [Local~~nbr-range] --> Juliet<Scalar>
+is 24 _     [nbr-range] --> Juliet<Scalar>
 is 25 _ Amorphous Mediums:
 is 26 _   [Medium: Alfa = root]
 is 27 _ Fields:
@@ -2391,7 +2391,7 @@ is 14 _     Foxtrot<Boolean>, Echo<Scalar inf>, Delta<Scalar> --> [mux] --> Char
 is 15 _     India<Scalar>, Bravo<Scalar> --> [*] --> Delta<Scalar>
 is 16 _     [Lit: <Scalar inf>] --> Echo<Scalar inf>
 is 17 _     Golf<Scalar>, Hotel<Scalar 0> --> [=] --> Foxtrot<Boolean>
-is 18 _     [Local~~nbr-range] --> Golf<Scalar>
+is 18 _     [nbr-range] --> Golf<Scalar>
 is 19 _     [Lit: <Scalar 0>] --> Hotel<Scalar 0>
 is 20 _     Juliet<Scalar> --> [reference] --> India<Scalar>
 is 21 _ Amorphous Mediums:
@@ -2464,7 +2464,6 @@ is 33 _ Stopping before emission
 test: $(P2B) -CDlocalized "(any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
 is 0 _ Error during analysis:
 is 1 _  Error: Cannot restrict (if) inside a neighborhood operation ([mux])
-
 
 ////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
