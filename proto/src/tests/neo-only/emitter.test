@@ -484,9 +484,17 @@ is 2 _ uint16_t script_len = 14;
 = 6 3 7
 = 7 3 7
 
-// Fails with a `nbr-range' localization problem.
-//
+// min-hood+ simple test
+test: $(PROTO) '(min-hood+ (nbr (mid)))'
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 3, 
+is 1 _  DEF_FUN_OP, 11, NBR_RANGE_OP, LIT_0_OP, EQ_OP, 
+is 2 _  LIT_FLO_OP, 0, 0, 128, 127, REF_0_OP, MUX_OP, RET_OP, DEF_FUN_4_OP, 
+is 3 _  REF_0_OP, REF_1_OP, MIN_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP, 
+is 4 _  GLO_REF_0_OP, MID_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
+is 5 _ uint16_t script_len = 35;
+
 // test: $(PROTO) '(min-hood+ (* (+ (mid) 1) (nbr (mid))))'
+// Stack resolves to non zero height
 // is 0 _ lose
 
 // This test is producing a REF_3_OP while the environment stack is only 1-deep.
@@ -507,18 +515,31 @@ is 2 _ uint16_t script_len = 14;
 // Fails type check.  Hmm.  Looks like (tup x y) got turned into (tup
 // (tup x y)) when it shouldn't have.
 //
-// test: $(PROTO) '(any-hood (muxor (= (nbr (mid)) 0) (= (nbr (mid)) 1)))
-// is 0 _ lose
 
-// Fails with a `nbr-range' localization problem.
-//
-// test: $(PROTO) '(min-hood (nbr-range))'
-// is 0 _ lose
+test: $(PROTO) '(any-hood (muxor (= (nbr (mid)) 0) (= (nbr (mid)) 1)))'
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 4, 0, 0, 8, 3, 
+is 1 _  DEF_FUN_OP, 19, REF_0_OP, LET_1_OP, REF_0_OP, LIT_0_OP, ELT_OP, 
+is 2 _  LIT_0_OP, EQ_OP, LET_1_OP, REF_0_OP, REF_0_OP, POP_LET_1_OP, 
+is 3 _  REF_0_OP, POP_LET_1_OP, LIT_1_OP, ELT_OP, LIT_1_OP, EQ_OP, MUX_OP, 
+is 4 _  RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, 
+is 5 _  DEF_NUM_VEC_2_OP, DEF_FUN_OP, 10, GLO_REF_1_OP, GLO_REF_0_OP, 
+is 6 _  MID_OP, MID_OP, TUP_OP, 2, 2, FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP
+is 7 _   };
+is 8 _ uint16_t script_len = 49;
+
+test: $(PROTO) '(min-hood (nbr-range))'
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 3, DEF_FUN_2_OP,
+is 1 _  NBR_RANGE_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, 
+is 2 _  RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP, GLO_REF_0_OP, LIT_0_OP, 
+is 3 _  FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
+is 4 _ uint16_t script_len = 25;
 
 // test: $(PROTO) '(max-hood (tup (tup (nbr (mid)) 2) 3))'
+// Transformer giving up after 10 loops (compiler error)
 // is 0 _ lose
 
 // test: $(PROTO) '(fold-hood + 0 (mid))'
+// Fold operand is not a lambda (compiler)
 // is 0 _ lose
 
 
@@ -555,19 +576,19 @@ is 3 _ uint16_t script_len = 21;
 //(print (test 3))
 //(print (test 4))
 
-
-// Challenges for nbrs:
-// "(min-hood (+ (nbr 3) (nbr 4)))"
-// (min-hood+ (* (+ (mid) 1) (nbr (mid))))
 // (let ((v (+ 2 (nbr (mid))))) (* (max-hood (+ v v)) (min-hood (- v 1))))
-// (any-hood (or (= (nbr (mid)) 0) (= (nbr (mid)) 1)))
-// (min-hood (nbr-range))
-// (max-hood (tup (tup (nbr (mid)) 2) 3))
-// (fold-hood + 0 (mid))
+// Segmentation fault, core dumped
+
+////////////////////////////////////////////////////////////////////////////
+// hood without a nbr
+//test: $(PROTO) "(any-hood (+ 1 (mid)))"
+// COMPILER INTERNAL ERROR: Stack resolves to non-zero height: 3
 
 // Branch/nbr interaction:
 // (if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)
-// (any-hood (if (nbr (mid)) 1 0))
+// what should this do? 
+
+// (any-hood (if (nbr (mid)) 1 0))  (compiler error as it should?)
 
 // Branch/feedback interaction:
 // (if (> (timer) 5) (+ 3 (timer)) 0)
