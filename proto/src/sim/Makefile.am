@@ -48,16 +48,17 @@ pkginclude_HEADERS = \
 	UniformRandom.h \
 	FixedIntervalTime.h
 
-opsim_SOURCES = opsim.cpp
-
-opsim_LDADD = \
-	../shared/libshared.la \
-	../compiler/libcompiler.la \
-	../motelink/libmotelink.la \
-	libsim.la \
-	libprotosimplugin.la \
-	libdefaultplugin.la \
-	../shared/libshared.la \
-	../compiler/libcompiler.la
-
-opsim_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}
+#opsim doesn't work yet with Delft VM
+#opsim_SOURCES = opsim.cpp
+#
+#opsim_LDADD = \
+#	../shared/libshared.la \
+#	../compiler/libcompiler.la \
+#	../motelink/libmotelink.la \
+#	libsim.la \
+#	libprotosimplugin.la \
+#	libdefaultplugin.la \
+#	../shared/libshared.la \
+#	../compiler/libcompiler.la
+#
+#opsim_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}
