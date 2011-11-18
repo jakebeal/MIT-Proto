@@ -474,7 +474,6 @@ is 7 _ uint16_t script_len = 53;
 = 12 3 6
 = 13 3 7
 
-
 test: $(PROTO) '(min-hood (+ (nbr 3) (nbr 4)))'
 is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 1, 0, 0, 2, 0, DEF_FUN_3_OP,
 is 1 _   LIT_OP, 7, RET_OP, EXIT_OP };
@@ -493,9 +492,15 @@ is 3 _  REF_0_OP, REF_1_OP, MIN_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP,
 is 4 _  GLO_REF_0_OP, MID_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
 is 5 _ uint16_t script_len = 35;
 
-// test: $(PROTO) '(min-hood+ (* (+ (mid) 1) (nbr (mid))))'
-// Stack resolves to non zero height
-// is 0 _ lose
+test: $(PROTO) '(min-hood+ (* (+ (mid) 1) (nbr (mid))))'
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 8, 5, 
+is 1 _  DEF_FUN_OP, 13, NBR_RANGE_OP, LIT_0_OP, EQ_OP, 
+is 2 _  LIT_FLO_OP, 0, 0, 128, 127, REF_1_OP, REF_0_OP, MUL_OP, MUX_OP, 
+is 3 _  RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, RET_OP, 
+is 4 _  DEF_FUN_OP, 11, GLO_REF_1_OP, MID_OP, LIT_1_OP, ADD_OP, LET_1_OP, 
+is 5 _  GLO_REF_0_OP, MID_OP, FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, RET_OP, 
+is 6 _  EXIT_OP };
+is 7 _ uint16_t script_len = 43;
 
 // This test is producing a REF_3_OP while the environment stack is only 1-deep.
 // The REF_3_OP produces undefined behavior in the VM.
@@ -576,19 +581,24 @@ is 3 _ uint16_t script_len = 21;
 //(print (test 3))
 //(print (test 4))
 
-// (let ((v (+ 2 (nbr (mid))))) (* (max-hood (+ v v)) (min-hood (- v 1))))
-// Segmentation fault, core dumped
-
 ////////////////////////////////////////////////////////////////////////////
 // hood without a nbr
-//test: $(PROTO) "(any-hood (+ 1 (mid)))"
-// COMPILER INTERNAL ERROR: Stack resolves to non-zero height: 3
+test: $(PROTO) "(any-hood (+ 1 (mid)))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 5, DEF_FUN_2_OP, 
+is 1 _  REF_1_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, 
+is 2 _  DEF_FUN_OP, 11, GLO_REF_1_OP, LIT_1_OP, MID_OP, ADD_OP, LET_1_OP, 
+is 3 _  GLO_REF_0_OP, LIT_0_OP, FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, RET_OP, 
+is 4 _  EXIT_OP };
+is 5 _ uint16_t script_len = 31;
 
 // Branch/nbr interaction:
-// (if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)
-// what should this do? 
-
-// (any-hood (if (nbr (mid)) 1 0))  (compiler error as it should?)
+test: $(PROTO) "(if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 2, DEF_FUN_4_OP, 
+is 1 _  REF_0_OP, LIT_0_OP, EQ_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
+is 2 _  REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 15, MID_OP, LIT_OP, 5, GT_OP, 
+is 3 _  IF_OP, 3, LIT_1_OP, JMP_OP, 5, GLO_REF_1_OP, GLO_REF_0_OP, MID_OP, 
+is 4 _  FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
+is 5 _ uint16_t script_len = 37;
 
 // Branch/feedback interaction:
 // (if (> (timer) 5) (+ 3 (timer)) 0)
