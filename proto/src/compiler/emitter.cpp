@@ -841,10 +841,17 @@ public:
           iLET* sub = &dynamic_cast<iLET &>(*pointer);
           sources.push_back(sub);
           usages.push_back(sub->usages);
-        } else if(pointer->isA("Reference")) { // it's somebody's reference?
+        } else if (pointer->isA("Reference")) { // it's somebody's reference?
+          Reference* r = &dynamic_cast<Reference &>(*pointer);
+          if(r->store->isA("Global")) {
+        	  V3 << "\n is a global reference, ignoring" << endl;
+        	  pointer=pointer->next;
+        	  continue;
+          }
           V3 << "\n Found reference...";
           for(int j=0;j<usages.size();j++) {
             if(usages[j].count(pointer)) { 
+              V4 << "Erasing: " << ce2s(pointer) << endl;
               usages[j].erase(pointer);
               // mark last references for later use in pop insertion
               if(!usages[j].size()) pointer->mark("~Last~Reference");
@@ -855,6 +862,17 @@ public:
           while(usages.size() && usages[usages.size()-1].empty()) {
             V3 << "\n Popping a LET";
             usages.pop_back();
+          }
+        } else if (pointer->isA("Fold")) {
+          if (i->marked("~Fold-Reference")) {
+        	  V3 << "\n Found folder...";
+        	  l->usages.insert(pointer);
+              pointer->mark("~Last~Reference");
+              // trim any empty usages on top of the stack
+              while(usages.size() && usages[usages.size()-1].empty()) {
+                V3 << "\n Popping a LET";
+                usages.pop_back();
+              }
           }
         }
         if(!usages.empty()) pointer=pointer->next;
@@ -1130,12 +1148,14 @@ class ReferenceToParameter : public IRPropagator {
 
         // 1) alter CompoundOp by adding a parameter 
         CompoundOp* cop = current_am->bodyOf;
+        V3 << "CompoundOp " << ce2s(cop) << endl;
         int num_params = cop->signature->n_fixed();
         string fn_name = cop->name;
         // 1a) add an input to the function signature
         cop->signature->required_inputs.insert(
            cop->signature->required_inputs.begin(),
            oi->nth_input(0));
+        V3 << "Cop->signature " << ce2s(cop->signature) << endl;
         // 1b) foreach funcall, insert an input (input to [reference])
         OIset srcs = root->funcalls[cop];
         for_set(OI*,srcs,i) {
@@ -1876,9 +1896,39 @@ bool needs_let(Field* f) {
   for_set(Consumer,f->consumers,c) {
     if(c->first->output->domain == f->domain) { // same function consumer
       consumer_count++;
-      if(consumer_count > 1) return true; // 2+ => let needed
+      if(consumer_count > 1) {
+    	  return true; // 2+ => let needed
+      }
     } else if(f->container->relevant.count(c->first->output->domain)) {
       return true; // found a function reference
+    }
+  }
+  return false;
+}
+
+//
+bool needs_fold_lambda_let(Field* f) {
+  int consumer_count = 0;
+  for_set(Consumer,f->consumers,c) {
+    if((c->first->output->domain == f->domain) && // same function consumer
+       (c->first->op->isA("Literal"))) {
+      Literal *literal = &dynamic_cast<Literal &>(*c->first->op);
+      if (literal->value->isA("ProtoLambda")) {
+        ProtoLambda *lambda = &dynamic_cast<ProtoLambda &>(*literal->value);
+        // consumer is a lambda function
+        Field *cOut = c->first->output;
+        for_set(Consumer, cOut->consumers, cc) {
+          if (cc->first->op->isA("Primitive")) {
+        	string ccName = cc->first->op->name;
+        	if ((ccName == "fold-hood") || ccName == "fold-hood-plus") {
+        	  // Could check the lambda function here for the reference, but we'll skip that for now
+        	  // file bug
+        	  // cout << "  consumer is a lambda, need a let" << endl;
+              return true;
+        	}
+          }
+        }
+      }
     }
   }
   return false;
@@ -1905,6 +1955,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   } else if(oi->op->isA("Primitive")) {
     V4 << "Primitive is: " << ce2s(oi->op) << endl;
     chain_i(&chain,primitive_to_instruction(oi));
+    if(verbosity>=4) print_chain(start,cpout,2);
   } else if(oi->op->isA("Literal")) { 
     V4 << "Literal is: " << ce2s(oi->op) << endl;
     chain_i(&chain,
@@ -1929,9 +1980,21 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   if(f->selectors.size())
     ierror("Restrictions not all compiled out for: "+f->to_str());
   if(needs_let(f)) { // need a let to contain this
-    memory[f] = chain_i(&chain, new iLET());
+	memory[f] = chain_i(&chain, new iLET());
+	  V4 << "Needs Let: " << ce2s(memory[f]) << endl;
+    if(verbosity>=2) print_chain(start,cpout,2);
     chain_i(&chain, // and we got here by a ref...
         new Reference(&dynamic_cast<Instruction &>(*memory[f]), oi));
+    if(verbosity>=2) print_chain(start,cpout,2);
+  }
+  if(needs_fold_lambda_let(f)) { // need a let to contain the input to a lambda function used by a folder
+  	 iLET *l = new iLET();
+  	 l->mark("~Fold-Reference");
+     memory[f] = chain_i(&chain,l);
+     V4 << "Needs Fold Lambda Let: " << ce2s(memory[f]) << endl;
+     if(verbosity>=2) print_chain(start,cpout,2);
+     // Don't need to add a reference, the lambda function should have one
+     // Could check
   }
   return chain_start(chain);
 }
@@ -1949,12 +2012,16 @@ bool has_relevant_consumer(Field* f) {
 
 Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   Fset minima, f; root->all_fields(&f);
-  for_set(Field*,f,i) if(!has_relevant_consumer(*i)) minima.insert(*i);
+  for_set(Field*,f,i) {
+	  if(!has_relevant_consumer(*i))
+		  minima.insert(*i);
+  }
   
   string s=ce2s(root)+":"+i2s(minima.size())+" minima identified: ";
   for_set(Field*,minima,i) { if(!(i==minima.begin())) s+=","; s+=ce2s(*i); }
   V3 << s << endl;
-  iDEF_FUN *fnstart = new iDEF_FUN(); Instruction *chain=fnstart;
+  iDEF_FUN *fnstart = new iDEF_FUN();
+  Instruction *chain=fnstart;
   for_set(Field*,minima,i) chain_i(&chain, tree2instructions(*i));
   if(minima.size()>1) { // needs an all
     Instruction* all = new Instruction(ALL_OP);
