@@ -600,6 +600,10 @@ is 3 _  IF_OP, 3, LIT_1_OP, JMP_OP, 5, GLO_REF_1_OP, GLO_REF_0_OP, MID_OP,
 is 4 _  FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
 is 5 _ uint16_t script_len = 37;
 
+// Emitting a Number - could be either a scalar or vector
+test: $(PROTO) "(def vecOrTup(n) (if (< n 50) (tup 0 0) 0)) (vecOrTup (mid))"
+= 6 3 0
+
 // Branch/feedback interaction:
 // (if (> (timer) 5) (+ 3 (timer)) 0)
 // (rep x 0 (if 

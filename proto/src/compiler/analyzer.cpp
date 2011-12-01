@@ -36,7 +36,7 @@ class Concreteness {
   static bool acceptable(Field* f) { return acceptable(f->range); }
   // concreteness of types
   static bool acceptable(ProtoType* t) { 
-    if(t->isA("ProtoScalar")) { return true;
+    if(t->isA("ProtoNumber")) { return true;
     } else if(t->isA("ProtoSymbol")) { return true;
     } else if(t->isA("ProtoTuple")) { 
       ProtoTuple* tp = T_TYPE(t);
