@@ -1967,9 +1967,12 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   } else if(oi->op->isA("CompoundOp")) { 
     V4 << "Compound OP is: " << ce2s(oi->op) << endl;
     CompoundOp* cop = &dynamic_cast<CompoundOp &>(*oi->op);
+    Block* functionBlock = globalNameMap[cop];
+    // if the function is not defined yet (e.g., recursion), add a placeholder
+    if(!functionBlock) globalNameMap[cop] = new Block(new iDEF_FUN());
     // get global ref to DEF_FUN
     Global* def_fun_instr
-      = &dynamic_cast<Global &>(*globalNameMap[cop]->contents);
+      = &dynamic_cast<Global &>(*functionBlock->contents);
     // add GLO_REF, then FUN_CALL
     chain_i(&chain,new Reference(def_fun_instr,oi)); 
     chain_i(&chain,new FunctionCall(cop));
@@ -2031,7 +2034,7 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   }
   chain_i(&chain, fnstart->ret = new Instruction(RET_OP));
   if(root->bodyOf!=NULL) {
-     V3 << "Adding fn:" << root->bodyOf->name << " to globalNameMap" << endl;
+     V3 << "Adding " << ce2s(root->bodyOf) << " to globalNameMap" << endl;
      globalNameMap[root->bodyOf] = new Block(fnstart);
   }
   return fnstart;
