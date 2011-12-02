@@ -62,13 +62,14 @@ bool evolution_lagging = false; // is the simulator keeping up or not?
 #define FPS_DECAY 0.95
 double fps=1.0; // frames-per-second measurement
 bool show_time=false;
-
+string opcode_file=""; // file to look for opcodes
 
 
 // evolve all top-level items
 void advance_time() {
   bool changed = false;
-  changed |= compiler->evolve(sim_time);
+  if(compiler)
+     changed |= compiler->evolve(sim_time);
   changed |= (vis && vis->evolve(sim_time));
   changed |= computer->evolve(sim_time);
   changed |= (motelink && motelink->evolve(sim_time));
@@ -329,7 +330,8 @@ void render () {
     glPopMatrix();
   }
   // rest of drawing
-  vis->visualize(); compiler->visualize();
+  vis->visualize(); 
+  if(compiler) compiler->visualize();
   if(motelink!=NULL) motelink->visualize();
   
   vis->complete_frame();
@@ -437,6 +439,8 @@ void process_app_args(Args *args) {
   }
 
 
+  // maximum time for simulation (useful for headless execution)
+  if(args->extract_switch("-opcodes")) opcode_file = args->pop_next();
   // should the simulator start paused?
   is_stepping = args->extract_switch("-step");
   // maximum time for simulation (useful for headless execution)
@@ -472,6 +476,80 @@ void process_app_args(Args *args) {
   }
 }
 
+	enum {
+#		define INSTRUCTION(name)     name##_OP,
+#		define INSTRUCTION_N(name,n) name##_##n##_OP,
+#		include <shared/instructions.def>
+#		undef INSTRUCTION
+#		undef INSTRUCTION_N
+	};
+
+map<string,uint8_t> create_opcode_map() {
+   map<string,uint8_t> m;
+  #define INSTRUCTION(name) m[#name "_OP"] = name##_OP;
+  #define INSTRUCTION_N(name,n) m[#name "_" #n "_OP"] = name##_##n##_OP;
+  #include "shared/instructions.def"
+  #undef INSTRUCTION_N
+  #undef INSTRUCTION
+   return m;
+}
+
+map<string,uint8_t> opcodes = create_opcode_map();
+
+vector<uint8_t> convert_inst(vector<string> tokens) {
+   //map<string,uint8_t>::iterator it = opcodes.begin();
+   //while(it != opcodes.end()) {
+   //   post(" %s -> %d \n", it->first.c_str(), it++->second);
+   //}
+   vector<uint8_t> ret;
+   for(int i=0; i<tokens.size(); i++) {
+      map<string,uint8_t>::iterator it = opcodes.find(tokens[i]);
+      if( it == opcodes.end() ) {
+         ret.push_back((uint8_t)atoi(tokens[i].c_str()));
+      } else {
+         ret.push_back(it->second);
+      }
+   }
+   return ret;
+}
+
+vector<string> tokenize_file(string file, int *len) {
+   vector<string> tokens;
+   ifstream infile(file.c_str());
+   string line;
+   while ( infile.is_open() && infile.good() ) {
+      string tmp;
+      getline(infile,tmp);
+      //remove comments
+      if(tmp.find("//") != string::npos)
+         tmp.erase(tmp.find("//"));
+      line += tmp;
+   }
+   line.erase(remove(line.begin(), line.end(), '\n'), line.end());
+   char* linechars = const_cast<char*>(line.c_str());
+   char* tok = strtok(linechars,",");
+   while(tok != NULL) {
+      tokens.push_back(tok);
+      tok = strtok(NULL,", ");
+   }
+   *len = (int)tokens.size();
+   return tokens;
+}
+
+/**
+ * Reads opcodes from file.
+ */
+uint8_t* read_script(string file, int *len) {
+   vector<string> tokens = tokenize_file(file, len);
+   vector<uint8_t> instructions = convert_inst(tokens);
+   uint8_t* ret = new uint8_t[instructions.size()];
+   for(int i=0; i<instructions.size(); i++) {
+      ret[i] = instructions[i];
+      //cout << "ret[" << i << "] = " << (int)ret[i] << endl;
+   }
+   return ret;
+}
+
 int main (int argc, char *argv[]) {
   post("PROTO v%s%s (%s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
       PROTO_VERSION,
@@ -499,35 +577,54 @@ int main (int argc, char *argv[]) {
     palette = Palette::default_palette;
 #endif // WANT_GLUT
   }
-#if USE_NEOCOMPILER
-  compiler = new NeoCompiler(args);  // first the compiler
-  compiler->emitter = new ProtoKernelEmitter(compiler,args);
-  computer = new SpatialComputer(args,!test_mode); // then the computer
-#else
-  compiler = new PaleoCompiler(args);  // first the compiler
-  computer = new SpatialComputer(args,!test_mode); // then the computer
-#endif
-  string defops;
-  computer->appendDefops(defops);
-  compiler->setDefops(defops);
-  if(!headless) {
-    vis->set_bounds(computer->vis_volume); // connect to computer
-    register_app_colors();
-  }
-  // next the forwarder for the motes, if desired
-  if(args->extract_switch("-motelink")) motelink = new MoteLink(args);
-  // load the script
-  int len;
-  if(args->argc==1) {
-    uerror("No program specified: all arguments consumed.");
+
+  computer = new SpatialComputer(args,!test_mode);
+  if(opcode_file != "") {
+     post("reading opcodes from: %s\n", opcode_file.c_str());
+     // read from file
+     int len = -1;
+     uint8_t* s = read_script(opcode_file,&len);
+     post("script[%d]=\n",len);
+     for(unsigned int i=0; i<len; ++i)
+        post("%d\n", s[i]);
+     if(len > 0 && s != NULL) {
+        computer->load_script(s,len);
+     }
+     else
+        uerror("Problem loading opcode file: %s", opcode_file.c_str());
   } else {
-    uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
-    computer->load_script(s,len);
-    if(args->argc>2) {
-      post("WARNING: %d unhandled arguments:",args->argc-2);
-      for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
-      post("\n");
-    }
+     // use a compiler
+#if USE_NEOCOMPILER
+     compiler = new NeoCompiler(args);  // first the compiler
+     compiler->emitter = new ProtoKernelEmitter(compiler,args);
+#else
+     compiler = new PaleoCompiler(args);  // first the compiler
+#endif
+     string defops;
+     computer->appendDefops(defops);
+     compiler->setDefops(defops);
+     if(!headless) {
+        vis->set_bounds(computer->vis_volume); // connect to computer
+        register_app_colors();
+     }
+     // next the forwarder for the motes, if desired
+     if(args->extract_switch("-motelink")) motelink = new MoteLink(args);
+     // load the script
+     int len;
+     if(args->argc==1) {
+        uerror("No program specified: all arguments consumed.");
+     } else {
+        uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
+        computer->load_script(s,len);
+        post("script[%d]=\n",len);
+        for(unsigned int i=0; i<len; ++i)
+           post("%d\n", s[i]);
+        if(args->argc>2) {
+           post("WARNING: %d unhandled arguments:",args->argc-2);
+           for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
+           post("\n");
+        }
+     }
   }
   // if in test mode, swap the C++ file for a C file for the SpatialComputer
   if(test_mode) {
