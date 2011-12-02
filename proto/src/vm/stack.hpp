@@ -69,6 +69,7 @@ class BasicStack {
 		
 		/// Push a new element on the stack.
 		inline void push(Element const & element) {
+			if( full() ) reset(2*size());
 			new (top++) Element(element);
 		}
 		
