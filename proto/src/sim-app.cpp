@@ -29,6 +29,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #endif
 #include "visualizer.h"
 #include "motelink.h"
+#include "sim-instructions.h"
 
 void shutdown_app(void);
 
@@ -476,35 +477,15 @@ void process_app_args(Args *args) {
   }
 }
 
-	enum {
-#		define INSTRUCTION(name)     name##_OP,
-#		define INSTRUCTION_N(name,n) name##_##n##_OP,
-#		include <shared/instructions.def>
-#		undef INSTRUCTION
-#		undef INSTRUCTION_N
-	};
-
-map<string,uint8_t> create_opcode_map() {
-   map<string,uint8_t> m;
-  #define INSTRUCTION(name) m[#name "_OP"] = name##_OP;
-  #define INSTRUCTION_N(name,n) m[#name "_" #n "_OP"] = name##_##n##_OP;
-  #include "shared/instructions.def"
-  #undef INSTRUCTION_N
-  #undef INSTRUCTION
-   return m;
-}
-
-map<string,uint8_t> opcodes = create_opcode_map();
-
 vector<uint8_t> convert_inst(vector<string> tokens) {
-   //map<string,uint8_t>::iterator it = opcodes.begin();
-   //while(it != opcodes.end()) {
+   //map<string,uint8_t>::iterator it = OPCODE_MAP.begin();
+   //while(it != OPCODE_MAP.end()) {
    //   post(" %s -> %d \n", it->first.c_str(), it++->second);
    //}
    vector<uint8_t> ret;
    for(int i=0; i<tokens.size(); i++) {
-      map<string,uint8_t>::iterator it = opcodes.find(tokens[i]);
-      if( it == opcodes.end() ) {
+      map<string,uint8_t>::iterator it = OPCODE_MAP.find(tokens[i]);
+      if( it == OPCODE_MAP.end() ) {
          ret.push_back((uint8_t)atoi(tokens[i].c_str()));
       } else {
          ret.push_back(it->second);
