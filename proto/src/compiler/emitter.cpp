@@ -1972,7 +1972,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     if(!functionBlock) globalNameMap[cop] = new Block(new iDEF_FUN());
     // get global ref to DEF_FUN
     Global* def_fun_instr
-      = &dynamic_cast<Global &>(*functionBlock->contents);
+      = &dynamic_cast<Global &>(*globalNameMap[cop]->contents);
     // add GLO_REF, then FUN_CALL
     chain_i(&chain,new Reference(def_fun_instr,oi)); 
     chain_i(&chain,new FunctionCall(cop));

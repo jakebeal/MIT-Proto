@@ -565,9 +565,9 @@ int main (int argc, char *argv[]) {
      // read from file
      int len = -1;
      uint8_t* s = read_script(opcode_file,&len);
-     post("script[%d]=\n",len);
-     for(unsigned int i=0; i<len; ++i)
-        post("%d\n", s[i]);
+     //post("script[%d]=\n",len);
+     //for(unsigned int i=0; i<len; ++i)
+     //   post("%d\n", s[i]);
      if(len > 0 && s != NULL) {
         computer->load_script(s,len);
      }
@@ -597,9 +597,6 @@ int main (int argc, char *argv[]) {
      } else {
         uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
         computer->load_script(s,len);
-        post("script[%d]=\n",len);
-        for(unsigned int i=0; i<len; ++i)
-           post("%d\n", s[i]);
         if(args->argc>2) {
            post("WARNING: %d unhandled arguments:",args->argc-2);
            for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
