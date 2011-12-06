@@ -146,9 +146,9 @@ class Stack<Data> : public BasicStack<Data> {
 	public:
 		inline explicit Stack(Size capacity = 0) : BasicStack<Data>(capacity) {}
 		
-		inline Number  popNumber () { Number  element = (*--top).asNumber (); top->resetNumber (); return element; }
-		inline Tuple   popTuple  () { Tuple   element = (*--top).asTuple  (); top->resetTuple  (); return element; }
-		inline Address popAddress() { Address element = (*--top).asAddress(); top->resetAddress(); return element; }
+		inline Number  popNumber () { return pop().asNumber();  }
+		inline Tuple   popTuple  () { return pop().asTuple();   }
+		inline Address popAddress() { return pop().asAddress(); }
 		
 };
 
