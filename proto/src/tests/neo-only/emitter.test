@@ -604,6 +604,21 @@ is 5 _ uint16_t script_len = 37;
 test: $(PROTO) "(def vecOrTup(n) (if (< n 50) (tup 0 0) 0)) (vecOrTup (mid))"
 = 6 3 0
 
+// Recursion
+test: $(PROTO) "(def factorial (n) (if (= n 0) 1 (* n (factorial (- n 1))))) (factorial (mid))" --function-inlining-threshold 0
+= 8 3 1
+= 9 3 1
+= 10 3 2
+= 11 3 6
+= 12 3 24
+= 13 3 120
+= 14 3 720
+= 15 3 5040
+= 16 3 40320
+= 17 3 362880
+= 18 3 3628800
+= 19 3 39916800
+
 // Branch/feedback interaction:
 // (if (> (timer) 5) (+ 3 (timer)) 0)
 // (rep x 0 (if 
