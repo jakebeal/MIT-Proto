@@ -56,6 +56,11 @@ class BasicMachine {
 		/** \memberof Machine */
 		Array<State> state;
 		
+		/// DT counter for feedback.  If true, dt = 0, if false compute DT as normal
+		///  Every nested init-feedback pushes a boolean onto this stack, feedbacks pop
+		/// This is true for the first update function after each init-feedback
+		Stack<Number> firstFeedbackUpdate;
+
 		/// The list of all the neighbours.
 		/** \memberof Machine */
 		NeighbourHood hood;
