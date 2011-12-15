@@ -573,6 +573,10 @@ int main (int argc, char *argv[]) {
      }
      else
         uerror("Problem loading opcode file: %s", opcode_file.c_str());
+     if(!headless) {
+       vis->set_bounds(computer->vis_volume); // connect to computer
+       register_app_colors();
+     }
   } else {
      // use a compiler
 #if USE_NEOCOMPILER
