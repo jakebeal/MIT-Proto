@@ -27,6 +27,15 @@ namespace Instructions {
 	 */
 	void DT(Machine & machine){
 		Number dt;
+		if (machine.firstFeedbackUpdate.size() > 0) {
+			// First update, execute with DT of 0
+			Number ff = machine.firstFeedbackUpdate.peek(0);
+			if (ff == 1) {
+				dt = 0;
+				machine.stack.push(dt);
+				return;
+			}
+		}
 		if (machine.currentThread().last_time) {
 			dt = machine.startTime() - machine.currentThread().last_time;
 		} else {

@@ -45,8 +45,10 @@ namespace Instructions {
 		machine.state[state_index].thread = machine.currentThreadId();
 		if (machine.state[state_index].data.isSet()){
 			machine.stack.push(machine.state[state_index].data);
+			machine.firstFeedbackUpdate.push(0);
 		} else {
 			machine.stack.push(Number(state_index));
+			machine.firstFeedbackUpdate.push(1);
 			machine.call(initialization_function, INIT_FEEDBACK_set_state);
 		}
 	}
@@ -74,6 +76,7 @@ namespace Instructions {
 		machine.state[state_index].is_executed = true;
 		machine.stack.pop(1);
 		machine.stack.push(value);
+		machine.firstFeedbackUpdate.pop();
 	}
 	
 	/// \}
