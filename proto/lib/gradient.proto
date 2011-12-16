@@ -4,4 +4,4 @@
 	  (mux (any-hood+
 		(<= (+ (nbr d) (nbr-range) (* v (+ (nbr-lag) (dt)))) d))
 	    (tup (min-hood+ (+ (nbr d) (nbr-range))) 0)
-	    (let ((v0 (if (= (dt) 0) 0 (/ (radio-range) (* (dt) 12))))) (tup (+ d (* v0 (dt))) v0)))))))
+	    (let ((v0 (if (= (dt) 0) 1 (/ (radio-range) (* (dt) 12))))) (tup (+ d (* v0 (dt))) v0)))))))
