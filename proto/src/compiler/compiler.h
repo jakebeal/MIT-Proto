@@ -165,6 +165,9 @@ class ProtoKernelEmitter : public CodeEmitter {
 
   /// Map of compound ops -> instructions (in global mem).
   std::map<CompoundOp *, Block *> globalNameMap;
+  /// Map of dchange OI -> InitFeedback instruction
+  ///  Used to get the proper init feedback to match with a feedback op
+  std::map<OI*, Instruction*> dchangeMap;
 
  private:
   std::vector<InstructionPropagator *> rules;
@@ -182,6 +185,9 @@ class ProtoKernelEmitter : public CodeEmitter {
   /// List of folding ops, which are also scalar/vector pairs.
   std::map<std::string, std::pair<int, int> > fold_ops;
 
+  /// List of Feedback ops, dchange, delay
+  std::map<std::string, std::pair<int, int> > feedback_ops;
+
   Instruction *start, *end;
 
   void load_ops(const std::string &name);
@@ -194,6 +200,11 @@ class ProtoKernelEmitter : public CodeEmitter {
   Instruction *standard_primitive_instruction(OperatorInstance *oi);
   Instruction *vector_primitive_instruction(OperatorInstance *oi);
   Instruction *fold_primitive_instruction(OperatorInstance *oi);
+  Instruction *init_feedback_instruction(OperatorInstance *oi);
+  Instruction *ref_instruction(OperatorInstance *oi);
+  OperatorInstance *find_dchange(OperatorInstance *oi);
+  Instruction *let_instruction(OperatorInstance *oi);
+  Instruction *feedback_instruction(OperatorInstance *oi);
   Instruction *divide_primitive_instruction(OperatorInstance *oi);
   Instruction *tuple_primitive_instruction(OperatorInstance *oi);
   Instruction *branch_primitive_instruction(OperatorInstance *oi);
