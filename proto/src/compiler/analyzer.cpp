@@ -109,9 +109,13 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
     ProtoScalar* t = &dynamic_cast<ProtoScalar &>(*base);
     return t->constant ? new ProtoScalar() : t;
   } else if(base->isA("ProtoLambda")) {
-    ierror("Deliteralization of ProtoLambdas is not yet implemented.");
+    //TODO: This isnt the right place to do this
+    //We want to propogate the output of a ProtoLambda, which would be the output value returned by the function
+    //This isn't really "deliteralization" at all.
+	ProtoLambda* t = &dynamic_cast<ProtoLambda &>(*base);
+	return deliteralize(t->op->signature->output);
   } else if(base->isA("ProtoField")) {
-    ProtoField* t = &dynamic_cast<ProtoField &>(*base);
+	    ProtoField* t = &dynamic_cast<ProtoField &>(*base);
     return new ProtoField(deliteralize(t->hoodtype));
   } else {
     return base;
@@ -430,8 +434,35 @@ ProtoType* Deliteralization::deliteralize(ProtoType* base) {
       // Named input/output argument:
       int n = oi->op->signature->parameter_id(&dynamic_cast<SE_Symbol &>(*ref),
           false);
-      if(n>=0) return get_nth_arg(oi,n);
-      if(n==-1) return oi->output->range;
+      V4 << "n : " << n << endl;
+      if(n>=0) {
+        ProtoType* ret = get_nth_arg(oi,n);
+        if (oi->attributes.count("LETFED-MUX")) {
+          if (ret->isA("ProtoLambda")) {
+            ProtoLambda* lambda = &dynamic_cast<ProtoLambda &>(*ret);
+        	if (lambda->op->isA("CompoundOp")) {
+    	      ProtoType* rtype = dynamic_cast<CompoundOp &>(*lambda->op).output->range;
+    		  ret = rtype;
+    	    }
+          }
+        }
+    	V4 << "nth arg: " << ce2s(ret) << endl;
+    	return ret;
+      }
+      if(n==-1) {
+    	  V4 << "oi->output->range " << ce2s(oi->output->range) << endl;
+    	  ProtoType *ret = oi->output->range;
+    	  if(oi->attributes.count("LETFED-MUX")) {
+    		if (oi->output->range->isA("ProtoLambda")) {
+    	      ProtoLambda* lambda = &dynamic_cast<ProtoLambda &>(*oi->output->range);
+    	      if (lambda->op->isA("CompoundOp")) {
+    	        ProtoType* rtype = dynamic_cast<CompoundOp &>(*lambda->op).output->range;
+    	  	    ret = rtype;
+    	      }
+    	    }
+    	  }
+    	  return ret;
+      }
       // "args": a tuple of argument types
       if(*ref=="args") return get_all_args(oi);
       // return: the value of a compound operator's output field
@@ -1522,13 +1553,14 @@ class DeadCodeEliminator : public IRPropagator {
   }
   
   void act(Field* f) {
-	V5 << "Dead Code Elimilator examining field " << ce2s(f) << endl;
+	V5 << "Dead Code Eliminator examining field " << ce2s(f) << endl;
     if(!kill_f.count(f)) return; // only check the dead
     bool live=false; string reason = "";
     if(f->is_output()) { live=true; reason="output";} // output is live
     if(f->producer->op->attributes.count(":side-effect"))
       { live=true; reason="side effect"; }
     for_set(Consumer,f->consumers,i) { // live consumer -> live
+      V5 << "Consumer: " << ce2s((*i).first) << endl;
       // ignore non-called functions
       if(root->relevant.count((*i).first->domain()->root())==0) continue;
       // check for live consumers
@@ -2072,8 +2104,12 @@ public:
 
   void act(OperatorInstance* oi) {
     // properly formed muxes are candidates for if patterns
-    if(oi->op==Env::core_op("mux") && oi->inputs.size()==3
-       && !oi->attributes.count("LETFED-MUX")) {
+    if(oi->op==Env::core_op("mux") && oi->inputs.size()==3) {
+      //&& !oi->attributes.count("LETFED-MUX")) {
+      bool letfedmux = false;
+      if (oi->attributes.count("LETFED-MUX")) {
+    	  letfedmux = true;
+      }
       V3 << "Considering If->Branch candidate:\n   "<<oi->to_str()<<endl;
       OI *join; Field *test, *testnot; AM *trueAM, *falseAM; AM* space;
       // fill in blanks
@@ -2092,26 +2128,53 @@ public:
       if(!(trueAM->selector==test && trueAM->parent==space)) return;
       V4 << "Checking false-expression space\n";
       if(!(falseAM->selector==testnot && falseAM->parent==space)) return;
-      // Swap the mux for a branch:
-      V3 << "Transforming to branch\n";
       OI* branch = new OperatorInstance(oi,Env::core_op("branch"),space);
+      V3 << "Transforming to true AM to a lambda function" << endl;
       CompoundOp *tf = am_to_lambda(trueAM,oi->inputs[1]);
+      V3 << "Transforming to false AM to a lambda function" << endl;
       CompoundOp *ff = am_to_lambda(falseAM,oi->inputs[2]);
-      tf->body->mark("branch-fn"); ff->body->mark("branch-fn");
-      branch->add_input(test);
-      branch->add_input(root->add_literal(new ProtoLambda(tf),space,tf));
-      branch->add_input(root->add_literal(new ProtoLambda(ff),space,ff));
-      root->relocate_consumers(oi->output,branch->output); 
+      OI* newoi;
+      if (!letfedmux) {
+        // Swap the mux for a branch:
+        V3 << "Transforming to branch\n";
+        tf->body->mark("branch-fn"); ff->body->mark("branch-fn");
+        branch->add_input(test);
+        branch->add_input(root->add_literal(new ProtoLambda(tf),space,tf));
+        branch->add_input(root->add_literal(new ProtoLambda(ff),space,ff));
+        root->relocate_consumers(oi->output,branch->output);
+        newoi = branch;
+      } else {
+         V3 << "ff Signature: " << ce2s(ff->signature) << endl;
+         ff->signature->required_inputs.push_back(oi->inputs[2]->range);
+         V3 << "ff Signature: " << ce2s(ff->signature) << endl;
+    	  // Easier to create a new mux than move everything
+    	 OI* newmux = new OperatorInstance(oi, Env::core_op("mux"), space);
+       	 newmux->add_input(test);
+    	 newmux->add_input(root->add_literal(new ProtoLambda(tf),space,tf));
+    	 newmux->add_input(root->add_literal(new ProtoLambda(ff),space,ff));
+    	 newmux->output->range = oi->output->range;
+    	 root->relocate_consumers(oi->output, newmux->output);
+    	 V5 << "Test: " << ce2s(test) << endl;
+    	 for_set(Consumer,test->consumers,i) {
+           V5 << "Test Consumer: " << ce2s((*i).first) << endl;
+    	 }
+    	 newoi = newmux;
+      }
+      V3 << "Removing old OIs" << endl;
       // delete old elements
       root->delete_node(oi);
-      OIset elts; trueAM->all_ois(&elts); falseAM->all_ois(&elts); 
+      OIset elts; trueAM->all_ois(&elts); falseAM->all_ois(&elts);
       for_set(OI*,elts,i) { root->delete_node(*i); }
       root->delete_space(trueAM); root->delete_space(falseAM);
       root->delete_node(testnot->producer);
       // note all changes
-      note_change(branch);
+      note_change(newoi);
       OIset br_ops; tf->body->all_ois(&br_ops); ff->body->all_ois(&br_ops);
       for_set(OI*,br_ops,i) note_change(*i);
+      V5 << "Test: " << ce2s(test) << endl;
+      for_set(Consumer,test->consumers,i) {
+         V5 << "Test Consumer: " << ce2s((*i).first) << endl;
+      }
     }
   }
 };
@@ -2132,6 +2195,48 @@ public:
   }
 };
 
+class DelayToStoreAndRead : public IRPropagator {
+public:
+  DelayToStoreAndRead(GlobalToLocal* parent, Args* args) : IRPropagator(false,true) {
+    verbosity = args->extract_switch("--delay-to-store-and-read-verbosity") ?
+    args->pop_int() : parent->verbosity;
+  }
+  virtual void print(ostream* out=0) { *out << "DelayToStoreAndRead"; }
+
+  void act(OperatorInstance* oi) {
+    if(oi->op==Env::core_op("delay")) {
+      AM* space = oi->output->domain;
+      V3 << "Converting delay to a store and a read: " << ce2s(oi) << endl;
+      V3 << "Creating Store" << endl;
+      OI* mux = oi->inputs[0]->producer;
+      if (mux->op == Env::core_op("mux")) {
+    	  V3 << "Changing the delay to a read" << endl;
+    	  oi->op = Env::core_op("read");
+    	  oi->output->range = mux->output->range;
+    	  mux->output->unuse(oi, 1);
+    	  oi->remove_input(0);
+
+    	  OI* store = new OperatorInstance(mux, Env::core_op("store"), mux->output->domain);
+       	  root->relocate_consumers(mux->output, store->output);
+    	  store->add_input(mux->output);
+    	  store->output->range = mux->output->range;
+    	  store->clear_attribute("LETFED-MUX");
+
+    	  note_change(oi);
+    	  note_change(mux);
+    	  note_change(store);
+    	  V3 << "Mux: " << ce2s(mux) << endl;
+    	  V3 << "Read: " << ce2s(oi) << endl;
+    	  V3 << "Store: " << ce2s(store) << endl;
+    	  V3 << "Mux output: " << ce2s(mux->output) << endl;
+      } else {
+    	  cout << "Delays input is not from a letfedmux!" << endl;
+      }
+    }
+  }
+};
+
+
 GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   verbosity=args->extract_switch("--localizer-verbosity") ? 
     args->pop_int() : parent->verbosity;
@@ -2141,6 +2246,7 @@ GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   rules.push_back(new HoodToFolder(this,args));
   rules.push_back(new RestrictToBranch(this,args));
   rules.push_back(new RestrictToReference(this,args));
+  rules.push_back(new DelayToStoreAndRead(this, args));
   rules.push_back(new DeadCodeEliminator(this,args));
 }
 
