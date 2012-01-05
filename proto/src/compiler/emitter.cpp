@@ -164,6 +164,9 @@ Instruction* chain_end(Instruction* chain)
 Instruction* chain_start(Instruction* chain) 
 { return (chain->prev==NULL) ? chain : chain_start(chain->prev); } 
 Instruction* chain_i(Instruction** chain, Instruction* newi) {
+  if (newi == NULL) {
+	return *chain;
+  }
   if(*chain) { 
     (*chain)->next=newi;
     if((*chain)->container) {
@@ -402,7 +405,7 @@ struct FunctionCall : public Instruction { reflection_sub(FunctionCall,Instructi
       static int getNumParams(CompoundOp* compoundOp) {
          // n_fixed = required + optional parameters
          // rest_input = single tuple of remaining parameters
-         return compoundOp->signature->n_fixed() +
+        return compoundOp->signature->n_fixed() +
             (compoundOp->signature->rest_input!=NULL);
       }
 };
@@ -454,10 +457,22 @@ struct Fold : public InstructionWithIndex {
   {}
 };
 
-// struct Feedback : public InstructionWithIndex {
-//   reflection_sub(Feedback, InstructionWithIndex);
-//   Feedback(OPCODE opcode) : InstructionWithIndex(opcode) {}
-// };
+struct InitFeedback : public InstructionWithIndex {
+  CompoundOp *init;
+  CompoundOp *update;
+  Instruction* letAfter;
+
+  reflection_sub(InitFeedback, InstructionWithIndex);
+  InitFeedback(OPCODE opcode, CompoundOp *init_, CompoundOp *update_)
+    : InstructionWithIndex(opcode), init(init_), update(update_)
+  {}
+};
+
+struct Feedback : public InstructionWithIndex {
+   InitFeedback *matchingInit;
+   reflection_sub(Feedback, InstructionWithIndex);
+   Feedback(OPCODE opcode) : InstructionWithIndex(opcode) {}
+};
 
 /*****************************************************************************
  *  PROPAGATOR                                                               *
@@ -598,9 +613,15 @@ class StackEnvSizer : public InstructionPropagator {
         }
       }
 
-      if (! (stack_maxes.count(chain) && env_maxes.count(chain)))
+      if (! (stack_maxes.count(chain) && env_maxes.count(chain))) {
+    	  V2 << "Wasn't able to entirely resolve: " << ce2s(chain) << endl;
+    	  V2 << "Stack Maxes: " << stack_maxes.count(chain) << endl;
+    	  V2 << "Env Maxes: " << env_maxes.count(chain) << endl;
         // Wasn't able to entirely resolve.
-        return;
+    	  V2 << ss << endl;
+    	  V2 << es << endl;
+         return;
+      }
 
       max_stack = max(max_stack, stack_maxes[chain]);
       max_env = max(max_env, env_maxes[chain]);
@@ -644,10 +665,11 @@ class StackEnvSizer : public InstructionPropagator {
     if (! (stack_height.count(i)
            && (stack_height[i] == neth)
            && (stack_maxes[i] == maxh))) {
+      V4 << "\t Set stack height from " << stack_height[i] << " to " << neth << endl;
+      V4 << "\t Set stack maxes from " << stack_maxes[i] << " to " << maxh << endl;
       stack_height[i] = neth;
       stack_maxes[i] = maxh;
       note_change(i);
-      V4 << "\t Set stack." << endl;
     }
   }
 
@@ -664,10 +686,13 @@ class StackEnvSizer : public InstructionPropagator {
     if (! (env_height.count(i)
            && (env_height[i] == neth)
            && (env_maxes[i] == maxh))) {
+      V4 << "\t Set env height from " << env_height[i] << " to " << neth << endl;
+      V4 << "\t Set env maxes from " << env_maxes[i] << " to " << maxh << endl;
+
       env_height[i] = neth;
       env_maxes[i] = maxh;
+
       note_change(i);
-      V4 << "\t Set env." << endl;
     }
   }
 
@@ -827,7 +852,10 @@ public:
         V3 << ".";
         while(sources.size()>usages.size()) sources.pop_back(); // cleanup...
         if(pointer==NULL) {
-          if(block_nesting.empty()) ierror("Couldn't find all usages of let");
+          if(block_nesting.empty()) {
+        	  V2 << "Instruction pointer: " << ce2s(pointer) << endl;
+        	  ierror("Couldn't find all usages of let");
+          }
           V3 << "^";
           pointer=block_nesting.top()->next; block_nesting.pop(); continue;
         }
@@ -873,6 +901,22 @@ public:
                 V3 << "\n Popping a LET";
                 usages.pop_back();
               }
+          }
+        } else if (pointer->isA("FunctionCall")) {
+          V3 << "\n Found FunctionCall usage...";
+          for(int j=0;j<usages.size();j++) {
+        	if(usages[j].count(pointer)) {
+        	  V4 << "Erasing: " << ce2s(pointer) << endl;
+        	  usages[j].erase(pointer);
+        	  // mark last references for later use in pop insertion
+        	  if(!usages[j].size()) pointer->mark("~Last~Reference");
+        	    break;
+        	  }
+           }
+           // trim any empty usages on top of the stack
+           while(usages.size() && usages[usages.size()-1].empty()) {
+        	 V3 << "\n Popping a LET";
+        	 usages.pop_back();
           }
         }
         if(!usages.empty()) pointer=pointer->next;
@@ -1058,10 +1102,18 @@ class ResolveState : public InstructionPropagator {
       Fold *fold = &dynamic_cast<Fold &>(*instruction);
       fold->index = n_exports_++;
       export_len_ += 1;   // FIXME: Add up the tuple lengths.
-    }//  else if (instruction->isA("Feedback")) {
-    //   Feedback *feedback = &dynamic_cast<Feedback &>(*instruction);
-    //   feedback->index = n_states_++;
-    // }
+    }  else if (instruction->isA("InitFeedback")) {
+       	InitFeedback *initf = &dynamic_cast<InitFeedback &>(*instruction);
+    	initf->index = n_states_++;
+    } else if (instruction->isA("Feedback")) {
+       	Feedback *fb = &dynamic_cast<Feedback &>(*instruction);
+    	InitFeedback *initf = fb->matchingInit;
+    	if (initf != NULL) {
+    		fb->index = initf->index;
+    	} else {
+    		ierror("Unable to find matching InitFeedback for Feedback Op");
+    	}
+    }
   }
 
  private:
@@ -1391,8 +1443,12 @@ ProtoKernelEmitter::primitive_to_instruction(OperatorInstance *oi)
     return vector_primitive_instruction(oi);
   else if (fold_ops.count(primitive->name))
     return fold_primitive_instruction(oi);
-  // else if (state_ops.count(primitive->name))
-  //   return state_primitive_instruction(oi);
+  else if (primitive->name == "dchange")
+	  return init_feedback_instruction(oi);
+  else if (primitive->name == "store")
+	  return let_instruction(oi);
+  else if (primitive->name == "read")
+	  return ref_instruction(oi);
   else if (primitive->name == "/") // FIXME: Env::core_op?
     return divide_primitive_instruction(oi);
   else if (primitive->name == "tup") // FIXME: Env::core_op?
@@ -1477,6 +1533,116 @@ ProtoKernelEmitter::fold_primitive_instruction(OperatorInstance *oi)
   CompoundOp *folder = fold_operand_cop(oi, 0);
   CompoundOp *nbrop = fold_operand_cop(oi, 1);
   return new Fold(opcode, folder, nbrop);
+}
+
+Instruction *
+ProtoKernelEmitter::init_feedback_instruction(OperatorInstance *oi)
+{
+  V3 << "Creating new Init_Feedback_OP" << ce2s(oi) << endl;
+  // Find the mux
+  OperatorInstance *mux;
+  for_set(Consumer,oi->output->consumers,c) {
+	  if (c->first->op->name == "mux") {
+		  mux = c->first;
+	  }
+  }
+  if (mux == NULL) {
+	  cout << "ERROR: Null MUX as dchange consumer" << endl;
+  }
+  Instruction *chain = 0;
+  CompoundOp *init = fold_operand_cop(mux, 1);
+  CompoundOp *update = fold_operand_cop(mux, 2);
+
+  V4 << "Init function: " << ce2s(init) << endl;
+  V4 << "Update function: " << ce2s(update) << endl;
+
+  InitFeedback* initFeedback = new InitFeedback(INIT_FEEDBACK_OP, init, update);
+  dchangeMap[oi] = initFeedback;
+  //lastInitFeedback = initFeedback;
+
+  Block* initFunctionBlock = globalNameMap[init];
+  // if the function is not defined yet (e.g., recursion), add a placeholder
+  if(!initFunctionBlock) globalNameMap[init] = new Block(new iDEF_FUN());
+
+  // get global ref to DEF_FUN
+  Global* def_fun_init = &dynamic_cast<Global &>(*globalNameMap[init]->contents);
+
+  // add GLO_REF, then init_feedback
+  chain_i(&chain,new Reference(def_fun_init, oi));
+  chain_i(&chain,initFeedback);
+  iLET* lAfter = new iLET();
+  chain_i(&chain,lAfter); // Put the cur value of the variable on the env stack for the update function
+  // And stick the value back on the stack for the feedback storage
+  initFeedback->letAfter = lAfter;
+  chain_i(&chain, new Reference(lAfter, oi));
+  chain_i(&chain, new Reference(lAfter, oi));
+
+  // Call the Update function after init-feedback
+  Block* updateFunctionBlock = globalNameMap[update];
+  // if the function is not defined yet (e.g., recursion), add a placeholder
+  if(!updateFunctionBlock) globalNameMap[update] = new Block(new iDEF_FUN());
+
+  // get global ref to DEF_FUN
+  Global* def_fun_update = &dynamic_cast<Global &>(*globalNameMap[update]->contents);
+
+  // add GLO_REF, then funcall
+  chain_i(&chain,new Reference(def_fun_update, oi));
+  FunctionCall *funccall = new FunctionCall(update);
+  lAfter->usages.insert(funccall);
+  chain_i(&chain,funccall);
+  return chain_start(chain);
+}
+
+Instruction *
+ProtoKernelEmitter::let_instruction(OperatorInstance *oi)
+{
+	V2 << "Store: " << ce2s(oi) << endl;
+	// Get the dchange from this store.  Look back through the inputs
+	// Store should have one input
+	OperatorInstance *dchange;
+	if (oi->inputs.size() == 1) {
+		dchange = find_dchange(oi->inputs[0]->producer);
+	} else {
+		dchange = find_dchange(oi);
+	}
+	Instruction *chain = 0;
+	Feedback* fb = new Feedback(FEEDBACK_OP);
+	if (dchange != NULL) {
+		Instruction* ins = dchangeMap[dchange];
+		InitFeedback *initF = &dynamic_cast<InitFeedback &>(*ins);
+		fb->matchingInit = initF;
+	}
+	chain_i(&chain, fb);
+	return chain_start(chain);
+}
+
+OperatorInstance *
+ProtoKernelEmitter::find_dchange(OperatorInstance *oi)
+{
+	if (oi->op->name == "dchange") {
+		return oi;
+	}
+	for(int i=0;i<oi->inputs.size();i++) {
+		if (oi->inputs[i]->producer->op->name == "dchange") {
+			return oi->inputs[i]->producer;
+		}
+	}
+	// backtrack?  When would this happen?  Should be dchange -> mux -> store
+	for(int i=0;i<oi->inputs.size();i++) {
+		OperatorInstance *dchange = find_dchange(oi->inputs[i]->producer);
+		if (dchange != NULL) {
+			return dchange;
+		}
+	}
+	return NULL;
+}
+
+Instruction *
+ProtoKernelEmitter::ref_instruction(OperatorInstance *oi)
+{
+	V2 << "Read: " << ce2s(oi) << endl;
+	// Assuming the update op is a one parameter function
+	return new Instruction(REF_0_OP);
 }
 
 // Division is handled specially until VDIV is implemented.
@@ -1939,13 +2105,30 @@ bool needs_fold_lambda_let(Field* f) {
    - consumers in order
 */
 Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
+  V5 << "Tree2Instructions for " << ce2s(f) << endl;
   if(memory.count(f))
     return
       new Reference(&dynamic_cast<Instruction &>(*memory[f]), f->producer);
   OperatorInstance* oi = f->producer; Instruction* chain = NULL;
+  V5 << "producer " << ce2s(oi) << endl;
+  if (oi->op->name == "mux") {
+    V3 << "MUX operator, checking if we're part of a feedback" << endl;
+    if (oi->attributes.count("LETFED-MUX")) {
+      // find the dchange input
+      for(int i=0;i<oi->inputs.size();i++) {
+    	if (oi->inputs[i]->producer->op->name == "dchange") {
+     	  V3 << "Found dchange, returning dchange instructions" << endl;
+   		  return tree2instructions(oi->inputs[i]);
+   	    }
+      }
+      V3 << "No dchange input, handling this mux normally" << endl;
+    }
+  }
   // first, get all the inputs
-  for(int i=0;i<oi->inputs.size();i++) 
+  for(int i=0;i<oi->inputs.size();i++) {
+    V4 << "Chaining " << oi->inputs[i] << endl;
     chain_i(&chain,tree2instructions(oi->inputs[i]));
+  }
   // second, add the operation
   if(oi->op==Env::core_op("reference")) {
     V4 << "Reference is: " << ce2s(oi->op) << endl;
@@ -1980,8 +2163,12 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     ierror("Don't know how to emit instruction for "+oi->op->to_str());
   }
   // finally, put the result in the appropriate location
-  if(f->selectors.size())
+  if(f->selectors.size()) {
+	cout << "Restrictions not all compiled out for field: " << ce2s(f) << endl;
+	AMset fsel = f->selectors;
+	for_set(AM*,fsel,i) cout << "Selector AM: " << ce2s(*i) << endl;
     ierror("Restrictions not all compiled out for: "+f->to_str());
+  }
   if(needs_let(f)) { // need a let to contain this
 	memory[f] = chain_i(&chain, new iLET());
 	  V4 << "Needs Let: " << ce2s(memory[f]) << endl;
