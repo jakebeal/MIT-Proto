@@ -219,10 +219,10 @@ struct CompilationElement : public Nameable { reflection_base(CE);
 
   // Attribute utilities
   void clear_attribute(const std::string &a) {
-    if (attributes.count(a)) {
-      delete attributes[a];
+    //if (attributes.count(a)) {
+      //delete attributes[a];
       attributes.erase(a);
-    }
+    //}
   }
 
   bool marked(const std::string &a) const { return attributes.count(a); }
