@@ -12,7 +12,7 @@ INCLUDES = \
 libprotosimplugin_la_SOURCES = \
 	radio.cpp \
 	plugin-support.cpp
-libprotosimplugin_la_LDFLAGS = -export-dynamic
+libprotosimplugin_la_LDFLAGS = -Wl,-export-dynamic
 
 libdefaultplugin_la_SOURCES = \
 	basic-hardware.cpp \
@@ -20,7 +20,7 @@ libdefaultplugin_la_SOURCES = \
 	simpledynamics.cpp \
 	FixedIntervalTime.cpp \
 	DefaultsPlugin.cpp
-libdefaultplugin_la_LDFLAGS = -export-dynamic
+libdefaultplugin_la_LDFLAGS = -Wl,-export-dynamic
 
 libsim_la_SOURCES = \
 	$(top_srcdir)/src/vm/instructions.cpp \
@@ -61,4 +61,4 @@ pkginclude_HEADERS = \
 #	../shared/libshared.la \
 #	../compiler/libcompiler.la
 #
-#opsim_LDFLAGS = -lltdl -export-dynamic -rdynamic -rpath ${libdir}
+#opsim_LDFLAGS = -lltdl -export-dynamic -rpath ${libdir}
