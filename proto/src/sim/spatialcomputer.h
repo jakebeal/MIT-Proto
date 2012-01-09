@@ -138,6 +138,8 @@ class Device : public EventConsumer {
   SpatialComputer* parent;          // upward track for the device
   bool is_selected;                 // is this device currently selected?
   bool is_debug;                    // is this device currently a debug focus?
+  bool is_print_stack;              // are we printing the stack of this device to cout after each instruction?
+  bool is_print_env_stack;          // are we printing the env stack
   
   Device(SpatialComputer* parent, METERS *loc, DeviceTimer *timer);
   ~Device();
@@ -168,6 +170,7 @@ class SpatialComputer : public EventConsumer {
   // display variables
   bool is_show_val, is_show_vec, is_show_id, is_show_version;
   bool is_debug, is_dump_default, is_dump_hood, is_dump_value; 
+  int print_stack_id, print_env_stack_id; // id of device to print stack of
   flo display_mag; // magnifier for body display
   Population selection;     // the list of devices currently selected
   // dumping variables

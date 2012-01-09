@@ -37,6 +37,16 @@ Device::Device(SpatialComputer* parent, METERS *loc, DeviceTimer *timer) {
   //vm = allocate_machine(); // unusable until script is loaded
   vm = new Machine();
   is_selected=false; is_debug=false;
+  if (parent->print_stack_id == uid) {
+	  is_print_stack = true;
+  } else {
+      is_print_stack = false;
+  }
+  if (parent->print_env_stack_id == uid) {
+	  is_print_env_stack = true;
+  } else {
+	  is_print_env_stack = false;
+  }
 }
 
 // copy all state
@@ -155,6 +165,8 @@ void Device::text_scale() {
 extern void radio_send_export(uint8_t version, Array<Data> const & data);
 
 void Device::internal_event(SECONDS time, DeviceEvent type) {
+
+  int iStep = 0;
   switch(type) {
   case COMPUTE:
     body->preupdate(); // run the pre-compute update
@@ -172,7 +184,18 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
       }
     }
     vm->run(time);
-    while(!vm->finished()) vm->step();
+    while(!vm->finished()) {
+    	if (is_print_stack) {
+    	  cout << "Stack (step " << iStep << "): ";
+    	  vm->print_stack(&vm->stack);
+    	}
+    	if (is_print_env_stack) {
+    	  cout << "Environment Stack (step " << iStep << "): ";
+    	  vm->print_stack(&vm->environment);
+    	}
+    	iStep++;
+    	vm->step();
+    }
     body->update(); // run the post-compute update
     for(int i=0;i<num_layers;i++)
       { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) d->update(); }
@@ -366,6 +389,10 @@ void SpatialComputer::register_colors() {
 SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
   ensure_colors_registered("SpatialComputer");
   sim_time=0;
+
+  print_stack_id = (args->extract_switch("-print-stack"))?args->pop_number() : -1;
+  print_env_stack_id = (args->extract_switch("-print-env-stack"))?args->pop_number() : -1;
+
   int n=(args->extract_switch("-n"))?(int)args->pop_number():100; // # devices
   // load dumping variables
   is_dump_default=true;
