@@ -24,6 +24,8 @@
 #include <neighbourhood.hpp>
 #include <instructions.hpp>
 #include <machineid.hpp>
+#include <iostream>
+using namespace std;
 
 class BasicMachine {
 	
@@ -255,6 +257,26 @@ class BasicMachine {
 				return *hood.begin();
 			}
 			
+			inline void print_stack(Stack<Data> *s) {
+				if (s->empty()) {
+				  cout << " Empty " << endl;
+				} else {
+			      for(Index i = 0; i < s->size(); i++) {
+			    	Data el = s->peek(i);
+			    	if (el.type() == Data::Type_number) {
+			    		cout << el.asNumber() << " ";
+			    	} else if (el.type() == Data::Type_address) {
+			    		cout << "A:" << el.asAddress() << " ";
+			    	} else if (el.type() == Data::Type_tuple) {
+			    		cout << el.asTuple() << " ";
+			    	} else {
+			    		cout << "UnknownType ";
+			    	}
+				  }
+				  cout << endl;
+				}
+			}
+
 		/// \}
 		
 	protected:
