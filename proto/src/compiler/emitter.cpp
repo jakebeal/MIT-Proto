@@ -457,21 +457,34 @@ struct Fold : public InstructionWithIndex {
   {}
 };
 
-struct InitFeedback : public InstructionWithIndex {
+struct InitFeedback : public Instruction {
   CompoundOp *init;
   CompoundOp *update;
   Instruction* letAfter;
+  int index;
 
-  reflection_sub(InitFeedback, InstructionWithIndex);
+  reflection_sub(InitFeedback, Instruction);
   InitFeedback(OPCODE opcode, CompoundOp *init_, CompoundOp *update_)
-    : InstructionWithIndex(opcode), init(init_), update(update_)
+    : Instruction(opcode), init(init_), update(update_), letAfter(NULL)
   {}
+  void set_index(int o) {
+     index = o;
+     parameters.clear();
+     padd(o);
+   }
 };
 
-struct Feedback : public InstructionWithIndex {
+struct Feedback : public Instruction {
    InitFeedback *matchingInit;
-   reflection_sub(Feedback, InstructionWithIndex);
-   Feedback(OPCODE opcode) : InstructionWithIndex(opcode) {}
+   int index;
+
+   reflection_sub(Feedback, Instruction);
+   Feedback(OPCODE opcode) : Instruction(opcode), matchingInit(NULL) {}
+   void set_index(int o) {
+        index = o;
+        parameters.clear();
+        padd(o);
+  }
 };
 
 /*****************************************************************************
@@ -1104,12 +1117,12 @@ class ResolveState : public InstructionPropagator {
       export_len_ += 1;   // FIXME: Add up the tuple lengths.
     }  else if (instruction->isA("InitFeedback")) {
        	InitFeedback *initf = &dynamic_cast<InitFeedback &>(*instruction);
-    	initf->index = n_states_++;
+       	initf->set_index(n_states_++);
     } else if (instruction->isA("Feedback")) {
        	Feedback *fb = &dynamic_cast<Feedback &>(*instruction);
     	InitFeedback *initf = fb->matchingInit;
     	if (initf != NULL) {
-    		fb->index = initf->index;
+    		fb->set_index(initf->index);
     	} else {
     		ierror("Unable to find matching InitFeedback for Feedback Op");
     	}
