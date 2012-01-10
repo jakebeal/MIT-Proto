@@ -255,6 +255,17 @@ struct NoInstruction : public Instruction {
   }
 };
 
+struct Placeholder : public Instruction {
+	reflection_sub(Placeholder, Instruction);
+	Placeholder() : Instruction(-1) {}
+	virtual void print(ostream* out=0) {*out << "<Placeholder>"; }
+	virtual int size() { return 0; }
+	virtual bool resolved() {return start_location() >= 0; }
+	virtual void output(uint8_t* buf) {
+		if (next) next->output(buf);
+	}
+};
+
 struct Global : public Instruction { reflection_sub(Global,Instruction);
   int index;
   Global(OPCODE op) : Instruction(op) { index = -1; }
@@ -1330,9 +1341,7 @@ ProtoKernelEmitter::literal_to_instruction(ProtoType *literal, OI *context)
       tuple_literal_instruction(&dynamic_cast<ProtoTuple &>(*literal),
           context);
   else if (literal->isA("ProtoLambda"))
-    return
-      lambda_literal_instruction(&dynamic_cast<ProtoLambda &>(*literal),
-          context);
+	 return lambda_literal_instruction(&dynamic_cast<ProtoLambda &>(*literal), context);
   else
     ierror("Don't know how to emit literal: " + literal->to_str());
 }
@@ -1420,8 +1429,11 @@ ProtoKernelEmitter::lambda_literal_instruction(ProtoLambda *lambda,
     CompoundOp *cop = &dynamic_cast<CompoundOp &>(*lambda->op);
     map<CompoundOp *, Block *>::const_iterator iterator
       = globalNameMap.find(cop);
-    if (iterator == globalNameMap.end())
-      ierror("Lambda has undefined operator: " + lambda->to_str());
+    if (iterator == globalNameMap.end()) {
+      V3 << "Lambda has undefined operator: " << lambda->to_str() << endl;
+      // skip this lambda for this iteration
+      return new Placeholder();
+    }
     Instruction *target = (*iterator).second->contents;
     return new Reference(target, context);
   }
@@ -2154,8 +2166,12 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     if(verbosity>=4) print_chain(start,cpout,2);
   } else if(oi->op->isA("Literal")) { 
     V4 << "Literal is: " << ce2s(oi->op) << endl;
-    chain_i(&chain,
-        literal_to_instruction(dynamic_cast<Literal &>(*oi->op).value, oi));
+    Instruction *ins = literal_to_instruction(dynamic_cast<Literal &>(*oi->op).value, oi);
+    if (ins->isA("Placeholder")) {
+    	return ins;
+    } else {
+    	chain_i(&chain, ins);
+    }
   } else if(oi->op->isA("Parameter")) { 
     V4 << "Parameter is: " << ce2s(oi->op) << endl;
     chain_i(&chain,
@@ -2225,7 +2241,13 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   V3 << s << endl;
   iDEF_FUN *fnstart = new iDEF_FUN();
   Instruction *chain=fnstart;
-  for_set(Field*,minima,i) chain_i(&chain, tree2instructions(*i));
+  for_set(Field*,minima,i) {
+	  Instruction *ins = tree2instructions(*i);
+	  if (ins->isA("Placeholder")) {
+		  return ins;
+	  }
+	  chain_i(&chain, ins);
+  }
   if(minima.size()>1) { // needs an all
     Instruction* all = new Instruction(ALL_OP);
     if(minima.size()>=256) ierror("Too many minima: "+minima.size());
@@ -2262,9 +2284,36 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
 
   V1<<"Linearizing DFG to instructions...\n";
   start = end = new iDEF_VM(); // start of every script
-  for_set(AM*,g->relevant,i) // translate each function
-    if((*i)!=g->output->domain && !(*i)->marked("branch-fn"))
-      chain_i(&end,dfg2instructions(*i));
+
+  // Try to output all functions.  If a func references another that we haven't done yet skip it until next iteration
+  bool allDone = false;
+  bool tryAgain = true;
+  while (!allDone && tryAgain) {
+	allDone = true;
+ 	tryAgain = false;
+ 	for_set(AM*,g->relevant,i) // translate each function
+ 	  // If we've already done this one, skip
+ 	  if (!globalNameMap[(*i)->bodyOf]) {
+        if((*i)!=g->output->domain && !(*i)->marked("branch-fn")) {
+      	  Instruction *idf = dfg2instructions(*i);
+ 	  	  if (idf->isA("Placeholder")) {
+ 	   		V2	<< "Placeholder for " << ce2s(*i) << endl;
+ 	   		allDone = false; // at least one failed
+     	  } else {
+	    	tryAgain = true; // at least one new function done this iteration
+ 	   		chain_i(&end,idf);
+ 	   	  }
+        }
+ 	  }
+ 	}
+ 	if (!allDone) {
+ 		if (tryAgain) {
+ 			V2 << "Didn't generate all AMs as functions, trying again." << endl;
+ 		} else {
+ 			ierror("Unable to resolve all functions");
+ 		}
+ 	}
+
   chain_i(&end,dfg2instructions(g->output->domain)); // next the main
   chain_i(&end,new Instruction(EXIT_OP)); // add the end op
   if(verbosity>=2) print_chain(start,cpout,2);
