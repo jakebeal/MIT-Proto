@@ -643,7 +643,31 @@ is 8 _  FEEDBACK_OP, 1, ADD_OP, RET_OP, EXIT_OP };
 is 9 _ uint16_t script_len = 61;
 ~= 12 3 5 1
 
-// (rep x 0 (if 
+// Feedback with tuples
+test: $(PROTO) "(rep (tup d v) (tup 0 0) (tup (+ d v) (+ v 1)))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 6, 1, 0, 4, 2, LIT_0_OP, 
+is 1 _  LIT_0_OP, DEF_TUP_OP, 2, DEF_FUN_2_OP, GLO_REF_0_OP, RET_OP, 
+is 2 _  DEF_NUM_VEC_2_OP, DEF_FUN_OP, 20, REF_0_OP, LET_1_OP, REF_0_OP, 
+is 3 _  LIT_0_OP, ELT_OP, REF_0_OP, POP_LET_1_OP, LIT_1_OP, ELT_OP, 
+is 4 _  LET_1_OP, REF_0_OP, ADD_OP, REF_0_OP, POP_LET_1_OP, LIT_1_OP, 
+is 5 _  ADD_OP, TUP_OP, 2, 2, RET_OP, DEF_NUM_VEC_2_OP, DEF_FUN_OP, 23, 
+is 6 _  GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, 
+is 7 _  GLO_REF_3_OP, FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, LET_1_OP, 
+is 8 _  REF_0_OP, LIT_0_OP, ELT_OP, REF_0_OP, POP_LET_1_OP, LIT_1_OP, 
+is 9 _  ELT_OP, TUP_OP, 4, 2, RET_OP, EXIT_OP };
+is 10 _ uint16_t script_len = 66;
+~= 13 3 10 1
+
+// Feedback + neighborhood (nested functions)
+test: $(PROTO) "(rep d (mid) (max-hood (nbr d)))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 7, 7, DEF_FUN_2_OP, 
+is 1 _  REF_0_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_4_OP, 
+is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_2_OP, 
+is 3 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, 
+is 4 _  DEF_FUN_OP, 12, GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, 
+is 5 _  REF_0_OP, REF_0_OP, GLO_REF_3_OP, FUNCALL_1_OP, POP_LET_1_OP, 
+is 6 _  FEEDBACK_OP, 0, RET_OP, EXIT_OP };
+is 7 _ uint16_t script_len = 42;
 
 // All-ways interaction:
 // (rep x 1 (if (> (timer) 5) (max-hood (nbr (mid))) 8))
