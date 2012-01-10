@@ -2152,7 +2152,11 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   // first, get all the inputs
   for(int i=0;i<oi->inputs.size();i++) {
     V4 << "Chaining " << oi->inputs[i] << endl;
-    chain_i(&chain,tree2instructions(oi->inputs[i]));
+    Instruction *ins = tree2instructions(oi->inputs[i]);
+    if (ins->isA("Placeholder")) {
+    	return ins;
+    }
+    chain_i(&chain,ins);
   }
   // second, add the operation
   if(oi->op==Env::core_op("reference")) {
