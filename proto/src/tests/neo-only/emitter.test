@@ -669,6 +669,20 @@ is 5 _  REF_0_OP, REF_0_OP, GLO_REF_3_OP, FUNCALL_1_OP, POP_LET_1_OP,
 is 6 _  FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 7 _ uint16_t script_len = 42;
 
+// Count steps to mid 1
+test: $(PROTO) "(rep d inf (mux (= (mid) 1) 0 (min-hood (+ (nbr d) 1))))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 11, 7, 
+is 1 _  DEF_FUN_4_OP, REF_0_OP, LIT_1_OP, ADD_OP, RET_OP, DEF_FUN_6_OP, 
+is 2 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
+is 3 _  REF_1_OP, MIN_OP, RET_OP, DEF_FUN_OP, 11, MID_OP, LIT_1_OP, EQ_OP, 
+is 4 _  LIT_0_OP, GLO_REF_2_OP, GLO_REF_0_OP, REF_0_OP, 
+is 5 _  FOLD_HOOD_PLUS_OP, 0, MUX_OP, RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, 
+is 6 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_3_OP, 
+is 7 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
+is 8 _ uint16_t script_len = 54;
+
+
+
 // All-ways interaction:
 // (rep x 1 (if (> (timer) 5) (max-hood (nbr (mid))) 8))
 // [and need many more]
