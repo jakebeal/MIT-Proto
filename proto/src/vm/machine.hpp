@@ -67,15 +67,15 @@ class BasicMachine {
 		/** \memberof Machine */
 		NeighbourHood hood;
 		
+		/// A pointer to the next instruction.
+		/** \memberof Machine */
+		Address instruction_pointer;
+
 	protected:
 		
 		/// The script that runs on this Machine.
 		/** \memberof Machine */
 		Script script;
-		
-		/// A pointer to the next instruction.
-		/** \memberof Machine */
-		Address instruction_pointer;
 		
 		/// The time at which the current/last run started.
 		/** \memberof Machine */
