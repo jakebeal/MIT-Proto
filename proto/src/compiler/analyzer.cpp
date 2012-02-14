@@ -1776,7 +1776,7 @@ void
 HoodToFolder::act(OperatorInstance *oi)
 {
   // Conversions begin at summaries (field-to-local ops).
-  if (oi->inputs.size() == 1
+  if (oi->inputs.size() == 1 && oi->inputs[0] != NULL
       && oi->inputs[0]->range->isA("ProtoField")
       && oi->output->range->isA("ProtoLocal")) {
     V2 << "Changing to fold-hood: " << ce2s(oi) << endl;
@@ -1856,8 +1856,11 @@ HoodToFolder::localize_compound_op(CompoundOp *cop)
     } else if (oi->op == Env::core_op("restrict")) {
       // restrict is not change to reference here: it will be handled later.
       OI *src = (oi->inputs[0] ? oi->inputs[0]->producer : 0);
-      if (src != 0 && src->op == Env::core_op("local"))
+      if (src != 0 && src->op == Env::core_op("local")) {
         root->relocate_source(oi, 0, src->inputs[0]);
+        V4 << "Relocated source: " << ce2s(oi) << endl;
+        V4 << "OI->Inputs[0] = " << ce2s(oi->inputs[0]) << endl;
+      }
     } else if (!oi->op->isA("FieldOp") && oi->op->isA("Primitive") && (oi->op->signature->output->isA("ProtoField"))) {
     	V2 << "Output is a Field but this isn't a FieldOp, this must be a primitive field function" << endl;
     	// We can localize it using localize_operator, but we want to keep the op name the same, since it will emit as the primitive
@@ -1946,8 +1949,9 @@ HoodToFolder::restrict_elements(OIset* elts,vector<Field *>* exports,AM* am,OI* 
       // remap elements that used the old export to the new restricted one
       for_set(OI*,*elts,oi) {
         for(int j=0;j<(*oi)->inputs.size();j++) {
-          if((*oi)->inputs[j] == ef) 
+          if((*oi)->inputs[j] == ef) {
             root->relocate_source(*oi,j,restrict->output);
+          }
         }
       }
       // change the export
@@ -2088,6 +2092,8 @@ public:
     V4 << "Converting 2-input 'restrict' operators to references\n";
     Fset fields; fields = space->fields; // delete invalidates original iterator
     for_set(Field*,fields,i) {
+     V4 << "Checking field: " << ce2s(*i) << endl;
+     V4 << "  Producer: " << ce2s((*i)->producer) << endl;
       if((*i)->producer->op==Env::core_op("restrict") &&
          (*i)->producer->inputs.size()==2) {
         V4 << "Converting to reference: "+ce2s((*i)->producer)+"\n";
@@ -2099,11 +2105,14 @@ public:
     V4 << "Deriving operators from space "+ce2s(space)+"\n";
     OIset elts; space->all_ois(&elts);
     vector<Field*> ins; // no inputs
-    return root->derive_op(&elts,space,&ins,out);
+    CompoundOp* res = root->derive_op(&elts,space,&ins,out);
+    for_set(OI *, elts, i) {
+      V2 << "OI ELT: " << ce2s(*i) << endl;
+    }
+    return res;
   }
-
   void act(OperatorInstance* oi) {
-    // properly formed muxes are candidates for if patterns
+	// properly formed muxes are candidates for if patterns
     if(oi->op==Env::core_op("mux") && oi->inputs.size()==3) {
       //&& !oi->attributes.count("LETFED-MUX")) {
       bool letfedmux = false;
@@ -2162,15 +2171,57 @@ public:
       }
       V3 << "Removing old OIs" << endl;
       // delete old elements
+
+      // 1) Find the new Delay, if there is one
+      OI* newDelay = NULL;
+      OIset br_ops1; tf->body->all_ois(&br_ops1); ff->body->all_ois(&br_ops1);
+      for_set(OI*,br_ops1,i) {
+      	  if ((*i)->op == Env::core_op("delay")) {
+      		  if (newDelay == NULL) {
+    		    newDelay = *i;
+    	      } else {
+    	    	  ierror("Multiple delays in the same update function, this is unexpected.");
+    	      }
+      	  }
+      }
+
       root->delete_node(oi);
       OIset elts; trueAM->all_ois(&elts); falseAM->all_ois(&elts);
-      for_set(OI*,elts,i) { root->delete_node(*i); }
+      // Move any other references to this delay to the new branch
+      for_set(OI*,elts,i) {
+    	V3 << "Removing OI: " << ce2s(*i) << endl;
+    	if ((*i)->op == Env::core_op("delay")) {
+          OI* delay = *i;
+    	  std::vector<OI*> relocaters;
+          V3 << "Delay output " << ce2s(delay->output) << endl;
+    	  for_set(Consumer,delay->output->consumers,j) {
+    	    OI* delayConsumer = (*j).first;
+       		if (delayConsumer != NULL) {
+    		  if (delayConsumer->op != NULL) {
+    		    V3 << "Delay Consumer: " << ce2s(delayConsumer) << endl;
+    			if ((delayConsumer->op->name == "reference") || (delayConsumer->op->name == "restrict")) {
+    			  relocaters.push_back(delayConsumer);
+    			}
+    		  }
+       		}
+    	  }
+    	  for (int k=0; k<relocaters.size(); ++k) {
+    		  OI* delayConsumer = relocaters[k];
+    		  V3 << "Relocating source from " << ce2s(delayConsumer) << " to " << ce2s(newDelay->output) << endl;
+    		  root->relocate_source(delayConsumer, 0, newDelay->output);
+    	  }
+    	}
+    	root->delete_node(*i);
+      }
       root->delete_space(trueAM); root->delete_space(falseAM);
       root->delete_node(testnot->producer);
       // note all changes
       note_change(newoi);
       OIset br_ops; tf->body->all_ois(&br_ops); ff->body->all_ois(&br_ops);
-      for_set(OI*,br_ops,i) note_change(*i);
+      for_set(OI*,br_ops,i) {
+    	  V5 << "Note change for " << ce2s(*i) << endl;
+    	  note_change(*i);
+      }
       V5 << "Test: " << ce2s(test) << endl;
       for_set(Consumer,test->consumers,i) {
          V5 << "Test Consumer: " << ce2s((*i).first) << endl;
@@ -2188,10 +2239,10 @@ public:
   virtual void print(ostream* out=0) { *out << "RestrictToReference"; }
 
   void act(OperatorInstance* oi) {
-    if(oi->op==Env::core_op("restrict") && oi->inputs.size()==1) {
-      V3 << "Converting restrict to reference: "+ce2s(oi)+"\n";
-      oi->op = Env::core_op("reference"); note_change(oi);
-    }
+      if(oi->op==Env::core_op("restrict") && oi->inputs.size()==1 && oi->inputs[0] != NULL) {
+        V3 << "Converting restrict to reference: " << ce2s(oi) << endl;
+        oi->op = Env::core_op("reference"); note_change(oi);
+      }
   }
 };
 
@@ -2232,7 +2283,41 @@ public:
       } else {
     	  cout << "Delays input is not from a letfedmux!" << endl;
       }
-    }
+    } else if(oi->op==Env::core_op("mux")) {
+       // Handle the case where we have a dchange with no delay
+       // This can happen if the update function ignores the rep variable
+       //   So it's probably bad code
+       //   may want to throw a compiler error instead?  But for now it's allowed so we have to handle it.
+    	if (oi->attributes.count("LETFED-MUX")) {
+    		Field* out = oi->output;
+    		// If output goes to a delay, leave it alone here, the delay will handle it
+    		for_set(Consumer,out->consumers,i) {
+    		    if(i->first->op==Env::core_op("delay")) {
+    		    	return;
+    		    }
+    		    if(i->first->op==Env::core_op("store")) {
+    		    	// already did it
+    		    	return;
+    		    }
+    		}
+    		// No delay, and it's a letfed mux
+    		// This is the silly case where there is no reference to the rep variable in the update
+    		//   So the rep is really doing nothing (rep t 0 (+ 1 2))
+
+    		// Add in a store, which will be emitted as a FeedbackOp for completeness and to match what the paleo compiler does
+    		V3 << "Creating Store" << endl;
+            OI* store = new OperatorInstance(oi, Env::core_op("store"), oi->output->domain);
+         	root->relocate_consumers(oi->output, store->output);
+      	    store->add_input(oi->output);
+      	    store->output->range = oi->output->range;
+      	    store->clear_attribute("LETFED-MUX");
+
+      	    note_change(oi);
+      	    note_change(store);
+        	V3 << "Store: " << ce2s(store) << endl;
+      	    V3 << "Mux output: " << ce2s(oi->output) << endl;
+    	}
+     }
   }
 };
 

@@ -434,7 +434,11 @@ int OperatorInstance::pointwise() {
 void OperatorInstance::print(ostream* out) {
   for(int i=0;i<inputs.size();i++) {
     if(i) *out << ", ";
-    *out << inputs[i]->nicename(); inputs[i]->range->print(out);
+    if (inputs[i] == NULL) {
+    	*out << "NULL";
+    } else {
+        *out << inputs[i]->nicename(); inputs[i]->range->print(out);
+    }
   }
   if(inputs.size()) *out << " --> "; 
   op->print(out); 
@@ -899,7 +903,7 @@ bool IRPropagator::maybe_set_range(Field* f,ProtoType* range) {
 }
 
 bool IRPropagator::propagate(DFG* g) {
-  V1 << "Executing analyzer " << to_str(); V2 << endl;
+  V1 << "Executing analyzer " << to_str(); V1 << endl;
   any_changes=false; root=g;
   // initialize worklists
   if(act_fields) queue_all_fields(g,this); else worklist_f.clear();

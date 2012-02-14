@@ -828,6 +828,7 @@ public:
       // find the last reference to this source
       Instruction* last = NULL;
       for_set(Instruction*,sources[i]->usages,j) {
+    	V4 << "Usage Instruction: " << ce2s(*j) << endl;
         if((*j)->marked("~Last~Reference")) { last = *j; break; }
       }
       if(last==NULL)ierror("Trying to pop a let without its last usage marked");
@@ -872,7 +873,11 @@ public:
       usages.push_back(l->usages); //1 per src
       Instruction* pointer = l->next;
       stack<Instruction*> block_nesting;
-      while(!usages.empty()) {
+      bool foldReferenceFound = true;
+      if (i->marked("~Fold-Reference")) {
+    	  foldReferenceFound = false;
+      }
+      while(!usages.empty() && ~foldReferenceFound) {
         V3 << ".";
         while(sources.size()>usages.size()) sources.pop_back(); // cleanup...
         if(pointer==NULL) {
@@ -883,6 +888,7 @@ public:
           V3 << "^";
           pointer=block_nesting.top()->next; block_nesting.pop(); continue;
         }
+        V3 << "Pointer: " << ce2s(pointer) << endl;
         if(pointer->isA("Block")) { // search for references in subs
           V3 << "v";
           block_nesting.push(pointer);
@@ -916,7 +922,8 @@ public:
             usages.pop_back();
           }
         } else if (pointer->isA("Fold")) {
-          if (i->marked("~Fold-Reference")) {
+        	V3 << "\n\t is a FOLD" << endl;
+            if (i->marked("~Fold-Reference")) {
         	  V3 << "\n Found folder...";
         	  l->usages.insert(pointer);
               pointer->mark("~Last~Reference");
@@ -925,6 +932,7 @@ public:
                 V3 << "\n Popping a LET";
                 usages.pop_back();
               }
+              foldReferenceFound = true;
           }
         } else if (pointer->isA("FunctionCall")) {
           V3 << "\n Found FunctionCall usage...";
@@ -943,7 +951,7 @@ public:
         	 usages.pop_back();
           }
         }
-        if(!usages.empty()) pointer=pointer->next;
+        if(!usages.empty() || (foldReferenceFound == false && i->marked("~Fold-Reference"))) pointer=pointer->next;
       }
       // Now walk through and pop all the sources, clumping by destination
       V3 << "\n Adding set of pops, size: "<<sources.size()<<"\n";
@@ -2151,7 +2159,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
   }
   // first, get all the inputs
   for(int i=0;i<oi->inputs.size();i++) {
-    V4 << "Chaining " << oi->inputs[i] << endl;
+    V4 << "Chaining " << ce2s(oi->inputs[i]) << endl;
     Instruction *ins = tree2instructions(oi->inputs[i]);
     if (ins->isA("Placeholder")) {
     	return ins;
@@ -2166,8 +2174,73 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     if(frag) fragments[oi->inputs[0]->producer] = frag;
   } else if(oi->op->isA("Primitive")) {
     V4 << "Primitive is: " << ce2s(oi->op) << endl;
+    if (fold_ops.count(oi->op->name)) {
+    	V4 << "Folder, fixing input sequence" << endl;
+    	// Kludge
+    	//   Need to fix the stack in the case where there are multiple uses of an external input for a neurhborhood
+    	//   Need to put the external input on the stack first (n times), then the folder function, then the hood function
+    	//   Without this fix, we'll interleave the input reference (ref, folder, ref, hood func), which gets the stack wrong
+    	//   Should fix this upstream
+
+    	// This code checks for the case where we have two glo-refs (the two inputs to the hood folder), with a ref in the middle.
+    	//   It then moves that ref before the first glo ref, since that ref setting an input parameter on the stack to be used by the hood function
+    	Instruction *tChain = chain;
+    	bool found = false;
+    	bool foundRef = false;
+    	Instruction* g1 = 0;
+    	while (tChain && !found) {
+    	  V4 << "TChain: " << ce2s(tChain) << endl;
+    	  // if (tChain->isA("Global")) {  Why doesn't isA("Global") work here?
+    	  if (g1 != 0 && tChain->op == REF_OP) {
+    		  foundRef = true;
+    	  }
+    	  if (tChain->op == GLO_REF_OP) {
+    		 V4 << " is a Global" << endl;
+    		 if (g1 == 0) {
+    			 g1 = tChain;
+    			 tChain = tChain->prev;
+    			 V4 << "First global is " << ce2s(g1) << endl;
+    		 } else if (!foundRef) {
+    			 V4 << "No references in the middle, don't need to fix the stack" << endl;
+    			 // No references inbetween, we don't need to fix anythinmg
+    			 found = true;
+    			 break;
+    		 } else {
+    			 V4 << "Found second global" << endl;
+    			 // found first global
+    			 if (tChain->next == g1) {
+    				 // We're good;
+    				 V4 << "Nothing to move, globals are adjacent" << endl;
+    				 found = true;
+    				 break;
+    			 } else {
+    				 while (tChain->next != g1) {
+    					 // Move guy after me to before me
+    					 Instruction* tNext = tChain->next;
+    					 Instruction* tPrev = tChain->prev;
+    					 V3 << "Moving " << ce2s(tNext) << " to before " << ce2s(tChain) << endl;
+
+    					 tChain->next = tNext->next;
+    					 tChain->prev = tNext;
+    					 tChain->next->prev = tChain;
+
+    					 tNext->next = tChain;
+    					 tNext->prev = tPrev;
+
+    					 if (tPrev != 0) {
+    					   tPrev->next = tNext;
+    					 }
+    				 }
+    				 found = true;
+    			 }
+    		 }
+    	  } else {
+    		 tChain = tChain->prev;
+    	  }
+    	}
+    }
     chain_i(&chain,primitive_to_instruction(oi));
-    if(verbosity>=4) print_chain(start,cpout,2);
+    if(verbosity>=4) print_chain(chain,cpout,2);
   } else if(oi->op->isA("Literal")) { 
     V4 << "Literal is: " << ce2s(oi->op) << endl;
     Instruction *ins = literal_to_instruction(dynamic_cast<Literal &>(*oi->op).value, oi);
@@ -2202,7 +2275,17 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
 	for_set(AM*,fsel,i) cout << "Selector AM: " << ce2s(*i) << endl;
     ierror("Restrictions not all compiled out for: "+f->to_str());
   }
-  if(needs_let(f)) { // need a let to contain this
+  if(needs_fold_lambda_let(f)) { // need a let to contain the input to a lambda function used by a folder
+    	 iLET *l = new iLET();
+    	 l->mark("~Fold-Reference");
+       memory[f] = chain_i(&chain,l);
+       V4 << "Needs Fold Lambda Let: " << ce2s(f) << endl;
+       if(verbosity>=2) print_chain(start,cpout,2);
+       // Don't need to add a reference, the lambda function should have one
+       // Could check
+  } else if (f->producer->op->name == "read") {
+	V4 << "Reads don't need a let here" << endl;
+  } else if(needs_let(f)) { // need a let to contain this
 	memory[f] = chain_i(&chain, new iLET());
 	  V4 << "Needs Let: " << ce2s(memory[f]) << endl;
     if(verbosity>=2) print_chain(start,cpout,2);
@@ -2210,15 +2293,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
         new Reference(&dynamic_cast<Instruction &>(*memory[f]), oi));
     if(verbosity>=2) print_chain(start,cpout,2);
   }
-  if(needs_fold_lambda_let(f)) { // need a let to contain the input to a lambda function used by a folder
-  	 iLET *l = new iLET();
-  	 l->mark("~Fold-Reference");
-     memory[f] = chain_i(&chain,l);
-     V4 << "Needs Fold Lambda Let: " << ce2s(memory[f]) << endl;
-     if(verbosity>=2) print_chain(start,cpout,2);
-     // Don't need to add a reference, the lambda function should have one
-     // Could check
-  }
+
   return chain_start(chain);
 }
 
