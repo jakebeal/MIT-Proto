@@ -186,6 +186,10 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
     vm->run(time);
     while(!vm->finished()) {
     	if (is_print_stack) {
+    	  Int8 opcode = *(vm->instruction_pointer);
+    	  cout << "OpCode: " << opcode;
+    	  Instruction i = instructions[opcode];
+    	  cout << " Instruction: " << i << endl;
     	  cout << "Stack (step " << iStep << "): ";
     	  vm->print_stack(&vm->stack);
     	}
