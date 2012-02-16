@@ -326,7 +326,7 @@ SExpr* ProtoInterpreter::expand_macro(MacroOperator* m, SE_List* call) {
       = &dynamic_cast<ProtoSymbol &>(*m->signature->optional_inputs[j]);
     m_env.bind(var->value,(*call)[i++]);
   }
-  if(i<call->len()) { // sweep all else into rest argument
+  if(m->signature->rest_input) { // sweep all else into rest argument
     ProtoSymbol* var
       = &dynamic_cast<ProtoSymbol &>(*m->signature->rest_input);
     SE_List *rest = new SE_List(); rest->inherit_attributes(m);
@@ -334,7 +334,10 @@ SExpr* ProtoInterpreter::expand_macro(MacroOperator* m, SE_List* call) {
     m_env.bind(var->value,rest);
   }
   // then substitute the pattern
-  return macro_substitute(m->pattern,&m_env);
+  V3 << "Expand macro call:\n"; V3 << call->to_str() << endl;
+  SExpr* expanded = macro_substitute(m->pattern,&m_env);
+  V3 << "Macro expanded into:\n"; V3 << expanded->to_str() << endl;
+  return expanded;
 }
 
 // walks through, copying (and inheriting attributes)
