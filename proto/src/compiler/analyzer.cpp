@@ -2092,8 +2092,8 @@ public:
     V4 << "Converting 2-input 'restrict' operators to references\n";
     Fset fields; fields = space->fields; // delete invalidates original iterator
     for_set(Field*,fields,i) {
-     V4 << "Checking field: " << ce2s(*i) << endl;
-     V4 << "  Producer: " << ce2s((*i)->producer) << endl;
+      V4 << "Checking field: " << ce2s(*i) << endl;
+      V4 << "  Producer: " << ce2s((*i)->producer) << endl;
       if((*i)->producer->op==Env::core_op("restrict") &&
          (*i)->producer->inputs.size()==2) {
         V4 << "Converting to reference: "+ce2s((*i)->producer)+"\n";
@@ -2119,11 +2119,12 @@ public:
       if (oi->attributes.count("LETFED-MUX")) {
     	  letfedmux = true;
       }
-      V3 << "Considering If->Branch candidate:\n   "<<oi->to_str()<<endl;
+      V3 << "Considering If->Branch candidate:\n   "<< ce2s(oi) <<endl;
       OI *join; Field *test, *testnot; AM *trueAM, *falseAM; AM* space;
       // fill in blanks
       join = oi; space = oi->output->domain; test = oi->inputs[0];
-      trueAM = oi->inputs[1]->domain; falseAM = oi->inputs[2]->domain;
+      trueAM = oi->inputs[1]->domain;
+      falseAM = oi->inputs[2]->domain;
       testnot = falseAM->selector;
       // check for validity
       V4 << "Checking not operator\n";
@@ -2185,7 +2186,7 @@ public:
       	  }
       }
 
-      root->delete_node(oi);
+      V3 << "New Delay is " << ce2s(newDelay) << endl;
       OIset elts; trueAM->all_ois(&elts); falseAM->all_ois(&elts);
       // Move any other references to this delay to the new branch
       for_set(OI*,elts,i) {
@@ -2199,9 +2200,7 @@ public:
        		if (delayConsumer != NULL) {
     		  if (delayConsumer->op != NULL) {
     		    V3 << "Delay Consumer: " << ce2s(delayConsumer) << endl;
-    			if ((delayConsumer->op->name == "reference") || (delayConsumer->op->name == "restrict")) {
-    			  relocaters.push_back(delayConsumer);
-    			}
+    			relocaters.push_back(delayConsumer);
     		  }
        		}
     	  }
@@ -2213,6 +2212,7 @@ public:
     	}
     	root->delete_node(*i);
       }
+      root->delete_node(oi);
       root->delete_space(trueAM); root->delete_space(falseAM);
       root->delete_node(testnot->producer);
       // note all changes
@@ -2239,9 +2239,14 @@ public:
   virtual void print(ostream* out=0) { *out << "RestrictToReference"; }
 
   void act(OperatorInstance* oi) {
-      if(oi->op==Env::core_op("restrict") && oi->inputs.size()==1 && oi->inputs[0] != NULL) {
-        V3 << "Converting restrict to reference: " << ce2s(oi) << endl;
-        oi->op = Env::core_op("reference"); note_change(oi);
+      if(oi->op==Env::core_op("restrict") && oi->inputs.size()==1) {
+    	  if (oi->inputs[0] != NULL) {
+    		  V3 << "Converting restrict to reference: " << ce2s(oi) << endl;
+              oi->op = Env::core_op("reference");
+              note_change(oi);
+    	  } else {
+    		  V2 << "NULL Input in Restrict To Reference for " << ce2s(oi) << endl;
+    	  }
       }
   }
 };
@@ -2329,8 +2334,8 @@ GlobalToLocal::GlobalToLocal(NeoCompiler* parent, Args* args) {
   paranoid = args->extract_switch("--localizer-paranoid")|parent->paranoid;
   // set up rule collection
   rules.push_back(new HoodToFolder(this,args));
-  rules.push_back(new RestrictToBranch(this,args));
   rules.push_back(new RestrictToReference(this,args));
+  rules.push_back(new RestrictToBranch(this,args));
   rules.push_back(new DelayToStoreAndRead(this, args));
   rules.push_back(new DeadCodeEliminator(this,args));
 }
