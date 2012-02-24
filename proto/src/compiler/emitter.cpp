@@ -827,11 +827,15 @@ public:
     for(int i=0;i<sources.size();i++) {
       // find the last reference to this source
       Instruction* last = NULL;
+      V4 << "Source: " << ce2s(sources[i]) << endl;
+      V4 << "  Usages: " << sources[i]->usages.size() << endl;
       for_set(Instruction*,sources[i]->usages,j) {
     	V4 << "Usage Instruction: " << ce2s(*j) << endl;
         if((*j)->marked("~Last~Reference")) { last = *j; break; }
       }
-      if(last==NULL)ierror("Trying to pop a let without its last usage marked");
+      if(last==NULL) {
+    	  ierror("Trying to pop a let without its last usage marked");
+      }
       // is it marked as being in a branch?
       V5 << "Considering last reference: "<<ce2s(last)<<endl;
       if(last->marked("~Branch~End")) {
@@ -912,8 +916,11 @@ public:
               V4 << "Erasing: " << ce2s(pointer) << endl;
               usages[j].erase(pointer);
               // mark last references for later use in pop insertion
-              if(!usages[j].size()) pointer->mark("~Last~Reference");
-              break;
+              if(!usages[j].size()) {
+            	  V4 << "  Marking LastReference" << endl;
+            	  pointer->mark("~Last~Reference");
+              }
+              continue;
             }
           }
           // trim any empty usages on top of the stack
@@ -925,15 +932,25 @@ public:
         	V3 << "\n\t is a FOLD" << endl;
             if (i->marked("~Fold-Reference")) {
         	  V3 << "\n Found folder...";
+
         	  l->usages.insert(pointer);
               pointer->mark("~Last~Reference");
-              // trim any empty usages on top of the stack
-              while(usages.size() && usages[usages.size()-1].empty()) {
+              for (int j=0;j<sources.size();++j) {
+            	  if (sources[j]->marked("~Fold-Reference")) {
+            	    V3 << " Adding Fold as a usage for sublet" << endl;
+            	    sources[j]->usages.insert(pointer);
+            	  } else {
+            		V3 << " SubLet is not marked as fold-ref" << endl;
+            	  }
+              }
+              // trim any all usages on top of the stack
+              // lets assume here the fold uses all these lets
+              while(usages.size() && usages[usages.size()-1].empty())  {
                 V3 << "\n Popping a LET";
                 usages.pop_back();
               }
               foldReferenceFound = true;
-          }
+            }
         } else if (pointer->isA("FunctionCall")) {
           V3 << "\n Found FunctionCall usage...";
           for(int j=0;j<usages.size();j++) {
@@ -2120,9 +2137,7 @@ bool needs_fold_lambda_let(Field* f) {
           if (cc->first->op->isA("Primitive")) {
         	string ccName = cc->first->op->name;
         	if ((ccName == "fold-hood") || ccName == "fold-hood-plus") {
-        	  // Could check the lambda function here for the reference, but we'll skip that for now
-        	  // file bug
-        	  // cout << "  consumer is a lambda, need a let" << endl;
+        	  //TODO: Check the lambda function for the reference and mark it
               return true;
         	}
           }
@@ -2276,13 +2291,13 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     ierror("Restrictions not all compiled out for: "+f->to_str());
   }
   if(needs_fold_lambda_let(f)) { // need a let to contain the input to a lambda function used by a folder
-    	 iLET *l = new iLET();
-    	 l->mark("~Fold-Reference");
-       memory[f] = chain_i(&chain,l);
-       V4 << "Needs Fold Lambda Let: " << ce2s(f) << endl;
-       if(verbosity>=2) print_chain(start,cpout,2);
-       // Don't need to add a reference, the lambda function should have one
-       // Could check
+    iLET *l = new iLET();
+    l->mark("~Fold-Reference");
+    memory[f] = chain_i(&chain,l);
+    V4 << "Needs Fold Lambda Let: " << ce2s(f) << endl;
+    if(verbosity>=2) print_chain(start,cpout,2);
+    // Don't need to add a reference, the lambda function should have one
+    // Could check
   } else if (f->producer->op->name == "read") {
 	V4 << "Reads don't need a let here" << endl;
   } else if(needs_let(f)) { // need a let to contain this
