@@ -783,6 +783,18 @@ CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
         oi->second->add_input(oi->first->inputs[i]); // external reference
       }
     }
+	// Relocate source for external references 
+    for_set(Consumer,oi->first->output->consumers,j) {
+      //cout << "OI consumer: " << ce2s((*j).first) << endl;
+      if ((*j).first != NULL && (*j).first->op != NULL) {
+   		if ((*j).first->op->name == "reference") {
+   		  // External reference
+   		  //cout << "Relocating source for " << ce2s((*j).first) << " to " << ce2s(oi->second->output) << endl;
+   		  relocate_source((*j).first, 0, oi->second->output);
+   		  break;
+   	    }
+      }
+    }
   }
 
   // Assign the output
