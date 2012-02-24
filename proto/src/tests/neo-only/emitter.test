@@ -704,6 +704,20 @@ is 4 _  EXIT_OP };
 is 5 _ uint16_t script_len = 30;
 = 15 3 2
 
+// Simple case of reference used in an internal lambda created by a branch (rep)
+test: $(PROTO) "(rep d 0 (mux (max-hood (+ d (dt))) 1 2))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 7, 8, DEF_FUN_2_OP, 
+is 1 _  REF_1_OP, RET_OP, DEF_FUN_2_OP, LIT_0_OP, RET_OP, DEF_FUN_4_OP, 
+is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 14, GLO_REF_2_OP, 
+is 3 _  REF_0_OP, DT_OP, ADD_OP, LET_1_OP, GLO_REF_0_OP, LIT_0_OP, 
+is 4 _  FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, LIT_1_OP, LIT_2_OP, MUX_OP, 
+is 5 _  RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, 
+is 6 _  LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_3_OP, FUNCALL_1_OP, 
+is 7 _  POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
+is 8 _ uint16_t script_len = 51;
+= 15 3 1
+
+
 // All-ways interaction:
 // (rep x 1 (if (> (timer) 5) (max-hood (nbr (mid))) 8))
 // [and need many more]
