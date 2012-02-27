@@ -262,19 +262,33 @@ class BasicMachine {
 				  cout << " Empty " << endl;
 				} else {
 			      for(Index i = 0; i < s->size(); i++) {
-			    	Data el = s->peek(i);
-			    	if (el.type() == Data::Type_number) {
-			    		cout << el.asNumber() << " ";
-			    	} else if (el.type() == Data::Type_address) {
-			    		cout << "A:" << el.asAddress() << " ";
-			    	} else if (el.type() == Data::Type_tuple) {
-			    		cout << el.asTuple() << " ";
-			    	} else {
-			    		cout << "UnknownType ";
-			    	}
+					Data el = s->peek(i);
+					print_data(el);
+					cout << " ";
 				  }
 				  cout << endl;
 				}
+			}
+
+			inline void print_data(Data el) {
+			  if (el.type() == Data::Type_number) {
+				cout << el.asNumber();
+			  } else if (el.type() == Data::Type_address) {
+				cout << "A:" << (int)*(el.asAddress());
+			  } else if (el.type() == Data::Type_tuple) {
+				Tuple const & tup = el.asTuple();
+				cout << "T:(";
+				for (int i=0;i<tup.size(); ++i) {
+					print_data(tup[i]);
+					if (i<(tup.size() - 1)) {
+						cout << ",";
+					} else {
+						cout << ")";
+					}
+				}
+			  } else {
+				cout << "UnknownType ";
+			  }
 			}
 
 		/// \}
