@@ -31,6 +31,8 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "motelink.h"
 #include "sim-instructions.h"
 
+map<string,uint8_t> OPCODE_MAP = create_opcode_map();
+
 void shutdown_app(void);
 
 #if USE_NEOCOMPILER
