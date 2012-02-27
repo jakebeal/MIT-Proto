@@ -18,7 +18,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "plugin_manager.h"
 #include "DefaultsPlugin.h"
 
-using namespace std;
+extern map<string,uint8_t> OPCODE_MAP;
 
 /*****************************************************************************
  *  DEVICE                                                                   *
@@ -185,20 +185,31 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
     }
     vm->run(time);
     while(!vm->finished()) {
+    	if (is_print_stack || is_print_env_stack) {
+    		Int8 opcode = *(vm->instruction_pointer);
+    		cout << "OpCode: " << (int)opcode;
+    		Instruction i = instructions[opcode];
+    		map<string,uint8_t>::iterator it;
+    		for ( it=OPCODE_MAP.begin() ; it != OPCODE_MAP.end(); it++ ) {
+    			if ((*it).second == opcode) {
+    				cout << " " << (*it).first;
+    				break;
+    			}
+    		}
+    	}
     	if (is_print_stack) {
-    	  Int8 opcode = *(vm->instruction_pointer);
-    	  cout << "OpCode: " << opcode;
-    	  Instruction i = instructions[opcode];
-    	  cout << " Instruction: " << i << endl;
-    	  cout << "Stack (step " << iStep << "): ";
+    	  cout << " Stack (" << iStep << "): ";
     	  vm->print_stack(&vm->stack);
     	}
     	if (is_print_env_stack) {
-    	  cout << "Environment Stack (step " << iStep << "): ";
+    	  cout << " Environment Stack (" << iStep << "): ";
     	  vm->print_stack(&vm->environment);
     	}
     	iStep++;
     	vm->step();
+    }
+    if (is_print_stack || is_print_env_stack) {
+    	cout << endl;
     }
     body->update(); // run the post-compute update
     for(int i=0;i<num_layers;i++)

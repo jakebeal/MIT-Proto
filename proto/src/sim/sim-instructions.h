@@ -19,6 +19,4 @@ map<string,uint8_t> create_opcode_map() {
    return m;
 }
 
-map<string,uint8_t> OPCODE_MAP = create_opcode_map();
-
 #endif
