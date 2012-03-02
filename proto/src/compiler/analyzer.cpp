@@ -2251,6 +2251,11 @@ public:
   }
 };
 
+// Map Stores to Reads
+// TODO: Put this in the Read OperatorInstance, would need to extend OI to add a field and redo the below where we just change the delay to a read
+// Need to map store and reads so we can get the right reference later in the emitter
+std::map<OI*, OI*> readToStoreMap;
+
 class DelayToStoreAndRead : public IRPropagator {
 public:
   DelayToStoreAndRead(GlobalToLocal* parent, Args* args) : IRPropagator(false,true) {
@@ -2277,6 +2282,8 @@ public:
     	  store->add_input(mux->output);
     	  store->output->range = mux->output->range;
     	  store->clear_attribute("LETFED-MUX");
+
+    	  readToStoreMap[oi] = store;
 
     	  note_change(oi);
     	  note_change(mux);

@@ -168,6 +168,9 @@ class ProtoKernelEmitter : public CodeEmitter {
   /// Map of dchange OI -> InitFeedback instruction
   ///  Used to get the proper init feedback to match with a feedback op
   std::map<OI*, Instruction*> dchangeMap;
+  /// Map of dchange OI -> "read" Reference
+  /// Used to fix the read reference to be the init feedback's let, since the read is resolved first
+  std::map<OI*, std::set<Instruction*> > dchangeReadMap;
 
  private:
   std::vector<InstructionPropagator *> rules;
