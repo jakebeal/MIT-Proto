@@ -105,6 +105,66 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   }
 };
 
+struct Global : public Instruction { reflection_sub(Global,Instruction);
+  int index;
+  Global(OPCODE op) : Instruction(op) { index = -1; }
+};
+
+/// DEF_VM
+struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
+  int export_len, n_exports, n_globals, n_states, max_stack, max_env;
+  iDEF_VM() : Instruction(DEF_VM_OP)
+  { export_len=n_exports=n_globals=n_states=max_stack=max_env=-1;}
+  bool resolved() {
+    return export_len>=0 && n_exports>=0 && n_globals>=0 && n_states>=0
+             && max_stack>=0 && max_env>=0 && Instruction::resolved();
+  }
+  virtual void output(uint8_t* buf) {
+    padd8(export_len); padd8(n_exports); padd16(n_globals); padd8(n_states);
+    padd16(max_stack+1); padd8(max_env); // +1 for enclosing function call
+    Instruction::output(buf);
+  }
+  virtual void print(ostream* out=0) {
+     if(ProtoKernelEmitter::op_debug)
+        *out << "VM Definition "
+           << "[ export_len:" << export_len
+           << ", n_exports:"  << n_exports
+           << ", n_globals:"  << n_globals
+           << ", n_states:"   << n_states
+           << ", max_stack:"  << max_stack
+           << ", max_env:"    << max_env
+           << " ]";
+     else
+        Instruction::print(out);
+  }
+  int size() { return 9; }
+};
+
+/// DEF_FUN_k_OP, DEF_FUN_OP, DEF_FUN16_OP
+struct iDEF_FUN : public Global { reflection_sub(iDEF_FUN,Global);
+  Instruction* ret;
+  int fun_size;
+  iDEF_FUN() : Global(DEF_FUN_OP) { ret=NULL; fun_size=-1; }
+  bool resolved() { return fun_size>=0 && Instruction::resolved(); }
+  int size() { return (fun_size<0) ? -1 : Instruction::size(); }
+};
+
+/// DEF_TUP_OP, DEF_VEC_OP, DEF_NUM_VEC_OP, DEV_NUM_VEC_k_OP
+struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
+  int size;
+  iDEF_TUP(int size,bool literal=false) : Global(DEF_TUP_OP) {
+    this->size=size;
+    if(!literal) { // change to DEF_NUM_VEC_OP
+      stack_delta = 0;
+      if(size <= MAX_DEF_NUM_VEC_OPS) { op = DEF_NUM_VEC_OP + size;
+      } else { op = DEF_NUM_VEC_OP; padd(size); }
+    } else { // keep as DEF_TUP_OP
+      stack_delta = -size;
+      padd(size);
+    }
+  }
+};
+
 /// A block is a sequence of instructions
 struct Block : public Instruction { reflection_sub(Block,Instruction);
   Instruction* contents;
@@ -128,13 +188,24 @@ struct Block : public Instruction { reflection_sub(Block,Instruction);
   virtual int net_env_delta() { 
     env_delta = 0;
     Instruction* ptr = contents;
-    while(ptr) { env_delta+=ptr->net_env_delta(); ptr=ptr->next; }
+    bool defFun = false;
+    if(ptr->isA("iDEF_FUN")) {
+       defFun = true;
+    }
+    while(ptr && (!defFun || ptr->op != RET_OP)) {
+       env_delta+=ptr->net_env_delta();
+       ptr=ptr->next;
+    }
     return env_delta;
   }
   virtual int max_env_delta() { 
     int delta = 0, max_delta = 0;
     Instruction* ptr = contents;
-    while(ptr) { 
+    bool defFun = false;
+    if(ptr->isA("iDEF_FUN")) {
+       defFun = true;
+    }
+    while(ptr && (!defFun || ptr->op != RET_OP)) {
       max_delta = max(max_delta, delta + ptr->max_env_delta());
       delta+=ptr->net_env_delta(); ptr=ptr->next;
     }
@@ -143,13 +214,30 @@ struct Block : public Instruction { reflection_sub(Block,Instruction);
   virtual int net_stack_delta() {
     stack_delta = 0;
     Instruction* ptr = contents;
-    while(ptr) { stack_delta+=ptr->net_stack_delta(); ptr=ptr->next; }
+    bool defFun = false;
+    if(ptr->isA("iDEF_FUN")) {
+       defFun = true;
+    }
+    while(ptr && (!defFun || ptr->op != RET_OP)) {
+    	int thisdelta = ptr->net_stack_delta();
+    	stack_delta += thisdelta;
+    	//stack_delta+=ptr->net_stack_delta();
+    	ptr=ptr->next;
+    }
+    // Ret
+    if (defFun) {
+      stack_delta = stack_delta - 1;
+    }
     return stack_delta;
   }
   virtual int max_stack_delta() {
     int delta = 0, max_delta = 0;
     Instruction* ptr = contents;
-    while(ptr) { 
+    bool defFun = false;
+    if(ptr->isA("iDEF_FUN")) {
+       defFun = true;
+    }
+    while(ptr && (!defFun || ptr->op != RET_OP)) {
       max_delta = max(max_delta, delta + ptr->max_stack_delta());
       delta+=ptr->net_stack_delta(); ptr=ptr->next;
     }
@@ -264,66 +352,6 @@ struct Placeholder : public Instruction {
 	virtual void output(uint8_t* buf) {
 		if (next) next->output(buf);
 	}
-};
-
-struct Global : public Instruction { reflection_sub(Global,Instruction);
-  int index;
-  Global(OPCODE op) : Instruction(op) { index = -1; }
-};
-
-/// DEF_VM
-struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
-  int export_len, n_exports, n_globals, n_states, max_stack, max_env;
-  iDEF_VM() : Instruction(DEF_VM_OP) 
-  { export_len=n_exports=n_globals=n_states=max_stack=max_env=-1;}
-  bool resolved() { 
-    return export_len>=0 && n_exports>=0 && n_globals>=0 && n_states>=0 
-             && max_stack>=0 && max_env>=0 && Instruction::resolved(); 
-  }
-  virtual void output(uint8_t* buf) {
-    padd8(export_len); padd8(n_exports); padd16(n_globals); padd8(n_states);
-    padd16(max_stack+1); padd8(max_env); // +1 for enclosing function call
-    Instruction::output(buf);
-  }
-  virtual void print(ostream* out=0) {
-     if(ProtoKernelEmitter::op_debug)
-        *out << "VM Definition "
-           << "[ export_len:" << export_len
-           << ", n_exports:"  << n_exports
-           << ", n_globals:"  << n_globals
-           << ", n_states:"   << n_states
-           << ", max_stack:"  << max_stack
-           << ", max_env:"    << max_env
-           << " ]";
-     else
-        Instruction::print(out);
-  }
-  int size() { return 9; }
-};
-
-/// DEF_FUN_k_OP, DEF_FUN_OP, DEF_FUN16_OP
-struct iDEF_FUN : public Global { reflection_sub(iDEF_FUN,Global);
-  Instruction* ret;
-  int fun_size;
-  iDEF_FUN() : Global(DEF_FUN_OP) { ret=NULL; fun_size=-1; }
-  bool resolved() { return fun_size>=0 && Instruction::resolved(); }
-  int size() { return (fun_size<0) ? -1 : Instruction::size(); }
-};
-
-/// DEF_TUP_OP, DEF_VEC_OP, DEF_NUM_VEC_OP, DEV_NUM_VEC_k_OP
-struct iDEF_TUP : public Global { reflection_sub(iDEF_TUP,Global);
-  int size;
-  iDEF_TUP(int size,bool literal=false) : Global(DEF_TUP_OP) { 
-    this->size=size;
-    if(!literal) { // change to DEF_NUM_VEC_OP
-      stack_delta = 0;
-      if(size <= MAX_DEF_NUM_VEC_OPS) { op = DEF_NUM_VEC_OP + size;
-      } else { op = DEF_NUM_VEC_OP; padd(size); }
-    } else { // keep as DEF_TUP_OP
-      stack_delta = -size;
-      padd(size);
-    }
-  }
 };
 
 /// LET_OP, LET_k_OP
@@ -747,16 +775,16 @@ class StackEnvSizer : public InstructionPropagator {
       // FIXME: Mega-kludgerific!  This is totally the wrong place to
       // do this computation.
       if (i->isA("Fold")) {
-        V4 << "Handling fold... " << extra_net << ", " << extra_max << endl;
-        Fold *fold = &dynamic_cast<Fold &>(*i);
-        Instruction *i_folder = compound_op_block(fold->folder);
-        Instruction *i_nbrop = compound_op_block(fold->nbrop);
-        dependents[i_folder].insert(i);
-        dependents[i_nbrop].insert(i);
-        extra_net += i_folder->net_stack_delta() + i_nbrop->net_stack_delta();
-        extra_max
-          += max(i_folder->max_stack_delta(), i_nbrop->max_stack_delta());
-        V4 << "Handling fold*... " << extra_net << ", " << extra_max << endl;
+    	  V4 << "Handling fold... " << extra_net << ", " << extra_max << endl;
+    	  Fold *fold = &dynamic_cast<Fold &>(*i);
+    	  Instruction *i_folder = compound_op_block(fold->folder);
+    	  Instruction *i_nbrop = compound_op_block(fold->nbrop);
+    	  dependents[i_folder].insert(i);
+    	  dependents[i_nbrop].insert(i);
+    	  extra_net += i_folder->net_stack_delta() + i_nbrop->net_stack_delta();
+    	  extra_max
+    	     += max(i_folder->max_stack_delta(), i_nbrop->max_stack_delta());
+    	  V4 << "Handling fold*... " << extra_net << ", " << extra_max << endl;
       }
       maybe_set_stack(i, baseh + extra_net, baseh + extra_max);
     } else {
