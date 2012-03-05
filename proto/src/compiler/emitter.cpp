@@ -295,13 +295,22 @@ string wrap_print(ostream* out, string accumulated, string newblock, int len) {
 
 string print_raw_chain(Instruction* chain, string line, int line_len,
                        ostream* out, int compactness, bool recursed=false) {
+  bool defFun = false;
+  if (chain->isA("iDEF_FUN")) {
+	defFun = true;
+  }
   while(chain) {
     if(chain->isA("Block")) {
       line = print_raw_chain(dynamic_cast<Block &>(*chain).contents, line,
           line_len, out, compactness, true);
       chain = chain->next;
     } else {
-      string block = chain->to_str(); chain = chain->next; 
+      string block = chain->to_str();
+      if (defFun && chain->op == RET_OP) {
+    	  chain = NULL;
+      } else {
+          chain = chain->next;
+      }
       if(chain || recursed) block += (compactness ? ", " : ",\n  ");
       line = wrap_print(out,line,block,line_len);
     }
@@ -383,6 +392,24 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
     this->store=store; store->dependents.insert(this);
     offset=-1; padd8(255); vec_op=true;
   }
+
+  void moveStore(Instruction* newStore) {
+	  bool global = store->isA("Global");
+	  if (store != NULL) {
+		  store->dependents.erase(this);
+		  if (!global) {
+		    dynamic_cast<iLET &>(*store).usages.erase(this);
+		  }
+	  }
+	  this->store = newStore;
+	  global = store->isA("Global");
+	  store->dependents.insert(this);
+	  if (!global) {
+		op = REF_OP;
+	    dynamic_cast<iLET &>(*store).usages.insert(this);
+	  }
+  }
+
   bool resolved() { return offset>=0 && Instruction::resolved(); }
   int size() { return (offset<0) ? -1 : Instruction::size(); }
   void set_offset(int o) {
@@ -657,10 +684,26 @@ class StackEnvSizer : public InstructionPropagator {
             && env_height.count(r->store)
             && env_height.count(r)) {
           int rh = env_height[r], sh = env_height[r->store];
-          if (r->offset != (rh - sh)) {
+          if ((rh - sh) >= 0 && r->offset != (rh - sh)) {
             V3 << "Setting let ref offset: " << rh << "-" << sh
                << "=" << (rh - sh) << endl;
             r->set_offset(rh - sh);
+          }
+          if (r->marked("~Read-Reference")) {
+        	  // If it's a read inside the update funcall for the rep update, the env stack size is the size at the funcall + the size at the rep
+        	  // Find the funcall
+        	  Instruction *findFuncall = r->store;
+        	  while (findFuncall != NULL && !findFuncall->isA("FunctionCall")) {
+        		  findFuncall = findFuncall->next;
+        	  }
+        	  if (findFuncall != NULL) {
+        		  findFuncall = findFuncall->prev; // Right before the funcall
+        		  rh += env_height[findFuncall];
+        	  }
+        	  if ((rh - sh) >= 0 && r->offset != (rh - sh)) {
+        		  V3 << "Setting read refs offset: " << rh << "-" << sh << "=" << (rh - sh) << endl;
+        		  r->set_offset(rh - sh);
+        	  }
           }
         }
       }
@@ -755,7 +798,7 @@ class StackEnvSizer : public InstructionPropagator {
 
     // Stack heights.
     baseh = -1;
-
+    
     if (!i->prev && (!i->container || (i->container && !i->container->prev)))
       // Base case: i is first instruction.
       baseh = 0;
@@ -775,16 +818,16 @@ class StackEnvSizer : public InstructionPropagator {
       // FIXME: Mega-kludgerific!  This is totally the wrong place to
       // do this computation.
       if (i->isA("Fold")) {
-    	  V4 << "Handling fold... " << extra_net << ", " << extra_max << endl;
-    	  Fold *fold = &dynamic_cast<Fold &>(*i);
-    	  Instruction *i_folder = compound_op_block(fold->folder);
-    	  Instruction *i_nbrop = compound_op_block(fold->nbrop);
-    	  dependents[i_folder].insert(i);
-    	  dependents[i_nbrop].insert(i);
-    	  extra_net += i_folder->net_stack_delta() + i_nbrop->net_stack_delta();
-    	  extra_max
-    	     += max(i_folder->max_stack_delta(), i_nbrop->max_stack_delta());
-    	  V4 << "Handling fold*... " << extra_net << ", " << extra_max << endl;
+        V4 << "Handling fold... " << extra_net << ", " << extra_max << endl;
+        Fold *fold = &dynamic_cast<Fold &>(*i);
+        Instruction *i_folder = compound_op_block(fold->folder);
+        Instruction *i_nbrop = compound_op_block(fold->nbrop);
+        dependents[i_folder].insert(i);
+        dependents[i_nbrop].insert(i);
+        extra_net += i_folder->net_stack_delta() + i_nbrop->net_stack_delta();
+        extra_max
+          += max(i_folder->max_stack_delta(), i_nbrop->max_stack_delta());
+        V4 << "Handling fold*... " << extra_net << ", " << extra_max << endl;
       }
       maybe_set_stack(i, baseh + extra_net, baseh + extra_max);
     } else {
@@ -812,14 +855,27 @@ class StackEnvSizer : public InstructionPropagator {
         dependents[i_nbrop].insert(i);
         // FIXME: This pattern of computing the extra depth must be
         // named somewhere.
+        
+        // This is broken, we don't put all the folder/nbrop args on the env stack
+        //  nbrop arg is put on by the fold-hood-op, folder args are handled by the callback, and removed
+        // So the end result of a fold-hood-op is +1 env stack size
+      
+        V2 << "extra net: " << extra_net << endl;
+        V2 << "extra max: " << extra_max << endl;
         int folder_arity = fold->folder->signature->required_inputs.size();
+        V2 << "Folder Arity: " << folder_arity << endl;
+        folder_arity = 0;
         int nbrop_arity = fold->nbrop->signature->required_inputs.size();
+        V2 << "nbrop Arity: " << nbrop_arity << endl;
+        nbrop_arity = 1;
         extra_net += folder_arity + i_folder->net_env_delta()
           + nbrop_arity + i_nbrop->net_env_delta();
+        extra_net = 1;
         extra_max =
           max(extra_max,
               max(folder_arity + i_folder->max_env_delta(),
                   nbrop_arity + i_nbrop->max_env_delta()));
+        extra_max = 1;
       }
       maybe_set_env(i, baseh + extra_net, baseh + extra_max);
     } else {
@@ -897,20 +953,44 @@ public:
   }
   
   void act(Instruction* i) {
-    if(i->isA("iLET")) { iLET* l = &dynamic_cast<iLET &>(*i);
+    if(i->isA("iLET")) {
+      iLET* l = &dynamic_cast<iLET &>(*i);
       if(l->pop!=NULL) return; // don't do it when pops are resolved
-      vector<iLET*> sources; sources.push_back(l);
+      vector<iLET*> sources;
+      sources.push_back(l);
       V2 << "Considering a LET";
       vector<set<Instruction*, CompilationElement_cmp> > usages;
+      set<Instruction*, CompilationElement_cmp>::iterator it;
       usages.push_back(l->usages); //1 per src
+      V2 << "l->Usages size: " << l->usages.size() << endl;
       Instruction* pointer = l->next;
       stack<Instruction*> block_nesting;
       bool foldReferenceFound = true;
       if (i->marked("~Fold-Reference")) {
     	  foldReferenceFound = false;
       }
-      while(!usages.empty() && ~foldReferenceFound) {
-        V3 << ".";
+
+      // Ignore read references, they'll be used earlier in the program (in a function)
+      //  The pop is handled by the function call (the funcall is a usage also)
+      std::set<Instruction*> readRefs;
+      for(int in=0; in<usages.size(); ++in) {
+    	  V3 << "Usages[" << in << "] size: " << usages[in].size() << endl;
+    	  for ( it=usages[in].begin() ; it != usages[in].end(); it++ ) {
+    		 if ((*it)->marked("~Read-Reference")) {
+    			 V3 << " " << "READ REFERENCE" << endl;
+    			 readRefs.insert(*it);
+    		 }
+    	     V3 << " " << ce2s(*it) << endl;
+    	  }
+          std::set<Instruction*>::iterator it2;
+          for (it2=readRefs.begin(); it2 != readRefs.end(); it2++) {
+    	    usages[in].erase(*it2);
+          }
+          readRefs.clear();
+      }
+      V3 << "Fold Reference: " << i->marked("~Fold-Reference") << endl;
+      while(!usages.empty() || !foldReferenceFound) {
+        V3 << ". (Sources: " << sources.size() << " Usages: " << usages.size() << ") ";
         while(sources.size()>usages.size()) sources.pop_back(); // cleanup...
         if(pointer==NULL) {
           if(block_nesting.empty()) {
@@ -948,7 +1028,7 @@ public:
             	  V4 << "  Marking LastReference" << endl;
             	  pointer->mark("~Last~Reference");
               }
-              continue;
+              break;
             }
           }
           // trim any empty usages on top of the stack
@@ -971,9 +1051,9 @@ public:
             		V3 << " SubLet is not marked as fold-ref" << endl;
             	  }
               }
-              // trim any all usages on top of the stack
+              // trim any all usages on top of the stack?
               // lets assume here the fold uses all these lets
-              while(usages.size() && usages[usages.size()-1].empty())  {
+              while(usages.size()) { // && usages[usages.size()-1].empty())  {
                 V3 << "\n Popping a LET";
                 usages.pop_back();
               }
@@ -1085,7 +1165,7 @@ public:
     if(i->start_location() != l) { 
       V4 << "Setting location of "<<ce2s(i)<<" to "<<l<<endl;
       i->set_location(l); note_change(i);
-    }
+    } 
   }
   void maybe_set_index(Instruction* i, int l) {
     g_max = max(g_max, l + 1);
@@ -1655,6 +1735,16 @@ ProtoKernelEmitter::init_feedback_instruction(OperatorInstance *oi)
   chain_i(&chain, new Reference(lAfter, oi));
   chain_i(&chain, new Reference(lAfter, oi));
 
+  // Fix the read if necessary
+  std::set<Instruction*> readRefs = dchangeReadMap[oi];
+  std::set<Instruction*>::iterator rrit;
+  for (rrit=readRefs.begin(); rrit != readRefs.end(); rrit++) {
+	  Instruction* ins = *rrit;
+	  Reference* rRef = &dynamic_cast<Reference &>(*ins);
+	  V4 << "Moved Read Reference to " << ce2s(lAfter) << endl;
+	  rRef->moveStore(lAfter);
+  }
+
   // Call the Update function after init-feedback
   Block* updateFunctionBlock = globalNameMap[update];
   // if the function is not defined yet (e.g., recursion), add a placeholder
@@ -1715,13 +1805,55 @@ ProtoKernelEmitter::find_dchange(OperatorInstance *oi)
 	return NULL;
 }
 
+extern std::map<OI*, OI*> readToStoreMap;
+
 Instruction *
 ProtoKernelEmitter::ref_instruction(OperatorInstance *oi)
 {
 	V2 << "Read: " << ce2s(oi) << endl;
 	// Assuming the update op is a one parameter function
-	return new Instruction(REF_0_OP);
+	// TODO: Make this a real Reference, link to the Let from the associated InitFeedback
+	OI* store = readToStoreMap[oi];
+	if (store != NULL) {
+	  V2 << "Found Store in map: " << ce2s(store) << endl;
+	} else {
+	  V2 << "Unable to locate Store for this READ!" << endl;
+	  return new Instruction(REF_0_OP);
+	}
+	// Find the dchange for this store
+	OperatorInstance *dchange;
+    if (store->inputs.size() == 1) {
+		dchange = find_dchange(store->inputs[0]->producer);
+	} else {
+		dchange = find_dchange(store);
+	}
+
+    if (dchange != NULL) {
+      Instruction* ins = dchangeMap[dchange];
+      // We likely haven't resolved the initFeedback yet, so it might not be in the dchangeMap yet
+      // If so, we'll have to fix this later when we create the initfeedback
+      if (ins != NULL) {
+        InitFeedback *initF = &dynamic_cast<InitFeedback &>(*ins);
+        Instruction* iLet = initF->letAfter;
+        V2 << "Found matching InitFeedback, iLet is " << ce2s(iLet) << endl;
+        Reference *readRef = new Reference(iLet, oi);
+        readRef->mark("~Read-Reference");
+        return readRef;
+      } else {
+    	  // Dummy Store for now
+    	 V2 << "Temporarily putting a dummy iLet as the store for the read reference" << endl;
+    	 iLET* dummyiLet = new iLET();
+       	 Reference *readRef = new Reference(dummyiLet, oi);
+    	 // Is there only one read for a dchange? Think so.  If not, can make this a set
+       	 dchangeReadMap[dchange].insert(readRef);
+         readRef->mark("~Read-Reference");
+    	 return readRef;
+      }
+    } else {
+    	V2 << "Unable to locate dchange for Store: " << ce2s(store) << endl;
+    }
 }
+
 
 // Division is handled specially until VDIV is implemented.
 
@@ -2151,7 +2283,7 @@ bool needs_let(Field* f) {
 }
 
 //
-bool needs_fold_lambda_let(Field* f) {
+OI* needs_fold_lambda_let(Field* f) {
   int consumer_count = 0;
   for_set(Consumer,f->consumers,c) {
     if((c->first->output->domain == f->domain) && // same function consumer
@@ -2166,14 +2298,14 @@ bool needs_fold_lambda_let(Field* f) {
         	string ccName = cc->first->op->name;
         	if ((ccName == "fold-hood") || ccName == "fold-hood-plus") {
         	  //TODO: Check the lambda function for the reference and mark it
-              return true;
+        	  return cc->first;
         	}
           }
         }
       }
     }
   }
-  return false;
+  return NULL;
 }
 
 /* this walks a DFG in order as follows: 
@@ -2220,7 +2352,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     if (fold_ops.count(oi->op->name)) {
     	V4 << "Folder, fixing input sequence" << endl;
     	// Kludge
-    	//   Need to fix the stack in the case where there are multiple uses of an external input for a neurhborhood
+    	//   Need to fix the stack in the case where there are multiple uses of an external input for a neighborhood
     	//   Need to put the external input on the stack first (n times), then the folder function, then the hood function
     	//   Without this fix, we'll interleave the input reference (ref, folder, ref, hood func), which gets the stack wrong
     	//   Should fix this upstream
@@ -2233,10 +2365,19 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     	Instruction* g1 = 0;
     	while (tChain && !found) {
     	  V4 << "TChain: " << ce2s(tChain) << endl;
-    	  // if (tChain->isA("Global")) {  Why doesn't isA("Global") work here?
-    	  if (g1 != 0 && tChain->op == REF_OP) {
-    		  foundRef = true;
-    	  }
+
+    	  // TODO: Figure out what's needed here.
+    	  // This may be obsolete...
+    	  
+    	  //if (g1 != 0 &&
+    	//	   (tChain->op == REF_OP || tChain->op == REF_0_OP ||
+    	//	    tChain->op == REF_1_OP || tChain->op == REF_2_OP || tChain->op == REF_3_OP)) {
+    	//	  foundRef = true;
+    	//  }
+    	//  if (g1 != 0 && tChain->op == REF_OP) {
+    	//	  foundRef = true;
+    	// }
+
     	  if (tChain->op == GLO_REF_OP) {
     		 V4 << " is a Global" << endl;
     		 if (g1 == 0) {
@@ -2245,7 +2386,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     			 V4 << "First global is " << ce2s(g1) << endl;
     		 } else if (!foundRef) {
     			 V4 << "No references in the middle, don't need to fix the stack" << endl;
-    			 // No references inbetween, we don't need to fix anythinmg
+    			 // No references inbetween, we don't need to fix anything
     			 found = true;
     			 break;
     		 } else {
@@ -2318,16 +2459,20 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
 	for_set(AM*,fsel,i) cout << "Selector AM: " << ce2s(*i) << endl;
     ierror("Restrictions not all compiled out for: "+f->to_str());
   }
-  if(needs_fold_lambda_let(f)) { // need a let to contain the input to a lambda function used by a folder
+  OI* flLet = needs_fold_lambda_let(f);
+  if (flLet != NULL) {
+	// need a let to contain the input to a lambda function used by a folder
     iLET *l = new iLET();
     l->mark("~Fold-Reference");
+    // TOOO: Mark which folder this is for.  Here we assume it's the "next" one
     memory[f] = chain_i(&chain,l);
     V4 << "Needs Fold Lambda Let: " << ce2s(f) << endl;
+    V4 << "F's producer op name is: " <<ce2s(f->producer->op) << endl;
     if(verbosity>=2) print_chain(start,cpout,2);
     // Don't need to add a reference, the lambda function should have one
     // Could check
   } else if (f->producer->op->name == "read") {
-	V4 << "Reads don't need a let here" << endl;
+    	V4 << "Reads don't need a let here" << endl;
   } else if(needs_let(f)) { // need a let to contain this
 	memory[f] = chain_i(&chain, new iLET());
 	  V4 << "Needs Let: " << ce2s(memory[f]) << endl;
