@@ -485,7 +485,7 @@ is 2 _ uint16_t script_len = 14;
 
 // min-hood+ simple test
 test: $(PROTO) '(min-hood+ (nbr (mid)))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 3, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 1, 
 is 1 _  DEF_FUN_OP, 11, NBR_RANGE_OP, LIT_0_OP, EQ_OP, 
 is 2 _  LIT_FLO_OP, 0, 0, 128, 127, REF_0_OP, MUX_OP, RET_OP, DEF_FUN_4_OP, 
 is 3 _  REF_0_OP, REF_1_OP, MIN_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP, 
@@ -493,7 +493,7 @@ is 4 _  GLO_REF_0_OP, MID_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
 is 5 _ uint16_t script_len = 35;
 
 test: $(PROTO) '(min-hood+ (* (+ (mid) 1) (nbr (mid))))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 8, 5, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 8, 2, 
 is 1 _  DEF_FUN_OP, 13, NBR_RANGE_OP, LIT_0_OP, EQ_OP, 
 is 2 _  LIT_FLO_OP, 0, 0, 128, 127, REF_1_OP, REF_0_OP, MUL_OP, MUX_OP, 
 is 3 _  RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, RET_OP, 
@@ -522,7 +522,7 @@ is 7 _ uint16_t script_len = 43;
 //
 
 test: $(PROTO) '(any-hood (muxor (= (nbr (mid)) 0) (= (nbr (mid)) 1)))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 4, 0, 0, 8, 3, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 4, 0, 0, 8, 2, 
 is 1 _  DEF_FUN_OP, 19, REF_0_OP, LET_1_OP, REF_0_OP, LIT_0_OP, ELT_OP, 
 is 2 _  LIT_0_OP, EQ_OP, LET_1_OP, REF_0_OP, REF_0_OP, POP_LET_1_OP, 
 is 3 _  REF_0_OP, POP_LET_1_OP, LIT_1_OP, ELT_OP, LIT_1_OP, EQ_OP, MUX_OP, 
@@ -533,7 +533,7 @@ is 7 _   };
 is 8 _ uint16_t script_len = 49;
 
 test: $(PROTO) '(min-hood (nbr-range))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 3, DEF_FUN_2_OP,
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 1, DEF_FUN_2_OP,
 is 1 _  NBR_RANGE_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, 
 is 2 _  RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP, GLO_REF_0_OP, LIT_0_OP, 
 is 3 _  FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
@@ -584,7 +584,7 @@ is 3 _ uint16_t script_len = 21;
 ////////////////////////////////////////////////////////////////////////////
 // hood without a nbr
 test: $(PROTO) "(any-hood (+ 1 (mid)))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 5, DEF_FUN_2_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 2, DEF_FUN_2_OP, 
 is 1 _  REF_1_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, 
 is 2 _  DEF_FUN_OP, 11, GLO_REF_1_OP, LIT_1_OP, MID_OP, ADD_OP, LET_1_OP, 
 is 3 _  GLO_REF_0_OP, LIT_0_OP, FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, RET_OP, 
@@ -593,7 +593,7 @@ is 5 _ uint16_t script_len = 31;
 
 // Branch/nbr interaction:
 test: $(PROTO) "(if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 2, DEF_FUN_4_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 1, DEF_FUN_4_OP, 
 is 1 _  REF_0_OP, LIT_0_OP, EQ_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
 is 2 _  REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 15, MID_OP, LIT_OP, 5, GT_OP, 
 is 3 _  IF_OP, 3, LIT_1_OP, JMP_OP, 5, GLO_REF_1_OP, GLO_REF_0_OP, MID_OP, 
@@ -660,7 +660,7 @@ is 10 _ uint16_t script_len = 63;
 
 // Feedback + neighborhood (nested functions)
 test: $(PROTO) "(rep d (mid) (max-hood (nbr d)))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 5, DEF_FUN_2_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 3, DEF_FUN_2_OP, 
 is 1 _  REF_0_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_4_OP, 
 is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_2_OP, 
 is 3 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, 
@@ -671,7 +671,7 @@ is 7 _ uint16_t script_len = 42;
 
 // Count steps to mid 1
 test: $(PROTO) "(rep d inf (mux (= (mid) 1) 0 (min-hood (+ (nbr d) 1))))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 8, 5, DEF_FUN_4_OP,
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 8, 3, DEF_FUN_4_OP,
 is 1 _  REF_0_OP, LIT_1_OP, ADD_OP, RET_OP, DEF_FUN_6_OP, 
 is 2 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
 is 3 _  REF_1_OP, MIN_OP, RET_OP, DEF_FUN_OP, 11, MID_OP, LIT_1_OP, EQ_OP, 
@@ -684,7 +684,7 @@ is 8 _ uint16_t script_len = 54;
 // Test multiple usages of the rep variable inside a hood
 // resulting program should cause devices to swap between 1 and 2
 test: $(PROTO) "(rep d (mid) (max-hood (mux (<= (nbr d) d) 1 2)))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 7, 6, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 7, 3, 
 is 1 _  DEF_FUN_OP, 7, REF_0_OP, REF_1_OP, LTE_OP, LIT_1_OP, LIT_2_OP, 
 is 2 _  MUX_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_4_OP, 
 is 3 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 9, GLO_REF_2_OP, 
@@ -706,7 +706,7 @@ is 5 _ uint16_t script_len = 30;
 
 // Simple case of reference used in an internal lambda created by a branch (rep)
 test: $(PROTO) "(rep d 0 (mux (max-hood (+ d (dt))) 1 2))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 6, DEF_FUN_2_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 3, DEF_FUN_2_OP, 
 is 1 _  REF_1_OP, RET_OP, DEF_FUN_2_OP, LIT_0_OP, RET_OP, DEF_FUN_4_OP, 
 is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 14, GLO_REF_2_OP, 
 is 3 _  REF_0_OP, DT_OP, ADD_OP, LET_1_OP, GLO_REF_0_OP, LIT_0_OP, 
