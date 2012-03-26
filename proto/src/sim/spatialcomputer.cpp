@@ -146,7 +146,31 @@ void Device::load_script(uint8_t const * script, int len) {
   //new_machine(vm, uid, 0, 0, 0, 1, script, len);
   vm->id = uid;
   vm->install(Script(script,len));
-  while(!vm->finished()) vm->step();
+  int iStep = 0;
+  while(!vm->finished()) {
+	 	if (is_print_stack || is_print_env_stack) {
+	    	Int8 opcode = *(vm->instruction_pointer);
+	    	cout << "OpCode: " << (int)opcode;
+	    	Instruction i = instructions[opcode];
+	   		map<string,uint8_t>::iterator it;
+	   		for ( it=OPCODE_MAP.begin() ; it != OPCODE_MAP.end(); it++ ) {
+	   			if ((*it).second == opcode) {
+	   				cout << " " << (*it).first;
+    				break;
+	   			}
+	   		}
+	 	}
+	 	if (is_print_stack) {
+	 		cout << " Stack (" << iStep << "): ";
+	 		vm->print_stack(&vm->stack);
+	    }
+	 	if (is_print_env_stack) {
+	   	  cout << " Environment Stack (" << iStep << "): ";
+	   	  vm->print_stack(&vm->environment);
+	   	}
+     	iStep++;
+	    vm->step();
+    }
 }
 
 // a convenient combined function
@@ -165,7 +189,6 @@ void Device::text_scale() {
 extern void radio_send_export(uint8_t version, Array<Data> const & data);
 
 void Device::internal_event(SECONDS time, DeviceEvent type) {
-
   int iStep = 0;
   switch(type) {
   case COMPUTE:
