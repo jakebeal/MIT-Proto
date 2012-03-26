@@ -30,6 +30,8 @@ map<int,string> opnames;
 map<string,int> primitive2op;
 map<int,int> op_stackdeltas;
 
+map<OI*, set<Instruction*> > letsForFolders;
+
 // forward declaration for Block
 struct Block;
 
@@ -363,12 +365,44 @@ struct Placeholder : public Instruction {
 	}
 };
 
+int debugIndexCounter = 0;
+
+struct PopLet : public Instruction { reflection_sub(PopLet, Instruction);
+  std::set<int> debugIndices;
+  PopLet() : Instruction(POP_LET_OP) { }
+  PopLet(OPCODE op) : Instruction(op) { }
+  void addDebugIndex(int i) {
+	  debugIndices.insert(i);
+  }
+  virtual void print(ostream* out=0) {
+  	Instruction::print(out);
+    if(ProtoKernelEmitter::op_debug) {
+  	  set<int>::iterator it;
+  	  *out << " {";
+  	  for ( it=debugIndices.begin() ; it != debugIndices.end(); it++ )
+  	    *out << " " << *it;
+      *out << "}";
+    }
+  }
+};
+
 /// LET_OP, LET_k_OP
 struct iLET : public Instruction { reflection_sub(iLET,Instruction);
   Instruction* pop;
+  int debugIndex;
   CEset(Instruction*) usages;
-  iLET() : Instruction(LET_1_OP,1) { pop=NULL; }
+  iLET() : Instruction(LET_1_OP,1) { pop=NULL; debugIndex = debugIndexCounter++; }
   bool resolved() { return pop!=NULL && Instruction::resolved(); }
+  virtual void print(ostream* out=0) {
+	 Instruction::print(out);
+	 if (ProtoKernelEmitter::op_debug) {
+	    *out << " {" << debugIndex << "}";
+	 }
+   }
+};
+
+struct DummyiLET : public iLET {
+  DummyiLET() : iLET() { pop = NULL; debugIndex = 0; debugIndexCounter--;}
 };
 
 /// REF_OP, REF_k_OP, GLO_REF16_OP, GLO_REF_OP, GLO_REF_k_OP
@@ -426,6 +460,20 @@ struct Reference : public Instruction { reflection_sub(Reference,Instruction);
       if(o < MAX_REF_OPS) { op = REF_0_OP + o;
       } else  { op = REF_OP; padd(o); }
     }
+  }
+  virtual void print(ostream* out=0) {
+  	 Instruction::print(out);
+  	 if (ProtoKernelEmitter::op_debug) {
+       if (store != NULL) {
+         bool global = store->isA("Global"); // else is a let
+         if (!global) {
+           iLET l = dynamic_cast<iLET &>(*store);
+           *out << " {" << l.debugIndex << "}";
+         }
+       } else {
+    	   *out << " {unresolved}";
+       }
+  	 }
   }
 };
 
@@ -936,18 +984,24 @@ public:
     // Next, place each set
     for_map(Instruction*, CEset(iLET*), dest_sets, i) {
       // create the pop instruction
-      Instruction* pop;
+      PopLet* pop;
       if(i->second.size()<=MAX_LET_OPS) {
-        pop = new Instruction(POP_LET_OP+(i->second.size()));
+        //pop = new Instruction(POP_LET_OP+(i->second.size()));
+    	  pop = new PopLet(POP_LET_OP+(i->second.size()));
       } else {
-        pop = new Instruction(POP_LET_OP); pop->padd(i->second.size());
+        //pop = new Instruction(POP_LET_OP); pop->padd(i->second.size());
+    	  pop = new PopLet();
+    	  pop->padd(i->second.size());
       }
       pop->env_delta = -i->second.size();
       // tag it onto the lets in the set
-      for_set(iLET*,i->second,j) (*j)->pop = pop;
+      for_set(iLET*,i->second,j) {
+    	  (*j)->pop = pop;
+    	  pop->addDebugIndex((*j)->debugIndex);
+      }
       // and place the pop at the destination
       string type = (i->first==pointer)?"standard":"branch";
-      V3 << "Inserting "+type+" POP_LET after "<<ce2s(i->first)<<endl;
+      V3 << "Inserting "+type+" " + ce2s(pop)+" after "<<ce2s(i->first)<<endl;
       chain_insert(i->first,pop);
     }
   }
@@ -958,7 +1012,7 @@ public:
       if(l->pop!=NULL) return; // don't do it when pops are resolved
       vector<iLET*> sources;
       sources.push_back(l);
-      V2 << "Considering a LET";
+      V2 << "Considering a LET " << l->debugIndex;
       vector<set<Instruction*, CompilationElement_cmp> > usages;
       set<Instruction*, CompilationElement_cmp>::iterator it;
       usages.push_back(l->usages); //1 per src
@@ -988,6 +1042,7 @@ public:
           }
           readRefs.clear();
       }
+
       V3 << "Fold Reference: " << i->marked("~Fold-Reference") << endl;
       while(!usages.empty() || !foldReferenceFound) {
         V3 << ". (Sources: " << sources.size() << " Usages: " << usages.size() << ") ";
@@ -1007,9 +1062,11 @@ public:
           pointer = dynamic_cast<Block &>(*pointer).contents;
           continue;
         } else if(pointer->isA("iLET")) { // add subs in
-          V3 << "\n Adding sub LET";
           iLET* sub = &dynamic_cast<iLET &>(*pointer);
+
+          V3 << "\n Adding sub LET " << sub->debugIndex;
           sources.push_back(sub);
+          V3 << "Sources size: " << sources.size() << endl;
           usages.push_back(sub->usages);
         } else if (pointer->isA("Reference")) { // it's somebody's reference?
           Reference* r = &dynamic_cast<Reference &>(*pointer);
@@ -1033,28 +1090,30 @@ public:
           }
           // trim any empty usages on top of the stack
           while(usages.size() && usages[usages.size()-1].empty()) {
-            V3 << "\n Popping a LET";
+            V3 << "\n Popping a LET " << l->debugIndex;
             usages.pop_back();
           }
         } else if (pointer->isA("Fold")) {
         	V3 << "\n\t is a FOLD" << endl;
             if (i->marked("~Fold-Reference")) {
         	  V3 << "\n Found folder...";
+        	  for(int j=0;j<usages.size();j++) {
+        	     if(usages[j].count(pointer)) {
+        	      V4 << "Erasing: " << ce2s(pointer) << endl;
+        	      usages[j].erase(pointer);
+        	      // mark last references for later use in pop insertion
+        	      if(!usages[j].size()) {
+        	         V4 << "  Marking LastReference" << endl;
+        	         pointer->mark("~Last~Reference");
+        	      } else {
+        	    	 V4 << usages[j].size() << " more usages left for let " << j << endl;
+        	      }
+        	     }
+        	  }
 
-        	  l->usages.insert(pointer);
-              pointer->mark("~Last~Reference");
-              for (int j=0;j<sources.size();++j) {
-            	  if (sources[j]->marked("~Fold-Reference")) {
-            	    V3 << " Adding Fold as a usage for sublet" << endl;
-            	    sources[j]->usages.insert(pointer);
-            	  } else {
-            		V3 << " SubLet is not marked as fold-ref" << endl;
-            	  }
-              }
-              // trim any all usages on top of the stack?
-              // lets assume here the fold uses all these lets
-              while(usages.size()) { // && usages[usages.size()-1].empty())  {
-                V3 << "\n Popping a LET";
+              // trim any empty usages on top of the stack
+              while(usages.size() && usages[usages.size()-1].empty())  {
+                V3 << "\n Popping a Usage";
                 usages.pop_back();
               }
               foldReferenceFound = true;
@@ -1072,9 +1131,11 @@ public:
            }
            // trim any empty usages on top of the stack
            while(usages.size() && usages[usages.size()-1].empty()) {
-        	 V3 << "\n Popping a LET";
+        	 V3 << "\n Popping a Usage";
         	 usages.pop_back();
           }
+        } else if (pointer->op == RET_OP) {
+
         }
         if(!usages.empty() || (foldReferenceFound == false && i->marked("~Fold-Reference"))) pointer=pointer->next;
       }
@@ -1690,7 +1751,20 @@ ProtoKernelEmitter::fold_primitive_instruction(OperatorInstance *oi)
   OPCODE opcode = (*fold_ops.find(p->name)).second.first;
   CompoundOp *folder = fold_operand_cop(oi, 0);
   CompoundOp *nbrop = fold_operand_cop(oi, 1);
-  return new Fold(opcode, folder, nbrop);
+  Fold* newf = new Fold(opcode, folder, nbrop);
+  set<Instruction*> flets = letsForFolders[oi];
+  if (!flets.empty()) {
+    set<Instruction*>::iterator flit;
+    for (flit = flets.begin(); flit != flets.end(); flit++) {
+      Instruction* ins = *flit;
+   	  iLET* fi = &dynamic_cast<iLET &>(*ins);
+	  fi->usages.insert(newf);
+	  V3 << "Adding " << ce2s(newf) << " as usage for " << ce2s(fi) << endl;
+    }
+  } else {
+	  V3 << "No lets found for " << ce2s(oi) << endl;
+  }
+  return newf;
 }
 
 Instruction *
@@ -1812,7 +1886,6 @@ ProtoKernelEmitter::ref_instruction(OperatorInstance *oi)
 {
 	V2 << "Read: " << ce2s(oi) << endl;
 	// Assuming the update op is a one parameter function
-	// TODO: Make this a real Reference, link to the Let from the associated InitFeedback
 	OI* store = readToStoreMap[oi];
 	if (store != NULL) {
 	  V2 << "Found Store in map: " << ce2s(store) << endl;
@@ -1842,7 +1915,7 @@ ProtoKernelEmitter::ref_instruction(OperatorInstance *oi)
       } else {
     	  // Dummy Store for now
     	 V2 << "Temporarily putting a dummy iLet as the store for the read reference" << endl;
-    	 iLET* dummyiLet = new iLET();
+    	 iLET* dummyiLet = new DummyiLET();
        	 Reference *readRef = new Reference(dummyiLet, oi);
     	 // Is there only one read for a dchange? Think so.  If not, can make this a set
        	 dchangeReadMap[dchange].insert(readRef);
@@ -2349,80 +2422,6 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     if(frag) fragments[oi->inputs[0]->producer] = frag;
   } else if(oi->op->isA("Primitive")) {
     V4 << "Primitive is: " << ce2s(oi->op) << endl;
-    if (fold_ops.count(oi->op->name)) {
-    	V4 << "Folder, fixing input sequence" << endl;
-    	// Kludge
-    	//   Need to fix the stack in the case where there are multiple uses of an external input for a neighborhood
-    	//   Need to put the external input on the stack first (n times), then the folder function, then the hood function
-    	//   Without this fix, we'll interleave the input reference (ref, folder, ref, hood func), which gets the stack wrong
-    	//   Should fix this upstream
-
-    	// This code checks for the case where we have two glo-refs (the two inputs to the hood folder), with a ref in the middle.
-    	//   It then moves that ref before the first glo ref, since that ref setting an input parameter on the stack to be used by the hood function
-    	Instruction *tChain = chain;
-    	bool found = false;
-    	bool foundRef = false;
-    	Instruction* g1 = 0;
-    	while (tChain && !found) {
-    	  V4 << "TChain: " << ce2s(tChain) << endl;
-
-    	  // TODO: Figure out what's needed here.
-    	  // This may be obsolete...
-    	  
-    	  //if (g1 != 0 &&
-    	//	   (tChain->op == REF_OP || tChain->op == REF_0_OP ||
-    	//	    tChain->op == REF_1_OP || tChain->op == REF_2_OP || tChain->op == REF_3_OP)) {
-    	//	  foundRef = true;
-    	//  }
-    	//  if (g1 != 0 && tChain->op == REF_OP) {
-    	//	  foundRef = true;
-    	// }
-
-    	  if (tChain->op == GLO_REF_OP) {
-    		 V4 << " is a Global" << endl;
-    		 if (g1 == 0) {
-    			 g1 = tChain;
-    			 tChain = tChain->prev;
-    			 V4 << "First global is " << ce2s(g1) << endl;
-    		 } else if (!foundRef) {
-    			 V4 << "No references in the middle, don't need to fix the stack" << endl;
-    			 // No references inbetween, we don't need to fix anything
-    			 found = true;
-    			 break;
-    		 } else {
-    			 V4 << "Found second global" << endl;
-    			 // found first global
-    			 if (tChain->next == g1) {
-    				 // We're good;
-    				 V4 << "Nothing to move, globals are adjacent" << endl;
-    				 found = true;
-    				 break;
-    			 } else {
-    				 while (tChain->next != g1) {
-    					 // Move guy after me to before me
-    					 Instruction* tNext = tChain->next;
-    					 Instruction* tPrev = tChain->prev;
-    					 V3 << "Moving " << ce2s(tNext) << " to before " << ce2s(tChain) << endl;
-
-    					 tChain->next = tNext->next;
-    					 tChain->prev = tNext;
-    					 tChain->next->prev = tChain;
-
-    					 tNext->next = tChain;
-    					 tNext->prev = tPrev;
-
-    					 if (tPrev != 0) {
-    					   tPrev->next = tNext;
-    					 }
-    				 }
-    				 found = true;
-    			 }
-    		 }
-    	  } else {
-    		 tChain = tChain->prev;
-    	  }
-    	}
-    }
     chain_i(&chain,primitive_to_instruction(oi));
     if(verbosity>=4) print_chain(chain,cpout,2);
   } else if(oi->op->isA("Literal")) { 
@@ -2460,19 +2459,21 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     ierror("Restrictions not all compiled out for: "+f->to_str());
   }
   OI* flLet = needs_fold_lambda_let(f);
-  if (flLet != NULL) {
+  if (flLet == NULL && f->producer->op->name == "read") {
+     V4 << "Reads don't need a let here" << endl;
+  } else if (flLet != NULL) {
 	// need a let to contain the input to a lambda function used by a folder
+	// This is the uncurry operation
     iLET *l = new iLET();
     l->mark("~Fold-Reference");
-    // TOOO: Mark which folder this is for.  Here we assume it's the "next" one
+    letsForFolders[flLet].insert(l);
+    V4 << "Adding " << ce2s(l) << " as let for folder " << ce2s(flLet) << endl;
     memory[f] = chain_i(&chain,l);
-    V4 << "Needs Fold Lambda Let: " << ce2s(f) << endl;
+    V4 << "Needs Fold Lambda Let: " << ce2s(flLet) << endl;
     V4 << "F's producer op name is: " <<ce2s(f->producer->op) << endl;
     if(verbosity>=2) print_chain(start,cpout,2);
     // Don't need to add a reference, the lambda function should have one
     // Could check
-  } else if (f->producer->op->name == "read") {
-    	V4 << "Reads don't need a let here" << endl;
   } else if(needs_let(f)) { // need a let to contain this
 	memory[f] = chain_i(&chain, new iLET());
 	  V4 << "Needs Let: " << ce2s(memory[f]) << endl;
