@@ -234,7 +234,7 @@ is 3 _ uint16_t script_len = 21;
 
 // function with references to outside variables:
 test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (+ x m)) 3))" --function-inlining-threshold 0
-is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, DEF_FUN_4_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 1, DEF_FUN_4_OP, 
 is 1 _   LIT_3_OP, REF_1_OP, ADD_OP, RET_OP, DEF_FUN_5_OP, MID_OP, LIT_3_OP, 
 is 2 _   GLO_REF_0_OP, FUNCALL_2_OP, RET_OP, EXIT_OP };
 is 3 _ uint16_t script_len = 21;
@@ -350,7 +350,7 @@ is 5 _ uint16_t script_len = 33;
 
 // Selector reference inside function:
 test: $(PROTO) "(let ((m (mid))) (apply (fun (x) (if m x 4)) 3))" --function-inlining-threshold 0
-is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 1, 
 is 1 _   DEF_FUN_OP, 8, REF_1_OP, IF_OP, 3, LIT_4_OP, JMP_OP, 1, LIT_3_OP, 
 is 2 _   RET_OP, DEF_FUN_5_OP, MID_OP, LIT_3_OP, GLO_REF_0_OP, FUNCALL_2_OP, 
 is 3 _   RET_OP, EXIT_OP };
@@ -485,7 +485,7 @@ is 2 _ uint16_t script_len = 14;
 
 // min-hood+ simple test
 test: $(PROTO) '(min-hood+ (nbr (mid)))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 1, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 7, 2, 
 is 1 _  DEF_FUN_OP, 11, NBR_RANGE_OP, LIT_0_OP, EQ_OP, 
 is 2 _  LIT_FLO_OP, 0, 0, 128, 127, REF_0_OP, MUX_OP, RET_OP, DEF_FUN_4_OP, 
 is 3 _  REF_0_OP, REF_1_OP, MIN_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP, 
@@ -493,7 +493,7 @@ is 4 _  GLO_REF_0_OP, MID_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
 is 5 _ uint16_t script_len = 35;
 
 test: $(PROTO) '(min-hood+ (* (+ (mid) 1) (nbr (mid))))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 8, 2, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 8, 3, 
 is 1 _  DEF_FUN_OP, 13, NBR_RANGE_OP, LIT_0_OP, EQ_OP, 
 is 2 _  LIT_FLO_OP, 0, 0, 128, 127, REF_1_OP, REF_0_OP, MUL_OP, MUX_OP, 
 is 3 _  RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, RET_OP, 
@@ -533,7 +533,7 @@ is 7 _   };
 is 8 _ uint16_t script_len = 49;
 
 test: $(PROTO) '(min-hood (nbr-range))'
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 1, DEF_FUN_2_OP,
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 2, DEF_FUN_2_OP,
 is 1 _  NBR_RANGE_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, 
 is 2 _  RET_OP, DEF_FUN_6_OP, GLO_REF_1_OP, GLO_REF_0_OP, LIT_0_OP, 
 is 3 _  FOLD_HOOD_PLUS_OP, 0, RET_OP, EXIT_OP };
@@ -550,7 +550,7 @@ is 4 _ uint16_t script_len = 25;
 
 //Testing function emission:
 test: $(PROTO) "(def kfoo (x y) (- x y)) (kfoo (mid) (speed))" --function-inlining-threshold 0
-is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 2, DEF_FUN_4_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 2, 0, 0, 4, 1, DEF_FUN_4_OP, 
 is 1 _  REF_0_OP, REF_1_OP, SUB_OP, RET_OP, DEF_FUN_5_OP, MID_OP, SPEED_OP, 
 is 2 _  GLO_REF_0_OP, FUNCALL_2_OP, RET_OP, EXIT_OP };
 is 3 _ uint16_t script_len = 21;
@@ -584,7 +584,7 @@ is 3 _ uint16_t script_len = 21;
 ////////////////////////////////////////////////////////////////////////////
 // hood without a nbr
 test: $(PROTO) "(any-hood (+ 1 (mid)))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 2, DEF_FUN_2_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 3, DEF_FUN_2_OP, 
 is 1 _  REF_1_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, 
 is 2 _  DEF_FUN_OP, 11, GLO_REF_1_OP, LIT_1_OP, MID_OP, ADD_OP, LET_1_OP, 
 is 3 _  GLO_REF_0_OP, LIT_0_OP, FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, RET_OP, 
@@ -593,7 +593,7 @@ is 5 _ uint16_t script_len = 31;
 
 // Branch/nbr interaction:
 test: $(PROTO) "(if (> (mid) 5) (any-hood (= (nbr (mid)) 0)) 1)"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 1, DEF_FUN_4_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 3, 0, 0, 6, 2, DEF_FUN_4_OP, 
 is 1 _  REF_0_OP, LIT_0_OP, EQ_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
 is 2 _  REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 15, MID_OP, LIT_OP, 5, GT_OP, 
 is 3 _  IF_OP, 3, LIT_1_OP, JMP_OP, 5, GLO_REF_1_OP, GLO_REF_0_OP, MID_OP, 
@@ -631,7 +631,7 @@ is 5 _ uint16_t script_len = 32;
 // Branch/feedback interaction:
 $(PROTO_ARGS) = -n 6 -headless -dump-after 9.5 -stop-after 10.5 -NDall -Dvalue --instructions --emit-semicompact
 test: $(PROTO) "(if (> (timer) 5) (+ 3 (timer)) 0)"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 5, 2, 0, 5, 3, DEF_FUN_2_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 5, 2, 0, 5, 2, DEF_FUN_2_OP, 
 is 1 _  LIT_0_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, DT_OP, ADD_OP, RET_OP, 
 is 2 _  DEF_FUN_2_OP, LIT_0_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, DT_OP, 
 is 3 _  ADD_OP, RET_OP, DEF_FUN_OP, 33, GLO_REF_0_OP, INIT_FEEDBACK_OP, 0, 
@@ -660,7 +660,7 @@ is 10 _ uint16_t script_len = 63;
 
 // Feedback + neighborhood (nested functions)
 test: $(PROTO) "(rep d (mid) (max-hood (nbr d)))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 3, DEF_FUN_2_OP, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 2, DEF_FUN_2_OP, 
 is 1 _  REF_0_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_4_OP, 
 is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_2_OP, 
 is 3 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, 
@@ -671,7 +671,7 @@ is 7 _ uint16_t script_len = 42;
 
 // Count steps to mid 1
 test: $(PROTO) "(rep d inf (mux (= (mid) 1) 0 (min-hood (+ (nbr d) 1))))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 8, 3, DEF_FUN_4_OP,
+is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 8, 2, DEF_FUN_4_OP,
 is 1 _  REF_0_OP, LIT_1_OP, ADD_OP, RET_OP, DEF_FUN_6_OP, 
 is 2 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
 is 3 _  REF_1_OP, MIN_OP, RET_OP, DEF_FUN_OP, 11, MID_OP, LIT_1_OP, EQ_OP, 
@@ -729,11 +729,43 @@ is 6 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_4_OP, REF_0_OP,
 is 7 _  REF_1_OP, MAX_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, 
 is 8 _  RET_OP, DEF_FUN_OP, 18, GLO_REF_3_OP, DT_OP, LET_1_OP, REF_1_OP,  
 is 9 _  LET_1_OP, GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, 
-is 10 _  GLO_REF_OP, 4, GLO_REF_1_OP, REF_1_OP, POP_LET_2_OP, 
+is 10 _  GLO_REF_OP, 4, GLO_REF_1_OP, REF_0_OP, POP_LET_2_OP, 
 is 11 _  FOLD_HOOD_PLUS_OP, 1, ADD_OP, RET_OP, DEF_FUN_OP, 13, GLO_REF_2_OP, 
 is 12 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_OP, 5, 
 is 13 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 14 _ uint16_t script_len = 94;
+
+// Gradient
+// todo: figure out a way to test that the values are correct
+//  maybe use a custom device layout (grid)
+test: $(PROTO) "(1st (rep (tup d v) (tup inf 0) (mux (sense 1) (tup 0 0) (mux (any-hood+ (<= (+ (nbr d) (nbr-range) (* v (+ (nbr-lag) (dt)))) d)) (tup (min-hood+ (+ (nbr d) (nbr-range))) 0) (let ((v0 (if (= (dt) 0) 1 (/ (radio-range) (* (dt) 12))))) (tup (+ d (* v0 (dt))) v0))))))"
+is 0 _ uint8_t script[] = { DEF_VM_OP, 2, 2, 0, 15, 1, 0, 13, 5, 
+is 1 _  DEF_FUN_OP, 17, NBR_RANGE_OP, LIT_0_OP, EQ_OP, LIT_0_OP, REF_0_OP, 
+is 2 _  NBR_RANGE_OP, REF_2_OP, NBR_LAG_OP, REF_3_OP, ADD_OP, MUL_OP, 
+is 3 _  ADD_OP, ADD_OP, REF_1_OP, LTE_OP, MUX_OP, RET_OP, DEF_FUN_OP, 13, 
+is 4 _  NBR_RANGE_OP, LIT_0_OP, EQ_OP, LIT_FLO_OP, 0, 0, 128, 127, 
+is 5 _  REF_0_OP, NBR_RANGE_OP, ADD_OP, MUX_OP, RET_OP, 
+is 6 _  LIT_FLO_OP, 0, 0, 128, 127, LIT_0_OP, DEF_TUP_OP, 2, DEF_FUN_2_OP, 
+is 7 _  GLO_REF_2_OP, RET_OP, LIT_0_OP, LIT_0_OP, DEF_TUP_OP, 2, 
+is 8 _  DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_4_OP, 
+is 9 _  REF_0_OP, REF_1_OP, MIN_OP, RET_OP, LIT_0_OP, LIT_0_OP, 
+is 10 _  DEF_TUP_OP, 2, DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, 
+is 11 _  DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, DEF_FUN_OP, 61, LIT_1_OP, 
+is 12 _  SENSE_OP, GLO_REF_OP, 7, GLO_REF_OP, 5, DT_OP, LET_1_OP, REF_1_OP, 
+is 13 _  LIT_1_OP, ELT_OP, LET_1_OP, REF_2_OP, LIT_0_OP, ELT_OP, LET_1_OP, 
+is 14 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, GLO_REF_OP, 6, 
+is 15 _  GLO_REF_1_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 1, LIT_0_OP, 
+is 16 _  TUP_OP, 8, 2, REF_0_OP, POP_LET_3_OP, DT_OP, LIT_0_OP, EQ_OP, 
+is 17 _  IF_OP, 8, HOOD_RADIUS_OP, DT_OP, LIT_OP, 12, MUL_OP, DIV_OP, 
+is 18 _  JMP_OP, 1, LIT_1_OP, LET_1_OP, REF_0_OP, DT_OP, MUL_OP, ADD_OP, 
+is 19 _  REF_0_OP, POP_LET_1_OP, TUP_OP, 9, 2, VMUX_OP, 10, VMUX_OP, 11, 
+is 20 _  RET_OP, DEF_NUM_VEC_2_OP, DEF_FUN_OP, 26, GLO_REF_3_OP, 
+is 21 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_OP, 12, 
+is 22 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, 
+is 23 _  LIT_0_OP, ELT_OP, REF_0_OP, POP_LET_1_OP, LIT_1_OP, ELT_OP, 
+is 24 _  TUP_OP, 13, 2, LIT_0_OP, ELT_OP, RET_OP, EXIT_OP };
+is 25 _ uint16_t script_len = 169;
+
 
 // All-ways interaction:
 // (rep x 1 (if (> (timer) 5) (max-hood (nbr (mid))) 8))
