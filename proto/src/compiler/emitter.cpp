@@ -60,8 +60,9 @@ struct Instruction : public CompilationElement { reflection_sub(Instruction,CE);
   }
   virtual void print(ostream* out=0) {
     *out << (opnames.count(op) ? opnames[op] : "<UNKNOWN OP>");
-    if(ProtoKernelEmitter::op_debug)
-      *out << "[" << location << "]";
+    if(ProtoKernelEmitter::op_debug) {
+      *out << " [" << location << " S: " << stack_delta << " E: " << env_delta << "]";
+    }
     for(int i=0;i<parameters.size();i++) { *out << ", " << i2s(parameters[i]); }
   }
   
@@ -378,9 +379,15 @@ struct PopLet : public Instruction { reflection_sub(PopLet, Instruction);
   	Instruction::print(out);
     if(ProtoKernelEmitter::op_debug) {
   	  set<int>::iterator it;
+  	  bool first = true;
   	  *out << " {";
-  	  for ( it=debugIndices.begin() ; it != debugIndices.end(); it++ )
-  	    *out << " " << *it;
+  	  for ( it=debugIndices.begin() ; it != debugIndices.end(); it++ ) {
+  		if (first)
+  			first = false;
+  		else
+  	      *out << " ";
+  		*out << *it;
+  	  }
       *out << "}";
     }
   }
@@ -508,9 +515,10 @@ struct FunctionCall : public Instruction { reflection_sub(FunctionCall,Instructi
          : Instruction(FUNCALL_0_OP) {
          compoundOp = compoundOpParam;
          // dynamically compute op, env_delta, & stack_delta
-         env_delta = getNumParams(compoundOp);
-         op = FUNCALL_0_OP+env_delta;
-         stack_delta = -env_delta;
+         int nArgs = getNumParams(compoundOp);
+         op = FUNCALL_0_OP+nArgs;
+         stack_delta = -nArgs;
+         env_delta = 0; // we clear the env stack when done, delta is 0
       }
    private:
       /**
@@ -738,14 +746,15 @@ class StackEnvSizer : public InstructionPropagator {
             r->set_offset(rh - sh);
           }
           if (r->marked("~Read-Reference")) {
-        	  // If it's a read inside the update funcall for the rep update, the env stack size is the size at the funcall + the size at the rep
+        	  // If it's a read inside the update funcall for the rep update, the env stack size is the size at the funcall
+        	  //   + the num of args of the funcall +the size at the rep
         	  // Find the funcall
         	  Instruction *findFuncall = r->store;
         	  while (findFuncall != NULL && !findFuncall->isA("FunctionCall")) {
         		  findFuncall = findFuncall->next;
         	  }
         	  if (findFuncall != NULL) {
-        		  findFuncall = findFuncall->prev; // Right before the funcall
+        		  //findFuncall = findFuncall->prev; // Right at the funcall
         		  rh += env_height[findFuncall];
         	  }
         	  if ((rh - sh) >= 0 && r->offset != (rh - sh)) {
@@ -906,7 +915,8 @@ class StackEnvSizer : public InstructionPropagator {
         
         // This is broken, we don't put all the folder/nbrop args on the env stack
         //  nbrop arg is put on by the fold-hood-op, folder args are handled by the callback, and removed
-        // So the end result of a fold-hood-op is +1 env stack size
+        // So the end result of a fold-hood-op is +0 env stack size
+        // But the max is +2
       
         V2 << "extra net: " << extra_net << endl;
         V2 << "extra max: " << extra_max << endl;
@@ -916,14 +926,17 @@ class StackEnvSizer : public InstructionPropagator {
         int nbrop_arity = fold->nbrop->signature->required_inputs.size();
         V2 << "nbrop Arity: " << nbrop_arity << endl;
         nbrop_arity = 1;
-        extra_net += folder_arity + i_folder->net_env_delta()
-          + nbrop_arity + i_nbrop->net_env_delta();
-        extra_net = 1;
-        extra_max =
-          max(extra_max,
-              max(folder_arity + i_folder->max_env_delta(),
-                  nbrop_arity + i_nbrop->max_env_delta()));
-        extra_max = 1;
+        //extra_net += folder_arity + i_folder->net_env_delta()
+        //  + nbrop_arity + i_nbrop->net_env_delta();
+        extra_net = 0;
+        //extra_max =
+        //  max(extra_max,
+        //      max(folder_arity + i_folder->max_env_delta(),
+        //          nbrop_arity + i_nbrop->max_env_delta()));
+        extra_max = 2;
+      } else if (i->isA("FunctionCall")) {
+    	extra_net = 0;
+    	extra_max = 1;
       }
       maybe_set_env(i, baseh + extra_net, baseh + extra_max);
     } else {
@@ -2290,7 +2303,7 @@ ProtoKernelEmitter::process_extension_op(SExpr *sexpr)
 }
 
 // small hack for getting op debugging into low-level print functions
-bool ProtoKernelEmitter::op_debug = false;
+bool ProtoKernelEmitter::op_debug = true;
 
 ProtoKernelEmitter::ProtoKernelEmitter(NeoCompiler *parent, Args *args)
 {
