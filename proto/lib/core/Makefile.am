@@ -4,7 +4,6 @@ protolib_DATA = \
 	3rd.proto \
 	acosh.proto \
 	all-time.proto \
-	and.proto \
 	any-time.proto \
 	asinh.proto \
 	assoc.proto \
@@ -32,7 +31,6 @@ protolib_DATA = \
 	neg.proto \
 	normalize.proto \
 	once.proto \
-	or.proto \
 	pi.proto \
 	polar-to-rect.proto \
 	position-first.proto \
