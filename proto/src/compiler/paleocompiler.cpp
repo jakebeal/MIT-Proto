@@ -2157,12 +2157,12 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
                           qq_env("$expr", lst_elt(args, 0), "$folder", folder, NULL));
     return parse(form, env);
   } else if (strcasecmp(name, "all-hood") == 0) {
-    Obj *folder = hood_folder("all-hood", args, read_qq("and", lisp_nil), read_qq("<", lisp_nil));
+    Obj *folder = hood_folder("all-hood", args, read_qq("muxand", lisp_nil), read_qq("<", lisp_nil));
     Obj *form   = read_qq("(fold-hood-plus* $folder $expr)", 
                           qq_env("$expr", lst_elt(args, 0), "$folder", folder, NULL));
     return parse(form, env);
   } else if (strcasecmp(name, "any-hood") == 0) {
-    Obj *folder = hood_folder("any-hood", args, read_qq("or", lisp_nil), read_qq(">", lisp_nil));
+    Obj *folder = hood_folder("any-hood", args, read_qq("muxor", lisp_nil), read_qq(">", lisp_nil));
     Obj *form   = read_qq("(fold-hood-plus* $folder $expr)", 
                           qq_env("$expr", lst_elt(args, 0), "$folder", folder, NULL));
     return parse(form, env);
