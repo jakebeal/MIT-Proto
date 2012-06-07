@@ -2174,6 +2174,18 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
     Obj *form = read_qq("(fold-hood-plus* + (* (infinitesimal) $expr))", 
                         qq_env("$expr", lst_elt(args, 0), NULL));
     return parse(form, env);
+  } else if (strcasecmp(name, "and") == 0) {
+    List *qenv = qq_env("$arg1", lst_elt(args, 0), 
+                        "$arg2", lst_elt(args, 1),
+                        NULL);
+    Obj *form = read_qq("(if $arg1 $arg2 0)", qenv);
+    return parse(form, env);
+  } else if (strcasecmp(name, "or") == 0) {
+    List *qenv = qq_env("$arg1", lst_elt(args, 0), 
+                        "$arg2", lst_elt(args, 1),
+                        NULL);
+    Obj *form = read_qq("(let ((~orval $arg1)) (if ~orval ~orval $arg2))", qenv);
+    return parse(form, env);
   } else if (strcasecmp(name, "rep") == 0) {
     List *qenv = qq_env("$n", lst_elt(args, 0), 
                         "$i", lst_elt(args, 1), 
