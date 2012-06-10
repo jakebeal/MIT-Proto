@@ -32,6 +32,7 @@ class SimpleBody : public Body {
   SimpleDynamics* parent; int parloc; // back pointers
   flo p[3],v[3]; // position, velocity, force
   flo radius; // bodies are spherical
+  bool wall_touch; // is the device currently being affected by a wall?
   
  public:
   const flo* position() { return p; }
@@ -47,8 +48,8 @@ class SimpleBody : public Body {
   
   SimpleBody(SimpleDynamics *parent, Device* container, flo x, flo y, 
              flo z, flo r) : Body(container) { 
-    this->parent=parent; moved=false;
-    set_position(x,y,z); set_velocity(0,0,0); radius=r;
+    this->parent=parent; moved=false; 
+    set_position(x,y,z); set_velocity(0,0,0); radius=r; wall_touch = false;
   }
   ~SimpleBody();
   void preupdate();
@@ -98,6 +99,7 @@ class SimpleDynamics : public BodyDynamics, HardwarePatch {
   void radius_get_op(Machine* machine);
   Number radius_set (Number val);
   Number radius_get ();
+  void wall_bump_op(Machine* machine);
   
   // not yet implemented:
   //Tuple read_ranger (VOID);

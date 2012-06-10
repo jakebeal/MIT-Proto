@@ -243,6 +243,7 @@ SimpleDynamics::SimpleDynamics(Args* args, SpatialComputer* parent, int n)
   parent->hardware.patch(this,MOV_FN);
   parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_set_op, "radius-set scalar scalar"));
   parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::radius_get_op, "radius scalar"));
+  parent->hardware.registerOpcode(new OpHandler<SimpleDynamics>(this, &SimpleDynamics::wall_bump_op, "wall-bump scalar"));
 }
 
 Color* SimpleDynamics::SIMPLE_BODY;
@@ -258,6 +259,11 @@ void SimpleDynamics::radius_set_op(Machine* machine) {
 
 void SimpleDynamics::radius_get_op(Machine* machine) {
   machine->stack.push(radius_get());
+}
+
+void SimpleDynamics::wall_bump_op(Machine* machine) {
+  bool bump = ((SimpleBody*)device->body)->wall_touch;
+  machine->stack.push(bump);
 }
 
 vector<HardwareFunction> SimpleDynamics::getImplementedHardwareFunctions()
@@ -327,6 +333,7 @@ bool SimpleDynamics::evolve(SECONDS dt) {
       if (len > speed_lim*speed_lim) vek_mul(&dp,speed_lim/sqrt(len)); // limit velocity
       vek_mul(&dp,dt);
       // device is moved by walls
+      ((SimpleBody*)b)->wall_touch = false;
       if (is_walls) {
 	for (int j=0; j<N_WALLS; j++) {
 	  Vek vec(b->position());
@@ -336,6 +343,7 @@ bool SimpleDynamics::evolve(SECONDS dt) {
 	    vek_cpy(&vec, wall_normals[j]);
 	    vek_mul(&vec, -d * K_BOUND * dt);
 	    vek_add(&dp, &vec);
+            ((SimpleBody*)b)->wall_touch = true;
 	  }
 	}
       }
