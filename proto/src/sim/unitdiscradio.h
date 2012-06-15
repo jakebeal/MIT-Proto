@@ -54,6 +54,9 @@ class UnitDiscRadio : public RadioSim {
   void connect_device(Device *d); // create all connections
   void disconnect_device(Device *d); // delete all connections
 
+  void create_cell_representation();
+  void change_radio_range(float newrange);
+
   virtual void register_colors();
   static Color *RADIO_RANGE_RING, *RADIO_CELL_INFO;
 };

@@ -45,6 +45,12 @@ UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(a
   p->hardware.patch(this,RADIO_SEND_DIGEST_FN);
 
   // make internal space representation, starting with grid size
+  create_cell_representation();
+}
+
+void UnitDiscRadio::create_cell_representation() {
+  SpatialComputer* p = parent;
+  // make internal space representation, starting with grid size
   cell_rows = (int)ceil((p->volume->r-p->volume->l)/range)+2;
   cell_cols = (int)ceil((p->volume->t-p->volume->b)/range)+2;
   cell_lvls = (p->volume->dimensions()==2)?1:
@@ -57,6 +63,22 @@ UnitDiscRadio::UnitDiscRadio(Args* args, SpatialComputer* p, int n) : RadioSim(a
   // make and populate the cell table
   cells = (Population**)calloc(num_cells,sizeof(Population*));
   for(int i=0;i<num_cells;i++) cells[i] = new Population();
+}
+
+void UnitDiscRadio::change_radio_range(float newrange) {
+  range = newrange; r_sqr = range*range;
+  // Get rid of old cell representation
+  for(int i=0;i<num_cells;i++) { delete cells[i]; }
+  free(cells); 
+  // Replace with new representation
+  create_cell_representation();
+  // Fill new cells with all devices
+  for(int i=0;i<parent->devices.size();i++) {
+    Device* d = (Device*)parent->devices.get(i); if(d==NULL) continue;
+    UnitDiscDevice* udd = (UnitDiscDevice*)d->layers[id];
+    int c = udd->cell_id = device_cell(d);
+    udd->cell_loc = cells[c]->add(d);
+  }
 }
 
 // register colors to use
@@ -95,6 +117,8 @@ bool UnitDiscRadio::handle_key(KeyEvent* key) {
     } else {
       switch(key->key) {
       case 'r': is_show_radio = !is_show_radio; return true;
+      case 'R': change_radio_range(range+1); return true;
+      case 'E': change_radio_range(range-1); return true;
       }
     }
   }
