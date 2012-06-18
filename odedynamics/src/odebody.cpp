@@ -497,11 +497,7 @@ void ODEBox::visualize() {
 				flo h = (360.0 * parloc) / parent->bodies.max_id();
 				flo r, g, b;
 				hsv_to_rgb(h, 1, 1, &r, &g, &b);
-
-				//TODO was this to indicate boxes collided?
-//				Color* c = palette->register_color("a",r/255,g/255,b/255,0.7);
-//				palette->use_color(c);
-
+				palette->scale_color(ODEDynamics::ODE_RAINBOW_BASE,r/255,g/255,b/255,1);
 				pushed = TRUE;
 			}
 		}
@@ -509,10 +505,10 @@ void ODEBox::visualize() {
   if(did_bump){
 		palette->use_color(ODEDynamics::ODE_BOT_BUMPED);
   }
+  if(!pushed) palette->use_color(ODEDynamics::ODE_BOT);
   draw_box(pos,R,sides);
   palette->use_color(ODEDynamics::ODE_EDGES); // draw edges in separate color
   draw_wire_box(pos,R,sides);
-  if(pushed) palette->use_color(ODEDynamics::ODE_BOT);
 #endif // WANT_GLUT
 }
 
@@ -577,11 +573,7 @@ void ODESphere::visualize() {
 				flo h = (360.0 * parloc) / parent->bodies.max_id();
 				flo r, g, b;
 				hsv_to_rgb(h, 1, 1, &r, &g, &b);
-
-				//TODO was this to indicate boxes collided?
-//				Color* c = palette->register_color("a",r/255,g/255,b/255,0.7);
-//				palette->use_color(c);
-
+				palette->scale_color(ODEDynamics::ODE_RAINBOW_BASE,r/255,g/255,b/255,1);
 				pushed = TRUE;
 			}
 		}
@@ -589,10 +581,10 @@ void ODESphere::visualize() {
   if(did_bump){
 		palette->use_color(ODEDynamics::ODE_BOT_BUMPED);
   }
+  if(!pushed) palette->use_color(ODEDynamics::ODE_BOT);
   draw_sphere(pos, R, rad);
   palette->use_color(ODEDynamics::ODE_EDGES); // draw edges in separate color
   draw_wire_sphere(pos,R,rad);
-  if(pushed) palette->use_color(ODEDynamics::ODE_BOT);
 #endif // WANT_GLUT
 }
 
@@ -666,6 +658,7 @@ void ODECylinder::visualize() {
 				flo h = (360.0 * parloc) / parent->bodies.max_id();
 				flo r, g, b;
 				hsv_to_rgb(h, 1, 1, &r, &g, &b);
+				palette->scale_color(ODEDynamics::ODE_RAINBOW_BASE,r/255,g/255,b/255,1);
 
 				pushed = TRUE;
 			}
@@ -675,11 +668,10 @@ void ODECylinder::visualize() {
 		palette->use_color(ODEDynamics::ODE_BOT_BUMPED);
   }
 
+  if(!pushed) palette->use_color(ODEDynamics::ODE_BOT);
   draw_cylinder(pos, R, rad, height);
   palette->use_color(ODEDynamics::ODE_EDGES); // draw edges in separate color
-
   draw_wire_cylinder(pos, R, rad, height);
-  if(pushed) palette->use_color(ODEDynamics::ODE_BOT);
 #endif // WANT_GLUT
 }
 
@@ -751,6 +743,7 @@ void ODECapsule::visualize() {
 				flo h = (360.0 * parloc) / parent->bodies.max_id();
 				flo r, g, b;
 				hsv_to_rgb(h, 1, 1, &r, &g, &b);
+				palette->scale_color(ODEDynamics::ODE_RAINBOW_BASE,r/255,g/255,b/255,1);
 
 				pushed = TRUE;
 			}
@@ -760,11 +753,11 @@ void ODECapsule::visualize() {
 		palette->use_color(ODEDynamics::ODE_BOT_BUMPED);
   }
 
+  if(!pushed) palette->use_color(ODEDynamics::ODE_BOT);
   draw_capsule(pos, R, rad, height);
   palette->use_color(ODEDynamics::ODE_EDGES); // draw edges in separate color
 
   draw_wire_capsule(pos, R, rad, height);
-  if(pushed) palette->use_color(ODEDynamics::ODE_BOT);
 #endif // WANT_GLUT
 }
 

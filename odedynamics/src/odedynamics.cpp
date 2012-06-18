@@ -44,8 +44,8 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
       contact[i].surface.mu = 30;
 //      contact[i].surface.mu = 0.85;
       contact[i].surface.mu2 = 0.85	;
-      // contact[i].surface.bounce = 0.1;
-      //      contact[i].surface.bounce = 0.5;
+      contact[i].surface.bounce = 0.1;
+      //contact[i].surface.bounce = 0.5;
       contact[i].surface.bounce_vel = 0.1;
       contact[i].surface.bounce_vel = 0.9;
       contact[i].surface.soft_cfm = 0.001; // give
@@ -402,6 +402,7 @@ Color* ODEDynamics::ODE_BOT_BUMPED;
 Color* ODEDynamics::ODE_EDGES;
 Color* ODEDynamics::ODE_WALL;
 Color* ODEDynamics::ODE_BRADLEY;
+Color* ODEDynamics::ODE_RAINBOW_BASE;
 
 void ODEDynamics::register_colors() {
 #ifdef WANT_GLUT
@@ -412,6 +413,7 @@ void ODEDynamics::register_colors() {
 	  ODE_EDGES = palette->register_color("ODE_EDGES", 0, 0, 1, 1);
 	  ODE_WALL = palette->register_color("ODE_WALL", 1, 0, 0, 0.1);
 	  ODE_BRADLEY = palette->register_color("ODE_BRADLEY", 0.29, 0.325, 0.125, 1.0);
+	  ODE_RAINBOW_BASE = palette->register_color("ODE_RAINBOW_BASE", 1.0, 1.0, 1.0, 0.7);
 #endif
 }
 

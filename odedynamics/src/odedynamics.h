@@ -107,6 +107,7 @@ class ODEDynamics : public BodyDynamics, HardwarePatch {
   static Color* ODE_EDGES;
   static Color* ODE_WALL;
   static Color* ODE_BRADLEY;
+  static Color* ODE_RAINBOW_BASE;
 
   void register_colors() ;
 
