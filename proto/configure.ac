@@ -77,6 +77,8 @@ AC_CHECK_FUNCS([floor gettimeofday memset pow select sqrt strcasecmp strrchr])
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/core/Makefile
+                 lib/neo/Makefile
+                 lib/paleo/Makefile
                  p2b
                  proto
                  src/Makefile

@@ -1,6 +1,14 @@
 # NOTE: order is important in this list!
+
+if USE_NEOCOMPILER
+neopaleodir = neo
+else
+neopaleodir = paleo
+endif
+
 SUBDIRS = \
 	core \
+	$(neopaleodir) \
 	.
 
 protolib_DATA = \
@@ -16,9 +24,7 @@ protolib_DATA = \
 	dither.proto \
 	elect.proto \
 	flip.proto \
-	grad-value.proto \
 	gradcast.proto \
-	gradient.proto \
 	norm.proto \
 	timer.proto
 
