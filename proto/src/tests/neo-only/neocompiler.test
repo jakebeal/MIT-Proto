@@ -1745,7 +1745,7 @@ is 10 _   Delta<Boolean> --> [nbr] --> Charlie<Field <Boolean>>
 is 11 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
 is 12 _   [mid] --> Echo<Scalar>
 is 13 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
-is 14 _ Function: lambda~6 [Signature: <Boolean> --> <Boolean>] called 1 times
+is 14 _ Function: Hood~6 [Signature: <Boolean> --> <Boolean>] called 1 times
 is 15 _   Amorphous Mediums:
 is 16 _     [Medium: Golf = root]
 is 17 _   Fields:
@@ -1760,19 +1760,19 @@ is 25 _   Echo: Alfa --> <Scalar>
 is 26 _   Foxtrot: Alfa --> <Scalar 0>
 is 27 _   India: Alfa --> <Boolean> OUTPUT
 is 28 _   Juliet: Alfa --> <Lambda [max]>
-is 29 _   Kilo: Alfa --> <Lambda [Fun: lambda~6]>
+is 29 _   Kilo: Alfa --> <Lambda [Fun: Hood~6]>
 is 30 _ Operator Instances:
 is 31 _   Echo<Scalar>, Foxtrot<Scalar 0> --> [=] --> Delta<Boolean>
 is 32 _   [mid] --> Echo<Scalar>
 is 33 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
-is 34 _   Juliet<Lambda [max]>, Kilo<Lambda [Fun: lambda~6]>, Delta<Boolean> --> [fold-hood-plus] --> India<Boolean> OUTPUT
+is 34 _   Juliet<Lambda [max]>, Kilo<Lambda [Fun: Hood~6]>, Delta<Boolean> --> [fold-hood-plus] --> India<Boolean> OUTPUT
 is 35 _   [Lit: <Lambda [max]>] --> Juliet<Lambda [max]>
-is 36 _   [Lit: <Lambda [Fun: lambda~6]>] --> Kilo<Lambda [Fun: lambda~6]>
+is 36 _   [Lit: <Lambda [Fun: Hood~6]>] --> Kilo<Lambda [Fun: Hood~6]>
 is 37 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(any-hood (sin (nbr (mid))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1787,18 +1787,18 @@ is 11 _ Fields:
 is 12 _   Echo: Delta --> <Scalar>
 is 13 _   Foxtrot: Delta --> <Scalar> OUTPUT
 is 14 _   Golf: Delta --> <Lambda [max]>
-is 15 _   Hotel: Delta --> <Lambda [Fun: lambda~6]>
+is 15 _   Hotel: Delta --> <Lambda [Fun: Hood~6]>
 is 16 _ Operator Instances:
 is 17 _   [mid] --> Echo<Scalar>
-is 18 _   Golf<Lambda [max]>, Hotel<Lambda [Fun: lambda~6]>, Echo<Scalar> --> [fold-hood-plus] --> Foxtrot<Scalar> OUTPUT
+is 18 _   Golf<Lambda [max]>, Hotel<Lambda [Fun: Hood~6]>, Echo<Scalar> --> [fold-hood-plus] --> Foxtrot<Scalar> OUTPUT
 is 19 _   [Lit: <Lambda [max]>] --> Golf<Lambda [max]>
-is 20 _   [Lit: <Lambda [Fun: lambda~6]>] --> Hotel<Lambda [Fun: lambda~6]>
+is 20 _   [Lit: <Lambda [Fun: Hood~6]>] --> Hotel<Lambda [Fun: Hood~6]>
 is 21 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Basic neighborhood localization test:
 test: $(P2B) -CDlocalized "(all-hood (+ 2 (nbr (mid))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1815,17 +1815,17 @@ is 13 _ Fields:
 is 14 _   Foxtrot: Echo --> <Scalar>
 is 15 _   Golf: Echo --> <Scalar> OUTPUT
 is 16 _   Hotel: Echo --> <Lambda [min]>
-is 17 _   India: Echo --> <Lambda [Fun: lambda~6]>
+is 17 _   India: Echo --> <Lambda [Fun: Hood~6]>
 is 18 _ Operator Instances:
 is 19 _   [mid] --> Foxtrot<Scalar>
-is 20 _   Hotel<Lambda [min]>, India<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 20 _   Hotel<Lambda [min]>, India<Lambda [Fun: Hood~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
 is 21 _   [Lit: <Lambda [min]>] --> Hotel<Lambda [min]>
-is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
+is 22 _   [Lit: <Lambda [Fun: Hood~6]>] --> India<Lambda [Fun: Hood~6]>
 is 23 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(min-hood (+ (nbr-range) (nbr (mid))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1842,18 +1842,18 @@ is 13 _ Fields:
 is 14 _   Foxtrot: Echo --> <Scalar>
 is 15 _   Golf: Echo --> <Scalar> OUTPUT
 is 16 _   Hotel: Echo --> <Lambda [min]>
-is 17 _   India: Echo --> <Lambda [Fun: lambda~6]>
+is 17 _   India: Echo --> <Lambda [Fun: Hood~6]>
 is 18 _ Operator Instances:
 is 19 _   [mid] --> Foxtrot<Scalar>
-is 20 _   Hotel<Lambda [min]>, India<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 20 _   Hotel<Lambda [min]>, India<Lambda [Fun: Hood~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
 is 21 _   [Lit: <Lambda [min]>] --> Hotel<Lambda [min]>
-is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
+is 22 _   [Lit: <Lambda [Fun: Hood~6]>] --> India<Lambda [Fun: Hood~6]>
 is 23 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test zero exports:
 test: $(P2B) -CDlocalized "(int-hood (nbr-range))"
-is 0 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -1870,12 +1870,12 @@ is 13 _ Fields:
 is 14 _   Foxtrot: Echo --> <Scalar 0>
 is 15 _   Golf: Echo --> <Scalar> OUTPUT
 is 16 _   Hotel: Echo --> <Lambda [+]>
-is 17 _   India: Echo --> <Lambda [Fun: lambda~5]>
+is 17 _   India: Echo --> <Lambda [Fun: Hood~5]>
 is 18 _ Operator Instances:
 is 19 _   [Lit: <Scalar 0>] --> Foxtrot<Scalar 0>
-is 20 _   Hotel<Lambda [+]>, India<Lambda [Fun: lambda~5]>, Foxtrot<Scalar 0> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 20 _   Hotel<Lambda [+]>, India<Lambda [Fun: Hood~5]>, Foxtrot<Scalar 0> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
 is 21 _   [Lit: <Lambda [+]>] --> Hotel<Lambda [+]>
-is 22 _   [Lit: <Lambda [Fun: lambda~5]>] --> India<Lambda [Fun: lambda~5]>
+is 22 _   [Lit: <Lambda [Fun: Hood~5]>] --> India<Lambda [Fun: Hood~5]>
 is 23 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1889,7 +1889,7 @@ is 4 _   Charlie: Alfa --> <Field <Scalar 1>>
 is 5 _ Operator Instances:
 is 6 _   Charlie<Field <Scalar 1>> --> [int-hood] --> Bravo<Scalar> OUTPUT
 is 7 _   [Lit: <Field <Scalar 1>>] --> Charlie<Field <Scalar 1>>
-is 8 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
+is 8 _ Function: Hood~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
 is 9 _   Amorphous Mediums:
 is 10 _     [Medium: Delta = root]
 is 11 _   Fields:
@@ -1906,12 +1906,12 @@ is 21 _ Fields:
 is 22 _   Hotel: Alfa --> <Scalar 0>
 is 23 _   India: Alfa --> <Scalar> OUTPUT
 is 24 _   Juliet: Alfa --> <Lambda [+]>
-is 25 _   Kilo: Alfa --> <Lambda [Fun: lambda~5]>
+is 25 _   Kilo: Alfa --> <Lambda [Fun: Hood~5]>
 is 26 _ Operator Instances:
 is 27 _   [Lit: <Scalar 0>] --> Hotel<Scalar 0>
-is 28 _   Juliet<Lambda [+]>, Kilo<Lambda [Fun: lambda~5]>, Hotel<Scalar 0> --> [fold-hood-plus] --> India<Scalar> OUTPUT
+is 28 _   Juliet<Lambda [+]>, Kilo<Lambda [Fun: Hood~5]>, Hotel<Scalar 0> --> [fold-hood-plus] --> India<Scalar> OUTPUT
 is 29 _   [Lit: <Lambda [+]>] --> Juliet<Lambda [+]>
-is 30 _   [Lit: <Lambda [Fun: lambda~5]>] --> Kilo<Lambda [Fun: lambda~5]>
+is 30 _   [Lit: <Lambda [Fun: Hood~5]>] --> Kilo<Lambda [Fun: Hood~5]>
 is 31 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1930,7 +1930,7 @@ is 10 _   Delta<Field <Scalar>>, Echo<Field <Scalar>> --> [Field~~+] --> Charlie
 is 11 _   [nbr-range] --> Delta<Field <Scalar>>
 is 12 _   Foxtrot<Scalar> --> [nbr] --> Echo<Field <Scalar>>
 is 13 _   [mid] --> Foxtrot<Scalar>
-is 14 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 14 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 15 _   Amorphous Mediums:
 is 16 _     [Medium: Golf = root]
 is 17 _   Fields:
@@ -1947,12 +1947,12 @@ is 27 _ Fields:
 is 28 _   Foxtrot: Alfa --> <Scalar>
 is 29 _   Kilo: Alfa --> <Scalar> OUTPUT
 is 30 _   Lima: Alfa --> <Lambda [min]>
-is 31 _   Mike: Alfa --> <Lambda [Fun: lambda~6]>
+is 31 _   Mike: Alfa --> <Lambda [Fun: Hood~6]>
 is 32 _ Operator Instances:
 is 33 _   [mid] --> Foxtrot<Scalar>
-is 34 _   Lima<Lambda [min]>, Mike<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
+is 34 _   Lima<Lambda [min]>, Mike<Lambda [Fun: Hood~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
 is 35 _   [Lit: <Lambda [min]>] --> Lima<Lambda [min]>
-is 36 _   [Lit: <Lambda [Fun: lambda~6]>] --> Mike<Lambda [Fun: lambda~6]>
+is 36 _   [Lit: <Lambda [Fun: Hood~6]>] --> Mike<Lambda [Fun: Hood~6]>
 is 37 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1975,7 +1975,7 @@ is 14 _   Foxtrot<Scalar> --> [nbr] --> Echo<Field <Scalar>>
 is 15 _   [speed] --> Foxtrot<Scalar>
 is 16 _   [Field~~mid] --> Golf<Field <Scalar>>
 is 17 _   [Lit: <Field <Scalar 1>>] --> Hotel<Field <Scalar 1>>
-is 18 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 18 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 19 _   Amorphous Mediums:
 is 20 _     [Medium: India = root]
 is 21 _   Fields:
@@ -1996,18 +1996,18 @@ is 35 _ Fields:
 is 36 _   Foxtrot: Alfa --> <Scalar>
 is 37 _   Oscar: Alfa --> <Scalar> OUTPUT
 is 38 _   Papa: Alfa --> <Lambda [max]>
-is 39 _   Quebec: Alfa --> <Lambda [Fun: lambda~6]>
+is 39 _   Quebec: Alfa --> <Lambda [Fun: Hood~6]>
 is 40 _ Operator Instances:
 is 41 _   [speed] --> Foxtrot<Scalar>
-is 42 _   Papa<Lambda [max]>, Quebec<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Oscar<Scalar> OUTPUT
+is 42 _   Papa<Lambda [max]>, Quebec<Lambda [Fun: Hood~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Oscar<Scalar> OUTPUT
 is 43 _   [Lit: <Lambda [max]>] --> Papa<Lambda [max]>
-is 44 _   [Lit: <Lambda [Fun: lambda~6]>] --> Quebec<Lambda [Fun: lambda~6]>
+is 44 _   [Lit: <Lambda [Fun: Hood~6]>] --> Quebec<Lambda [Fun: Hood~6]>
 is 45 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test multi-use fields:
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (nbr (mid))))) (+ (min-hood (+ x x)) (max-hood x)))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2020,7 +2020,7 @@ is 9 _     [Parameter 0: arg~5] --> Bravo<Scalar>
 is 10 _     Echo<Scalar 2>, Bravo<Scalar> --> [+] --> Charlie<Scalar>
 is 11 _     Charlie<Scalar>, Charlie<Scalar> --> [+] --> Delta<Scalar> OUTPUT
 is 12 _     [Lit: <Scalar 2>] --> Echo<Scalar 2>
-is 13 _ Function: lambda~9 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 13 _ Function: Hood~9 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 14 _   Amorphous Mediums:
 is 15 _     [Medium: Foxtrot = root]
 is 16 _   Fields:
@@ -2038,25 +2038,25 @@ is 27 _   Kilo: Juliet --> <Scalar>
 is 28 _   Lima: Juliet --> <Scalar> OUTPUT
 is 29 _   Mike: Juliet --> <Scalar>
 is 30 _   November: Juliet --> <Lambda [min]>
-is 31 _   Oscar: Juliet --> <Lambda [Fun: lambda~6]>
+is 31 _   Oscar: Juliet --> <Lambda [Fun: Hood~6]>
 is 32 _   Papa: Juliet --> <Scalar>
 is 33 _   Quebec: Juliet --> <Lambda [max]>
-is 34 _   Romeo: Juliet --> <Lambda [Fun: lambda~9]>
+is 34 _   Romeo: Juliet --> <Lambda [Fun: Hood~9]>
 is 35 _ Operator Instances:
 is 36 _   [mid] --> Kilo<Scalar>
 is 37 _   Mike<Scalar>, Papa<Scalar> --> [+] --> Lima<Scalar> OUTPUT
-is 38 _   November<Lambda [min]>, Oscar<Lambda [Fun: lambda~6]>, Kilo<Scalar> --> [fold-hood-plus] --> Mike<Scalar>
+is 38 _   November<Lambda [min]>, Oscar<Lambda [Fun: Hood~6]>, Kilo<Scalar> --> [fold-hood-plus] --> Mike<Scalar>
 is 39 _   [Lit: <Lambda [min]>] --> November<Lambda [min]>
-is 40 _   [Lit: <Lambda [Fun: lambda~6]>] --> Oscar<Lambda [Fun: lambda~6]>
-is 41 _   Quebec<Lambda [max]>, Romeo<Lambda [Fun: lambda~9]>, Kilo<Scalar> --> [fold-hood-plus] --> Papa<Scalar>
+is 40 _   [Lit: <Lambda [Fun: Hood~6]>] --> Oscar<Lambda [Fun: Hood~6]>
+is 41 _   Quebec<Lambda [max]>, Romeo<Lambda [Fun: Hood~9]>, Kilo<Scalar> --> [fold-hood-plus] --> Papa<Scalar>
 is 42 _   [Lit: <Lambda [max]>] --> Quebec<Lambda [max]>
-is 43 _   [Lit: <Lambda [Fun: lambda~9]>] --> Romeo<Lambda [Fun: lambda~9]>
+is 43 _   [Lit: <Lambda [Fun: Hood~9]>] --> Romeo<Lambda [Fun: Hood~9]>
 is 44 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Neighborhood variables:
 test: $(P2B) -CDlocalized "(let ((x (mid))) (+ x (min-hood (+ x (nbr x)))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2074,19 +2074,19 @@ is 14 _   Foxtrot: Echo --> <Scalar>
 is 15 _   Golf: Echo --> <Scalar> OUTPUT
 is 16 _   Hotel: Echo --> <Scalar>
 is 17 _   India: Echo --> <Lambda [min]>
-is 18 _   Juliet: Echo --> <Lambda [Fun: lambda~6]>
+is 18 _   Juliet: Echo --> <Lambda [Fun: Hood~6]>
 is 19 _ Operator Instances:
 is 20 _   [mid] --> Foxtrot<Scalar>
 is 21 _   Foxtrot<Scalar>, Hotel<Scalar> --> [+] --> Golf<Scalar> OUTPUT
-is 22 _   India<Lambda [min]>, Juliet<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Hotel<Scalar>
+is 22 _   India<Lambda [min]>, Juliet<Lambda [Fun: Hood~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Hotel<Scalar>
 is 23 _   [Lit: <Lambda [min]>] --> India<Lambda [min]>
-is 24 _   [Lit: <Lambda [Fun: lambda~6]>] --> Juliet<Lambda [Fun: lambda~6]>
+is 24 _   [Lit: <Lambda [Fun: Hood~6]>] --> Juliet<Lambda [Fun: Hood~6]>
 is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Neighborhood variables: 
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ x (nbr x)))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2106,15 +2106,15 @@ is 16 _   Hotel: Foxtrot --> <Scalar>
 is 17 _   India: Foxtrot --> <Scalar> OUTPUT
 is 18 _   Juliet: Foxtrot --> <Scalar>
 is 19 _   Kilo: Foxtrot --> <Lambda [min]>
-is 20 _   Lima: Foxtrot --> <Lambda [Fun: lambda~6]>
+is 20 _   Lima: Foxtrot --> <Lambda [Fun: Hood~6]>
 is 21 _ Operator Instances:
 is 22 _   Golf<Scalar 2>, Hotel<Scalar> --> [+] --> Echo<Scalar>
 is 23 _   [Lit: <Scalar 2>] --> Golf<Scalar 2>
 is 24 _   [mid] --> Hotel<Scalar>
 is 25 _   Echo<Scalar>, Juliet<Scalar> --> [+] --> India<Scalar> OUTPUT
-is 26 _   Kilo<Lambda [min]>, Lima<Lambda [Fun: lambda~6]>, Echo<Scalar> --> [fold-hood-plus] --> Juliet<Scalar>
+is 26 _   Kilo<Lambda [min]>, Lima<Lambda [Fun: Hood~6]>, Echo<Scalar> --> [fold-hood-plus] --> Juliet<Scalar>
 is 27 _   [Lit: <Lambda [min]>] --> Kilo<Lambda [min]>
-is 28 _   [Lit: <Lambda [Fun: lambda~6]>] --> Lima<Lambda [Fun: lambda~6]>
+is 28 _   [Lit: <Lambda [Fun: Hood~6]>] --> Lima<Lambda [Fun: Hood~6]>
 is 29 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -2142,7 +2142,7 @@ is 12 _   [mid] --> Delta<Scalar>
 is 13 _   [Lit: <Scalar 5>] --> Echo<Scalar 5>
 is 14 _   [Lit: <Scalar 7>] --> Foxtrot<Scalar 7>
 is 15 _   Charlie<Scalar> --> [local] --> Golf<Field <Scalar>>
-is 16 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
+is 16 _ Function: Hood~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
 is 17 _   Amorphous Mediums:
 is 18 _     [Medium: Hotel = root]
 is 19 _   Fields:
@@ -2159,21 +2159,21 @@ is 29 _   Foxtrot: Alfa --> <Scalar 7>
 is 30 _   Juliet: Alfa --> <Scalar 0>
 is 31 _   Kilo: Alfa --> <Scalar> OUTPUT
 is 32 _   Lima: Alfa --> <Lambda [+]>
-is 33 _   Mike: Alfa --> <Lambda [Fun: lambda~5]>
+is 33 _   Mike: Alfa --> <Lambda [Fun: Hood~5]>
 is 34 _ Operator Instances:
 is 35 _   Delta<Scalar>, Echo<Scalar 5>, Foxtrot<Scalar 7> --> [mux] --> Charlie<Scalar>
 is 36 _   [mid] --> Delta<Scalar>
 is 37 _   [Lit: <Scalar 5>] --> Echo<Scalar 5>
 is 38 _   [Lit: <Scalar 7>] --> Foxtrot<Scalar 7>
 is 39 _   [Lit: <Scalar 0>] --> Juliet<Scalar 0>
-is 40 _   Lima<Lambda [+]>, Mike<Lambda [Fun: lambda~5]>, Juliet<Scalar 0> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
+is 40 _   Lima<Lambda [+]>, Mike<Lambda [Fun: Hood~5]>, Juliet<Scalar 0> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
 is 41 _   [Lit: <Lambda [+]>] --> Lima<Lambda [+]>
-is 42 _   [Lit: <Lambda [Fun: lambda~5]>] --> Mike<Lambda [Fun: lambda~5]>
+is 42 _   [Lit: <Lambda [Fun: Hood~5]>] --> Mike<Lambda [Fun: Hood~5]>
 is 43 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(sum-hood (+ (nbr 1) (mux (mid) 5 7)))"
-is 0 _ Function: lambda~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~5 [Signature: <Scalar 0> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2194,16 +2194,16 @@ is 17 _   India: Foxtrot --> <Scalar 7>
 is 18 _   Juliet: Foxtrot --> <Scalar 0>
 is 19 _   Kilo: Foxtrot --> <Scalar> OUTPUT
 is 20 _   Lima: Foxtrot --> <Lambda [+]>
-is 21 _   Mike: Foxtrot --> <Lambda [Fun: lambda~5]>
+is 21 _   Mike: Foxtrot --> <Lambda [Fun: Hood~5]>
 is 22 _ Operator Instances:
 is 23 _   Golf<Scalar>, Hotel<Scalar 5>, India<Scalar 7> --> [mux] --> Echo<Scalar>
 is 24 _   [mid] --> Golf<Scalar>
 is 25 _   [Lit: <Scalar 5>] --> Hotel<Scalar 5>
 is 26 _   [Lit: <Scalar 7>] --> India<Scalar 7>
 is 27 _   [Lit: <Scalar 0>] --> Juliet<Scalar 0>
-is 28 _   Lima<Lambda [+]>, Mike<Lambda [Fun: lambda~5]>, Juliet<Scalar 0> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
+is 28 _   Lima<Lambda [+]>, Mike<Lambda [Fun: Hood~5]>, Juliet<Scalar 0> --> [fold-hood-plus] --> Kilo<Scalar> OUTPUT
 is 29 _   [Lit: <Lambda [+]>] --> Lima<Lambda [+]>
-is 30 _   [Lit: <Lambda [Fun: lambda~5]>] --> Mike<Lambda [Fun: lambda~5]>
+is 30 _   [Lit: <Lambda [Fun: Hood~5]>] --> Mike<Lambda [Fun: Hood~5]>
 is 31 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -2234,27 +2234,27 @@ is 22 _   Lima<Field <Scalar>> --> [any-hood] --> Kilo<Boolean>
 is 23 _   Foxtrot<Field <Scalar>>, Charlie<Boolean> --> [restrict] --> Lima<Field <Scalar>>
 is 24 _   Charlie<Boolean> --> [not] --> Echo<Boolean>
 is 25 _   [Lit: <Scalar 0>] --> Mike<Scalar 0>
-is 26 _ Function: lambda~7 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 26 _ Function: Hood~7 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 27 _   Amorphous Mediums:
 is 28 _     [Medium: November = root]
 is 29 _   Fields:
 is 30 _     Oscar: November --> <Scalar> OUTPUT
 is 31 _   Operator Instances:
 is 32 _     [Parameter 0: arg~6] --> Oscar<Scalar> OUTPUT
-is 33 _ Function: lambda~8 [Signature:  --> <Scalar>] called 1 times
+is 33 _ Function: TrueBranch~8 [Signature:  --> <Scalar>] called 1 times
 is 34 _   Amorphous Mediums:
 is 35 _     [Medium: Papa = root]
 is 36 _   Fields:
 is 37 _     Quebec: Papa --> <Scalar>
 is 38 _     Romeo: Papa --> <Scalar> OUTPUT
 is 39 _     Sierra: Papa --> <Lambda [max]>
-is 40 _     Tango: Papa --> <Lambda [Fun: lambda~7]>
+is 40 _     Tango: Papa --> <Lambda [Fun: Hood~7]>
 is 41 _   Operator Instances:
 is 42 _     Golf<Scalar> --> [reference] --> Quebec<Scalar>
-is 43 _     Sierra<Lambda [max]>, Tango<Lambda [Fun: lambda~7]>, Quebec<Scalar> --> [fold-hood-plus] --> Romeo<Scalar> OUTPUT
+is 43 _     Sierra<Lambda [max]>, Tango<Lambda [Fun: Hood~7]>, Quebec<Scalar> --> [fold-hood-plus] --> Romeo<Scalar> OUTPUT
 is 44 _     [Lit: <Lambda [max]>] --> Sierra<Lambda [max]>
-is 45 _     [Lit: <Lambda [Fun: lambda~7]>] --> Tango<Lambda [Fun: lambda~7]>
-is 46 _ Function: lambda~9 [Signature:  --> <Scalar 0>] called 1 times
+is 45 _     [Lit: <Lambda [Fun: Hood~7]>] --> Tango<Lambda [Fun: Hood~7]>
+is 46 _ Function: FalseBranch~9 [Signature:  --> <Scalar 0>] called 1 times
 is 47 _   Amorphous Mediums:
 is 48 _     [Medium: Uniform = root]
 is 49 _   Fields:
@@ -2269,16 +2269,16 @@ is 57 _   Charlie: Alfa --> <Boolean>
 is 58 _   Hotel: Alfa --> <Scalar>
 is 59 _   India: Alfa --> <Scalar 3>
 is 60 _   Whiskey: Alfa --> <Scalar> OUTPUT
-is 61 _   Xray: Alfa --> <Lambda [Fun: lambda~8]>
-is 62 _   Yankee: Alfa --> <Lambda [Fun: lambda~9]>
+is 61 _   Xray: Alfa --> <Lambda [Fun: TrueBranch~8]>
+is 62 _   Yankee: Alfa --> <Lambda [Fun: FalseBranch~9]>
 is 63 _ Operator Instances:
 is 64 _   [mid] --> Golf<Scalar>
 is 65 _   Hotel<Scalar>, India<Scalar 3> --> [>] --> Charlie<Boolean>
 is 66 _   [mid] --> Hotel<Scalar>
 is 67 _   [Lit: <Scalar 3>] --> India<Scalar 3>
-is 68 _   Charlie<Boolean>, Xray<Lambda [Fun: lambda~8]>, Yankee<Lambda [Fun: lambda~9]> --> [branch] --> Whiskey<Scalar> OUTPUT
-is 69 _   [Lit: <Lambda [Fun: lambda~8]>] --> Xray<Lambda [Fun: lambda~8]>
-is 70 _   [Lit: <Lambda [Fun: lambda~9]>] --> Yankee<Lambda [Fun: lambda~9]>
+is 68 _   Charlie<Boolean>, Xray<Lambda [Fun: TrueBranch~8]>, Yankee<Lambda [Fun: FalseBranch~9]> --> [branch] --> Whiskey<Scalar> OUTPUT
+is 69 _   [Lit: <Lambda [Fun: TrueBranch~8]>] --> Xray<Lambda [Fun: TrueBranch~8]>
+is 70 _   [Lit: <Lambda [Fun: FalseBranch~9]>] --> Yankee<Lambda [Fun: FalseBranch~9]>
 is 71 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -2315,7 +2315,7 @@ is 71 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDlocalized "(sum-hood (mux (nbr (mid)) 5 7))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2334,18 +2334,18 @@ is 15 _ Fields:
 is 16 _   Golf: Foxtrot --> <Scalar>
 is 17 _   Hotel: Foxtrot --> <Scalar> OUTPUT
 is 18 _   India: Foxtrot --> <Lambda [+]>
-is 19 _   Juliet: Foxtrot --> <Lambda [Fun: lambda~6]>
+is 19 _   Juliet: Foxtrot --> <Lambda [Fun: Hood~6]>
 is 20 _ Operator Instances:
 is 21 _   [mid] --> Golf<Scalar>
-is 22 _   India<Lambda [+]>, Juliet<Lambda [Fun: lambda~6]>, Golf<Scalar> --> [fold-hood-plus] --> Hotel<Scalar> OUTPUT
+is 22 _   India<Lambda [+]>, Juliet<Lambda [Fun: Hood~6]>, Golf<Scalar> --> [fold-hood-plus] --> Hotel<Scalar> OUTPUT
 is 23 _   [Lit: <Lambda [+]>] --> India<Lambda [+]>
-is 24 _   [Lit: <Lambda [Fun: lambda~6]>] --> Juliet<Lambda [Fun: lambda~6]>
+is 24 _   [Lit: <Lambda [Fun: Hood~6]>] --> Juliet<Lambda [Fun: Hood~6]>
 is 25 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test locals
 test: $(P2B) -CDlocalized "(let ((x (mid))) (max-hood (- x (nbr x))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2362,18 +2362,18 @@ is 13 _ Fields:
 is 14 _   Foxtrot: Echo --> <Scalar>
 is 15 _   Golf: Echo --> <Scalar> OUTPUT
 is 16 _   Hotel: Echo --> <Lambda [max]>
-is 17 _   India: Echo --> <Lambda [Fun: lambda~6]>
+is 17 _   India: Echo --> <Lambda [Fun: Hood~6]>
 is 18 _ Operator Instances:
 is 19 _   [mid] --> Foxtrot<Scalar>
-is 20 _   Hotel<Lambda [max]>, India<Lambda [Fun: lambda~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
+is 20 _   Hotel<Lambda [max]>, India<Lambda [Fun: Hood~6]>, Foxtrot<Scalar> --> [fold-hood-plus] --> Golf<Scalar> OUTPUT
 is 21 _   [Lit: <Lambda [max]>] --> Hotel<Lambda [max]>
-is 22 _   [Lit: <Lambda [Fun: lambda~6]>] --> India<Lambda [Fun: lambda~6]>
+is 22 _   [Lit: <Lambda [Fun: Hood~6]>] --> India<Lambda [Fun: Hood~6]>
 is 23 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(min-hood+ (* (+ (mid) 1) (nbr (mid))))"
-is 0 _ Function: lambda~7 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~7 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2403,21 +2403,21 @@ is 26 _   Mike: Kilo --> <Scalar 1>
 is 27 _   November: Kilo --> <Scalar>
 is 28 _   Oscar: Kilo --> <Scalar> OUTPUT
 is 29 _   Papa: Kilo --> <Lambda [min]>
-is 30 _   Quebec: Kilo --> <Lambda [Fun: lambda~7]>
+is 30 _   Quebec: Kilo --> <Lambda [Fun: Hood~7]>
 is 31 _ Operator Instances:
 is 32 _   Lima<Scalar>, Mike<Scalar 1> --> [+] --> Juliet<Scalar>
 is 33 _   [mid] --> Lima<Scalar>
 is 34 _   [Lit: <Scalar 1>] --> Mike<Scalar 1>
 is 35 _   [mid] --> November<Scalar>
-is 36 _   Papa<Lambda [min]>, Quebec<Lambda [Fun: lambda~7]>, November<Scalar> --> [fold-hood-plus] --> Oscar<Scalar> OUTPUT
+is 36 _   Papa<Lambda [min]>, Quebec<Lambda [Fun: Hood~7]>, November<Scalar> --> [fold-hood-plus] --> Oscar<Scalar> OUTPUT
 is 37 _   [Lit: <Lambda [min]>] --> Papa<Lambda [min]>
-is 38 _   [Lit: <Lambda [Fun: lambda~7]>] --> Quebec<Lambda [Fun: lambda~7]>
+is 38 _   [Lit: <Lambda [Fun: Hood~7]>] --> Quebec<Lambda [Fun: Hood~7]>
 is 39 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Mixing local and exported
 test: $(P2B) -CDlocalized "(let ((x (+ 2 (mid)))) (+ x (min-hood (+ (+ 1 x) (nbr x)))))"
-is 0 _ Function: lambda~6 [Signature: <Scalar> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~6 [Signature: <Scalar> --> <Scalar>] called 1 times
 is 1 _   Amorphous Mediums:
 is 2 _     [Medium: Alfa = root]
 is 3 _   Fields:
@@ -2439,7 +2439,7 @@ is 18 _   Echo: Foxtrot --> <Scalar>
 is 19 _   Kilo: Foxtrot --> <Scalar 1>
 is 20 _   Lima: Foxtrot --> <Scalar>
 is 21 _   Mike: Foxtrot --> <Lambda [min]>
-is 22 _   November: Foxtrot --> <Lambda [Fun: lambda~6]>
+is 22 _   November: Foxtrot --> <Lambda [Fun: Hood~6]>
 is 23 _ Operator Instances:
 is 24 _   Hotel<Scalar 2>, India<Scalar> --> [+] --> Golf<Scalar>
 is 25 _   [Lit: <Scalar 2>] --> Hotel<Scalar 2>
@@ -2447,9 +2447,9 @@ is 26 _   [mid] --> India<Scalar>
 is 27 _   Golf<Scalar>, Lima<Scalar> --> [+] --> Juliet<Scalar> OUTPUT
 is 28 _   Kilo<Scalar 1>, Golf<Scalar> --> [+] --> Echo<Scalar>
 is 29 _   [Lit: <Scalar 1>] --> Kilo<Scalar 1>
-is 30 _   Mike<Lambda [min]>, November<Lambda [Fun: lambda~6]>, Golf<Scalar> --> [fold-hood-plus] --> Lima<Scalar>
+is 30 _   Mike<Lambda [min]>, November<Lambda [Fun: Hood~6]>, Golf<Scalar> --> [fold-hood-plus] --> Lima<Scalar>
 is 31 _   [Lit: <Lambda [min]>] --> Mike<Lambda [min]>
-is 32 _   [Lit: <Lambda [Fun: lambda~6]>] --> November<Lambda [Fun: lambda~6]>
+is 32 _   [Lit: <Lambda [Fun: Hood~6]>] --> November<Lambda [Fun: Hood~6]>
 is 33 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
@@ -2468,7 +2468,7 @@ is 1 _  Error: Cannot restrict (if) inside a neighborhood operation ([mux])
 ////////////////////////////////////////////////////////////////////////////
 // Local variables and a common-subexpression export:
 test: $(P2B) -CDlocalized "(any-hood (muxor (= (nbr (mid)) 0) (= (nbr (mid)) 1)))"
-is 0 _ Function: lambda~8 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Boolean>] called 1 times
+is 0 _ Function: Hood~8 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Boolean>] called 1 times
 is 1 _  Amorphous Mediums:
 is 2 _    [Medium: Alfa = root]
 is 3 _  Fields:
@@ -2501,20 +2501,20 @@ is 29 _   November: Lima --> <Scalar>
 is 30 _   Oscar: Lima --> <2-Vector<Scalar>,<Scalar>>
 is 31 _   Papa: Lima --> <Boolean> OUTPUT
 is 32 _   Quebec: Lima --> <Lambda [max]>
-is 33 _   Romeo: Lima --> <Lambda [Fun: lambda~8]>
+is 33 _   Romeo: Lima --> <Lambda [Fun: Hood~8]>
 is 34 _ Operator Instances:
 is 35 _   [mid] --> Mike<Scalar>
 is 36 _   [mid] --> November<Scalar>
 is 37 _	  Mike<Scalar>, November<Scalar> --> [tup] --> Oscar<2-Vector<Scalar>,<Scalar>>
-is 38 _   Quebec<Lambda [max]>, Romeo<Lambda [Fun: lambda~8]>, Oscar<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Papa<Boolean> OUTPUT
+is 38 _   Quebec<Lambda [max]>, Romeo<Lambda [Fun: Hood~8]>, Oscar<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Papa<Boolean> OUTPUT
 is 39 _   [Lit: <Lambda [max]>] --> Quebec<Lambda [max]>
-is 40 _   [Lit: <Lambda [Fun: lambda~8]>] --> Romeo<Lambda [Fun: lambda~8]>
+is 40 _   [Lit: <Lambda [Fun: Hood~8]>] --> Romeo<Lambda [Fun: Hood~8]>
 is 41 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Multiple exports (turned into a tuple)
 test: $(P2B) -CDlocalized "(min-hood (+ (* 3 (nbr (mid))) (nbr (- (mid) 2))))"
-is 0 _ Function: lambda~7 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~7 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Scalar>] called 1 times
 is 1 _  Amorphous Mediums:
 is 2 _    [Medium: Alfa = root]
 is 3 _  Fields:
@@ -2545,22 +2545,22 @@ is 27 _   November: Juliet --> <Scalar 2>
 is 28 _   Oscar: Juliet --> <2-Vector<Scalar>,<Scalar>>
 is 29 _   Papa: Juliet --> <Scalar> OUTPUT
 is 30 _   Quebec: Juliet --> <Lambda [min]>
-is 31 _   Romeo: Juliet --> <Lambda [Fun: lambda~7]>
+is 31 _   Romeo: Juliet --> <Lambda [Fun: Hood~7]>
 is 32 _ Operator Instances:
 is 33 _  [mid] --> Kilo<Scalar>
 is 34 _   Mike<Scalar>, November<Scalar 2> --> [-] --> Lima<Scalar>
 is 35 _   [mid] --> Mike<Scalar>
 is 36 _   [Lit: <Scalar 2>] --> November<Scalar 2>
 is 37 _   Lima<Scalar>, Kilo<Scalar> --> [tup] --> Oscar<2-Vector<Scalar>,<Scalar>>
-is 38 _   Quebec<Lambda [min]>, Romeo<Lambda [Fun: lambda~7]>, Oscar<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Papa<Scalar> OUTPUT
+is 38 _   Quebec<Lambda [min]>, Romeo<Lambda [Fun: Hood~7]>, Oscar<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Papa<Scalar> OUTPUT
 is 39 _   [Lit: <Lambda [min]>] --> Quebec<Lambda [min]>
-is 40 _   [Lit: <Lambda [Fun: lambda~7]>] --> Romeo<Lambda [Fun: lambda~7]>
+is 40 _   [Lit: <Lambda [Fun: Hood~7]>] --> Romeo<Lambda [Fun: Hood~7]>
 is 41 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////
 // Test multi-use exports, tuplized exports
 test: $(P2B) -CDlocalized "(let ((x (nbr (mid))) (y (speed))) (any-hood (+ x x (nbr y) (nbr y))))"
-is 0 _ Function: lambda~7 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Scalar>] called 1 times
+is 0 _ Function: Hood~7 [Signature: <2-Vector<Scalar>,<Scalar>> --> <Scalar>] called 1 times
 is 1 _  Amorphous Mediums:
 is 2 _    [Medium: Alfa = root]
 is 3 _  Fields:
@@ -2585,14 +2585,14 @@ is 21 _   Juliet: Hotel --> <Scalar>
 is 22 _   Kilo: Hotel --> <2-Vector<Scalar>,<Scalar>>
 is 23 _   Lima: Hotel --> <Scalar> OUTPUT
 is 24 _   Mike: Hotel --> <Lambda [max]>
-is 25 _   November: Hotel --> <Lambda [Fun: lambda~7]>
+is 25 _   November: Hotel --> <Lambda [Fun: Hood~7]>
 is 26 _ Operator Instances:
 is 27 _   [mid] --> India<Scalar>
 is 28 _   [speed] --> Juliet<Scalar>
 is 29 _   India<Scalar>, Juliet<Scalar> --> [tup] --> Kilo<2-Vector<Scalar>,<Scalar>>
-is 30 _   Mike<Lambda [max]>, November<Lambda [Fun: lambda~7]>, Kilo<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Lima<Scalar> OUTPUT
+is 30 _   Mike<Lambda [max]>, November<Lambda [Fun: Hood~7]>, Kilo<2-Vector<Scalar>,<Scalar>> --> [fold-hood-plus] --> Lima<Scalar> OUTPUT
 is 31 _   [Lit: <Lambda [max]>] --> Mike<Lambda [max]>
-is 32 _   [Lit: <Lambda [Fun: lambda~7]>] --> November<Lambda [Fun: lambda~7]>
+is 32 _   [Lit: <Lambda [Fun: Hood~7]>] --> November<Lambda [Fun: Hood~7]>
 is 33 _ Stopping before emission
 
 ////////////////////////////////////////////////////////////////////////////

@@ -414,7 +414,7 @@ struct DataflowGraph : public CompilationElement { reflection_sub(DFG,CE);
   void delete_space(AM* am);
   void remap_medium(AM* src, AM* target); // move src to target, destroying src
   void make_op_inline(OperatorInstance* oi); // CompoundOps only
-  CompoundOp* derive_op(OIset *elts,AM* space,std::vector<Field*> *in,Field *out);
+  CompoundOp* derive_op(OIset *elts,AM* space,std::vector<Field*> *in,Field *out,std::string stem);
   void determine_relevant(); // figure out which AMs are relevant
   Field* add_literal(ProtoType* val,AM* space,CompilationElement* src);
   Field* add_parameter(CompoundOp* op,std::string name,int index,AM* space,CE* src);

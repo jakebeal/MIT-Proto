@@ -27,4 +27,5 @@ pkginclude_HEADERS = \
 	palette.h \
 	proto_opcodes.h \
 	opcodes.def \
+	instructions.def \
 	visualizer.h

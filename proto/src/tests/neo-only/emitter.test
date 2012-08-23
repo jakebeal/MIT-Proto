@@ -669,6 +669,10 @@ is 5 _  REF_0_OP, REF_0_OP, GLO_REF_3_OP, FUNCALL_1_OP, POP_LET_1_OP,
 is 6 _  FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 7 _ uint16_t script_len = 42;
 
+// Feedback with external reference
+//test: $(PROTO) "(let ((x (= (mid) 1))) (rep y 1 (+ x y)))" --function-inlining-threshold 0
+//is 0 _ dont have the right thing here yet
+
 // Count steps to mid 1
 test: $(PROTO) "(rep d inf (mux (= (mid) 1) 0 (min-hood (+ (nbr d) 1))))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 8, 2, DEF_FUN_4_OP,

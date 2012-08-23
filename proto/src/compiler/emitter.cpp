@@ -764,11 +764,12 @@ class StackEnvSizer : public InstructionPropagator {
           }
         }
       }
-
+      
       if (! (stack_maxes.count(chain) && env_maxes.count(chain))) {
     	  V2 << "Wasn't able to entirely resolve: " << ce2s(chain) << endl;
     	  V2 << "Stack Maxes: " << stack_maxes.count(chain) << endl;
     	  V2 << "Env Maxes: " << env_maxes.count(chain) << endl;
+    	  V2 << "Context: " << ce2s(chain->prev) << "; [inst]; " << ce2s(chain->next) << endl;
         // Wasn't able to entirely resolve.
     	  V2 << ss << endl;
     	  V2 << es << endl;
@@ -1443,8 +1444,10 @@ class ReferenceToParameter : public IRPropagator {
         OIset srcs = root->funcalls[cop];
         for_set(OI*,srcs,i) {
            OI* op_inst = (*i);
+           V3 << "Inserting reference input on:" << ce2s(op_inst) << endl;
            op_inst->insert_input(op_inst->inputs.begin(),
                                  oi->inputs[0]);
+           V3 << "Op instance is now:" << ce2s(op_inst) << endl;
         }
         // TODO: 1c) ensure that # inputs/outputs and their types still match
 
@@ -1715,7 +1718,7 @@ ProtoKernelEmitter::vector_primitive_instruction(OperatorInstance *oi)
   Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
   ProtoType *output_type = oi->output->range;
 
-  // Op switch happens if *any* input is non-scalar.
+  // Operator switch happens if *any* input is non-scalar.
   bool output_tuple_p = output_type->isA("ProtoTuple");
   bool tuple_p = output_tuple_p;
   if (!tuple_p)
@@ -1740,10 +1743,22 @@ ProtoKernelEmitter::vector_primitive_instruction(OperatorInstance *oi)
 
 // FIXME: Reduce code duplicated in vector_primitive_instruction.
 
+// Mark operator instances as they are emitted, to ensure they are
+// not emitted multiple times
+void ensure_one_emission(OI* oi) {
+  if(oi->marked("emission_log")) {
+    //ierror("Duplicate emission of "+ce2s(oi));
+    //compile_warn("Duplicate emission of "+ce2s(oi));
+  } else { 
+    oi->mark("emission_log");
+  }
+}
+
 static CompoundOp *
 fold_operand_cop(OperatorInstance *oi, size_t i)
 {
   Field *field = oi->inputs[i];
+  ensure_one_emission(field->producer);
   ProtoType *type = field->range;
   if (!type->isA("ProtoLambda"))
     ierror("Fold operand is not a lambda!");
@@ -1816,10 +1831,14 @@ ProtoKernelEmitter::init_feedback_instruction(OperatorInstance *oi)
   chain_i(&chain,new Reference(def_fun_init, oi));
   chain_i(&chain,initFeedback);
   iLET* lAfter = new iLET();
-  chain_i(&chain,lAfter); // Put the cur value of the variable on the env stack for the update function
-  // And stick the value back on the stack for the feedback storage
+  // FIXME: I think this won't handle multivariable updates correctly?
+  chain_i(&chain,lAfter);
+  // Put the cur value of the variable on the env stack for the update function
   initFeedback->letAfter = lAfter;
   chain_i(&chain, new Reference(lAfter, oi));
+  // Put implicit arguments for the update function (from references) onto the stack
+  //ierror("Don't know how to get the implicit arguments!");
+  // And stick the value back on the stack for the feedback storage
   chain_i(&chain, new Reference(lAfter, oi));
 
   // Fix the read if necessary
@@ -2404,6 +2423,10 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     return
       new Reference(&dynamic_cast<Instruction &>(*memory[f]), f->producer);
   OperatorInstance* oi = f->producer; Instruction* chain = NULL;
+  // ensure that emission happens precisely once per operator instance
+  f->domain->mark("emission_log");
+  ensure_one_emission(oi);
+
   V5 << "producer " << ce2s(oi) << endl;
   if (oi->op->name == "mux") {
     V3 << "MUX operator, checking if we're part of a feedback" << endl;
@@ -2606,7 +2629,22 @@ uint8_t* ProtoKernelEmitter::emit_from(DFG* g, int* len) {
     print_chain(chain_start(i), &s, 2);
     ierror("Unplaced fragment: "+ce2s(fragments.begin()->first)+"\n"+s.str());
   }
+  // Check that every function (AM) that's touched has all of its subsections
+  // output as well
+  bool badnodes = false;
+  for_set(AM*,g->spaces,am) {
+    if(!(*am)->marked("emission_log")) continue;
+    OIset contents;
+    (*am)->all_ois(&contents);
+    for_set(OI*,contents,i) {
+      if(!(*i)->marked("emission_log")) {
+        badnodes=true; compile_error("Unplaced operator instance: "+ce2s(*i));
+      }
+    }
+  }
+  if(badnodes) ierror("Not all operator instances were emitted.");
 
+  // Fill in all of the blanks
   V1<<"Resolving unknowns in instruction sequence...\n";
   for(int i=0;i<max_loops;i++) {
     bool changed=false;

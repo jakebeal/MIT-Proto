@@ -2014,7 +2014,7 @@ HoodToFolder::make_nbr_subroutine(OperatorInstance *oi, Field **exportf)
   // Create the compound op.
   V4 << "Creating compound operator from elements" << endl;
   CompoundOp *cop
-    = root->derive_op(&elts, oi->domain(), &exports, oi->inputs[0]);
+    = root->derive_op(&elts, oi->domain(), &exports, oi->inputs[0],"Hood");
   V5 << "Localizing new compound operator " << ce2s(cop) << endl;
   cop = localize_compound_op(cop);
 
@@ -2087,7 +2087,7 @@ public:
   }
   virtual void print(ostream* out=0) { *out << "RestrictToBranch"; }
 
-  CompoundOp* am_to_lambda(AM* space,Field *out) {
+  CompoundOp* am_to_lambda(AM* space,Field *out,string stem) {
     // discard immediate-child restrict functions:
     V4 << "Converting 2-input 'restrict' operators to references\n";
     Fset fields; fields = space->fields; // delete invalidates original iterator
@@ -2105,7 +2105,7 @@ public:
     V4 << "Deriving operators from space "+ce2s(space)+"\n";
     OIset elts; space->all_ois(&elts);
     vector<Field*> ins; // no inputs
-    CompoundOp* res = root->derive_op(&elts,space,&ins,out);
+    CompoundOp* res = root->derive_op(&elts,space,&ins,out,stem);
     for_set(OI *, elts, i) {
       V2 << "OI ELT: " << ce2s(*i) << endl;
     }
@@ -2140,9 +2140,9 @@ public:
       if(!(falseAM->selector==testnot && falseAM->parent==space)) return;
       OI* branch = new OperatorInstance(oi,Env::core_op("branch"),space);
       V3 << "Transforming to true AM to a lambda function" << endl;
-      CompoundOp *tf = am_to_lambda(trueAM,oi->inputs[1]);
+      CompoundOp *tf = am_to_lambda(trueAM,oi->inputs[1],letfedmux?"Init":"TrueBranch");
       V3 << "Transforming to false AM to a lambda function" << endl;
-      CompoundOp *ff = am_to_lambda(falseAM,oi->inputs[2]);
+      CompoundOp *ff = am_to_lambda(falseAM,oi->inputs[2],letfedmux?"Update":"FalseBranch");
       OI* newoi;
       if (!letfedmux) {
         // Swap the mux for a branch:

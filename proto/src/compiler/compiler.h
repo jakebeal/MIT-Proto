@@ -132,7 +132,7 @@ class GlobalToLocal : public DFGTransformer {
  * CODE EMITTER.
  *  this is a framework class: we'll have multiple instantiations
  */
-class CodeEmitter {
+class CodeEmitter { public: reflection_base(CodeEmitter);
   public:
     /**
      * If an emitter wants to change some of the core operators, it must
@@ -141,17 +141,14 @@ class CodeEmitter {
      */
     virtual uint8_t *emit_from(DFG *g, int *len) = 0;
 
-    virtual void setDefops(const std::string &defops) = 0;
+    virtual void print(std::ostream *out = cpout) { *cpout << "CodeEmitter"; }
 };
-
-// FIXME: What a kludge!  The top-level compiler cruft shouldn't have
-// to know about this crap.
 
 class InstructionPropagator;
 class Instruction;
 class Block;
 
-class ProtoKernelEmitter : public CodeEmitter {
+class ProtoKernelEmitter : public CodeEmitter { public: reflection_sub(ProtoKernelEmitter, CodeEmitter);
  public:
   bool is_dump_hex, paranoid;
   static bool op_debug;
@@ -162,6 +159,7 @@ class ProtoKernelEmitter : public CodeEmitter {
   void init_standalone(Args *args);
   uint8_t *emit_from(DFG *g, int *len);
   void setDefops(const std::string &defops);
+  virtual void print(std::ostream *out = cpout) { *cpout << "ProtoKernelEmitter"; }
 
   /// Map of compound ops -> instructions (in global mem).
   std::map<CompoundOp *, Block *> globalNameMap;

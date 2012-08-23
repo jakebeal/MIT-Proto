@@ -728,8 +728,8 @@ void DFG::make_op_inline(OperatorInstance* target) {
   delete_node(target); delete nop;
 }
 
-CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out){
-  CompoundOp* cop = new CompoundOp(out->producer,this); 
+CompoundOp* DFG::derive_op(OIset *elts,AM* space,vector<Field*> *in,Field *out,string stem){
+  CompoundOp* cop = new CompoundOp(out->producer,this,make_gensym(stem)->name);
   CEmap(AM*,AM*) amap; CEmap(OI*,OI*) omap; CEmap(Field*,Field*) fmap; 
   // Create signature from I/O
   cop->signature = new Signature(cop,new ProtoType());

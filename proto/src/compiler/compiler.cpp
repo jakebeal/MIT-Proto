@@ -210,7 +210,11 @@ NeoCompiler::set_platform(const string &path)
 void
 NeoCompiler::setDefops(const string &defops)
 {
-  emitter->setDefops(defops);
+  if(emitter->isA("ProtoKernelEmitter")) {
+    ((ProtoKernelEmitter*)emitter)->setDefops(defops);
+  } else {
+    cerr << "WARNING: don't know how to load operators for non-VM emitters";
+  }
 }
 
 // Neocompiler is case sensitive, paleocompiler is not
