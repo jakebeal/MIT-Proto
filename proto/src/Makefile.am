@@ -25,8 +25,6 @@ bin_PROGRAMS = \
 proto_SOURCES = \
 	sim-app.cpp
 
-# FIXME: have to list libkernel twice here, due to circular dependency
-# with libsim...
 proto_LDADD = \
 	shared/libshared.la \
 	compiler/libcompiler.la \
@@ -50,7 +48,8 @@ p2b_LDADD = \
 	shared/libshared.la
 
 p2b_LDFLAGS = \
-	-export-dynamic
+	-export-dynamic \
+	-rpath ${libdir}
 
 pkginclude_HEADERS = \
 	proto_version.h
