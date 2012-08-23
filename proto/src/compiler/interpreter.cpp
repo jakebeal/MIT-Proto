@@ -657,7 +657,8 @@ ProtoInterpreter::letfed_to_graph(SE_List *s, AM *space, Env *env,
     update_space = new AM(s, space, false_if_change->output);
   } else {
     true_if_change = false_if_change = 0;
-    initial_space = update_space = 0;
+    initial_space = 0;
+    update_space = space;
   }
 
   // Evaluate the initial expressions.
