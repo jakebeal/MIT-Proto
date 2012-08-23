@@ -20,7 +20,7 @@ void* RadioModelsPlugin::get_sim_plugin(string type,string name,Args* args,
 }
 
 string RadioModelsPlugin::inventory() {
-  return "# Cloning and apoptosis\n" +
+  return "# More complex radio models\n" +
     registry_entry(LAYER_PLUGIN,WORM_HOLES_NAME,DLL_NAME) +
     registry_entry(LAYER_PLUGIN,MULTI_RADIO_NAME,DLL_NAME);
 }
