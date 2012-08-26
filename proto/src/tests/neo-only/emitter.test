@@ -661,27 +661,35 @@ is 10 _ uint16_t script_len = 63;
 // Feedback + neighborhood (nested functions)
 test: $(PROTO) "(rep d (mid) (max-hood (nbr d)))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 2, DEF_FUN_2_OP, 
-is 1 _  REF_0_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_4_OP, 
-is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_6_OP, GLO_REF_2_OP, 
-is 3 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, 
-is 4 _  DEF_FUN_OP, 12, GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, 
-is 5 _  REF_0_OP, REF_0_OP, GLO_REF_3_OP, FUNCALL_1_OP, POP_LET_1_OP, 
-is 6 _  FEEDBACK_OP, 0, RET_OP, EXIT_OP };
+is 1 _  REF_0_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_6_OP, 
+is 2 _  GLO_REF_3_OP, GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, RET_OP, 
+is 3 _  DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 12, 
+is 4 _  GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, 
+is 5 _  GLO_REF_2_OP, FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, 
+is 6 _  EXIT_OP };
 is 7 _ uint16_t script_len = 42;
 
 // Feedback with external reference
-//test: $(PROTO) "(let ((x (= (mid) 1))) (rep y 1 (+ x y)))" --function-inlining-threshold 0
-//is 0 _ dont have the right thing here yet
+test: $(PROTO) "(let ((x (= (mid) 1))) (rep y 1 (+ x y)))" --function-inlining-threshold 0
+is 0 _ uint8_t script[] = { DEF_VM_OP, 0, 0, 0, 3, 1, 0, 5, 2, DEF_FUN_2_OP, 
+is 1 _   LIT_1_OP, RET_OP, DEF_FUN_4_OP, REF_1_OP, REF_0_OP, ADD_OP, RET_OP, 
+is 2 _   DEF_FUN_OP, 15, GLO_REF_0_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, 
+is 3 _   REF_0_OP, MID_OP, LIT_1_OP, EQ_OP, REF_0_OP, GLO_REF_1_OP, 
+is 4 _   FUNCALL_2_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
+is 5 _ uint16_t script_len = 35;
+= 7 3 1
+~= 8 3 10 1
+= 9 3 1
 
 // Count steps to mid 1
 test: $(PROTO) "(rep d inf (mux (= (mid) 1) 0 (min-hood (+ (nbr d) 1))))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 8, 2, DEF_FUN_4_OP,
 is 1 _  REF_0_OP, LIT_1_OP, ADD_OP, RET_OP, DEF_FUN_6_OP, 
-is 2 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
-is 3 _  REF_1_OP, MIN_OP, RET_OP, DEF_FUN_OP, 11, MID_OP, LIT_1_OP, EQ_OP, 
-is 4 _  LIT_0_OP, GLO_REF_2_OP, GLO_REF_0_OP, REF_0_OP, 
-is 5 _  FOLD_HOOD_PLUS_OP, 0, MUX_OP, RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, 
-is 6 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_3_OP, 
+is 2 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_OP, 11, MID_OP, 
+is 3 _  LIT_1_OP, EQ_OP, LIT_0_OP, GLO_REF_3_OP, GLO_REF_0_OP, REF_0_OP, 
+is 4 _  FOLD_HOOD_PLUS_OP, 0, MUX_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
+is 5 _  REF_1_OP, MIN_OP, RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, 
+is 6 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_2_OP, 
 is 7 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 8 _ uint16_t script_len = 54;
 
@@ -690,11 +698,11 @@ is 8 _ uint16_t script_len = 54;
 test: $(PROTO) "(rep d (mid) (max-hood (mux (<= (nbr d) d) 1 2)))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 7, 3, 
 is 1 _  DEF_FUN_OP, 7, REF_0_OP, REF_1_OP, LTE_OP, LIT_1_OP, LIT_2_OP, 
-is 2 _  MUX_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_4_OP, 
-is 3 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 9, GLO_REF_2_OP, 
-is 4 _  REF_0_OP, LET_1_OP, GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, 
-is 5 _  POP_LET_1_OP, RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, 
-is 6 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_3_OP, 
+is 2 _  MUX_OP, RET_OP, DEF_FUN_2_OP, MID_OP, RET_OP, DEF_FUN_OP, 9, 
+is 3 _  GLO_REF_3_OP, REF_0_OP, LET_1_OP, GLO_REF_0_OP, REF_0_OP,
+is 4 _  FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
+is 5 _  REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, 
+is 6 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_2_OP, 
 is 7 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 8 _ uint16_t script_len = 52;
 
@@ -711,13 +719,13 @@ is 5 _ uint16_t script_len = 30;
 // Simple case of reference used in an internal lambda created by a branch (rep)
 test: $(PROTO) "(rep d 0 (mux (max-hood (+ d (dt))) 1 2))"
 is 0 _ uint8_t script[] = { DEF_VM_OP, 1, 1, 0, 5, 1, 0, 6, 3, DEF_FUN_2_OP, 
-is 1 _  REF_1_OP, RET_OP, DEF_FUN_2_OP, LIT_0_OP, RET_OP, DEF_FUN_4_OP, 
-is 2 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_OP, 14, GLO_REF_2_OP, 
-is 3 _  REF_0_OP, DT_OP, ADD_OP, LET_1_OP, GLO_REF_0_OP, LIT_0_OP, 
-is 4 _  FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, LIT_1_OP, LIT_2_OP, MUX_OP, 
-is 5 _  RET_OP, DEF_FUN_OP, 12, GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, 
-is 6 _  LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_3_OP, FUNCALL_1_OP, 
-is 7 _  POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
+is 1 _  REF_1_OP, RET_OP, DEF_FUN_2_OP, LIT_0_OP, RET_OP, DEF_FUN_OP, 14,
+is 2 _  GLO_REF_3_OP, REF_0_OP, DT_OP, ADD_OP, LET_1_OP, GLO_REF_0_OP,
+is 3 _  LIT_0_OP, FOLD_HOOD_PLUS_OP, 0, POP_LET_1_OP, LIT_1_OP, LIT_2_OP,
+is 4 _  MUX_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, 
+is 5 _  DEF_FUN_OP, 12, GLO_REF_1_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, 
+is 6 _  REF_0_OP, REF_0_OP, GLO_REF_2_OP, FUNCALL_1_OP, POP_LET_1_OP, 
+is 7 _  FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 8 _ uint16_t script_len = 51;
 
 // Portion of the gradient program
@@ -729,13 +737,13 @@ is 2 _  NBR_RANGE_OP, NBR_LAG_OP, REF_2_OP, ADD_OP, ADD_OP, ADD_OP,
 is 3 _  REF_1_OP, LTE_OP, MUX_OP, RET_OP, DEF_FUN_OP, 13, NBR_RANGE_OP, 
 is 4 _  LIT_0_OP, EQ_OP, LIT_FLO_OP, 0, 0, 128, 127, REF_0_OP, 
 is 5 _  NBR_RANGE_OP, ADD_OP, MUX_OP, RET_OP, DEF_FUN_6_OP, 
-is 6 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
-is 7 _  REF_1_OP, MAX_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, 
-is 8 _  RET_OP, DEF_FUN_OP, 18, GLO_REF_3_OP, DT_OP, LET_1_OP, REF_1_OP,  
-is 9 _  LET_1_OP, GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, 
-is 10 _  GLO_REF_OP, 4, GLO_REF_1_OP, REF_0_OP, POP_LET_2_OP, 
-is 11 _  FOLD_HOOD_PLUS_OP, 1, ADD_OP, RET_OP, DEF_FUN_OP, 13, GLO_REF_2_OP, 
-is 12 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_OP, 5, 
+is 6 _  LIT_FLO_OP, 0, 0, 128, 127, RET_OP, DEF_FUN_OP, 19, GLO_REF_OP, 4, 
+is 7 _  DT_OP, LET_1_OP, REF_1_OP, LET_1_OP, GLO_REF_0_OP, REF_0_OP, 
+is 8 _  FOLD_HOOD_PLUS_OP, 0, GLO_REF_OP, 5, GLO_REF_1_OP, REF_0_OP, 
+is 9 _  POP_LET_2_OP, FOLD_HOOD_PLUS_OP, 1, ADD_OP, RET_OP, DEF_FUN_4_OP, 
+is 10 _  REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_4_OP, REF_0_OP, 
+is 11 _  REF_1_OP, MIN_OP, RET_OP, DEF_FUN_OP, 12, GLO_REF_2_OP, 
+is 12 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_3_OP,
 is 13 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, RET_OP, EXIT_OP };
 is 14 _ uint16_t script_len = 94;
 
@@ -743,7 +751,7 @@ is 14 _ uint16_t script_len = 94;
 // todo: figure out a way to test that the values are correct
 //  maybe use a custom device layout (grid)
 test: $(PROTO) "(1st (rep (tup d v) (tup inf 0) (mux (sense 1) (tup 0 0) (mux (any-hood+ (<= (+ (nbr d) (nbr-range) (* v (+ (nbr-lag) (dt)))) d)) (tup (min-hood+ (+ (nbr d) (nbr-range))) 0) (let ((v0 (if (= (dt) 0) 1 (/ (radio-range) (* (dt) 12))))) (tup (+ d (* v0 (dt))) v0))))))"
-is 0 _ uint8_t script[] = { DEF_VM_OP, 2, 2, 0, 15, 1, 0, 13, 5, 
+is 0 _ uint8_t script[] = { DEF_VM_OP, 2, 2, 0, 14, 1, 0, 13, 5, 
 is 1 _  DEF_FUN_OP, 17, NBR_RANGE_OP, LIT_0_OP, EQ_OP, LIT_0_OP, REF_0_OP, 
 is 2 _  NBR_RANGE_OP, REF_2_OP, NBR_LAG_OP, REF_3_OP, ADD_OP, MUL_OP, 
 is 3 _  ADD_OP, ADD_OP, REF_1_OP, LTE_OP, MUX_OP, RET_OP, DEF_FUN_OP, 13, 
@@ -751,24 +759,24 @@ is 4 _  NBR_RANGE_OP, LIT_0_OP, EQ_OP, LIT_FLO_OP, 0, 0, 128, 127,
 is 5 _  REF_0_OP, NBR_RANGE_OP, ADD_OP, MUX_OP, RET_OP, 
 is 6 _  LIT_FLO_OP, 0, 0, 128, 127, LIT_0_OP, DEF_TUP_OP, 2, DEF_FUN_2_OP, 
 is 7 _  GLO_REF_2_OP, RET_OP, LIT_0_OP, LIT_0_OP, DEF_TUP_OP, 2, 
-is 8 _  DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, DEF_FUN_4_OP, 
-is 9 _  REF_0_OP, REF_1_OP, MIN_OP, RET_OP, LIT_0_OP, LIT_0_OP, 
-is 10 _  DEF_TUP_OP, 2, DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, 
-is 11 _  DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, DEF_FUN_OP, 61, LIT_1_OP, 
-is 12 _  SENSE_OP, GLO_REF_OP, 7, GLO_REF_OP, 5, DT_OP, LET_1_OP, REF_1_OP, 
-is 13 _  LIT_1_OP, ELT_OP, LET_1_OP, REF_2_OP, LIT_0_OP, ELT_OP, LET_1_OP, 
-is 14 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, GLO_REF_OP, 6, 
-is 15 _  GLO_REF_1_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 1, LIT_0_OP, 
-is 16 _  TUP_OP, 8, 2, REF_0_OP, POP_LET_3_OP, DT_OP, LIT_0_OP, EQ_OP, 
-is 17 _  IF_OP, 8, HOOD_RADIUS_OP, DT_OP, LIT_OP, 12, MUL_OP, DIV_OP, 
-is 18 _  JMP_OP, 1, LIT_1_OP, LET_1_OP, REF_0_OP, DT_OP, MUL_OP, ADD_OP, 
-is 19 _  REF_0_OP, POP_LET_1_OP, TUP_OP, 9, 2, VMUX_OP, 10, VMUX_OP, 11, 
-is 20 _  RET_OP, DEF_NUM_VEC_2_OP, DEF_FUN_OP, 26, GLO_REF_3_OP, 
-is 21 _  INIT_FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, REF_0_OP, GLO_REF_OP, 12, 
-is 22 _  FUNCALL_1_OP, POP_LET_1_OP, FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, 
-is 23 _  LIT_0_OP, ELT_OP, REF_0_OP, POP_LET_1_OP, LIT_1_OP, ELT_OP, 
-is 24 _  TUP_OP, 13, 2, LIT_0_OP, ELT_OP, RET_OP, EXIT_OP };
-is 25 _ uint16_t script_len = 169;
+is 8 _  DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, DEF_NUM_VEC_2_OP, 
+is 9 _  DEF_NUM_VEC_2_OP, DEF_FUN_OP, 61, LIT_1_OP, SENSE_OP, 
+is 10 _  GLO_REF_OP, 4, GLO_REF_OP, 10, DT_OP, LET_1_OP, REF_1_OP, LIT_1_OP, 
+is 11 _  ELT_OP, LET_1_OP, REF_2_OP, LIT_0_OP, ELT_OP, LET_1_OP, 
+is 12 _  GLO_REF_0_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 0, GLO_REF_OP, 11, 
+is 13 _  GLO_REF_1_OP, REF_0_OP, FOLD_HOOD_PLUS_OP, 1, LIT_0_OP, 
+is 14 _  TUP_OP, 5, 2, REF_0_OP, POP_LET_3_OP, DT_OP, LIT_0_OP, EQ_OP, 
+is 15 _  IF_OP, 8, HOOD_RADIUS_OP, DT_OP, LIT_OP, 12, MUL_OP, DIV_OP, 
+is 16 _  JMP_OP, 1, LIT_1_OP, LET_1_OP, REF_0_OP, DT_OP, MUL_OP, ADD_OP, 
+is 17 _  REF_0_OP, POP_LET_1_OP, TUP_OP, 6, 2, VMUX_OP, 7, VMUX_OP, 8, 
+is 18 _  RET_OP, DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MAX_OP, RET_OP, 
+is 19 _  DEF_FUN_4_OP, REF_0_OP, REF_1_OP, MIN_OP, RET_OP, DEF_NUM_VEC_2_OP, 
+is 20 _  DEF_FUN_OP, 26, GLO_REF_3_OP, INIT_FEEDBACK_OP, 0, LET_1_OP, 
+is 21 _  REF_0_OP, REF_0_OP, GLO_REF_OP, 9, FUNCALL_1_OP, POP_LET_1_OP, 
+is 22 _  FEEDBACK_OP, 0, LET_1_OP, REF_0_OP, LIT_0_OP, ELT_OP, REF_0_OP, 
+is 23 _  POP_LET_1_OP, LIT_1_OP, ELT_OP, TUP_OP, 12, 2, LIT_0_OP, ELT_OP, 
+is 24 _  RET_OP, EXIT_OP };
+is 25 _ uint16_t script_len = 165;
 
 
 // All-ways interaction:
