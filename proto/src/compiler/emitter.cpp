@@ -147,7 +147,10 @@ struct iDEF_VM : public Instruction { reflection_sub(iDEF_VM,Instruction);
 struct iDEF_FUN : public Global { reflection_sub(iDEF_FUN,Global);
   Instruction* ret;
   int fun_size;
-  iDEF_FUN() : Global(DEF_FUN_OP) { ret=NULL; fun_size=-1; }
+  iDEF_FUN(CompoundOp* src=NULL) : Global(DEF_FUN_OP) {
+    if(src) this->attributes["function~def"] = new CEAttr(src);
+    ret=NULL; fun_size=-1;
+  }
   bool resolved() { return fun_size>=0 && Instruction::resolved(); }
   int size() { return (fun_size<0) ? -1 : Instruction::size(); }
 };
@@ -296,11 +299,26 @@ string wrap_print(ostream* out, string accumulated, string newblock, int len) {
   }
 }
 
+string print_chain_comments(Instruction* chain, int compactness) {
+  if(compactness) return ""; // no comments if at all compact
+
+  if(chain->isA("iDEF_FUN")) { // add function name
+    string name = "[unknown]"; 
+    if(chain->attributes.count("function~def")) {
+      CE* fndef = ((CEAttr*)chain->attributes["function~def"])->value;
+      name = ((CompoundOp*)fndef)->name;
+    }
+    return " // Function: " + name;
+  } else { // default: no comment
+    return "";
+  }
+}
+
 string print_raw_chain(Instruction* chain, string line, int line_len,
                        ostream* out, int compactness, bool recursed=false) {
   bool defFun = false;
   if (chain->isA("iDEF_FUN")) {
-	defFun = true;
+    defFun = true;
   }
   while(chain) {
     if(chain->isA("Block")) {
@@ -309,12 +327,13 @@ string print_raw_chain(Instruction* chain, string line, int line_len,
       chain = chain->next;
     } else {
       string block = chain->to_str();
+      string comments = print_chain_comments(chain,compactness);
       if (defFun && chain->op == RET_OP) {
     	  chain = NULL;
       } else {
           chain = chain->next;
       }
-      if(chain || recursed) block += (compactness ? ", " : ",\n  ");
+      if(chain || recursed) block += (compactness ? ", " : ","+comments+"\n  ");
       line = wrap_print(out,line,block,line_len);
     }
   }
@@ -1527,7 +1546,8 @@ class PrimitiveToCompound : public IRPropagator {
     // Fabricate a compound operator that invokes the primitive with
     // the parameters it was given.
     Operator *primitive_op = lambda->op;
-    CompoundOp *compound_op = new CompoundOp(oi, root);
+    string name = "Compound~of~"+primitive_op->name;
+    CompoundOp *compound_op = new CompoundOp(oi, root,name);
     AmorphousMedium *am = compound_op->body;
     compound_op->signature = primitive_op->signature;
     OperatorInstance *poi = new OperatorInstance(oi, primitive_op, am);
@@ -1800,8 +1820,8 @@ ProtoKernelEmitter::fold_primitive_instruction(OperatorInstance *oi)
 {
   Primitive *p = &dynamic_cast<Primitive &>(*oi->op);
 
-  if (oi->output->range->isA("ProtoTuple"))
-    ierror("Fold can't handle output tuples yet!");
+  //if (oi->output->range->isA("ProtoTuple"))
+  //  ierror("Fold can't handle output tuples yet!");
 
   OPCODE opcode = (*fold_ops.find(p->name)).second.first;
   CompoundOp *folder = fold_operand_cop(oi, 0);
@@ -1852,7 +1872,7 @@ ProtoKernelEmitter::init_feedback_instruction(OperatorInstance *oi)
 
   Block* initFunctionBlock = globalNameMap[init];
   // if the function is not defined yet (e.g., recursion), add a placeholder
-  if(!initFunctionBlock) globalNameMap[init] = new Block(new iDEF_FUN());
+  if(!initFunctionBlock) globalNameMap[init] = new Block(new iDEF_FUN(init));
 
   // get global ref to DEF_FUN
   Global* def_fun_init = &dynamic_cast<Global &>(*globalNameMap[init]->contents);
@@ -1886,7 +1906,7 @@ ProtoKernelEmitter::init_feedback_instruction(OperatorInstance *oi)
   // Call the Update function after init-feedback
   Block* updateFunctionBlock = globalNameMap[update];
   // if the function is not defined yet (e.g., recursion), add a placeholder
-  if(!updateFunctionBlock) globalNameMap[update] = new Block(new iDEF_FUN());
+  if(!updateFunctionBlock) globalNameMap[update] = new Block(new iDEF_FUN(update));
 
   // get global ref to DEF_FUN
   Global* def_fun_update = &dynamic_cast<Global &>(*globalNameMap[update]->contents);
@@ -2502,7 +2522,7 @@ Instruction* ProtoKernelEmitter::tree2instructions(Field* f) {
     CompoundOp* cop = &dynamic_cast<CompoundOp &>(*oi->op);
     Block* functionBlock = globalNameMap[cop];
     // if the function is not defined yet (e.g., recursion), add a placeholder
-    if(!functionBlock) globalNameMap[cop] = new Block(new iDEF_FUN());
+    if(!functionBlock) globalNameMap[cop] = new Block(new iDEF_FUN(cop));
     // get global ref to DEF_FUN
     Global* def_fun_instr
       = &dynamic_cast<Global &>(*globalNameMap[cop]->contents);
@@ -2568,7 +2588,7 @@ Instruction* ProtoKernelEmitter::dfg2instructions(AM* root) {
   string s=ce2s(root)+":"+i2s(minima.size())+" minima identified: ";
   for_set(Field*,minima,i) { if(!(i==minima.begin())) s+=","; s+=ce2s(*i); }
   V3 << s << endl;
-  iDEF_FUN *fnstart = new iDEF_FUN();
+  iDEF_FUN *fnstart = new iDEF_FUN(root->bodyOf);
   Instruction *chain=fnstart;
   for_set(Field*,minima,i) {
     Instruction *ins = tree2instructions(*i);

@@ -778,6 +778,9 @@ is 23 _  POP_LET_1_OP, LIT_1_OP, ELT_OP, TUP_OP, 12, 2, LIT_0_OP, ELT_OP,
 is 24 _  RET_OP, EXIT_OP };
 is 25 _ uint16_t script_len = 165;
 
+// Next tests:
+// (gradient (sense 1))
+// (mov (disperse))
 
 // All-ways interaction:
 // (rep x 1 (if (> (timer) 5) (max-hood (nbr (mid))) 8))
