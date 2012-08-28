@@ -18,7 +18,6 @@ protolib_DATA = \
 	core.ops \
 	core.proto \
 	dilate.proto \
-	disperse.proto \
 	distance-to.proto \
 	distance.proto \
 	dither.proto \

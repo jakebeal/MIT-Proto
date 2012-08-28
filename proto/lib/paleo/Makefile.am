@@ -1,4 +1,5 @@
 protolib_DATA = \
+	disperse.proto \
 	grad-value.proto \
 	gradient.proto
 
