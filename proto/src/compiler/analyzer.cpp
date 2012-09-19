@@ -1203,7 +1203,9 @@ class TypePropagator : public IRPropagator {
       maybe_set_range(oi->output,newtype);
     } else if(oi->op->isA("CompoundOp")) { // constrain against params & output
       ProtoType* rtype = dynamic_cast<CompoundOp &>(*oi->op).output->range;
+      V4 << "Constraining type "<<ce2s(rtype)<<" with op output "<<ce2s(oi->output->range)<<endl;
       ProtoType* newtype = ProtoType::gcs(rtype,oi->output->range);
+      if(newtype==NULL) newtype = ProtoType::lcs(rtype,oi->output->range);
       maybe_set_range(oi->output,newtype);
     } else if(oi->op->isA("Literal")) { // ignore: already be fully resolved
       // ignored

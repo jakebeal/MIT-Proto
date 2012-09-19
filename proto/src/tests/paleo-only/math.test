@@ -1,7 +1,6 @@
 // Suite of tests for Proto's numeric functions
 
 // Constants
-//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(inf)"
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(inf)"
 = 1 3 Inf
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(e)"
