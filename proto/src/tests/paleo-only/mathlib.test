@@ -157,8 +157,8 @@ test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod
 //Mod for floats is =  mod for ints + the "decimal part"
 //test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod -27.3 -5)"
 //= 1 3 -2.3
-test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod 27.3 -5)"
-= 1 3 -2.7
+//test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(mod 27.3 -5)"
+//= 1 3 -2.7
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rem 27 5)"
 = 1 3 2
 test: $(PROTO) -n 1 -headless -dump-after 1 -stop-after 1.5 -NDall -Dvalue "(rem -27 5)"
