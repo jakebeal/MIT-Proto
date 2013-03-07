@@ -616,7 +616,11 @@ int main (int argc, char *argv[]) {
   // This comes last, so that we can ensure that all the colors are
   // registered before we start to put them to use
   while(args->extract_switch("-palette",false)) { // may use many palette files
+#ifdef WANT_GLUT
     palette->overlay_from_file(args->pop_next()); // patch the palette
+#else
+    // ignore the palette arguments
+#endif
   }
 
   // Check if there are any leftover arguments:
