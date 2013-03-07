@@ -43,9 +43,6 @@ Visualizer::Visualizer(Args* args)
   // use the default palette, register our colors, and patch files
   palette = Palette::default_palette;
   ensure_colors_registered("Visualizer");
-  while(args->extract_switch("-palette",false)) { // may use many palette files
-    palette->overlay_from_file(args->pop_next()); // patch the palette
-  }
   
   // set up drawing environment
   glClear(GL_ACCUM_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

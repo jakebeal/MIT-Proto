@@ -562,6 +562,7 @@ int main (int argc, char *argv[]) {
   }
 
   computer = new SpatialComputer(args,!test_mode);
+
   if(opcode_file != "") {
      post("reading opcodes from: %s\n", opcode_file.c_str());
      // read from file
@@ -603,11 +604,6 @@ int main (int argc, char *argv[]) {
      } else {
         uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
         computer->load_script(s,len);
-        if(args->argc>2) {
-           post("WARNING: %d unhandled arguments:",args->argc-2);
-           for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
-           post("\n");
-        }
      }
   }
   // if in test mode, swap the C++ file for a C file for the SpatialComputer
@@ -615,6 +611,21 @@ int main (int argc, char *argv[]) {
     delete cpout;
     computer->dump_file = fopen(dump_name,"a");
   }
+  
+  // Overlay palettes, if needed
+  // This comes last, so that we can ensure that all the colors are
+  // registered before we start to put them to use
+  while(args->extract_switch("-palette",false)) { // may use many palette files
+    palette->overlay_from_file(args->pop_next()); // patch the palette
+  }
+
+  // Check if there are any leftover arguments:
+  if(args->argc>2) {
+    post("WARNING: %d unhandled arguments:",args->argc-2);
+    for(int i=2;i<args->argc;i++) post(" '%s'",args->argv[i-1]);
+    post("\n");
+  }
+  
   // and start!
   if(headless) {
     if(stop_time==INFINITY) 
