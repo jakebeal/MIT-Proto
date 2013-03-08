@@ -208,7 +208,7 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
     }
 
     // double-delay kludge option: just run the VM a second time
-    for(int vmrun=0;vmrun<=parent->is_double_delay_kludge;vmrun++) {
+    for(int vmrun=0;vmrun<=(2*parent->is_double_delay_kludge);vmrun++) {
       vm->run(time);
       while(!vm->finished()) {
     	if (is_print_stack || is_print_env_stack) {
