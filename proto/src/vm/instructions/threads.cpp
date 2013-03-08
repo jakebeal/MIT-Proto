@@ -36,11 +36,7 @@ namespace Instructions {
 				return;
 			}
 		}
-		if (machine.currentThread().last_time) {
-			dt = machine.startTime() - machine.currentThread().last_time;
-		} else {
-			dt = machine.currentThread().desired_period;
-		}
+                dt = machine.startTime() - machine.currentThread().last_time;
 		machine.stack.push(dt);
 	}
 	

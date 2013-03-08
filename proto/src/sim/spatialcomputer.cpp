@@ -206,19 +206,22 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
         }
       }
     }
-    vm->run(time);
-    while(!vm->finished()) {
+
+    // double-delay kludge option: just run the VM a second time
+    for(int vmrun=0;vmrun<=parent->is_double_delay_kludge;vmrun++) {
+      vm->run(time);
+      while(!vm->finished()) {
     	if (is_print_stack || is_print_env_stack) {
-    		Int8 opcode = *(vm->instruction_pointer);
-    		cout << "OpCode: " << (int)opcode;
-    		Instruction i = instructions[opcode];
-    		map<string,uint8_t>::iterator it;
-    		for ( it=OPCODE_MAP.begin() ; it != OPCODE_MAP.end(); it++ ) {
-    			if ((*it).second == opcode) {
-    				cout << " " << (*it).first;
-    				break;
-    			}
-    		}
+          Int8 opcode = *(vm->instruction_pointer);
+          cout << "OpCode: " << (int)opcode;
+          Instruction i = instructions[opcode];
+          map<string,uint8_t>::iterator it;
+          for ( it=OPCODE_MAP.begin() ; it != OPCODE_MAP.end(); it++ ) {
+            if ((*it).second == opcode) {
+              cout << " " << (*it).first;
+              break;
+            }
+          }
     	}
     	if (is_print_stack) {
     	  cout << " Stack (" << iStep << "): ";
@@ -230,10 +233,12 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
     	}
     	iStep++;
     	vm->step();
-    }
-    if (is_print_stack || is_print_env_stack) {
+      }
+      if (is_print_stack || is_print_env_stack) {
     	cout << endl;
+      }
     }
+
     body->update(); // run the post-compute update
     for(int i=0;i<num_layers;i++)
       { DeviceLayer* d = (DeviceLayer*)layers[i]; if(d) d->update(); }
@@ -427,6 +432,7 @@ void SpatialComputer::register_colors() {
 SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
   ensure_colors_registered("SpatialComputer");
   sim_time=0;
+  is_double_delay_kludge = !(args->extract_switch("--no-double-delay-kludge"));
 
   print_stack_id = (args->extract_switch("-print-stack"))?args->pop_number() : -1;
   print_env_stack_id = (args->extract_switch("-print-env-stack"))?args->pop_number() : -1;

@@ -179,6 +179,8 @@ class SpatialComputer : public EventConsumer {
   const char* dump_dir;  // directory where dumps will go
   const char* dump_stem; // start of the dump file name
   FILE* dump_file;
+  // Are we using the kludge to remove double-delays?
+  bool is_double_delay_kludge;
   
   // system state
   SECONDS sim_time;         // time (initially zero)
