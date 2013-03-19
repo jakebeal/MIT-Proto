@@ -117,6 +117,24 @@ void Device::dump_state(FILE* out, int verbosity) {
       fprintf(out,"Output %s\n",buf);
     }
   }
+
+  // dump network graph structure
+  if(parent->is_dump_network) {
+    char buf[1000];
+    // First number of neighboring devices
+    if(verbosity==0) { 
+      fprintf(out," %i",vm->hood.size());
+    } else {
+      fprintf(out,"Number of neighbors: %i\n",vm->hood.size());
+    }
+    // Then IDs of all neighboring devices
+    if(verbosity>=1) { fprintf(out,"Neighbor IDs:"); }
+    for(NeighbourHood::iterator i=vm->hood.begin(); i != vm->hood.end(); i++) {
+      Neighbour const & nbr = *i;
+      fprintf(out," %i",nbr.id);
+    }
+    if(verbosity>=1) { fprintf(out,"\n"); }
+  }
   
   // dump neighborhood data
   if(verbosity>=1 && parent->is_dump_hood) {
@@ -445,6 +463,8 @@ SpatialComputer::SpatialComputer(Args* args, bool own_dump) {
   args->undefault(&is_dump_hood,"-Dhood","-NDhood");
   is_dump_value=is_dump_default;
   args->undefault(&is_dump_value,"-Dvalue","-NDvalue");
+  is_dump_network=false; // dumping the network structure is not standard
+  args->undefault(&is_dump_network,"-Dnetwork","-NDnetwork");
   is_dump = args->extract_switch("-D");
   is_probe_filter = args->extract_switch("-probe-dump-filter");
   is_show_snaps = !args->extract_switch("-no-dump-snaps");
@@ -819,6 +839,7 @@ void SpatialComputer::dump_header(FILE* out) {
   for(int i=0;i<dynamics.max_id();i++)
     { Layer* d = (Layer*)dynamics.get(i); if(d) d->dump_header(out); }
   if(is_dump_value) fprintf(out," \"OUT\"");
+  if(is_dump_network) fprintf(out," \"NUM NBRS\" \"NBR IDs (variable)\"");
   fprintf(out,"\n");
 }
 
@@ -835,8 +856,7 @@ void SpatialComputer::dump_frame(SECONDS time, bool time_in_name) {
     // open the file
     if(time_in_name) {
       sprintf(buf,"%s/%s%.2f-%.2f.log",dump_dir,dump_stem,get_real_secs(),time);
-    }
-    else {
+    } else {
       sprintf(buf,"%s/%s%.2f.log",dump_dir,dump_stem,time);
     }
     dump_file = fopen(buf,"w");

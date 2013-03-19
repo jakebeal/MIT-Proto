@@ -169,7 +169,7 @@ class SpatialComputer : public EventConsumer {
  public:
   // display variables
   bool is_show_val, is_show_vec, is_show_id, is_show_version;
-  bool is_debug, is_dump_default, is_dump_hood, is_dump_value; 
+  bool is_debug, is_dump_default, is_dump_hood, is_dump_value, is_dump_network; 
   int print_stack_id, print_env_stack_id; // id of device to print stack of
   flo display_mag; // magnifier for body display
   Population selection;     // the list of devices currently selected

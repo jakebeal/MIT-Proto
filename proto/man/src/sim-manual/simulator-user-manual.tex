@@ -355,6 +355,11 @@ the user.
   Default \true{}.}
 \simPMarg{-Dhood}{-NDhood}{Include neighborhood data in printed state, 
   but not snapshot files (due to variability of size).}
+\simPMarg{-Dnetwork}{-NDnetwork}{Include the neighborhood size and a
+  list of the IDs of all the neighbors.\footnote{Note that this will make the
+  entries of the dump file have different length lines.  If you are
+  processing dumps with Matlab, you will need to use a variable length
+  loader such as {\bf loadcell}}}
 \simPMarg{-Dvalue}{-NDvalue}{Include output value in dumps?}
 
 \simargkey{-probe-dump-filter}{8}{``Probe filtering'' an unimplemented feature
