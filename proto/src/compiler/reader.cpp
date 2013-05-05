@@ -303,10 +303,11 @@ read_objects_from(istream *stream)
     return NULL;
   for (;;) {
     Obj *obj = read_object(buf, &start);
-    if (obj == NULL)
+    if (obj == NULL) {
       return lst_rev(objs);
-    else
+    } else {
       objs = new List(obj, objs);
+    }
   }
 }
 

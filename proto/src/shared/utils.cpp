@@ -276,6 +276,7 @@ Args::parse_argstream(istream *s)
   // Put into a mutable, long-term allocated c-str.
   char *newargs = static_cast<char *>(malloc(newargstr.size()));
   newargstr.copy(newargs, newargstr.size());
+  newargs[newargstr.size()]=0;
 
   // Extract tokens.
   vector<char *> tokens;

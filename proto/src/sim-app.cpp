@@ -602,8 +602,8 @@ int main (int argc, char *argv[]) {
      if(args->argc==1) {
         uerror("No program specified: all arguments consumed.");
      } else {
-        uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
-        computer->load_script(s,len);
+       uint8_t* s = compiler->compile(args->argv[args->argc-1],&len);
+       computer->load_script(s,len);
      }
   }
   // if in test mode, swap the C++ file for a C file for the SpatialComputer

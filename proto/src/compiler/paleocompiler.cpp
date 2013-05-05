@@ -1785,17 +1785,21 @@ void load_def (const char *name) {
 }
 
 VAR* lookup (const char *name, list<VAR*> *stack) {
+  // First, see if it's a local variable
   VAR *res = lookup_name(name, stack);
   if (res != NULL)
     return res;
+  // Second, see if it's a global
   res = lookup_name(name, globals);
   if (res != NULL)
     return res;
+  // next, check if it's a built-in op
+  res = lookup_op(name);
+  if (res != NULL)
+    return res;
+  // finally, search for it in files
   load_def(name);
-  res = lookup_name(name, globals);
-  if (res != NULL)
-    return res;
-  return lookup_op(name);
+  return lookup_name(name, globals);
 }
 
 map<string, AST*> fun_ops;
