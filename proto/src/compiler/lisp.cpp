@@ -97,7 +97,7 @@ std::vector<Obj *> *Vector::getValue() {
 void Vector::print(std::ostream &stream) {
   int first = 1;
   stream << "[";
-  for(typeof(vec.begin()) it = vec.begin();
+  for(std::vector<Obj *>::iterator it = vec.begin();
       it != vec.end(); it++) {
     (*it)->print(stream);
     if(first) {

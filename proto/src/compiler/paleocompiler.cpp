@@ -318,7 +318,7 @@ typedef enum {
 
 template<class T>
 T& list_nth(list<T> *lst, int n) {
-  typeof(lst->begin()) it = lst->begin();
+  typename list<T>::iterator it = lst->begin();
   while(n--) it++;
   return *it;
 }
@@ -383,7 +383,7 @@ void cerror (AST* ast, const char* message, ...) {
 void clerror (const char* name, list<AST*> *args, const char* message, ...) {
   va_list ap;
   fprintf(error_log(),"(%s", name);
-  for (typeof(args->begin()) it = args->begin();
+  for (list<AST*>::iterator it = args->begin();
        it != args->end(); it++) {
     fprintf(error_log()," ");
     (*it)->print();
@@ -485,7 +485,7 @@ AST_REF::AST_REF(VAR *var, list<VAR*> *env) {
 
 int lookup_index (VAR *var, list<VAR*> *env) {
   int j;
-  typeof(env->begin()) it;
+  list<VAR*>::iterator it;
   for (j = 0, it = env->begin(); it != env->end(); it++, j++) {
     if (*it == var)
       return j;
@@ -564,7 +564,7 @@ struct AST_GOP : public AST {
     this->name=name;
     this->arity=arity;
     this->is_nary=is_nary;
-    this->ops = new typeof(*this->ops);
+    this->ops = new list<AST_OP*>;
     this->type=type;
   }
   
@@ -601,7 +601,7 @@ struct AST_FUN : public AST{
   void print() {
     int i;
     fprintf(error_log(),"(FUN (");
-    typeof(vars->begin()) it;
+    list<VAR*>::iterator it;
     for (i = 0, it = vars->begin(); it != vars->end(); it++, i++) {
             if (i != 0)
         fprintf(error_log()," ");
@@ -640,7 +640,7 @@ AST* new_fab_vec (int len, TYPE* elt_type) {
   if (elt_type->kind == NUM_KIND) {
     ast = new_ast_op_call_offset(fab_num_vec_op, new list<AST*>(), len);
   } else {
-    list<AST*> *lst = new typeof(*lst);
+    list<AST*> *lst = new list<AST*>;
     lst->push_back(null_of(elt_type));
     ast = new_ast_op_call_offset(fab_vec_op, lst, len);
   }
@@ -660,7 +660,7 @@ AST* null_of(TYPE* t) {
     return new_fab_vec(vt->len, vt->elt_type); }
   case TUP_KIND: {
     TUP_TYPE *tt = (TUP_TYPE*)t;
-    list<AST*> *args = new typeof(*args);
+    list<AST*> *args = new list<AST*>;
     // post("TUP %d\n", tt->len);
     for (i = 0; i < tt->len; i++)
       args->push_back(null_of(tt->elt_types[i]));
@@ -683,7 +683,7 @@ AST* real_null_of(TYPE* t) {
     return new AST_LIT(0);
   case VEC_KIND: 
   case TUP_KIND: {
-    list<AST*> *args = new typeof(*args);
+    list<AST*> *args = new list<AST*>;
     // post("VEC/TUP %d\n", tup_type_len(t));
     for (i = 0; i < tup_type_len(t); i++)
       args->push_back(real_null_of(tup_type_elt(t, i)));
@@ -718,7 +718,7 @@ int has_same_fun_bodies (AST *a1, AST *a2) {
 
 int maybe_lift_fun (AST_FUN *ast, LIFT_DATA *data) {
   int k, n = data->glos->size();
-  typeof(data->glos->rbegin()) it;
+  list<AST*>::reverse_iterator it;
   // post("LIFTING %s\n", ast->name);
   for (k = 0, it = data->glos->rbegin();
        it != data->glos->rend();
@@ -797,7 +797,7 @@ AST *ast_let_lift_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
   LIFT_DATA *data = (LIFT_DATA*)arg;
   list<AST*> *inits = ast->inits;
   list<VAR*> *env   = data->env;
-  for(typeof(inits->begin()) it = inits->begin();
+  for(list<AST*>::iterator it = inits->begin();
       it != inits->end(); it++)
     *it = ast_walk(action, *it, arg);
   data->env  = augment_env(ast->vars, data->env);
@@ -808,8 +808,8 @@ AST *ast_let_lift_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
 
 AST *ast_let_let_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
   AST_LET *ast = (AST_LET*)ast_;
-  typeof(ast->vars->begin()) vit;
-  typeof(ast->inits->begin()) iit;
+  list<VAR*>::iterator vit;
+  list<AST*>::iterator iit;
 
   ast->body  = ast_walk(action, ast->body, arg);
   for (vit = ast->vars->begin(), iit = ast->inits->begin();
@@ -831,8 +831,8 @@ AST *ast_let_let_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
 void AST_LET::print() {
   fprintf(error_log(),"(LET (");
   int i;
-  typeof(vars->begin()) vit;
-  typeof(inits->begin()) iit;
+  list<VAR*>::iterator vit;
+  list<AST*>::iterator iit;
   for(i=0, vit=vars->begin(), iit=inits->begin();
       vit != vars->end(); i++, vit++, iit++) {
     if (i != 0)
@@ -862,7 +862,7 @@ void emit_pop_let_op (int n, Script* script) {
 
 void AST_LET::emit(Script* script) {
   int n=0;
-  typeof(inits->begin()) iit;
+  list<AST*>::iterator iit;
   for(iit=inits->begin(); iit != inits->end(); iit++) {
     (*iit)->emit(script);
     n += 1;
@@ -885,7 +885,7 @@ int dep=0;
 int AST_LET::stack_size() {
   int size = 0;
 
-  for (typeof(inits->begin()) it = inits->begin();
+  for (list<AST*>::iterator it = inits->begin();
        it != inits->end(); it++) {
     size = int_max(size, (*it)->stack_size() - 1);
   }
@@ -897,7 +897,7 @@ int AST_LET::stack_size() {
 int AST_LET::env_size() {
   int size = 0;
 
-  for (typeof(inits->begin()) it = inits->begin();
+  for (list<AST*>::iterator it = inits->begin();
        it != inits->end(); it++) {
     size = int_max(size, (*it)->env_size());
   }
@@ -943,7 +943,7 @@ AST *new_ast_op_call_offset(AST_OP *op, list<AST*> *args, int offset) {
 AST *ast_op_call_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
   AST_OP_CALL *ast = (AST_OP_CALL*)ast_;
 
-  for(typeof(ast->args->begin()) it = ast->args->begin();
+  for(list<AST*>::iterator it = ast->args->begin();
       it != ast->args->end(); it++) {
     *it = ast_walk(action, *it, arg);
   }
@@ -993,7 +993,7 @@ void init_feedback_lift (AST_OP_CALL *ast, LIFT_DATA *data) {
 extern AST_CLASS ast_op_call_class;
 
 void fold_hood_lift (AST_OP_CALL *ast, LIFT_DATA *data) {
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   it++; it++;
   AST* arg = *it;
   int size = arg->type->size();
@@ -1084,7 +1084,7 @@ AST *ast_op_call_lift_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
 }
 
 void ast_args_print (list<AST*> *args) {
-  for (typeof(args->begin()) i = args->begin(); i != args->end(); i++) {
+  for (list<AST*>::iterator i = args->begin(); i != args->end(); i++) {
     fprintf(error_log()," ");
     (*i)->print();
   }
@@ -1098,7 +1098,7 @@ void AST_OP_CALL::print() {
 }
 
 void default_ast_op_call_emit(AST_OP_CALL* ast, Script* script) {
-  for (typeof(ast->args->begin()) it = ast->args->begin();
+  for (list<AST*>::iterator it = ast->args->begin();
        it != ast->args->end(); it++)
     (*it)->emit(script);
   script->add(ast->op->code);
@@ -1119,7 +1119,7 @@ void ast_if_emit(AST_OP_CALL* ast, Script* script) {
   Script then_script;
   Script jmp_script;
 
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   (*it++)->emit(&if_script);
   (*it++)->emit(&then_script);
   (*it++)->emit(&jmp_script);
@@ -1149,11 +1149,11 @@ int AST_OP_CALL::stack_size() {
   } else if ( op == feedback_op ) {
     base_size =  fun_stk_size(feedback_init(this)->args->front());
   } else if ( op == fold_hood_plus_op || op == vfold_hood_plus_op) {
-    typeof(args->begin()) it = args->begin();
+    list<AST*>::iterator it = args->begin();
     base_size = int_max(fun_stk_size(*it++),
                         fun_stk_size(*it++));
   }
-  for (typeof(args->begin()) it = args->begin();
+  for (list<AST*>::iterator it = args->begin();
        it != args->end(); it++ ) {
     size = int_max(size, (*it)->stack_size() - 1);
   }
@@ -1176,11 +1176,11 @@ int AST_OP_CALL::env_size() {
   } else if ( op == feedback_op ) {
     base_size =  fun_stk_size(feedback_init(this)->args->front());
   } else if (op == fold_hood_plus_op || op == vfold_hood_plus_op) {
-    typeof(args->begin()) it = args->begin();
+    list<AST*>::iterator it = args->begin();
     base_size = int_max(fun_env_size(*it++),
                         fun_env_size(*it++));
   }
-  for (typeof(args->begin()) it = args->begin();
+  for (list<AST*>::iterator it = args->begin();
        it != args->end(); it++ ) {
     size = int_max(size, (*it)->env_size());
   }
@@ -1219,7 +1219,7 @@ struct AST_CALL : public AST {
 AST *ast_call_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
   AST_CALL *ast = (AST_CALL*)ast_;
   list<AST*> *new_args = new list<AST*>;
-  for (typeof(ast->args->begin()) it = ast->args->begin();
+  for (list<AST*>::iterator it = ast->args->begin();
        it != ast->args->end(); it++) {
     new_args->push_back(ast_walk(action, *it, arg));
   }
@@ -1259,7 +1259,7 @@ AST_OP *add_op_full
       AST_OP *oop  = ((ONE_OP_TYPE*)var->type)->op;
       TYPE *type   = new ONE_GOP_TYPE(gop);
       // post("ADDING OP TO NEW GOP\n");
-      gop->ops  = new typeof(*gop->ops);
+      gop->ops  = new list<AST_OP*>;
       gop->ops->push_back(op);
       gop->ops->push_back(oop);
       var->type = type;
@@ -1346,7 +1346,7 @@ TYPE* tup_type_infer (AST* ast_) {
   if(len==0)
     return new TUP_TYPE(0,NULL);
   TYPE* types[len];
-  for(typeof(ast->args->begin()) it = ast->args->begin();
+  for(list<AST*>::iterator it = ast->args->begin();
       it != ast->args->end(); it++, i++) {
     types[i]=blur_type((*it)->type);
     is_same &= is_same_type(types[i],types[0]);
@@ -1374,7 +1374,7 @@ TYPE* elt_type_infer (AST* ast_) {
   AST_OP_CALL* ast = (AST_OP_CALL*)ast_;
   if(ast->args->size()<2)
     cerror(ast_,"ELT CANNOT INFER TYPE WHEN NOT ENOUGH ARGUMENTS");
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   TYPE* elts = (*it++)->type;
   TYPE* idx  = (*it++)->type;
   if (elts->kind == VEC_KIND)
@@ -1412,7 +1412,7 @@ TYPE* fold_hood_type_infer (AST* ast_) {
 
 TYPE* fold_hood_plus_type_infer (AST* ast_) {
   AST_OP_CALL* ast = (AST_OP_CALL*)ast_;
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   it++;
   ONE_FUN_TYPE* fun = (ONE_FUN_TYPE*)(*it)->type;
   return fun->value->ast_body->type;
@@ -1426,7 +1426,7 @@ TYPE* apply_type_infer (AST* ast_) {
 
 TYPE* mux_type_infer (AST* ast_) {
   AST_OP_CALL* ast = (AST_OP_CALL*)ast_;
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   it++; // skip the condition
   AST* con = (AST*)(*it++);
   return blur_type(con->type);
@@ -1434,7 +1434,7 @@ TYPE* mux_type_infer (AST* ast_) {
 
 TYPE* vadd_type_infer (AST* ast_) {
   AST_OP_CALL* ast = (AST_OP_CALL*)ast_;
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   TYPE* t1 = (*it++)->type;
   TYPE* t2 = (*it++)->type;
   return (tup_type_len(t1) > tup_type_len(t2)) ? t1 : t2;
@@ -1442,7 +1442,7 @@ TYPE* vadd_type_infer (AST* ast_) {
 
 TYPE* vmul_type_infer (AST* ast_) {
   AST_OP_CALL* ast = (AST_OP_CALL*)ast_;
-  typeof(ast->args->begin()) it = ast->args->begin();
+  list<AST*>::iterator it = ast->args->begin();
   it++;
   return (*it)->type;
 }
@@ -1720,7 +1720,7 @@ static map<const char*, int, ltstr> obarray;
 static int obval = 0;
 
 int intern_symbol (const char *name) {
-  typeof(obarray.begin()) it = obarray.find(name);
+  map<const char*, int, ltstr>::iterator it = obarray.find(name);
   if (it != obarray.end()) {
     return it->second;
   } else {
@@ -1729,7 +1729,7 @@ int intern_symbol (const char *name) {
 }
 
 VAR* lookup_name (const char *name, list<VAR*> *bind) {
-  for (typeof(bind->begin()) it = bind->begin();
+  for (list<VAR*>::iterator it = bind->begin();
        it != bind->end(); it++) {
     if (strcasecmp((*it)->name, name) == 0) {
       (*it)->n_refs++;
@@ -1744,13 +1744,13 @@ VAR* lookup_op (const char *name) {
 }
 
 extern "C" AST_OP* lookup_op_by_code (int code, char **name) {
-  for (typeof(ops->begin()) it = ops->begin();
+  for (list<VAR*>::iterator it = ops->begin();
        it !=  ops->end(); it++) {
     VAR *var = *it;
     if (var->type->kind == ONE_GOP_KIND) {
       ONE_GOP_TYPE *gop_type = (ONE_GOP_TYPE*)var->type;
       list<AST_OP*> *gop_ops = gop_type->gop->ops;
-      for (typeof(gop_ops->begin()) it2 = gop_ops->begin();
+      for (list<AST_OP*>::iterator it2 = gop_ops->begin();
            it2 != gop_ops->end(); it2++) {
         AST_OP *o = *it2;
         if (o->code == code) {
@@ -1812,7 +1812,7 @@ AST* parse_op_ref (char *op_name, FUN_TYPE *type, list<VAR*> *env) {
   List *args     = lisp_nil;
   int  n         = type->arity;
 
-  typeof(fun_ops.begin()) it = fun_ops.find(opname);
+  map<string, AST*>::iterator it = fun_ops.find(opname);
   
   if(it != fun_ops.end())
     return it->second;
@@ -1923,7 +1923,7 @@ Obj *rewrite_nary (Obj *fun, List *args) {
 }
 
 list<VAR*> *params_to_vars (List *params) {
-  list<VAR*> *vars = new typeof(*vars);
+  list<VAR*> *vars = new list<VAR*>;
   int  i, n  = lst_len(params);
   for (i = 0; i < n; i++) {
     char *name = sym_elt(params, i);
@@ -1934,7 +1934,7 @@ list<VAR*> *params_to_vars (List *params) {
 
 list<AST*> *parse_args (List* args, list<VAR*> *env) {
   int i;
-  list<AST*> *ast_args = new typeof(*ast_args);
+  list<AST*> *ast_args = new list<AST*>;
   for (i = 0; i < lst_len(args); i++)
     ast_args->push_back(parse(lst_elt(args, i), env));
   return ast_args;
@@ -2575,7 +2575,7 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
       mvars->push_back(new VAR(list_nth(mfun->vars, 0)->name, elt_type));
       AST* mbody = parse_fun_body(mvars, mfun->body, env);
       AST* clone_mfun = new AST_FUN("fun", mvars, mfun->body, mbody);
-      list<VAR*> *fvars = new typeof(*fvars);
+      list<VAR*> *fvars = new list<VAR*>;
       fvars->push_back(new VAR(list_nth(ffun->vars, 0)->name, mbody->type));
       fvars->push_back(new VAR(list_nth(ffun->vars, 1)->name, mbody->type));
       AST* fbody = parse_fun_body(fvars, ffun->body, env);
@@ -2612,7 +2612,7 @@ int type_check (AST *arg, TYPE *type) {
 
 int ast_op_call_type_check (FUN_TYPE *type, list<AST*> *args) {
   int i = 0;
-  for (typeof(args->begin()) it = args->begin();
+  for (list<AST*>::iterator it = args->begin();
        it != args->end(); i++, it++) {
     AST *arg = *it;
     if (i < type->arity && !type_check(arg, type->param_types[i]))
@@ -2648,7 +2648,7 @@ AST *ast_gop_call_check (AST_GOP *gop, list<AST*> *args) {
     clerror("GOP-CALL", args,
             "WRONG NUMBER OF ARGS FOR %s GIVEN %d WANTED %d IS_NARY %d", 
            gop->name, nargs, gop_type->arity, gop_type->is_nary);
-  for (typeof(gop->ops->begin()) it = gop->ops->begin();
+  for (list<AST_OP*>::iterator it = gop->ops->begin();
        it != gop->ops->end(); it++) {
     AST_OP *op = *it;
     if (ast_op_call_type_check((FUN_TYPE*)(op->type), args) < 0) {
@@ -2658,7 +2658,7 @@ AST *ast_gop_call_check (AST_GOP *gop, list<AST*> *args) {
     }
   }
   //post_gop(gop);
-  for (typeof(args->begin()) it = args->begin();
+  for (list<AST*>::iterator it = args->begin();
        it != args->end(); it++) {
     fprintf(error_log()," %s", (*it)->type->name());
   }
@@ -2720,8 +2720,8 @@ AST* parse (Obj *e, list<VAR*> *env) {
       FUN_TYPE *type = (FUN_TYPE*)(fun->fun_type);
       VAR *var;
       AST *body;
-      list<VAR*> *vars = new typeof(*vars);
-      list<AST*> *let_vals = new typeof(*let_vals);
+      list<VAR*> *vars = new list<VAR*>;
+      list<AST*> *let_vals = new list<AST*>;
       list<AST*> *as = parse_args(args, env);
 
       if (!(nargs == type->arity ||
@@ -2730,7 +2730,7 @@ AST* parse (Obj *e, list<VAR*> *env) {
                 "WRONG NUMBER OF ARGS FOR %s GIVEN %d EXPECTED %d IS_NARY %d", 
                fun->name, nargs, type->arity, type->is_nary);
       i = 0;
-      for (typeof(as->begin()) it = as->begin();
+      for (list<AST*>::iterator it = as->begin();
            it != as->end(); i++, it++) {
         AST* a = *it;
         var = new VAR(list_nth(fun->vars, i)->name, &any_type);
@@ -2773,7 +2773,7 @@ Script* compile (Obj *e, int is_dump_ast) {
   Script* script = new Script(9, DEF_VM_OP, data.export_len, data.n_exports, 
                              n_glos >> 8, n_glos & 255, data.n_state, 
                              stk_siz >> 8, stk_siz & 255, env_siz);
-  for (typeof(data.glos->begin()) i = data.glos->begin();
+  for (list<AST*>::iterator i = data.glos->begin();
        i != data.glos->end(); i++)
     (*i)->emit(script);
   emit_def_fun_op(body.size()+1, script);
