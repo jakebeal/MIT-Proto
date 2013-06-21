@@ -135,6 +135,7 @@ bool Visualizer::handle_key(KeyEvent* key) {
       }
     }
   }
+  return false;
 }
 
 // Left-Drag rotates the display, Right-Drag zooms the display

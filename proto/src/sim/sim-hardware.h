@@ -49,7 +49,7 @@ public:
   virtual void set_is_folding (bool val, int k) 
   { hardware_error("set_is_folding"); }
   virtual bool read_fold_complete (int val) 
-  { hardware_error("read_fold_complete"); }
+  { hardware_error("read_fold_complete"); return 0; }
   
   virtual Number set_channel (Number diffusion, int k) 
   { hardware_error("set_channel"); return 0; }
@@ -57,19 +57,24 @@ public:
   { hardware_error("read_channel"); return 0;}
   virtual Number drip_channel (Number val, int k) 
   { hardware_error("drip_channel"); return 0; }
-  virtual Tuple grad_channel (int k) { hardware_error("grad_channel"); }
+  virtual Tuple grad_channel (int k)
+  { hardware_error("grad_channel"); return Tuple(); }
   
-  virtual Number read_radio_range () {hardware_error("read_radio_range"); return 0;}
-  virtual Number read_light_sensor(){hardware_error("read_light_sensor"); return 0;}
-  virtual Number read_microphone () { hardware_error("read_microphone"); return 0;}
+  virtual Number read_radio_range () 
+  { hardware_error("read_radio_range"); return 0; }
+  virtual Number read_light_sensor()
+  { hardware_error("read_light_sensor"); return 0; }
+  virtual Number read_microphone ()
+  { hardware_error("read_microphone"); return 0; }
   virtual Number read_temp () { hardware_error("read_temp"); return 0; }
   virtual Number read_short () { hardware_error("read_short"); return 0; }
-  virtual Number read_sensor (uint8_t n) { hardware_error("read_sensor"); return 0; }
+  virtual Number read_sensor (uint8_t n) 
+  { hardware_error("read_sensor"); return 0; }
   virtual Tuple read_coord_sensor()
-  { hardware_error("read_coord_sensor"); }
+  { hardware_error("read_coord_sensor"); return Tuple(); }
   virtual Tuple read_mouse_sensor()
-  { hardware_error("read_mouse_sensor"); }
-  virtual Tuple read_ranger () { hardware_error("read_ranger"); }
+  { hardware_error("read_mouse_sensor"); return Tuple(); }
+  virtual Tuple read_ranger () { hardware_error("read_ranger"); return Tuple(); }
   virtual Number read_bearing () { hardware_error("read_bearing"); return 0;}
   virtual Number read_speed () { hardware_error("read_speed"); return 0; }
   virtual Number read_bump () { hardware_error("read_bump"); return 0; }
