@@ -6,7 +6,7 @@ AC_PREREQ(2.60)
 # increment the version number here on each release, so that the
 # version number in the source-code repo is one *more* than the
 # latest release.
-AC_INIT([proto], [6], [proto-bugs@csail.mit.edu])
+AC_INIT([Proto], [8], [proto-bugs@csail.mit.edu])
 
 AC_CONFIG_SRCDIR([src/compiler/compiler.cpp])
 AC_CONFIG_AUX_DIR([config])
@@ -35,6 +35,7 @@ AX_WITH_PYTHON([echo "no python found"; exit 1; : ]) # only needed for tests
 PROTO_WITH_GLUT
 PROTO_WITH_NEOCOMPILER
 PROTO_WITHOUT_GC
+PROTO_WITH_SIMULATOR_IN_BROWSER
 
 ## check for doxygen
 
@@ -86,7 +87,6 @@ AC_CONFIG_FILES([Makefile
                  src/compiler/unittests/Makefile
                  src/core_plugins/Makefile
                  src/vm/Makefile
-                 src/motelink/Makefile
                  src/shared/Makefile
                  src/sim/Makefile
                  src/tests/Makefile
