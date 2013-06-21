@@ -31,7 +31,7 @@ void StopWhen::stop_op(Machine* machine) {
   if(val!=0) {
     probed.insert(device);
     if(probed.size() > n_devices * stop_pct
-       || stop_pct == 1.0 && probed.size() == n_devices) {
+       || (stop_pct == 1.0 && probed.size() == n_devices)) {
       post("Stopping simulation at t=%f\n", parent->sim_time);
       exit(0);
     }
