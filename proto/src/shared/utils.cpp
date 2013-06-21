@@ -327,7 +327,7 @@ str_is_number(const char *str)
     if (!isdigit(str[i])) {
       if ((str[i] == '.') && !decimal_point && !exponent_marker)
         decimal_point = true;
-      else if ((str[i] == 'e') || (str[i] == 'E') && !exponent_marker)
+      else if (((str[i] == 'e') || (str[i] == 'E')) && !exponent_marker)
         exponent_marker = true;
       else
         return false;
