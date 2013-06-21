@@ -34,9 +34,9 @@ public:
   virtual void die (Number val) { hardware_error("die"); }
   virtual void clone_machine (Number val) { hardware_error("clone_machine"); }
   
-  virtual Number cam_get (int k) { hardware_error("cam_get"); }
-  virtual Number radius_get () { hardware_error("radius_get"); }
-  virtual Number radius_set (Number val) { hardware_error("radius_set"); }
+  virtual Number cam_get (int k) { hardware_error("cam_get"); return 0; }
+  virtual Number radius_get () { hardware_error("radius_get"); return 0; }
+  virtual Number radius_set (Number val) { hardware_error("radius_set"); return 0; }
   
   virtual void set_r_led (Number val) { hardware_error("set_r_led"); }
   virtual void set_g_led (Number val) { hardware_error("set_g_led"); }
@@ -44,7 +44,7 @@ public:
   virtual void set_probe (Data d, uint8_t p) { hardware_error("set_probe"); }
   virtual void set_speak (Number period) { hardware_error("set_speak"); }
   
-  virtual Number set_dt (Number dt) { hardware_error("set_dt"); }
+  virtual Number set_dt (Number dt) { hardware_error("set_dt"); return 0; }
 
   virtual void set_is_folding (bool val, int k) 
   { hardware_error("set_is_folding"); }
@@ -52,39 +52,40 @@ public:
   { hardware_error("read_fold_complete"); }
   
   virtual Number set_channel (Number diffusion, int k) 
-  { hardware_error("set_channel"); }
-  virtual Number read_channel (int k) { hardware_error("read_channel"); }
+  { hardware_error("set_channel"); return 0; }
+  virtual Number read_channel (int k)
+  { hardware_error("read_channel"); return 0;}
   virtual Number drip_channel (Number val, int k) 
-  { hardware_error("drip_channel"); }
+  { hardware_error("drip_channel"); return 0; }
   virtual Tuple grad_channel (int k) { hardware_error("grad_channel"); }
   
-  virtual Number read_radio_range () {hardware_error("read_radio_range");}
-  virtual Number read_light_sensor(){hardware_error("read_light_sensor");}
-  virtual Number read_microphone () { hardware_error("read_microphone"); }
-  virtual Number read_temp () { hardware_error("read_temp"); }
-  virtual Number read_short () { hardware_error("read_short"); }
-  virtual Number read_sensor (uint8_t n) { hardware_error("read_sensor"); }
+  virtual Number read_radio_range () {hardware_error("read_radio_range"); return 0;}
+  virtual Number read_light_sensor(){hardware_error("read_light_sensor"); return 0;}
+  virtual Number read_microphone () { hardware_error("read_microphone"); return 0;}
+  virtual Number read_temp () { hardware_error("read_temp"); return 0; }
+  virtual Number read_short () { hardware_error("read_short"); return 0; }
+  virtual Number read_sensor (uint8_t n) { hardware_error("read_sensor"); return 0; }
   virtual Tuple read_coord_sensor()
   { hardware_error("read_coord_sensor"); }
   virtual Tuple read_mouse_sensor()
   { hardware_error("read_mouse_sensor"); }
   virtual Tuple read_ranger () { hardware_error("read_ranger"); }
-  virtual Number read_bearing () { hardware_error("read_bearing"); }
-  virtual Number read_speed () { hardware_error("read_speed"); }
-  virtual Number read_bump () { hardware_error("read_bump"); }
-  virtual Number read_button (uint8_t n) { hardware_error("read_button"); }
+  virtual Number read_bearing () { hardware_error("read_bearing"); return 0;}
+  virtual Number read_speed () { hardware_error("read_speed"); return 0; }
+  virtual Number read_bump () { hardware_error("read_bump"); return 0; }
+  virtual Number read_button (uint8_t n) { hardware_error("read_button"); return 0; }
   virtual Number read_slider (uint8_t ikey, uint8_t dkey, Number init, 
                                Number incr, Number min, Number max) 
-  { hardware_error("read_slider"); }
+  { hardware_error("read_slider"); return 0; }
   
   virtual int radio_send_export (uint8_t version, Array<Data> const & data)
-  { hardware_error("radio_send_export"); }
+  { hardware_error("radio_send_export"); return 0; }
   virtual int radio_send_script_pkt (uint8_t version, uint16_t n, 
                                       uint8_t pkt_num, uint8_t *script) 
-  { hardware_error("radio_send_script_pkt"); }
+  { hardware_error("radio_send_script_pkt"); return 0; }
   virtual int radio_send_digest (uint8_t version, uint16_t script_len, 
                                  uint8_t *digest) 
-  { hardware_error("radio_send_digest"); }
+  { hardware_error("radio_send_digest"); return 0; }
 };
 
 // A list of all the functions that can be supplied with a HardwarePatch,
