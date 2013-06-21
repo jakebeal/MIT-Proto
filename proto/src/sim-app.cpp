@@ -28,7 +28,6 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "paleocompiler.h"  // should also end up pulling in these two #defines
 #endif
 #include "visualizer.h"
-#include "motelink.h"
 #include "sim-instructions.h"
 
 map<string,uint8_t> OPCODE_MAP = create_opcode_map();
@@ -41,7 +40,6 @@ NeoCompiler* compiler = NULL;
 PaleoCompiler* compiler = NULL;
 #endif
 SpatialComputer* computer = NULL;
-MoteLink* motelink = NULL;
 Visualizer* vis = NULL;
 
 bool test_mode = false;
@@ -75,7 +73,6 @@ void advance_time() {
      changed |= compiler->evolve(sim_time);
   changed |= (vis && vis->evolve(sim_time));
   changed |= computer->evolve(sim_time);
-  changed |= (motelink && motelink->evolve(sim_time));
 #ifdef WANT_GLUT
   if(changed && vis!=NULL) glutPostRedisplay(); // redraw only if needed
 #endif // WANT_GLUT
@@ -268,8 +265,7 @@ void dispatch_key_event() {
     app_handle_key(&key) ||
     computer->handle_key(&key) ||
     vis->handle_key(&key) || // visualizer always there for GLUT events
-    compiler->handle_key(&key) ||
-    (motelink!=NULL && motelink->handle_key(&key));
+    compiler->handle_key(&key);
   if(handled)  glutPostRedisplay();
 #endif // WANT_GLUT
 }
@@ -335,7 +331,6 @@ void render () {
   // rest of drawing
   vis->visualize(); 
   if(compiler) compiler->visualize();
-  if(motelink!=NULL) motelink->visualize();
   
   vis->complete_frame();
 #endif // WANT_GLUT
@@ -407,7 +402,6 @@ void special_handler( int key_id, int x, int y ) {
  *****************************************************************************/
 // destroy in the opposite order from creation
 void shutdown_app() {
-  if(motelink) delete motelink;
 #ifdef WANT_GLUT
   if(vis) delete vis;
 #endif // WANT_GLUT
@@ -448,8 +442,8 @@ void process_app_args(Args *args) {
   is_stepping = args->extract_switch("-step");
   // maximum time for simulation (useful for headless execution)
   if(args->extract_switch("-stop-after")) stop_time = args->pop_number();
-  // throttle when told explicitly, or when hooked to real motes
-  if(args->extract_switch("-throttle") || args->find_switch("-motelink")) {
+  // throttle when told explicitly
+  if(args->extract_switch("-throttle")) {
     is_sim_throttling=true;
     last_inflection_real=get_real_secs(); // need to know when it starts
   }
@@ -595,8 +589,6 @@ int main (int argc, char *argv[]) {
         vis->set_bounds(computer->vis_volume); // connect to computer
         register_app_colors();
      }
-     // next the forwarder for the motes, if desired
-     if(args->extract_switch("-motelink")) motelink = new MoteLink(args);
      // load the script
      int len;
      if(args->argc==1) {

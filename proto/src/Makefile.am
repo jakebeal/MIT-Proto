@@ -2,7 +2,6 @@
 SUBDIRS = \
 	shared \
 	compiler \
-	motelink \
 	sim \
 	vm \
 	core_plugins \
@@ -14,7 +13,6 @@ INCLUDES = \
 	-I$(top_srcdir)/src/shared \
 	-I$(top_srcdir)/src/kernel \
 	-I$(top_srcdir)/src/compiler \
-	-I$(top_srcdir)/src/motelink \
 	-I$(top_srcdir)/src/sim \
 	-I$(top_srcdir)/src/vm
 
@@ -28,7 +26,6 @@ proto_SOURCES = \
 proto_LDADD = \
 	shared/libshared.la \
 	compiler/libcompiler.la \
-	motelink/libmotelink.la \
 	sim/libsim.la \
 	sim/libprotosimplugin.la \
 	sim/libdefaultplugin.la \
