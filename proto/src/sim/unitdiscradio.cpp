@@ -318,6 +318,7 @@ int UnitDiscRadio::radio_send_export (uint8_t version, Array<Data> const & data)
     }
   }
   // hardware->set_vm_context(udd->container); // restore context
+  return 1;
 }
 
 int UnitDiscRadio::radio_send_script_pkt (uint8_t version, uint16_t n, 
