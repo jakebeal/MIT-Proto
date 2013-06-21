@@ -311,7 +311,7 @@ class EventConsumer {
 
   // Move state forward in time to the absolute time limit.  Returns
   // true iff state changed.  FIXME: This can't be right...
-  virtual bool evolve(SECONDS limit) {};
+  virtual bool evolve(SECONDS limit) { return false; };
 
   // Visualizer utility: color management for static variables.
   void ensure_colors_registered(const std::string &classname);
