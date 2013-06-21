@@ -203,9 +203,10 @@ ProtoType* ProtoInterpreter::sexp_to_type(SExpr* s) {
     } else if(name=="field") {
       if(sl->len()!=2) return type_err(s,"Bad field type: "+s->to_str());
       ProtoType* sub = sexp_to_type((*sl)[1]);
-      if(sub->isA("ProtoField")) 
+      if(!sub->isA("ProtoLocal")) 
         return type_err(s,"Field type must have a local subtype");
-      return new ProtoField(sub);
+      ProtoLocal* lsub = &dynamic_cast<ProtoLocal &>(*sub);
+      return new ProtoField(lsub);
     } else {
       return type_err(s,"Unknown type "+s->to_str());
     }
@@ -743,7 +744,7 @@ ProtoLocal* quote_to_literal_type(SExpr* s) {
       ProtoType* sub = quote_to_literal_type((*sl)[i]); subs.push_back(sub);
       if(!sub->isA("ProtoScalar")) all_scalar=false;
     }
-    ProtoTuple* out = all_scalar ? new ProtoVector(true) : new ProtoTuple(true);
+    ProtoLocalTuple* out = all_scalar ? new ProtoVector(true) : new ProtoLocalTuple(true);
     for(int i=0;i<subs.size();i++) out->add(subs[i]);
     return out;
   }

@@ -29,7 +29,7 @@ string nicenames[] =
  "Bribe", "Tidy", "Whichever", "Multiplication", "Dissatisfy", "Overflow",
  "Paw", "Attentive", "Enclosure", "Discomfort", "Congratulate", "Cheat",
  "Rejoice", "Mat", "Coward", "Photography", "Breadth", "Bicycle",
- "Old-Fashioned", "Omission", "Weed", "Basin", "Spade", "Hesitation",
+ "OldFashioned", "Omission", "Weed", "Basin", "Spade", "Hesitation",
  "Descendant", "Correction", "Revenge", "Lengthen", "Deceive", "Strap",
  "Spoon", "Avoidance", "Thicken", "Reproduction", "Disappearance", "Ink",
  "Goat", "Everlasting", "Fry", "Ounce", "Congratulation", "Actress", "Flour",

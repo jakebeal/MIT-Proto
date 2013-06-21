@@ -20,6 +20,7 @@ libcompiler_la_SOURCES = \
 	prototypes.cpp \
 	ir.cpp \
 	interpreter.cpp \
+	type-inference.cpp \
 	analyzer.cpp \
 	emitter.cpp \
 	compiler.cpp \

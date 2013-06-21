@@ -280,7 +280,8 @@ Operator* FieldOp::get_field_op(OperatorInstance* oi) {
 
 // assumes base is pointwise
 ProtoType* fieldop_type(ProtoType* base) {
-  return new ProtoField(base);
+  ProtoLocal* lt = &dynamic_cast<ProtoLocal &>(*base);
+  return new ProtoField(lt);
 }
 FieldOp::FieldOp(Operator* base) : Primitive(base) {
   this->base = base; name = "Field~~"+base->name;

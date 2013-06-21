@@ -58,7 +58,7 @@ struct ProtoType : public CompilationElement {
   virtual int pointwise() { return -1; } // uncertain whether it's pointwise
 };
 
-struct ProtoLocal : public ProtoType {
+struct ProtoLocal : virtual public ProtoType {
   reflection_sub(ProtoLocal,ProtoType);
   ProtoLocal() {}
   virtual ~ProtoLocal() {}
@@ -68,8 +68,10 @@ struct ProtoLocal : public ProtoType {
   virtual int pointwise() { return 1; } // definitely pointwise
 };
 
-struct ProtoTuple : virtual public ProtoLocal {
-  reflection_sub(ProtoTuple,ProtoLocal);
+// A general Tuple may contain Fields within it, and thus be neither
+// local nor field.
+struct ProtoTuple : virtual public ProtoType {
+  reflection_sub(ProtoTuple,ProtoType);
   std::vector<ProtoType*> types;
   bool bounded; // when false, last type is "rest" type
   ProtoTuple() { this->bounded=false; this->types.push_back(new ProtoType()); }
@@ -80,6 +82,7 @@ struct ProtoTuple : virtual public ProtoLocal {
     inherit_attributes(src);
   }
   virtual ~ProtoTuple() {}
+  static ProtoTuple* specialize_tuple_class(ProtoTuple* t);
   void add(ProtoType* t) { types.push_back(t); }
   void clear() { types.clear(); }
   virtual void print(std::ostream* out=0);
@@ -91,8 +94,21 @@ struct ProtoTuple : virtual public ProtoLocal {
     for(int i=0;i<types.size();i++) if(!types[i]->isLiteral()) return false;
     return true;
   }
+  virtual int pointwise() { return -1; } // uncertain whether it's pointwise
 };
 #define T_TYPE(x) (&dynamic_cast<ProtoTuple &>(*(x)))
+
+struct ProtoLocalTuple : virtual public ProtoLocal, public ProtoTuple {
+  reflection_sub2(ProtoLocalTuple,ProtoLocal,ProtoTuple);
+  ProtoLocalTuple() : ProtoTuple() {};
+  ProtoLocalTuple(bool bounded) : ProtoTuple(bounded) { }
+  virtual ~ProtoLocalTuple() {}
+  virtual void print(std::ostream* out=0);
+  virtual ProtoType* lcs(ProtoType* t);
+  virtual ProtoType* gcs(ProtoType* t) { return ProtoTuple::gcs(t); }
+  virtual int pointwise() { return 1; } // definitely pointwise
+};
+#define LT_TYPE(x) (&dynamic_cast<ProtoLocalTuple &>(*(x)))
 
 struct ProtoSymbol : public ProtoLocal {
   reflection_sub(ProtoSymbol,ProtoLocal);
@@ -139,15 +155,15 @@ struct ProtoBoolean : public ProtoScalar {
 };
 
 // Vectors are a Tuple of scalars
-struct ProtoVector : public ProtoTuple, public ProtoNumber {
-  reflection_sub2(ProtoVector,ProtoNumber,ProtoTuple);
-  ProtoVector() : ProtoTuple(false) {this->types.push_back(new ProtoScalar());}
-  ProtoVector(bool bounded) : ProtoTuple(bounded) { }
-  ProtoVector(ProtoTuple* src) : ProtoTuple(src) { }
+struct ProtoVector : public ProtoLocalTuple, public ProtoNumber {
+  reflection_sub2(ProtoVector,ProtoNumber,ProtoLocalTuple);
+  ProtoVector() : ProtoLocalTuple(false) {this->types.push_back(new ProtoScalar());}
+  ProtoVector(bool bounded) : ProtoLocalTuple(bounded) { }
   virtual ~ProtoVector() {}
   virtual void print(std::ostream* out=0);
   virtual ProtoType* lcs(ProtoType* t);
-  virtual ProtoType* gcs(ProtoType* t) { return ProtoTuple::gcs(t); }
+  virtual ProtoType* gcs(ProtoType* t) { return ProtoLocalTuple::gcs(t); }
+  virtual int pointwise() { return 1; } // definitely pointwise
 };
 #define V_TYPE(x) (&dynamic_cast<ProtoVector &>(*(x)))
 
@@ -167,9 +183,9 @@ struct ProtoLambda: public ProtoLocal {
 
 struct ProtoField : public ProtoType {
   reflection_sub(ProtoField,ProtoType);
-  ProtoType* hoodtype; // must be local, but derived types defer resolution
-  ProtoField() { hoodtype=new ProtoType(); }
-  ProtoField(ProtoType* hoodtype) { this->hoodtype = hoodtype; }
+  ProtoLocal* hoodtype; // must be local
+  ProtoField() { hoodtype=new ProtoLocal(); }
+  ProtoField(ProtoLocal* hoodtype) { this->hoodtype = hoodtype; }
   virtual void print(std::ostream* out=0) { *out<<"<Field "<<ce2s(hoodtype)<<">"; }
   virtual bool supertype_of(ProtoType* sub);
   virtual ProtoType* lcs(ProtoType* t);

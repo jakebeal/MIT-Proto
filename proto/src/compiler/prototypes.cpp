@@ -164,7 +164,7 @@ void element_lcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
 }
 
 ProtoType* ProtoTuple::lcs(ProtoType* t) {
-  if(!t->isA("ProtoTuple")) return ProtoLocal::lcs(t);
+  if(!t->isA("ProtoTuple")) return ProtoType::lcs(t);
   ProtoTuple* tt = &dynamic_cast<ProtoTuple &>(*t);
   ProtoTuple* nt = new ProtoTuple(true); element_lcs(this,tt,nt); return nt;
 }
@@ -189,10 +189,20 @@ ProtoType* ProtoBoolean::lcs(ProtoType* t) {
   return new ProtoBoolean(); // LCS -> not super -> one true, other false
 }
 
+ProtoType* ProtoLocalTuple::lcs(ProtoType* t) {
+  if(!t->isA("ProtoLocalTuple")) { // split inheritance
+    if(t->isA("ProtoTuple")) return ProtoTuple::lcs(t);
+    if(t->isA("ProtoLocal")) return ProtoLocal::lcs(t);
+    return ProtoType::lcs(t); // join point in inheritance
+  }
+  ProtoLocalTuple* tt = &dynamic_cast<ProtoLocalTuple &>(*t);
+  ProtoLocalTuple* nt = new ProtoLocalTuple(true); element_lcs(this,tt,nt); return nt;
+}
+
 ProtoType* ProtoVector::lcs(ProtoType* t) {
   if(!t->isA("ProtoVector")) { // split inheritance
     if(t->isA("ProtoNumber")) return ProtoNumber::lcs(t);
-    if(t->isA("ProtoTuple")) return ProtoTuple::lcs(t);
+    if(t->isA("ProtoLocalTuple")) return ProtoLocalTuple::lcs(t);
     return ProtoLocal::lcs(t); // join point in inheritance
   }
   ProtoVector* tv = &dynamic_cast<ProtoVector &>(*t);
@@ -207,7 +217,9 @@ ProtoType* ProtoLambda::lcs(ProtoType* t) {
 ProtoType* ProtoField::lcs(ProtoType* t) {
   if(!t->isA("ProtoField")) return ProtoType::lcs(t);
   ProtoField* tf = &dynamic_cast<ProtoField &>(*t); //not super -> hoodtype != null
-  return new ProtoField(ProtoType::lcs(hoodtype,tf->hoodtype));
+  ProtoType* merged = ProtoType::lcs(hoodtype,tf->hoodtype);
+  ProtoLocal* lt = &dynamic_cast<ProtoLocal &>(*merged);
+  return new ProtoField(lt);
 }
 
 /*****************************************************************************
@@ -254,14 +266,12 @@ bool element_gcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
   return true;
 }
 
-ProtoType* ProtoTuple::gcs(ProtoType* t) { // covers vectors too
+ProtoType* ProtoTuple::gcs(ProtoType* t) { // covers vectors, localtuples too
   if(t->isA("ProtoTuple")) {
     ProtoTuple* tt = &dynamic_cast<ProtoTuple &>(*t);
-    bool vec = (isA("ProtoVector") || t->isA("ProtoVector"));
-    ProtoTuple* newt;
-    if(vec) newt = new ProtoVector(false); else newt = new ProtoTuple(false);
+    ProtoTuple* newt = new ProtoTuple(false);
     if(!element_gcs(this,tt,newt)) { delete newt; return NULL; }
-    return newt; // vector contents assured by GCS
+    return specialize_tuple_class(newt); // map to vector/local as needed
   }
   if(t->type_of()=="ProtoNumber") {
     // check if all elements are scalars... if so, result is a vector
@@ -289,9 +299,43 @@ ProtoType* ProtoField::gcs(ProtoType* t) {
   if(!t->isA("ProtoField")) return NULL;
   ProtoField* tf = &dynamic_cast<ProtoField &>(*t); //not super -> hoodtype != null
   ProtoType* hood = ProtoType::gcs(tf->hoodtype,hoodtype);
-  return (hood==NULL) ? NULL : new ProtoField(hood);
+  if (hood==NULL) {
+    return NULL;
+  } else {
+    ProtoLocal* lhood = &dynamic_cast<ProtoLocal &>(*hood);
+    return new ProtoField(lhood);
+  }
 }
 
+/*****************************************************************************
+ *  MISCELLANEOUS OPS                                                        *
+ *****************************************************************************/
+
+ProtoTuple* ProtoTuple::specialize_tuple_class(ProtoTuple* t) {
+  bool all_local = true, all_scalar = true;
+  // create all the subelements
+  vector<ProtoType*> copied_types;
+  for(int i=0;i<t->types.size();i++) {
+    if(t->types[i]->isA("ProtoTuple")) {
+      all_scalar = false;
+      ProtoTuple* ti = &dynamic_cast<ProtoTuple &>(*t->types[i]);
+      ProtoTuple* subtuple = specialize_tuple_class(ti);
+      if(!subtuple->isA("ProtoLocalTuple")) all_local = false;
+      copied_types.push_back(subtuple);
+    } else {
+      if(!t->types[i]->isA("ProtoLocal")) all_local = false;
+      copied_types.push_back(t->types[i]);
+    }
+  }
+  // make a tuple of the correct type, and add all the subelements
+  ProtoTuple* newt;
+  if(all_scalar) newt = new ProtoVector(t->bounded);
+  else if(all_local) newt = new ProtoLocalTuple(t->bounded);
+  else newt = new ProtoTuple(t->bounded);
+  for(int i=0;i<copied_types.size();i++)
+    newt->add(copied_types[i]);
+  return newt;
+}
 
 /*****************************************************************************
  *  PRINTING                                                                 *
@@ -299,6 +343,12 @@ ProtoType* ProtoField::gcs(ProtoType* t) {
 void ProtoTuple::print(ostream* out) { 
   //*out<<"[ID="<<elmt_id<<"]";
   *out << "<"; if(bounded) *out << types.size() << "-"; *out << "Tuple";
+  for(int i=0;i<types.size();i++) { if(i) *out<<","; types[i]->print(out); }
+  if(!bounded) *out<<"...";
+  *out << ">";
+}
+void ProtoLocalTuple::print(ostream* out) { 
+  *out << "<"; if(bounded) *out << types.size() << "-"; *out << "LocalTuple";
   for(int i=0;i<types.size();i++) { if(i) *out<<","; types[i]->print(out); }
   if(!bounded) *out<<"...";
   *out << ">";
@@ -346,7 +396,8 @@ string gcs_test(ProtoType* ta,ProtoType* tb) {
 }
 
 void type_system_tests() {
-  ProtoType top; ProtoLocal local; ProtoTuple tuple; ProtoSymbol symbol;
+  ProtoType top; ProtoLocal local; ProtoTuple tuple; 
+  ProtoLocalTuple ltuple; ProtoSymbol symbol;
   ProtoNumber number; ProtoScalar scalar; ProtoBoolean boolean;
   ProtoVector vector; ProtoLambda lambda; ProtoField field;
   *cpout << "Testing type relations:\n";
@@ -393,18 +444,19 @@ void type_system_tests() {
   *cpout << typeorder_test(&sf,&sb) << endl;
   // now compound types
   *cpout << "Tuples:\n";
-  ProtoTuple t2(true); t2.add(&l3); t2.add(&symbol);
+  ProtoLocalTuple t2(true); t2.add(&l3); t2.add(&symbol);
   ProtoTuple t2u(false); t2u.add(&l3); t2u.add(&top); t2u.add(&field);
   *cpout << typeorder_test(&t2,&t2u) << endl;
   *cpout << typeorder_test(&t2,&tuple) << endl;
   *cpout << typeorder_test(&t2u,&tuple) << endl;
-  ProtoTuple t34s(false); t34s.add(&l3); t34s.add(&l4); t34s.add(&scalar);
-  ProtoTuple t34ss(false); t34ss.add(&l3); t34ss.add(&l4); t34ss.add(&scalar); t34ss.add(&scalar);
-  ProtoTuple t345s(false); t345s.add(&l3); t345s.add(&l4); t345s.add(&l5); t345s.add(&scalar);
-  ProtoTuple t34(true); t34.add(&l3); t34.add(&l4);
-  ProtoTuple t345(true); t345.add(&l3); t345.add(&l4); t345.add(&l5);
+  ProtoLocalTuple t34s(false); t34s.add(&l3); t34s.add(&l4); t34s.add(&scalar);
+  ProtoLocalTuple t34ss(false); t34ss.add(&l3); t34ss.add(&l4); t34ss.add(&scalar); t34ss.add(&scalar);
+  ProtoLocalTuple t345s(false); t345s.add(&l3); t345s.add(&l4); t345s.add(&l5); t345s.add(&scalar);
+  ProtoLocalTuple t34(true); t34.add(&l3); t34.add(&l4);
+  ProtoLocalTuple t345(true); t345.add(&l3); t345.add(&l4); t345.add(&l5);
   ProtoTuple t3x5(true); t3x5.add(&l3); t3x5.add(&top); t3x5.add(&l5);
-  ProtoTuple t3t5(true); t3t5.add(&l3); t3t5.add(&t345); t3t5.add(&l5);
+  ProtoLocalTuple t3l5(true); t3x5.add(&l3); t3x5.add(&local); t3x5.add(&l5);
+  ProtoLocalTuple t3t5(true); t3t5.add(&l3); t3t5.add(&t345); t3t5.add(&l5);
   *cpout << typeorder_test(&tuple,&t34s) << endl;
   *cpout << typeorder_test(&t345s,&t34s) << endl;
   *cpout << typeorder_test(&t345,&t34s) << endl;
@@ -432,11 +484,11 @@ void type_system_tests() {
   *cpout << typeorder_test(&v34s,&t345) << endl;
   *cpout << typeorder_test(&v34s,&t34s) << endl;
   *cpout << "Fields:\n";
-  ProtoField f3(&l3), f3t5(&t3t5), f3x5(&t3x5);
+  ProtoField f3(&l3), f3t5(&t3t5), f3l5(&t3l5);
   *cpout << typeorder_test(&f3,&field) << endl;
-  *cpout << typeorder_test(&f3,&f3t5) << endl;
+  *cpout << typeorder_test(&f3,&f3l5) << endl;
   *cpout << typeorder_test(&f3t5,&field) << endl;
-  *cpout << typeorder_test(&f3t5,&f3x5) << endl;
+  *cpout << typeorder_test(&f3t5,&f3l5) << endl;
   // LCS relations
   *cpout << "Testing least-common-supertype:\n";
   // first some ordered pairs
@@ -506,6 +558,6 @@ void type_system_tests() {
   *cpout << gcs_test(&t3x5,&v34s) << endl; // = V<3,4,5>
   *cpout << gcs_test(&v34s,&vs45) << endl; // = V<3,4,5>
   *cpout << gcs_test(&sf,&sb) << endl; // = null
-  *cpout << gcs_test(&f3x5,&f3t5) << endl; // = F<T<3,T<3,4,5>,5>>
+  *cpout << gcs_test(&f3l5,&f3t5) << endl; // = F<T<3,T<3,4,5>,5>>
   *cpout << gcs_test(&tuple,&t34) << endl; // = T<3,4>
 }
