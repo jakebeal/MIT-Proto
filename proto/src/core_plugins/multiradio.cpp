@@ -75,7 +75,7 @@ int MultiRadio::radio_send_export (uint8_t version, Array<Data> const & data){
 
 int MultiRadio::radio_send_script_pkt (uint8_t version, uint16_t n,
                                        uint8_t pkt_num, uint8_t *script) {
-/*  typeof(radios.begin()) it;
+/*  vector<RadioSim*>::iterator it;
   for(it = radios.begin(); it != radios.end(); it++) {
     (*it)->radio_send_script_pkt(version, n, pkt_num, script);
   }*/
@@ -83,7 +83,7 @@ int MultiRadio::radio_send_script_pkt (uint8_t version, uint16_t n,
 
 int MultiRadio::radio_send_digest (uint8_t version, uint16_t script_len,
                                    uint8_t *digest) {
-/*  typeof(radios.begin()) it;
+/*  vector<RadioSim*>::iterator it;
   for(it = radios.begin(); it != radios.end(); it++) {
     (*it)->radio_send_digest(version, script_len, digest);
   }*/
