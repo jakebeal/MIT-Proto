@@ -78,7 +78,7 @@ int WormHoleRadio::radio_send_export (uint8_t version, Array<Data> const & data)
   int src_id = device->uid;
   const flo *me = device->body->position();
   WormHoleRadioDevice *dev = (WormHoleRadioDevice*)device->layers[id];
-  for(typeof(dev->nbrs.begin()) it = dev->nbrs.begin();
+  for(set<WormHoleRadioDevice*>::iterator it = dev->nbrs.begin();
       it != dev->nbrs.end(); it++) {
     WormHoleRadioDevice *o = *it;
     if(try_rx()) {
@@ -103,7 +103,7 @@ int WormHoleRadio::radio_send_script_pkt (uint8_t version, uint16_t n,
 
   int src_id = device->uid;
   WormHoleRadioDevice *dev = (WormHoleRadioDevice*)device->layers[id];
-  for(typeof(dev->nbrs.begin()) it = dev->nbrs.begin();
+  for(set<WormHoleRadioDevice*>::iterator it = dev->nbrs.begin();
       it != dev->nbrs.end(); it++) {
     WormHoleRadioDevice *o = *it;
     if(try_rx()) {
@@ -122,7 +122,7 @@ int WormHoleRadio::radio_send_digest (uint8_t version, uint16_t script_len,
 
   int src_id = device->uid;
   WormHoleRadioDevice *dev = (WormHoleRadioDevice*)device->layers[id];
-  for(typeof(dev->nbrs.begin()) it = dev->nbrs.begin();
+  for(set<WormHoleRadioDevice*>::iterator it = dev->nbrs.begin();
       it != dev->nbrs.end(); it++) {
     WormHoleRadioDevice *o = *it;
     if(try_rx()) {
@@ -169,7 +169,7 @@ void WormHoleRadioDevice::visualize() {
     // do the actual draw
     glBegin(GL_LINES);
     const flo *me = container->body->position();
-    for(typeof(nbrs.begin()) it = nbrs.begin(); it != nbrs.end(); it++) {
+    for(set<WormHoleRadioDevice*>::iterator it = nbrs.begin(); it != nbrs.end(); it++) {
       if((local_sharp || (*it)->container->uid > container->uid)) {
         const flo *them = (*it)->container->body->position();
         glVertex3f(0,0,0);
