@@ -51,7 +51,7 @@ void MultiRadio::update_patches() {
 
 bool MultiRadio::handle_key(KeyEvent *key) {
   bool handled = false;
-  typeof(radios.begin()) it;
+  vector<RadioSim*>::iterator it;
 
   for(it = radios.begin(); it != radios.end(); it++) {
     if((*it)->handle_key(key)) {
@@ -67,7 +67,7 @@ void MultiRadio::add_device(Device *d) {}
 void MultiRadio::device_moved(Device *d) {}
 
 int MultiRadio::radio_send_export (uint8_t version, Array<Data> const & data){
-  typeof(radios.begin()) it;
+  vector<RadioSim*>::iterator it;
   for(it = radios.begin(); it != radios.end(); it++) {
     (*it)->radio_send_export(version, data);
   }
