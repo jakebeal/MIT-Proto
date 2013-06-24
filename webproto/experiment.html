@@ -19,13 +19,16 @@
 <body>
   <div id="container"></div>
 
+<script src="jquery-2.0.2.min.js"></script>
+<script src="webproto.js"></script>
 <script src="three.min.js"></script>
 <script src="TrackballControls.js"></script>
+<script src="stats.min.js"></script>
 <script>
 
 // set the scene size
-var WIDTH = 400,
-  HEIGHT = 300;
+var WIDTH = $(window).width(),
+  HEIGHT = $(window).height();
 
 // set some camera attributes
 var VIEW_ANGLE = 45,
@@ -41,19 +44,23 @@ var camera =
     ASPECT,
     NEAR,
     FAR);
-var sphere;
-var sphere2;
+
+var stadiumXSize = 100;
+var stadiumYSize = 100;
+var stadiumZSize = 100;
+
+var numSpheres = 1000;
+var spheres = new Array();
+var stats = new Stats();
 
 function init() {
 
 // get the DOM element to attach to
-// - assume we've got jQuery to hand
-//var $container = $('#container');
-container = document.getElementById( 'container' );
+var $container = $('#container');
 
-// create a WebGL renderer, camera
-// and a scene
-
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.top = '0px';
+container.appendChild( stats.domElement );
 
 // add the camera to the scene
 scene.add(camera);
@@ -69,44 +76,46 @@ renderer.setSize(WIDTH, HEIGHT);
 container.appendChild(renderer.domElement);
 
 // set up the sphere vars
-var radius = 50,
+var radius = 2,
     segments = 16,
     rings = 16;
 
 var sphereMaterial =
-  new THREE.MeshLambertMaterial(
+  new THREE.MeshBasicMaterial(
     {
       color: 0xCC0000
     });
 
-// create a new mesh with
-// sphere geometry - we will cover
-// the sphereMaterial next!
-sphere = new THREE.Mesh(
 
-  new THREE.SphereGeometry(
-    radius,
-    segments,
-    rings),
+    for(mid = 0; mid < numSpheres; mid++) {
 
-  sphereMaterial);
+       spheres[mid] = new THREE.Mesh(
 
-// add the sphere to the scene
+       new THREE.CubeGeometry(1,1,1),
+       //radius,
+       //segments,
+       //rings),
 
-scene.add(sphere);
+       sphereMaterial);
 
-sphere2 = new THREE.Mesh(
+       var xpos = (Math.random() * stadiumXSize);
+       var ypos = (Math.random() * stadiumYSize);
+       var zpos = (Math.random() * stadiumZSize);
 
-  new THREE.SphereGeometry(
-    radius,
-    segments,
-    rings),
+       // set it's initial position
+       spheres[mid].position = { 
+          x: xpos,
+          y: ypos, 
+          z: zpos
+       };
 
-  sphereMaterial);
+       // add the sphere to the scene
+       scene.add(spheres[mid]);
 
-// add the sphere to the scene
-sphere2.position = { x: 100, y: 20, z: 30 } 
-scene.add(sphere2);
+       spheres[mid].machine = new Module.Machine(xpos, ypos, zpos);
+
+    }
+
 
 // create a point light
 var pointLight =
@@ -140,10 +149,37 @@ controls.keys = [65, 83, 68];
 camera.lookAt(scene.position);
 }
 
+time = 0.0;
+
 function animate() {
+
+   for(mid=0; mid < numSpheres; mid++) {
+      spheres[mid].machine.executeRound(time);
+      var updatedXpos = spheres[mid].machine.x + spheres[mid].machine.dx;
+      var updatedYpos = spheres[mid].machine.y + spheres[mid].machine.dy;
+      var updatedZpos = spheres[mid].machine.z + spheres[mid].machine.dz;
+
+      spheres[mid].machine.dx = 0;
+      spheres[mid].machine.dy = 0;
+      spheres[mid].machine.dz = 0;
+
+      spheres[mid].position = {
+         x: updatedXpos,
+         y: updatedYpos,
+         z: updatedZpos
+      };
+
+      spheres[mid].machine.x = updatedXpos;
+      spheres[mid].machine.y = updatedYpos;
+      spheres[mid].machine.Z = updatedZpos;
+   }
+   time++;
+
   requestAnimationFrame( animate );
   controls.update();
   render();
+  
+  stats.update();
 }
 
 function render() {
