@@ -17,14 +17,14 @@
 </style>
 </head>
 <body>
-  <div id="container"></div>
+   <div id="container"></div>
 
-<script src="jquery-2.0.2.min.js"></script>
-<script src="webproto.js"></script>
-<script src="three.min.js"></script>
-<script src="TrackballControls.js"></script>
-<script src="stats.min.js"></script>
-<script>
+   <script src="jquery-2.0.2.min.js"></script>
+   <script src="webproto.js"></script>
+   <script src="three.min.js"></script>
+   <script src="TrackballControls.js"></script>
+   <script src="stats.min.js"></script>
+   <script>
 
 // set the scene size
 var WIDTH = $(window).width(),
@@ -49,9 +49,28 @@ var stadiumXSize = 100;
 var stadiumYSize = 100;
 var stadiumZSize = 100;
 
-var numSpheres = 1000;
+var numSpheres = 100;
 var spheres = new Array();
 var stats = new Stats();
+
+var script = new Module.Script();
+$.ajax({
+   type: 'GET',
+   dataType: "json",
+   async: false,
+   url: '/cgi-bin/p2b',
+   data: { "program" : '(mov (if (< (timer) 20) (tup 1 1 1) (tup -1 -1 -1)))' },
+   success: function(data) {
+      console.log(data.script);
+      $.each(data.script, function(index, value) {
+         script.push_back(value);
+      });
+   },
+   error: function(err) {
+      console.log("ERROR: " + err);
+      console.log(err);
+   }
+});
 
 function init() {
 
@@ -112,7 +131,7 @@ var sphereMaterial =
        // add the sphere to the scene
        scene.add(spheres[mid]);
 
-       spheres[mid].machine = new Module.Machine(xpos, ypos, zpos);
+       spheres[mid].machine = new Module.Machine(xpos, ypos, zpos, script);
 
     }
 
