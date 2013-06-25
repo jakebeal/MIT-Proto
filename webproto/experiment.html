@@ -17,14 +17,21 @@
 </style>
 </head>
 <body>
-   <div id="container"></div>
+   <div id="container"> </div>
+
+   <link rel="stylesheet" type="text/css" href="jquery-ui.css">
+   <link rel="stylesheet" type="text/css" href="jquery.jnotify.css">
 
    <script src="jquery-2.0.2.min.js"></script>
+   <script src="jquery-ui.js"></script>
+   <script src="jquery.jnotify.min.js"></script>
    <script src="webproto.js"></script>
    <script src="three.min.js"></script>
    <script src="TrackballControls.js"></script>
    <script src="stats.min.js"></script>
    <script>
+
+var paused = false;
 
 // set the scene size
 var WIDTH = $(window).width(),
@@ -53,6 +60,20 @@ var numSpheres = 100;
 var spheres = new Array();
 var stats = new Stats();
 
+$(document).ready(function() {
+   $(document).keydown(function(e) {
+      if(e.keyCode == 32) { //(space)
+         if(paused) {
+            paused = false;
+            $.jnotify("Un-Paused");
+         } else {
+            paused = true;
+            $.jnotify("Paused");
+         }
+      }
+   });
+});
+
 var script = new Module.Script();
 $.ajax({
    type: 'GET',
@@ -67,6 +88,7 @@ $.ajax({
       });
    },
    error: function(err) {
+      $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
       console.log("ERROR: " + err);
       console.log(err);
    }
@@ -172,33 +194,38 @@ time = 0.0;
 
 function animate() {
 
-   for(mid=0; mid < numSpheres; mid++) {
-      spheres[mid].machine.executeRound(time);
-      var updatedXpos = spheres[mid].machine.x + spheres[mid].machine.dx;
-      var updatedYpos = spheres[mid].machine.y + spheres[mid].machine.dy;
-      var updatedZpos = spheres[mid].machine.z + spheres[mid].machine.dz;
+   if(!paused) {
 
-      spheres[mid].machine.dx = 0;
-      spheres[mid].machine.dy = 0;
-      spheres[mid].machine.dz = 0;
+      for(mid=0; mid < numSpheres; mid++) {
+         spheres[mid].machine.executeRound(time);
+         var updatedXpos = spheres[mid].machine.x + spheres[mid].machine.dx;
+         var updatedYpos = spheres[mid].machine.y + spheres[mid].machine.dy;
+         var updatedZpos = spheres[mid].machine.z + spheres[mid].machine.dz;
 
-      spheres[mid].position = {
-         x: updatedXpos,
-         y: updatedYpos,
-         z: updatedZpos
-      };
+         spheres[mid].machine.dx = 0;
+         spheres[mid].machine.dy = 0;
+         spheres[mid].machine.dz = 0;
 
-      spheres[mid].machine.x = updatedXpos;
-      spheres[mid].machine.y = updatedYpos;
-      spheres[mid].machine.Z = updatedZpos;
-   }
-   time++;
+         spheres[mid].position = {
+            x: updatedXpos,
+            y: updatedYpos,
+            z: updatedZpos
+         };
+
+         spheres[mid].machine.x = updatedXpos;
+         spheres[mid].machine.y = updatedYpos;
+         spheres[mid].machine.Z = updatedZpos;
+      }
+      time++;
+      
+      stats.update();
+  }
 
   requestAnimationFrame( animate );
   controls.update();
   render();
   
-  stats.update();
+
 }
 
 function render() {
