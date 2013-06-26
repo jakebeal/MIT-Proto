@@ -59,7 +59,7 @@ function init() {
    camera.position.z = 300;
 
    // start the renderer
-   renderer.setSize(WIDTH, HEIGHT);
+   renderer.setSize($('#container').width(), $('#container').height());
 
    // attach the render-supplied DOM element
    container.appendChild(renderer.domElement);
@@ -175,6 +175,7 @@ function animate() {
 };
 
 function render() {
+  renderer.setSize($('#container').width(), $('#container').height());
   renderer.render( scene, camera );
 };
 
