@@ -20,3 +20,5 @@ put it in your system's CGI folder (e.g., /usr/lib/cgi-bin),
 make sure to enable CGI, and point it to your JSON-enabled
 version of the proto p2b
 
+ace is the library that we're using to display/edit code.
+We added a syntax highlighting module, ace/mode-proto.js
