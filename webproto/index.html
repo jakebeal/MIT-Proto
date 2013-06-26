@@ -154,6 +154,13 @@
              $.each(data.script, function(index, value) {
                 script.push_back(value);
              });
+
+             // Prevent further editing
+             editor.setReadOnly(true);
+
+             // Start the Simulator
+             init();
+             animate();
           },
           error: function(err) {
              $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
@@ -162,9 +169,6 @@
           }
        });
 
-       // Start the Simulator
-       init();
-       animate();
 
     }
 
