@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>WebProto IDE</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style type="text/css" media="screen">
+   #editor { 
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+   }
+   body {
+      color: #fff;
+      font-family:Monospace;
+      font-size:13px;
+      background-color: #050505;
+      margin: 0px;
+      overflow: hidden;
+   }
+</style>
+<link rel="stylesheet" type="text/css" href="jquery-ui.css">
+<link rel="stylesheet" type="text/css" href="jquery.jnotify.css">
+
+</head>
+<body>
+
+<div id="container"> </div>
+<div id="editor">
+
+;; Move
+(mov
+   ;; If the time is over 20 ticks
+   (if (< (timer) 20)
+      ;; In the positive x, y, and z directions
+      (tup 1 1 1)
+      ;; otherwise, the negative directions
+      (tup -1 -1 -1)))
+
+</div>
+
+<script src="jquery-2.0.2.min.js"></script>
+<script src="jquery-ui.js"></script>
+<script src="jquery.jnotify.min.js"></script>
+<script src="webproto.js"></script>
+<script src="three.min.js"></script>
+<script src="TrackballControls.js"></script>
+<script src="stats.min.js"></script>
+<script src="protosim.js"></script>
+<script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/proto");
+
+    var script;
+    function runSimulator(program) {
+       // Hide the IDE
+       $('#editor').hide();
+
+       // Grab key events
+       $(document).keydown(keyHandlers);
+
+       // Compile the Script
+       script = new Module.Script();
+       $.ajax({
+          type: 'GET',
+          dataType: "json",
+          async: false,
+          url: '/cgi-bin/p2b',
+          data: { "program" : program },
+          success: function(data) {
+             console.log(data.script);
+             $.each(data.script, function(index, value) {
+                script.push_back(value);
+             });
+          },
+          error: function(err) {
+             $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
+             console.log("ERROR: " + err);
+             console.log(err);
+          }
+       });
+
+       // Start the Simulator
+       init();
+       animate();
+
+    }
+
+    editor.commands.addCommand({
+       name: 'myCommand',
+       bindKey: {win: 'Ctrl-M',  mac: 'Command-M'},
+       exec: function(editor) {
+          var program = "";
+          var editorLines= editor.getValue().split('\n');
+          $.each(editorLines, function(lineNumber, line) {
+             var commentCharAt = line.indexOf(';');
+             if(commentCharAt >= 0) {
+                line = line.substring(0, commentCharAt);
+             }
+             line = $.trim(line);
+             if(line.length > 0) {
+                program += line + ' ';
+             }
+          });
+          runSimulator(program);
+       },
+       readOnly: false // false if this command should not apply in readOnly mode
+    });
+</script>
+</body>
+</html>
