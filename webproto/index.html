@@ -64,6 +64,15 @@
       bottom: 0;
       left: 0;
    }
+   #container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 99%;
+      width: 99%;
+   }
    /*
    body {
       color: #fff;
@@ -138,7 +147,7 @@
           type: 'GET',
           dataType: "json",
           async: false,
-          url: '/cgi-bin/p2b',
+          url: '/cgi-bin/webcompiler',
           data: { "program" : program },
           success: function(data) {
              console.log(data.script);

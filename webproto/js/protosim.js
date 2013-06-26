@@ -4,10 +4,8 @@ var paused = false;
 var time = 0.0;
 
 // set the scene size
-//var WIDTH = $('#container').width(),
-//  HEIGHT = $('#container').height();
-var WIDTH = 200,
-  HEIGHT = 200;
+var WIDTH = $('#container').width(),
+  HEIGHT = $('#container').height();
 
 // set some camera attributes
 var VIEW_ANGLE = 45,
