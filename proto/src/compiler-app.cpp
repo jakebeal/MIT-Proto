@@ -24,15 +24,17 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 void run_test_suite(); // testing kludge
 
 int main (int argc, char *argv[]) {
-  post("PROTO v%s%s (Kernel %s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
-		  PROTO_VERSION,
-#if USE_NEOCOMPILER
-		  "[neo]",
-#else
-		  "[paleo]",
-#endif
-		  KERNEL_VERSION);
   Args *args = new Args(argc,argv); // set up the arg parser
+  if(!args->find_switch("--json")) { // don't print block in web mode
+    post("PROTO v%s%s (Kernel %s) (Developed by MIT Space-Time Programming Group 2005-2008)\n",
+	 PROTO_VERSION,
+#if USE_NEOCOMPILER
+	 "[neo]",
+#else
+	 "[paleo]",
+#endif
+	 KERNEL_VERSION);
+  }
   plugins.ensure_initialized(args);
   
 #if USE_NEOCOMPILER
