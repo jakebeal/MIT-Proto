@@ -10,7 +10,7 @@
       top: 0;
       right: 0;
       bottom: 0;
-      left: 0;
+      left: 200px;
    }
    body {
       color: #fff;
@@ -23,11 +23,15 @@
 </style>
 <link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="css/jquery.jnotify.css">
+<link rel="stylesheet" type="text/css" href="sidr-package-1.1.1/stylesheets/jquery.sidr.dark.css">
 
 </head>
 <body>
 
 <div id="container"> </div>
+<a id="simple-menu" href="#sidr">Toogle slider</a>
+
+<div id="sidr">
 <div id="editor">
 
 ;; Move
@@ -40,9 +44,11 @@
       (tup -1 -1 -1)))
 
 </div>
+</div>
 
 <script src="js/jquery-2.0.2.min.js"></script>
 <script src="js/jquery-ui.js"></script>
+<script src="sidr-package-1.1.1/jquery.sidr.min.js"></script>
 <script src="js/jquery.jnotify.min.js"></script>
 <script src="js/webproto.js"></script>
 <script src="js/three.min.js"></script>
@@ -90,25 +96,32 @@
 
     }
 
-    editor.commands.addCommand({
-       name: 'myCommand',
-       bindKey: {win: 'Ctrl-M',  mac: 'Command-M'},
-       exec: function(editor) {
-          var program = "";
-          var editorLines= editor.getValue().split('\n');
-          $.each(editorLines, function(lineNumber, line) {
-             var commentCharAt = line.indexOf(';');
-             if(commentCharAt >= 0) {
-                line = line.substring(0, commentCharAt);
-             }
-             line = $.trim(line);
-             if(line.length > 0) {
-                program += line + ' ';
-             }
-          });
-          runSimulator(program);
-       },
-       readOnly: false // false if this command should not apply in readOnly mode
+    $(document).ready(function() {
+
+       // slider
+       $('#simple-menu').sidr();
+
+       // Execute code
+       editor.commands.addCommand({
+          name: 'myCommand',
+          bindKey: {win: 'Ctrl-M',  mac: 'Command-M'},
+          exec: function(editor) {
+             var program = "";
+             var editorLines= editor.getValue().split('\n');
+             $.each(editorLines, function(lineNumber, line) {
+                var commentCharAt = line.indexOf(';');
+                if(commentCharAt >= 0) {
+                   line = line.substring(0, commentCharAt);
+                }
+                line = $.trim(line);
+                if(line.length > 0) {
+                   program += line + ' ';
+                }
+             });
+             runSimulator(program);
+          },
+          readOnly: false // false if this command should not apply in readOnly mode
+       });
     });
 </script>
 </body>
