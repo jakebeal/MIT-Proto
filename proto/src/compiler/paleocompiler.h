@@ -27,6 +27,7 @@ class PaleoCompiler : public Compiler {
   bool is_dump_code;
   bool is_dump_ast;
   bool is_echo_defops;
+  bool is_json_format;
   const char *last_script;
 
   PaleoCompiler(Args *args);

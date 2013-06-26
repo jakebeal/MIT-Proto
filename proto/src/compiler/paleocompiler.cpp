@@ -2811,33 +2811,46 @@ uint8_t *compile_script (const char *str, int *len, int is_dump_ast) {
 }
 
 FILE* dump_target=stdout;
-void dump_instructions (int is_c, int n, uint8_t *bytes) {
+void dump_instructions (bool is_json_format, int n, uint8_t *bytes) {
   int j;
-  if (is_c) { fprintf(dump_target,"uint8_t script[] = {"); }
+  if (is_json_format) { fprintf(dump_target,"{ \"script\" : \n  ["); }
+  else { fprintf(dump_target,"uint8_t script[] = {"); }
   for (j = 0; j < n; j++) {
     int i;
     char *name, opname[100];
     uint8_t code = bytes[j];
     AST_OP* op = lookup_op_by_code(code, &name);
     if (op == NULL) uerror("NULL OP %d", code);
-    if (is_c && j != 0) fprintf(dump_target,",");
-    fprintf(dump_target," %s", is_c ? xlate_opname(opname, name) : name);
+    if (j != 0) {
+      if(is_json_format) { fprintf(dump_target,",\n"); }
+      else { fprintf(dump_target,","); }
+    }
+    if(is_json_format) fprintf(dump_target," \"%s\"",xlate_opname(opname, name));
+    else fprintf(dump_target," %s",xlate_opname(opname, name));
     if (op->arity < 0) {
       for (i = 0; i < (-op->arity)+op->is_nary;) {
-        if (is_c) fprintf(dump_target,",");
+        if (is_json_format) { fprintf(dump_target,",\n"); }
+        else { fprintf(dump_target,","); }
         j += 1;
-        fprintf(dump_target," %d", bytes[j]);
+        if (is_json_format) { fprintf(dump_target," \"%d\"", bytes[j]); }
+        else { fprintf(dump_target," %d", bytes[j]); }
         if (!(bytes[j] & 0x80)) i++;
       }
     } else {
       for (i = 0; i < op->arity+op->is_nary; i++) {
-        if (is_c) fprintf(dump_target,",");
+        if (is_json_format) { fprintf(dump_target,",\n"); }
+        else { fprintf(dump_target,","); }
         j += 1;
-        fprintf(dump_target," %d", bytes[j]);
+        if (is_json_format) { fprintf(dump_target," \"%d\"", bytes[j]);}
+        else { fprintf(dump_target," %d", bytes[j]); }
       }
     }
   }
-  if (is_c) { fprintf(dump_target," };\n"); fprintf(dump_target,"uint16_t script_len = %d;", n); }
+  if (is_json_format) { fprintf(dump_target,"]\n}\n"); }
+  else { 
+    fprintf(dump_target," };\n"); 
+    fprintf(dump_target,"uint16_t script_len = %d;", n);
+  }
   fprintf(dump_target,"\n");
 }
 
@@ -3030,6 +3043,7 @@ PaleoCompiler::PaleoCompiler(Args* args) : Compiler(args) {
   
   is_show_code = args->extract_switch("-k");
   is_dump_code = args->extract_switch("--instructions");
+  is_json_format = args->extract_switch("--json");
   is_dump_ast = args->extract_switch("--print-ast");
   is_echo_defops = args->extract_switch("--echo-defops");
   init_compiler();
@@ -3095,7 +3109,7 @@ PaleoCompiler::init_standalone(Args *args)
 uint8_t* PaleoCompiler::compile(const char *str, int* len) {
   last_script=str;
   uint8_t* bytes = compile_script(str,len,is_dump_ast);
-  if(is_dump_code) dump_instructions(1,*len,bytes);
+  if(is_dump_code) dump_instructions(is_json_format,*len,bytes);
   return bytes;
 }
 
