@@ -5,13 +5,66 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style type="text/css" media="screen">
+   body,html{width:100%;height:100%;padding:0;margin:0;}
+   #main{
+      color: #fff;
+      font-family:Monospace;
+      font-size:13px;
+      background-color: #050505;
+      float: right;
+      position: absolute;
+      top:100px;
+      bottom: 38px;
+      right: 0;
+      left: 50%;
+      overflow: hidden;
+   }
+   .sidebar{
+      color: #fff;
+      font-family:Monospace;
+      font-size:13px;
+      background-color: #050505;
+      width: 50%;
+      float: left;
+      position: absolute;
+      top:100px;
+      bottom: 38px;
+      overflow: hidden;
+   }
+   #footer{
+      color: #fff;
+      font-family:Monospace;
+      font-size:13px;
+      background-color: #050505;
+      width:100%;
+      height: 38px;
+      bottom:0;
+      position:absolute;
+   }
+   #header{
+      color: #fff;
+      font-family:Monospace;
+      font-size:13px;
+      background-color: #050505;
+      width:100%;
+      height: 100px;
+   }
+   #dragbar{
+      background-color: gray;
+      height:100%;
+      float: right;
+      width: 6px;
+      cursor: col-resize;
+   }
    #editor { 
+      font-size:20px;
       position: absolute;
       top: 0;
       right: 0;
       bottom: 0;
-      left: 200px;
+      left: 0;
    }
+   /*
    body {
       color: #fff;
       font-family:Monospace;
@@ -20,19 +73,26 @@
       margin: 0px;
       overflow: hidden;
    }
+   */
 </style>
 <link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="css/jquery.jnotify.css">
-<link rel="stylesheet" type="text/css" href="sidr-package-1.1.1/stylesheets/jquery.sidr.dark.css">
 
 </head>
 <body>
 
-<div id="container"> </div>
-<a id="simple-menu" href="#sidr">Toogle slider</a>
+   <div id="fullpage">
+      <div id="header"> header </div>
+      <div id="sidebar" class="sidebar">
+         <span id="position"></span>
+         <div id="dragbar"></div>
+         <div id="container"> </div>
+      </div>
 
-<div id="sidr">
-<div id="editor">
+
+      <div id="main">
+         Main
+         <div id="editor">
 
 ;; Move
 (mov
@@ -43,12 +103,15 @@
       ;; otherwise, the negative directions
       (tup -1 -1 -1)))
 
-</div>
-</div>
+         </div>
+      </div>
+
+      <div id="footer"> footer </div>
+
+   </div>
 
 <script src="js/jquery-2.0.2.min.js"></script>
 <script src="js/jquery-ui.js"></script>
-<script src="sidr-package-1.1.1/jquery.sidr.min.js"></script>
 <script src="js/jquery.jnotify.min.js"></script>
 <script src="js/webproto.js"></script>
 <script src="js/three.min.js"></script>
@@ -64,7 +127,7 @@
     var script;
     function runSimulator(program) {
        // Hide the IDE
-       $('#editor').hide();
+       //$('#editor').hide();
 
        // Grab key events
        $(document).keydown(keyHandlers);
@@ -98,8 +161,20 @@
 
     $(document).ready(function() {
 
-       // slider
-       $('#simple-menu').sidr();
+       // Dragging dragbar
+       $('#dragbar').mousedown(function(e){
+          e.preventDefault();
+          $(document).mousemove(function(e){
+             //$('#position').html(e.pageX +', '+ e.pageY);
+             $('#sidebar').css("width",e.pageX+2);
+             $('#main').css("left",e.pageX+2);
+          })
+       });
+       $(document).mouseup(function(e){
+          $(document).unbind('mousemove');
+       });
+
+
 
        // Execute code
        editor.commands.addCommand({
