@@ -1,44 +1,72 @@
+// Settings
+var settings = {
+      numDevices : 100,
+      radius : 10,
+      stadiumSize : { x:100, y:100, z:100 },
+      material : new THREE.MeshBasicMaterial( { color: 0xCC0000 }),
+      deviceShape : new THREE.CubeGeometry(1,1,1),
+      cameraView : {
+         angle : 45,
+         aspect : (4 / 3),
+         near : 0.1,
+         far : 10000,
+         zposition : 300
+      },
+      pointLight : new THREE.PointLight(0xFFFFFF),
+      pointLightPos : { x:10, y:50, z:130 },
+      stepSize : 1,
+      startPaused : false,
+      startTime : 0.0,
+      showWebGlStats : true,
+      distribution : function(mid) {
+         return {
+            x : (Math.random() * settings.stadiumSize.x), 
+            y : (Math.random() * settings.stadiumSize.y), 
+            z : (Math.random() * settings.stadiumSize.z)
+         };
+      },
+      stopWhen : function(time) {
+         return false;
+      },
+      positionMultipliers : { x:1, y:1, z:1 }
+   };
 
 // Timing
-var paused = false;
-var time = 0.0;
-
-// set the scene size
-var WIDTH = $('#container').width(),
-  HEIGHT = $('#container').height();
-
-// set some camera attributes
-var VIEW_ANGLE = 45,
-  ASPECT = WIDTH / HEIGHT,
-  NEAR = 0.1,
-  FAR = 10000;
+var paused = settings.startPaused;
+var time = settings.startTime;
 
 var renderer = new THREE.WebGLRenderer();
 var scene = new THREE.Scene();
-var camera =
-  new THREE.PerspectiveCamera(
-    VIEW_ANGLE,
-    ASPECT,
-    NEAR,
-    FAR);
+var camera = new THREE.PerspectiveCamera(
+    settings.cameraView.angle,
+    settings.cameraView.aspect,
+    settings.cameraView.near,
+    settings.cameraView.far);
 
-var stadiumXSize = 100;
-var stadiumYSize = 100;
-var stadiumZSize = 100;
-
-var numSpheres = 100;
-var spheres = new Array();
+var devices = new Array();
 var stats = new Stats();
+
+function unpause() {
+   paused = false;
+   $.jnotify("Un-Paused");
+}
+
+function pause() {
+   paused = true;
+   $.jnotify("Paused");
+}
+
+function togglePause() {
+   if(paused) {
+      unpause();
+   } else {
+      pause();
+   }
+}
 
 function keyHandlers(e) {
    if(e.keyCode == 32) { //(space)
-      if(paused) {
-         paused = false;
-         $.jnotify("Un-Paused");
-      } else {
-         paused = true;
-         $.jnotify("Paused");
-      }
+      togglePause();
    }
 };
 
@@ -56,7 +84,7 @@ function init() {
 
    // the camera starts at 0,0,0
    // so pull it back
-   camera.position.z = 300;
+   camera.position.z = settings.cameraView.zposition;
 
    // start the renderer
    renderer.setSize($('#container').width(), $('#container').height());
@@ -64,62 +92,32 @@ function init() {
    // attach the render-supplied DOM element
    container.appendChild(renderer.domElement);
 
-   // set up the sphere vars
-   var radius = 2,
-       segments = 16,
-       rings = 16;
+   // initialize the devices
+   for(mid = 0; mid < settings.numDevices; mid++) {
 
-   var sphereMaterial =
-      new THREE.MeshBasicMaterial(
-                                  {
-                                     color: 0xCC0000
-                                  });
-
-
-   for(mid = 0; mid < numSpheres; mid++) {
-
-      spheres[mid] = new THREE.Mesh(
-
-                                    new THREE.CubeGeometry(1,1,1),
-                                    //radius,
-                                    //segments,
-                                    //rings),
-
-         sphereMaterial);
-
-      var xpos = (Math.random() * stadiumXSize);
-      var ypos = (Math.random() * stadiumYSize);
-      var zpos = (Math.random() * stadiumZSize);
+      devices[mid] = new THREE.Mesh(settings.deviceShape, settings.material);
 
       // set it's initial position
-      spheres[mid].position = { 
-         x: xpos,
-         y: ypos, 
-         z: zpos
-      };
+      devices[mid].position = settings.distribution(mid);
 
       // add the sphere to the scene
-      scene.add(spheres[mid]);
+      scene.add(devices[mid]);
 
-      spheres[mid].machine = new Module.Machine(xpos, ypos, zpos, script);
-
+      // initialize the Proto VM
+      devices[mid].machine = new Module.Machine(
+         devices[mid].position.x, 
+         devices[mid].position.y, 
+         devices[mid].position.z, 
+         script);
    }
 
 
    // create a point light
-   var pointLight =
-      new THREE.PointLight(0xFFFFFF);
-
-   // set its position
-   pointLight.position.x = 10;
-   pointLight.position.y = 50;
-   pointLight.position.z = 130;
-
-   // add to the scene
+   var pointLight = settings.pointLight;
+   pointLight.position = settings.pointLightPos;
    scene.add(pointLight);
 
    renderer.render(scene, camera);
-
 
    controls = new THREE.TrackballControls(camera, renderer.domElement);
 
@@ -140,29 +138,37 @@ function init() {
 
 function animate() {
 
+   if(!paused && settings.stopWhen && settings.stopWhen(time)) {
+      pause()
+   }
+
    if(!paused) {
 
-      for(mid=0; mid < numSpheres; mid++) {
-         spheres[mid].machine.executeRound(time);
-         var updatedXpos = spheres[mid].machine.x + spheres[mid].machine.dx;
-         var updatedYpos = spheres[mid].machine.y + spheres[mid].machine.dy;
-         var updatedZpos = spheres[mid].machine.z + spheres[mid].machine.dz;
+      for(mid=0; mid < settings.numDevices; mid++) {
 
-         spheres[mid].machine.dx = 0;
-         spheres[mid].machine.dy = 0;
-         spheres[mid].machine.dz = 0;
+         // while (!machine.finished()) machine.step();
+         devices[mid].machine.executeRound(time);
 
-         spheres[mid].position = {
-            x: updatedXpos,
-            y: updatedYpos,
-            z: updatedZpos
+         // update the position of the device
+         devices[mid].position = {
+            x: devices[mid].machine.x + (devices[mid].machine.dx * settings.positionMultipliers.x),
+            y: devices[mid].machine.y + (devices[mid].machine.dy * settings.positionMultipliers.y),
+            z: devices[mid].machine.z + (devices[mid].machine.dz * settings.positionMultipliers.z)
          };
 
-         spheres[mid].machine.x = updatedXpos;
-         spheres[mid].machine.y = updatedYpos;
-         spheres[mid].machine.Z = updatedZpos;
+         // update the position of the Proto VM
+         devices[mid].machine.x = devices[mid].position.x;
+         devices[mid].machine.y = devices[mid].position.y;
+         devices[mid].machine.z = devices[mid].position.z;
+
+         // reset the position differential
+         devices[mid].machine.dx = 0;
+         devices[mid].machine.dy = 0;
+         devices[mid].machine.dz = 0;
+
       }
-      time++;
+
+      time = time + settings.stepSize;
       
   }
 
