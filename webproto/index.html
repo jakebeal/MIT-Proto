@@ -123,8 +123,9 @@
 <script src="js/jquery.numeric.js"></script>
 <script src="js/jquery-ui.js"></script>
 <script src="js/jquery.jnotify.min.js"></script>
-<script src="js/webproto.js"></script>
 <script src="js/three.min.js"></script>
+<script src="js/spatialcomputer.js"></script>
+<script src="js/webproto.js"></script>
 <script src="js/TrackballControls.js"></script>
 <script src="js/stats.min.js"></script>
 <script src="js/protosim.js"></script>
@@ -195,7 +196,7 @@
           type: 'GET',
           dataType: "json",
           async: false,
-          url: '/cgi-bin/webcompiler',
+          url: 'http://proto.bbn.com/cgi-bin/webcompiler',
           data: { "program" : program },
           success: function(data) {
              console.log(data.script);
