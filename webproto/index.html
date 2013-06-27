@@ -82,7 +82,11 @@
 <body>
 
    <div id="fullpage">
-      <div id="header"> <button id="settings">Settings</button> </div>
+      <div id="header"> 
+         <img height="100px" src="http://proto.bbn.com/commons/sites/default/files/commons_connect_logo.png"/> 
+         <button id="runProgramButton">Run</button> 
+         <button id="settingsButton">Settings</button> 
+      </div>
       <div id="sidebar" class="sidebar">
          <span id="position"></span>
          <div id="dragbar"></div>
@@ -144,8 +148,9 @@
        }
     });
 
-    $( "#settings" ).click(function() {
-       $( "#settingsDialog" ).dialog( "open" );
+    $("#settingsButton").click(function() {
+       $("#settingsDialog").dialog( "open" );
+       $("#numDevicesInput").val(settings.numDevices);
     });
 
     $("#numDevicesInput").change(function() {
@@ -155,6 +160,26 @@
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/proto");
+    
+    $( "#runProgramButton" ).click(function() {
+       runProgram(editor);
+    });
+
+    function runProgram(editor) {
+       var program = "";
+       var editorLines= editor.getValue().split('\n');
+       $.each(editorLines, function(lineNumber, line) {
+          var commentCharAt = line.indexOf(';');
+          if(commentCharAt >= 0) {
+             line = line.substring(0, commentCharAt);
+          }
+          line = $.trim(line);
+          if(line.length > 0) {
+             program += line + ' ';
+          }
+       });
+       runSimulator(program);
+    }
 
     var script;
     function runSimulator(program) {
@@ -217,19 +242,7 @@
           name: 'myCommand',
           bindKey: {win: 'Ctrl-M',  mac: 'Ctrl-M'},
           exec: function(editor) {
-             var program = "";
-             var editorLines= editor.getValue().split('\n');
-             $.each(editorLines, function(lineNumber, line) {
-                var commentCharAt = line.indexOf(';');
-                if(commentCharAt >= 0) {
-                   line = line.substring(0, commentCharAt);
-                }
-                line = $.trim(line);
-                if(line.length > 0) {
-                   program += line + ' ';
-                }
-             });
-             runSimulator(program);
+             runProgram(editor);
           },
           readOnly: false // false if this command should not apply in readOnly mode
        });
