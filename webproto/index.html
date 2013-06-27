@@ -73,25 +73,16 @@
       height: 99%;
       width: 99%;
    }
-   /*
-   body {
-      color: #fff;
-      font-family:Monospace;
-      font-size:13px;
-      background-color: #050505;
-      margin: 0px;
-      overflow: hidden;
-   }
-   */
 </style>
-<link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 <link rel="stylesheet" type="text/css" href="css/jquery.jnotify.css">
 
 </head>
 <body>
 
    <div id="fullpage">
-      <div id="header"> header </div>
+      <div id="header"> <button id="settings">Settings</button> </div>
       <div id="sidebar" class="sidebar">
          <span id="position"></span>
          <div id="dragbar"></div>
@@ -119,7 +110,13 @@
 
    </div>
 
+   <div id="settingsDialog" title="Settings">
+      Number of Devices:
+      <input id="numDevicesInput" class="positive-integer" type="text" /><br />
+   </div>
+
 <script src="js/jquery-2.0.2.min.js"></script>
+<script src="js/jquery.numeric.js"></script>
 <script src="js/jquery-ui.js"></script>
 <script src="js/jquery.jnotify.min.js"></script>
 <script src="js/webproto.js"></script>
@@ -129,6 +126,32 @@
 <script src="js/protosim.js"></script>
 <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
+
+   $(".numeric").numeric();
+   $(".integer").numeric(false, function() { alert("Integers only"); this.value = ""; this.focus(); });
+   $(".positive").numeric({ negative: false }, function() { alert("No negative values"); this.value = ""; this.focus(); });
+   $(".positive-integer").numeric({ decimal: false, negative: false }, function() { alert("Positive integers only"); this.value = ""; this.focus(); });
+
+    $( "#settingsDialog" ).dialog({
+       autoOpen: false,
+       show: {
+          effect: "slide",
+          duration: 500
+       },
+       hide: {
+          effect: "slide",
+          duration: 500
+       }
+    });
+
+    $( "#settings" ).click(function() {
+       $( "#settingsDialog" ).dialog( "open" );
+    });
+
+    $("#numDevicesInput").change(function() {
+       settings.numDevices = parseInt($("#numDevicesInput").val());
+    });
+
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/proto");
