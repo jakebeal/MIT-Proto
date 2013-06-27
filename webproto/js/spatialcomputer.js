@@ -68,6 +68,9 @@ function SpatialComputer() {
             this.devices[mid].deviceTimer.nextTransmit(this.time);
           this.devices[mid].nextComputeTime = 
             this.devices[mid].deviceTimer.nextCompute(this.time);
+
+          this.devices[mid].requestDeath = false;
+          this.devices[mid].requestClone = false;
           
           if(simulatorSettings.deviceInitHook) { simulatorSettings.deviceInitHook(this.device[mid]); }
        }
@@ -96,6 +99,11 @@ function SpatialComputer() {
              // call the deviceExecuteHook
              if(simulatorSettings.deviceExecuteHook) { simulatorSettings.deviceExecuteHook(this.devices[mid]); }
           }
+
+          // update the color of the device
+          this.devices[mid].material.color.r = (this.devices[mid].machine.red / 255);
+          this.devices[mid].material.color.g = (this.devices[mid].machine.green / 255);
+          this.devices[mid].material.color.b = (this.devices[mid].machine.blue / 255);
 
           // update the position of the device
           this.devices[mid].position = {
