@@ -8,21 +8,27 @@ var simulatorSettings = {
     startPaused : false,
     startTime : 0.0,
     distribution : function(mid) {
-        return {
-	    x : (Math.random() * simulatorSettings.stadiumSize.x), 
-	    y : (Math.random() * simulatorSettings.stadiumSize.y), 
-	    z : (Math.random() * simulatorSettings.stadiumSize.z)
-        };
+       return {
+          x : (Math.random() * simulatorSettings.stadiumSize.x), 
+          y : (Math.random() * simulatorSettings.stadiumSize.y), 
+          z : (Math.random() * simulatorSettings.stadiumSize.z)
+       };
     },
     stopWhen : function(time) {
         return false;
-    }
+    },
+    preInitHook : null,
+    deviceInitHook : null,
+    preUpdateHook : null,
+    deviceExecuteHook : null
 };
 
 function SpatialComputer() {
     this.devices = new Array();
     this.time = 0.0;
     this.init = function() {
+      if(simulatorSettings.preInitHook) { simulatorSettings.preInitHook(); }
+
        this.time = simulatorSettings.startTime;
 
        // initialize the devices
@@ -38,18 +44,58 @@ function SpatialComputer() {
 
           // initialize the Proto VM
           this.devices[mid].machine = new Module.Machine(
-                                                                    this.devices[mid].position.x, 
-                                                                    this.devices[mid].position.y, 
-                                                                    this.devices[mid].position.z, 
-                                                                    script);
+                                                         this.devices[mid].position.x, 
+                                                         this.devices[mid].position.y, 
+                                                         this.devices[mid].position.z, 
+                                                         script);
+
+          this.devices[mid].machine.resetActuators = function() {
+             this.dx = 0;
+             this.dy = 0;
+             this.dz = 0;
+          }
+
+          // Set the device's internal time
+          this.devices[mid].time = this.time;
+          
+          // Set the device's model of time
+          this.devices[mid].deviceTimer = {
+             nextTransmit : function(currentTime) { return 0.5 + currentTime; },
+             nextCompute : function(currentTime) { return 1 + currentTime; }
+          };
+          
+          this.devices[mid].nextTransmitTime = 
+            this.devices[mid].deviceTimer.nextTransmit(this.time);
+          this.devices[mid].nextComputeTime = 
+            this.devices[mid].deviceTimer.nextCompute(this.time);
+          
+          if(simulatorSettings.deviceInitHook) { simulatorSettings.deviceInitHook(this.device[mid]); }
        }
     };
 
     this.update = function() {
+      if(simulatorSettings.preUpdateHook) { simulatorSettings.preUpdateHook(); }
+
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
 
-          // while (!machine.finished()) machine.step();
-          this.devices[mid].machine.executeRound(this.time);
+          // if the machine should execute this timestep
+          if(this.time >= this.devices[mid].nextComputeTime) {
+             // zero-out all actuators
+             this.devices[mid].machine.resetActuators();
+
+             // while (!machine.finished()) machine.step();
+             this.devices[mid].machine.executeRound(this.time);
+
+             // update device time, etc...
+             this.devices[mid].time = this.time;
+             this.devices[mid].nextTransmitTime = 
+                this.devices[mid].deviceTimer.nextTransmit(this.time);
+             this.devices[mid].nextComputeTime = 
+                this.devices[mid].deviceTimer.nextCompute(this.time);
+             
+             // call the deviceExecuteHook
+             if(simulatorSettings.deviceExecuteHook) { simulatorSettings.deviceExecuteHook(this.devices[mid]); }
+          }
 
           // update the position of the device
           this.devices[mid].position = {
@@ -62,11 +108,6 @@ function SpatialComputer() {
           this.devices[mid].machine.x = this.devices[mid].position.x;
           this.devices[mid].machine.y = this.devices[mid].position.y;
           this.devices[mid].machine.z = this.devices[mid].position.z;
-
-          // reset the position differential
-          this.devices[mid].machine.dx = 0;
-          this.devices[mid].machine.dy = 0;
-          this.devices[mid].machine.dz = 0;
 
        }
 

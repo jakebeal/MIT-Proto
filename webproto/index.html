@@ -151,11 +151,11 @@
 
     $("#settingsButton").click(function() {
        $("#settingsDialog").dialog( "open" );
-       $("#numDevicesInput").val(settings.numDevices);
+       $("#numDevicesInput").val(simulatorSettings.numDevices);
     });
 
     $("#numDevicesInput").change(function() {
-       settings.numDevices = parseInt($("#numDevicesInput").val());
+       simulatorSettings.numDevices = parseInt($("#numDevicesInput").val());
     });
 
     var editor = ace.edit("editor");
