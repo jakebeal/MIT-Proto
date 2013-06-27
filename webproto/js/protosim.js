@@ -12,21 +12,6 @@ var viewSettings = {
     showWebGlStats : true
 };
 
-// Timing
-var paused = simulatorSettings.startPaused;
-
-var spatialComputer = new SpatialComputer();
-
-var renderer = new THREE.WebGLRenderer();
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(
-    viewSettings.cameraView.angle,
-    viewSettings.cameraView.aspect,
-    viewSettings.cameraView.near,
-    viewSettings.cameraView.far);
-
-var stats = new Stats();
-
 function unpause() {
    paused = false;
    $.jnotify("Un-Paused");
@@ -51,7 +36,26 @@ function keyHandlers(e) {
    }
 };
 
+function destroy() {
+   //?
+}
+
+var paused, spatialComputer, renderer, scene, camera, stats;
+
 function init() {
+   scene = new THREE.Scene();
+   renderer = new THREE.WebGLRenderer();
+   camera = new THREE.PerspectiveCamera(
+                                            viewSettings.cameraView.angle,
+                                            viewSettings.cameraView.aspect,
+                                            viewSettings.cameraView.near,
+                                            viewSettings.cameraView.far);
+   stats = new Stats();
+   
+   // Timing
+   paused = simulatorSettings.startPaused;
+
+   spatialComputer = new SpatialComputer();
 
    // get the DOM element to attach to
    var $container = $('#container');

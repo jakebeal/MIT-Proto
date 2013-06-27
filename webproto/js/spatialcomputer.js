@@ -26,6 +26,56 @@ var simulatorSettings = {
 function SpatialComputer() {
     this.devices = new Array();
     this.time = 0.0;
+    this.nextMid = 0;
+    this.getNextMid = function() {
+      return this.nextMid++;
+    };
+
+    this.addDevice = function() {
+       var mid = this.getNextMid();
+       this.devices[mid] = new THREE.Mesh(simulatorSettings.deviceShape, simulatorSettings.material);
+
+       // set it's initial position
+       this.devices[mid].position = simulatorSettings.distribution(mid);
+
+       // add the sphere to the scene
+       scene.add(this.devices[mid]);
+
+       // initialize the Proto VM
+       this.devices[mid].machine = new Module.Machine(
+                                                      this.devices[mid].position.x, 
+                                                      this.devices[mid].position.y, 
+                                                      this.devices[mid].position.z, 
+                                                      script);
+
+       this.devices[mid].machine.resetActuators = function() {
+          this.dx = 0;
+          this.dy = 0;
+          this.dz = 0;
+       }
+
+       // Set the device's internal time
+       this.devices[mid].time = this.time;
+
+       // Set the device's model of time
+       this.devices[mid].deviceTimer = {
+          nextTransmit : function(currentTime) { return 0.5 + currentTime; },
+          nextCompute : function(currentTime) { return 1 + currentTime; }
+       };
+
+       // Initialize the device's next compute/transmit time
+       this.devices[mid].nextTransmitTime = 
+          this.devices[mid].deviceTimer.nextTransmit(this.time);
+       this.devices[mid].nextComputeTime = 
+          this.devices[mid].deviceTimer.nextCompute(this.time);
+
+       // Flags for die/clone
+       this.devices[mid].requestDeath = false;
+       this.devices[mid].requestClone = false;
+
+       if(simulatorSettings.deviceInitHook) { simulatorSettings.deviceInitHook(this.device[mid]); }
+    };
+
     this.init = function() {
       if(simulatorSettings.preInitHook) { simulatorSettings.preInitHook(); }
 
@@ -33,56 +83,19 @@ function SpatialComputer() {
 
        // initialize the devices
        for(mid = 0; mid < simulatorSettings.numDevices; mid++) {
-
-          this.devices[mid] = new THREE.Mesh(simulatorSettings.deviceShape, simulatorSettings.material);
-
-          // set it's initial position
-          this.devices[mid].position = simulatorSettings.distribution(mid);
-
-          // add the sphere to the scene
-          scene.add(this.devices[mid]);
-
-          // initialize the Proto VM
-          this.devices[mid].machine = new Module.Machine(
-                                                         this.devices[mid].position.x, 
-                                                         this.devices[mid].position.y, 
-                                                         this.devices[mid].position.z, 
-                                                         script);
-
-          this.devices[mid].machine.resetActuators = function() {
-             this.dx = 0;
-             this.dy = 0;
-             this.dz = 0;
-          }
-
-          // Set the device's internal time
-          this.devices[mid].time = this.time;
-          
-          // Set the device's model of time
-          this.devices[mid].deviceTimer = {
-             nextTransmit : function(currentTime) { return 0.5 + currentTime; },
-             nextCompute : function(currentTime) { return 1 + currentTime; }
-          };
-          
-          this.devices[mid].nextTransmitTime = 
-            this.devices[mid].deviceTimer.nextTransmit(this.time);
-          this.devices[mid].nextComputeTime = 
-            this.devices[mid].deviceTimer.nextCompute(this.time);
-
-          this.devices[mid].requestDeath = false;
-          this.devices[mid].requestClone = false;
-          
-          if(simulatorSettings.deviceInitHook) { simulatorSettings.deviceInitHook(this.device[mid]); }
+         this.addDevice();
        }
     };
 
     this.update = function() {
       if(simulatorSettings.preUpdateHook) { simulatorSettings.preUpdateHook(); }
 
+       // for each device...
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
 
           // if the machine should execute this timestep
           if(this.time >= this.devices[mid].nextComputeTime) {
+
              // zero-out all actuators
              this.devices[mid].machine.resetActuators();
 
@@ -101,9 +114,18 @@ function SpatialComputer() {
           }
 
           // update the color of the device
-          this.devices[mid].material.color.r = (this.devices[mid].machine.red / 255);
-          this.devices[mid].material.color.g = (this.devices[mid].machine.green / 255);
-          this.devices[mid].material.color.b = (this.devices[mid].machine.blue / 255);
+          if(this.devices[mid].machine.red <= 0 &&
+             this.devices[mid].machine.green <= 0 &&
+             this.devices[mid].machine.blue <= 0) {
+            // Default color (red)
+             this.devices[mid].material.color.r = 0.8;
+             this.devices[mid].material.color.g = 0.0;
+             this.devices[mid].material.color.b = 0.0;
+          } else {
+             this.devices[mid].material.color.r = (this.devices[mid].machine.red / 255);
+             this.devices[mid].material.color.g = (this.devices[mid].machine.green / 255);
+             this.devices[mid].material.color.b = (this.devices[mid].machine.blue / 255);
+          }
 
           // update the position of the device
           this.devices[mid].position = {
@@ -117,8 +139,14 @@ function SpatialComputer() {
           this.devices[mid].machine.y = this.devices[mid].position.y;
           this.devices[mid].machine.z = this.devices[mid].position.z;
 
+          // clone, TODO: die
+          if(this.devices[mid].requestClone) {
+            spatialComputer.addDevice();
+          }
+
        }
 
+       // update the simulator time
        this.time = this.time + simulatorSettings.stepSize;
     };
 };
