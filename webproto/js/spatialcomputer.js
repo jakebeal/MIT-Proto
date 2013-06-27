@@ -19,60 +19,57 @@ var simulatorSettings = {
     }
 };
 
-var spatialComputer = {
-    devices : new Array(),
-    time : 0.0
+function SpatialComputer() {
+    this.devices = new Array();
+    this.time = 0.0;
+    this.init = function() {
+       this.time = simulatorSettings.startTime;
+
+       // initialize the devices
+       for(mid = 0; mid < simulatorSettings.numDevices; mid++) {
+
+          this.devices[mid] = new THREE.Mesh(simulatorSettings.deviceShape, simulatorSettings.material);
+
+          // set it's initial position
+          this.devices[mid].position = simulatorSettings.distribution(mid);
+
+          // add the sphere to the scene
+          scene.add(this.devices[mid]);
+
+          // initialize the Proto VM
+          this.devices[mid].machine = new Module.Machine(
+                                                                    this.devices[mid].position.x, 
+                                                                    this.devices[mid].position.y, 
+                                                                    this.devices[mid].position.z, 
+                                                                    script);
+       }
+    };
+
+    this.update = function() {
+       for(mid=0; mid < simulatorSettings.numDevices; mid++) {
+
+          // while (!machine.finished()) machine.step();
+          this.devices[mid].machine.executeRound(this.time);
+
+          // update the position of the device
+          this.devices[mid].position = {
+             x: this.devices[mid].machine.x + (this.devices[mid].machine.dx),
+             y: this.devices[mid].machine.y + (this.devices[mid].machine.dy),
+             z: this.devices[mid].machine.z + (this.devices[mid].machine.dz)
+          };
+
+          // update the position of the Proto VM
+          this.devices[mid].machine.x = this.devices[mid].position.x;
+          this.devices[mid].machine.y = this.devices[mid].position.y;
+          this.devices[mid].machine.z = this.devices[mid].position.z;
+
+          // reset the position differential
+          this.devices[mid].machine.dx = 0;
+          this.devices[mid].machine.dy = 0;
+          this.devices[mid].machine.dz = 0;
+
+       }
+
+       this.time = this.time + simulatorSettings.stepSize;
+    };
 };
-
-spatialComputer.init = function() {
-    spatialComputer.time = simulatorSettings.startTime;
-    
-    // initialize the devices
-    for(mid = 0; mid < simulatorSettings.numDevices; mid++) {
-	
-	spatialComputer.devices[mid] = new THREE.Mesh(simulatorSettings.deviceShape, simulatorSettings.material);
-	
-	// set it's initial position
-	spatialComputer.devices[mid].position = simulatorSettings.distribution(mid);
-	
-	// add the sphere to the scene
-	scene.add(spatialComputer.devices[mid]);
-	
-	// initialize the Proto VM
-	spatialComputer.devices[mid].machine = new Module.Machine(
-	    spatialComputer.devices[mid].position.x, 
-	    spatialComputer.devices[mid].position.y, 
-	    spatialComputer.devices[mid].position.z, 
-	    script);
-    }
-}
-    
-spatialComputer.update = function() {
-    for(mid=0; mid < simulatorSettings.numDevices; mid++) {
-	
-        // while (!machine.finished()) machine.step();
-        spatialComputer.devices[mid].machine.executeRound(spatialComputer.time);
-	
-        // update the position of the device
-        spatialComputer.devices[mid].position = {
-            x: spatialComputer.devices[mid].machine.x + (spatialComputer.devices[mid].machine.dx),
-            y: spatialComputer.devices[mid].machine.y + (spatialComputer.devices[mid].machine.dy),
-            z: spatialComputer.devices[mid].machine.z + (spatialComputer.devices[mid].machine.dz)
-        };
-	
-        // update the position of the Proto VM
-        spatialComputer.devices[mid].machine.x = spatialComputer.devices[mid].position.x;
-        spatialComputer.devices[mid].machine.y = spatialComputer.devices[mid].position.y;
-        spatialComputer.devices[mid].machine.z = spatialComputer.devices[mid].position.z;
-	
-        // reset the position differential
-        spatialComputer.devices[mid].machine.dx = 0;
-        spatialComputer.devices[mid].machine.dy = 0;
-        spatialComputer.devices[mid].machine.dz = 0;
-	
-    }
-    
-    spatialComputer.time = spatialComputer.time + simulatorSettings.stepSize;
-}
-
-

@@ -15,6 +15,8 @@ var viewSettings = {
 // Timing
 var paused = simulatorSettings.startPaused;
 
+var spatialComputer = new SpatialComputer();
+
 var renderer = new THREE.WebGLRenderer();
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(
@@ -71,7 +73,7 @@ function init() {
    // attach the render-supplied DOM element
    container.appendChild(renderer.domElement);
 
-    spatialComputer.init();
+   spatialComputer.init();
 
    // create a point light
    var pointLight = viewSettings.pointLight;

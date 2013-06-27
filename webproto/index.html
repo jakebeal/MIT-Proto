@@ -196,7 +196,7 @@
           type: 'GET',
           dataType: "json",
           async: false,
-          url: 'http://proto.bbn.com/cgi-bin/webcompiler',
+          url: '/cgi-bin/webcompiler',
           data: { "program" : program },
           success: function(data) {
              console.log(data.script);
