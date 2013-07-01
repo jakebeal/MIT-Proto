@@ -5,55 +5,53 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
-  body {
-  color: #fff;
-  font-family:Monospace;
-  font-size:13px;
-  text-align:center;
-  background-color: #050505;
-  margin: 0px;
-  overflow: hidden;
-  }
+   body {
+      color: #fff;
+      font-family:Monospace;
+      font-size:13px;
+      text-align:center;
+      background-color: #050505;
+      margin: 0px;
+      overflow: hidden;
+   }
+   #container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 99%;
+      width: 99%;
+   }
 </style>
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="css/jquery.jnotify.css">
+
 </head>
 <body>
    <div id="container"> </div>
 
-   <link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
-   <link rel="stylesheet" type="text/css" href="css/jquery.jnotify.css">
-
-   <script src="js/jquery-2.0.2.min.js"></script>
-   <script src="js/jquery-ui.js"></script>
-   <script src="js/jquery.jnotify.min.js"></script>
-   <script src="js/webproto.js"></script>
-   <script src="js/three.min.js"></script>
-   <script src="js/TrackballControls.js"></script>
-   <script src="js/stats.min.js"></script>
-   <script src="js/protosim.js"></script>
+<script src="js/jquery-2.0.2.min.js"></script>
+<script src="js/jquery.numeric.js"></script>
+<script src="js/jquery-ui.js"></script>
+<script src="js/jquery.jnotify.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js/spatialcomputer.js"></script>
+<script src="js/webproto.js"></script>
+<script src="js/TrackballControls.js"></script>
+<script src="js/stats.min.js"></script>
+<script src="js/protosim.js"></script>
    <script>
 
       $(document).ready(function() {
          $(document).keydown(keyHandlers);
       });
 
+      var data = { "script" : ["DEF_VM_OP", "0", "0", "0", "4", "1", "0", "8", "3", "DEF_NUM_VEC_3_OP", "DEF_NUM_VEC_3_OP", "DEF_FUN_2_OP", "LIT_0_OP", "RET_OP", "DEF_FUN_OP", "47", "GLO_REF_2_OP", "INIT_FEEDBACK_OP", "0", "LET_1_OP", "REF_0_OP", "REF_0_OP", "DT_OP", "ADD_OP", "FEEDBACK_OP", "0", "LET_1_OP", "REF_0_OP", "POP_LET_1_OP", "POP_LET_1_OP", "LIT_OP", "20", "LT_OP", "IF_OP", "20", "LIT_FLO_OP", "0", "0", "128", "191", "LIT_FLO_OP", "0", "0", "128", "191", "LIT_FLO_OP", "0", "0", "128", "191", "TUP_OP", "1", "3", "JMP_OP", "6", "LIT_1_OP", "LIT_1_OP", "LIT_1_OP", "TUP_OP", "0", "3", "MOV_OP", "RET_OP", "EXIT_OP"] };
       var script = new Module.Script();
-      $.ajax({
-         type: 'GET',
-         dataType: "json",
-         async: false,
-         url: '/cgi-bin/p2b',
-         data: { "program" : '(mov (if (< (timer) 20) (tup 1 1 1) (tup -1 -1 -1)))' },
-         success: function(data) {
-            console.log(data.script);
-            $.each(data.script, function(index, value) {
-               script.push_back(value);
-            });
-         },
-         error: function(err) {
-            $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
-            console.log("ERROR: " + err);
-            console.log(err);
-         }
+      $.each(data.script, function(index, value) {
+         script.push_back(value);
       });
 
       init();
