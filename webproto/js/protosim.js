@@ -42,6 +42,8 @@ function destroy() {
 
 var paused, spatialComputer, renderer, scene, camera, stats;
 
+var neighborLines = new Array();
+
 function init() {
    scene = new THREE.Scene();
    renderer = new THREE.WebGLRenderer();
@@ -106,10 +108,33 @@ function init() {
 function animate() {
 
     if(!paused && simulatorSettings.stopWhen && simulatorSettings.stopWhen(spatialComputer.time)) {
-	pause()
+       pause()
     }
     if(!paused) {
-	spatialComputer.update();
+       spatialComputer.update();
+
+       if(neighborLines.length > 0) {
+         $.each(neighborLines, function(index, line) {
+            scene.remove(line);
+         });
+         neighborLines = new Array();
+       }
+
+       if(simulatorSettings.drawEdges) {
+          $.each(spatialComputer.devices, function(index, device) {
+             neighborMap(device, spatialComputer.devices, function(neighbor, d) {
+                var geom = new THREE.Geometry();
+                geom.vertices.push(new THREE.Vertex(device.position));
+                geom.vertices.push(new THREE.Vertex(neighbor.position));
+                var line = new THREE.Line(geom, simulatorSettings.lineMaterial, THREE.LinePieces);
+                line.scale.x = line.scale.y = line.scale.z = 1;
+                line.originalScale = 1;
+                line.geometry.__dirtyVerticies = true;
+                scene.add(line);
+                neighborLines.push(line);
+             });
+          });
+       }
     }
     
     requestAnimationFrame( animate );
