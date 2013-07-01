@@ -6,6 +6,7 @@ var simulatorSettings = {
     lineMaterial : new THREE.LineBasicMaterial( { color: 0xCCCCCC, opacity: 0.5, linewidth: 0.5 } ),
     material : new THREE.MeshBasicMaterial( { color: 0xCC0000 }),
     deviceShape : new THREE.CubeGeometry(1,1,1),
+    //deviceShape : new THREE.SphereGeometry(1),
     stepSize : 1.0,
     startPaused : false,
     startTime : 0.0,
@@ -144,6 +145,12 @@ function SpatialComputer() {
              // call the deviceExecuteHook
              if(simulatorSettings.deviceExecuteHook) { simulatorSettings.deviceExecuteHook(this.devices[mid]); }
           }
+          if(this.time >= this.devices[mid].nextTransmitTime) {
+	      neighborMap(this.devices[mid],this.devices,
+			  function (nbr,d) { 
+			    d.machine.deliverMessage(nbr.machine); 
+			  });
+	  }
 
           // update the color of the device
           if(this.devices[mid].machine.red <= 0 &&
