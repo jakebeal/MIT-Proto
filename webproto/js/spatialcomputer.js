@@ -1,6 +1,6 @@
 var simulatorSettings = {
     numDevices : 100,
-    radius : 10,
+    radius : 35,
     stadiumSize : { x:100, y:100, z:100 },
     material : new THREE.MeshBasicMaterial( { color: 0xCC0000 }),
     deviceShape : new THREE.CubeGeometry(1,1,1),
@@ -22,6 +22,34 @@ var simulatorSettings = {
     preUpdateHook : null,
     deviceExecuteHook : null
 };
+
+function distanceBetweenDevices(deviceA, deviceB) {
+   var ma = deviceA.machine;
+   var mb = deviceB.machine;
+   return Math.sqrt(Math.pow(ma.x - mb.x, 2) + Math.pow(ma.y - mb.y, 2) + Math.pow(ma.z - mb.z, 2));
+};
+
+function areNeighbors(deviceA, deviceB) {
+   return distanceBetweenDevices(deviceA, deviceB) <= simulatorSettings.radius;
+}
+
+/**
+ * Calls toCallOnNeighbors() on each device in allDevices that
+ * are a neighbor of device.
+ *
+ * toCallOnNeighbors() will be called with two arguments:
+ * 1) the neighbor device
+ * 2) device (i.e., from args)
+ */
+function neighborMap(device, allDevices, toCallOnNeighbors) {
+   $.each(allDevices, function(index, value) {
+      if(areNeighbors(device, value)) {
+         if(toCallOnNeighbors) {
+            toCallOnNeighbors(value, device);
+         }
+      }
+   });
+}
 
 function SpatialComputer() {
     this.devices = new Array();
@@ -47,6 +75,8 @@ function SpatialComputer() {
                                                       this.devices[mid].position.y, 
                                                       this.devices[mid].position.z, 
                                                       script);
+
+       this.devices[mid].machine.id = mid;
 
        this.devices[mid].machine.resetActuators = function() {
           this.dx = 0;
