@@ -126,6 +126,12 @@ function SpatialComputer() {
        // for each device...
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
 
+          if(this.time >= this.devices[mid].nextTransmitTime) {
+	      neighborMap(this.devices[mid],this.devices,
+			  function (nbr,d) { 
+			    d.machine.deliverMessage(nbr.machine); 
+			  });
+          
           // if the machine should execute this timestep
           if(this.time >= this.devices[mid].nextComputeTime) {
 
@@ -145,11 +151,6 @@ function SpatialComputer() {
              // call the deviceExecuteHook
              if(simulatorSettings.deviceExecuteHook) { simulatorSettings.deviceExecuteHook(this.devices[mid]); }
           }
-          if(this.time >= this.devices[mid].nextTransmitTime) {
-	      neighborMap(this.devices[mid],this.devices,
-			  function (nbr,d) { 
-			    d.machine.deliverMessage(nbr.machine); 
-			  });
 	  }
 
           // update the color of the device
