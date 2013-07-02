@@ -2,7 +2,10 @@ var simulatorSettings = {
     numDevices : 100,
     radius : 35,
     drawEdges : false,
-    stadiumSize : { x:100, y:100, z:100 },
+    stadiumRegion : { x_min:-50, x_max:50, 
+		      y_min:-50, y_max:50, 
+		      z_min:0, z_max:0 },
+    distributionRegion : false, // default to stadiumsize
     lineMaterial : new THREE.LineBasicMaterial( { color: 0x00CC00, opacity: 0.8, linewidth: 0.5 } ),
     material : new THREE.MeshBasicMaterial( { color: 0xCC0000 }),
     deviceShape : new THREE.CubeGeometry(1,1,1),
@@ -11,10 +14,15 @@ var simulatorSettings = {
     startPaused : false,
     startTime : 0.0,
     distribution : function(mid) {
+       if (simulatorSettings.distributionRegion) { 
+	   size = simulatorSettings.distributionRegion;
+       } else { 
+	   size = simulatorSettings.stadiumRegion;
+       }
        return {
-          x : (Math.random() * simulatorSettings.stadiumSize.x), 
-          y : (Math.random() * simulatorSettings.stadiumSize.y), 
-          z : (Math.random() * simulatorSettings.stadiumSize.z)
+          x : size.x_min + (Math.random() * (size.x_max - size.x_min)), 
+          y : size.y_min + (Math.random() * (size.y_max - size.y_min)), 
+          z : size.z_min + (Math.random() * (size.z_max - size.z_min)), 
        };
     },
     stopWhen : function(time) {

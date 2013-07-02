@@ -4,11 +4,10 @@ var viewSettings = {
         angle : 45,
         aspect : (4 / 3),
         near : 0.1,
-        far : 10000,
-        zposition : 300
+        far : 10000
     },
-    pointLight : new THREE.PointLight(0xFFFFFF),
-    pointLightPos : { x:10, y:50, z:130 },
+    baseLight : new THREE.AmbientLight(0x202020), // soft white light
+    highLight : new THREE.DirectionalLight(0xC0C0C0), // hard white light
     showWebGlStats : true,
     antialias : true
 };
@@ -73,8 +72,17 @@ function init() {
    scene.add(camera);
 
    // the camera starts at 0,0,0
-   // so pull it back
-   camera.position.z = viewSettings.cameraView.zposition;
+   // so pull it back to see the whole arena
+   aspect_ratio = $('#container').width() / $('#container').height();
+   y_angle = Math.PI/8; // half of 45 degrees, in radians
+   width = simulatorSettings.stadiumRegion.x_max - 
+	simulatorSettings.stadiumRegion.x_min;
+   height = simulatorSettings.stadiumRegion.y_max -
+	simulatorSettings.stadiumRegion.y_min;
+   fit_zy = (width/2) / Math.tan(y_angle);
+   x_angle = Math.atan(Math.tan(y_angle)*aspect_ratio);
+   fit_zx = (height/2) / Math.tan(x_angle);
+   camera.position.z = Math.max(fit_zx, fit_zy)*1.05;
 
    // start the renderer
    renderer.setSize($('#container').width(), $('#container').height());
@@ -82,12 +90,12 @@ function init() {
    // attach the render-supplied DOM element
    container.appendChild(renderer.domElement);
 
-   spatialComputer.init();
+   // create the light sources
+   scene.add(viewSettings.baseLight);
+   scene.add(viewSettings.highLight);
+   viewSettings.highLight.position.set(0.5,0.2,1);
 
-   // create a point light
-   var pointLight = viewSettings.pointLight;
-   pointLight.position = viewSettings.pointLightPos;
-   scene.add(pointLight);
+   spatialComputer.init();
 
    renderer.render(scene, camera);
 
