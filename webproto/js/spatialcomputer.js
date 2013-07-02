@@ -3,7 +3,7 @@ var simulatorSettings = {
     radius : 35,
     drawEdges : false,
     stadiumSize : { x:100, y:100, z:100 },
-    lineMaterial : new THREE.LineBasicMaterial( { color: 0xCCCCCC, opacity: 0.5, linewidth: 0.5 } ),
+    lineMaterial : new THREE.LineBasicMaterial( { color: 0x00CC00, opacity: 0.8, linewidth: 0.5 } ),
     material : new THREE.MeshBasicMaterial( { color: 0xCC0000 }),
     deviceShape : new THREE.CubeGeometry(1,1,1),
     //deviceShape : new THREE.SphereGeometry(1),

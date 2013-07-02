@@ -9,7 +9,8 @@ var viewSettings = {
     },
     pointLight : new THREE.PointLight(0xFFFFFF),
     pointLightPos : { x:10, y:50, z:130 },
-    showWebGlStats : true
+    showWebGlStats : true,
+    antialias : true
 };
 
 function unpause() {
@@ -40,13 +41,15 @@ function destroy() {
    //?
 }
 
-var paused, spatialComputer, renderer, scene, camera, stats;
+var paused, spatialComputer, renderer, scene, camera, stats, projector, raycaster, mouse;
 
 var neighborLines = new Array();
 
 function init() {
+   projector = new THREE.Projector();
+   raycaster = new THREE.Raycaster();
    scene = new THREE.Scene();
-   renderer = new THREE.WebGLRenderer();
+   renderer = new THREE.WebGLRenderer( { antialias: viewSettings.antialias } );
    camera = new THREE.PerspectiveCamera(
                                             viewSettings.cameraView.angle,
                                             viewSettings.cameraView.aspect,
@@ -103,6 +106,15 @@ function init() {
    controls.keys = [65, 83, 68];
 
    camera.lookAt(scene.position);
+
+   document.addEventListener( 'mousemove', function(event) {
+      event.preventDefault();
+      mouse = {
+         x : ( event.clientX / window.innerWidth ) * 2 - 1,
+         y : - ( event.clientY / window.innerHeight ) * 2 + 1
+      };
+   }, false );
+
 };
 
 function animate() {
@@ -124,8 +136,8 @@ function animate() {
           $.each(spatialComputer.devices, function(index, device) {
              neighborMap(device, spatialComputer.devices, function(neighbor, d) {
                 var geom = new THREE.Geometry();
-                geom.vertices.push(new THREE.Vertex(device.position));
-                geom.vertices.push(new THREE.Vertex(neighbor.position));
+                geom.vertices.push(new THREE.Vector3(device.position.x, device.position.y, device.position.z));
+                geom.vertices.push(new THREE.Vector3(neighbor.position.x, neighbor.position.y, neighbor.position.z));
                 var line = new THREE.Line(geom, simulatorSettings.lineMaterial, THREE.LinePieces);
                 line.scale.x = line.scale.y = line.scale.z = 1;
                 line.originalScale = 1;
@@ -144,7 +156,41 @@ function animate() {
     stats.update();
 };
 
+var INTERSECTED;
+
+function onMouseOverObject(object) {
+}
+
+function onMouseOffObject(object) {
+}
+
 function render() {
   renderer.setSize($('#container').width(), $('#container').height());
+
+  // find intersections
+  if(mouse && mouse.x && mouse.y) {
+     var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
+     projector.unprojectVector( vector, camera );
+     raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+     var intersects = raycaster.intersectObjects( scene.children );
+     if ( intersects.length > 0 ) {
+        if ( INTERSECTED != intersects[ 0 ].object ) {
+           if ( INTERSECTED ) {
+              //INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+              onMouseOffObject(INTERSECTED);
+           }
+           INTERSECTED = intersects[ 0 ].object;
+           onMouseOverObject(INTERSECTED)
+           //INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+           //INTERSECTED.material.emissive.setHex( 0xff0000 );
+        }
+     } else {
+        //if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+        if( INTERSECTED ) onMouseOffObject(INTERSECTED);
+        INTERSECTED = null;
+     }
+  }
+
+
   renderer.render( scene, camera );
 };
