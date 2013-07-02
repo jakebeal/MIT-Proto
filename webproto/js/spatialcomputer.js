@@ -40,8 +40,11 @@ function distanceBetweenDevices(deviceA, deviceB) {
    return Math.sqrt(Math.pow(ma.x - mb.x, 2) + Math.pow(ma.y - mb.y, 2) + Math.pow(ma.z - mb.z, 2));
 };
 
+/**
+ * Neighbors from the persepctive of deviceA
+ */
 function areNeighbors(deviceA, deviceB) {
-   return distanceBetweenDevices(deviceA, deviceB) <= simulatorSettings.radius;
+   return distanceBetweenDevices(deviceA, deviceB) <= deviceA.machine.radius;
 }
 
 /**
@@ -88,6 +91,8 @@ function SpatialComputer() {
                                                       script);
 
        this.devices[mid].machine.id = mid;
+       
+       this.devices[mid].machine.radius = simulatorSettings.radius;
 
        this.devices[mid].machine.resetActuators = function() {
           this.dx = 0;

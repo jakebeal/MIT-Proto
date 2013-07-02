@@ -117,6 +117,8 @@
    <div id="settingsDialog" title="Settings">
       Number of Devices:
       <input id="numDevicesInput" class="positive-integer" type="text" /><br />
+      Radius:
+      <input id="radiusInput" class="positive-integer" type="text" /><br />
    </div>
 
 <script src="js/jquery-2.0.2.min.js"></script>
@@ -152,10 +154,20 @@
     $("#settingsButton").click(function() {
        $("#settingsDialog").dialog( "open" );
        $("#numDevicesInput").val(simulatorSettings.numDevices);
+       $("#radiusInput").val(simulatorSettings.radius);
     });
 
     $("#numDevicesInput").change(function() {
        simulatorSettings.numDevices = parseInt($("#numDevicesInput").val());
+    });
+    
+    $("#radiusInput").change(function() {
+       simulatorSettings.radius = parseInt($("#radiusInput").val());
+       if(spatialComputer && spatialComputer.devices) {
+          $.each(spatialComputer.devices, function(index, device) {
+             device.machine.radius = simulatorSettings.radius;
+          });
+       }
     });
 
     var editor = ace.edit("editor");
