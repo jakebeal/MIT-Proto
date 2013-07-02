@@ -7,9 +7,12 @@ var simulatorSettings = {
 		      z_min:0, z_max:0 },
     distributionRegion : false, // default to stadiumsize
     lineMaterial : new THREE.LineBasicMaterial( { color: 0x00CC00, opacity: 0.8, linewidth: 0.5 } ),
-    material : new THREE.MeshBasicMaterial( { color: 0xCC0000 }),
-    deviceShape : new THREE.CubeGeometry(1,1,1),
-    //deviceShape : new THREE.SphereGeometry(1),
+    material : function(mid) {
+      return new THREE.MeshBasicMaterial( { color: 0xCC0000 });
+    },
+    deviceShape : function(mid) {
+      return new THREE.CubeGeometry(1,1,1);
+    },
     stepSize : 1.0,
     startPaused : false,
     startTime : 0.0,
@@ -75,7 +78,7 @@ function SpatialComputer() {
 
     this.addDevice = function() {
        var mid = this.getNextMid();
-       this.devices[mid] = new THREE.Mesh(simulatorSettings.deviceShape, simulatorSettings.material);
+       this.devices[mid] = new THREE.Mesh(simulatorSettings.deviceShape(mid), simulatorSettings.material(mid));
 
        // set it's initial position
        this.devices[mid].position = simulatorSettings.distribution(mid);
@@ -175,9 +178,9 @@ function SpatialComputer() {
              this.devices[mid].material.color.g = 0.0;
              this.devices[mid].material.color.b = 0.0;
           } else {
-             this.devices[mid].material.color.r = (this.devices[mid].machine.red / 255);
-             this.devices[mid].material.color.g = (this.devices[mid].machine.green / 255);
-             this.devices[mid].material.color.b = (this.devices[mid].machine.blue / 255);
+             this.devices[mid].material.color.r = this.devices[mid].machine.red;
+             this.devices[mid].material.color.g = this.devices[mid].machine.green;
+             this.devices[mid].material.color.b = this.devices[mid].machine.blue;
           }
 
           // update the position of the device
