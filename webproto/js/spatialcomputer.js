@@ -170,7 +170,15 @@ function SpatialComputer() {
 	  }
 
           // update the color of the device
-          if(this.devices[mid].machine.red <= 0 &&
+          if(this.devices[mid].machine.getSensor(1)) {
+             this.devices[mid].material.color = { r:1.0, g:0.5, b:0 };
+          } else if(this.devices[mid].machine.getSensor(2)) {
+             this.devices[mid].material.color = { r:0.5, g:0, b:1 };
+          } else if(this.devices[mid].machine.getSensor(3)) {
+             this.devices[mid].material.color = { r:1, g:0.5, b:1 };
+          } else if(this.devices[mid].selected) {
+             this.devices[mid].material.color = { r:1, g:1, b:1 };
+          } else if(this.devices[mid].machine.red <= 0 &&
              this.devices[mid].machine.green <= 0 &&
              this.devices[mid].machine.blue <= 0) {
             // Default color (red)

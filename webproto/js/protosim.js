@@ -41,6 +41,7 @@ function destroy() {
 }
 
 var paused, spatialComputer, renderer, scene, camera, stats, projector, raycaster, mouse;
+var INTERSECTED;
 
 var neighborLines = new Array();
 
@@ -115,13 +116,55 @@ function init() {
 
    camera.lookAt(scene.position);
 
-   document.addEventListener( 'mousemove', function(event) {
+   document.addEventListener( 'click', function(event) {
       event.preventDefault();
+      function onMouseClickObject(object) {
+         INTERSECTED.selected = true;
+      }
+      function onMouseUnClickObject(object) {
+         INTERSECTED.selected = false;
+      }
       mouse = {
-         x : ( event.clientX / window.innerWidth ) * 2 - 1,
-         y : - ( event.clientY / window.innerHeight ) * 2 + 1
+         x : ( event.clientX / $('#container').width() ) * 2 - 1,
+         y : - ((event.clientY - $('#header').height()) / (window.innerHeight - $('#header').height() - $('#footer').height())  * 2 - 1)
       };
+      // find intersections
+      if(mouse && mouse.x && mouse.y) {
+         var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
+         projector.unprojectVector( vector, camera );
+         raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+         var intersects = raycaster.intersectObjects( scene.children );
+         if ( intersects.length > 0 ) {
+            if ( INTERSECTED != intersects[ 0 ].object ) {
+               if ( INTERSECTED ) {
+                  onMouseUnClickObject(INTERSECTED);
+               }
+               INTERSECTED = intersects[ 0 ].object;
+               onMouseClickObject(INTERSECTED)
+            }
+         } else {
+            if( INTERSECTED ) onMouseUnClickObject(INTERSECTED);
+            INTERSECTED = null;
+         }
+      }
    }, false );
+
+   document.addEventListener('keypress', function(event) {
+      if(INTERSECTED) { // a device is selected
+         if(event.which == 116) { // "t" pressed
+            INTERSECTED.machine.setSensor(1,
+               INTERSECTED.machine.getSensor(1) ? false : true);
+         }
+         if(event.which == 121) { // "y" pressed
+            INTERSECTED.machine.setSensor(2,
+               INTERSECTED.machine.getSensor(2) ? false : true);
+         }
+         if(event.which == 117) { // "u" pressed
+            INTERSECTED.machine.setSensor(3,
+               INTERSECTED.machine.getSensor(3) ? false : true);
+         }
+      }
+   }, false);
 
 };
 
@@ -164,41 +207,8 @@ function animate() {
     stats.update();
 };
 
-var INTERSECTED;
-
-function onMouseOverObject(object) {
-}
-
-function onMouseOffObject(object) {
-}
-
 function render() {
   renderer.setSize($('#container').width(), $('#container').height());
-
-  // find intersections
-  if(mouse && mouse.x && mouse.y) {
-     var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
-     projector.unprojectVector( vector, camera );
-     raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
-     var intersects = raycaster.intersectObjects( scene.children );
-     if ( intersects.length > 0 ) {
-        if ( INTERSECTED != intersects[ 0 ].object ) {
-           if ( INTERSECTED ) {
-              //INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-              onMouseOffObject(INTERSECTED);
-           }
-           INTERSECTED = intersects[ 0 ].object;
-           onMouseOverObject(INTERSECTED)
-           //INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-           //INTERSECTED.material.emissive.setHex( 0xff0000 );
-        }
-     } else {
-        //if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-        if( INTERSECTED ) onMouseOffObject(INTERSECTED);
-        INTERSECTED = null;
-     }
-  }
-
 
   renderer.render( scene, camera );
 };
