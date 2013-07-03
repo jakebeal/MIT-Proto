@@ -261,9 +261,6 @@
          // Hide the IDE
          //$('#editor').hide();
 
-         // Grab key events
-         $(document).keydown(keyHandlers);
-
          // Compile the Script
          script = new Module.Script();
          $.ajax({
@@ -274,11 +271,16 @@
             data: { "program" : program },
             success: function(data) {
                console.log(data.script);
+
+               // Grab key events
+               $(document).keydown(keyHandlers);
+
+               // Add the compiler's response to a script
                $.each(data.script, function(index, value) {
                   script.push_back(value);
                });
 
-               // Prevent further editing
+               // Prevent further code editing
                editor.setReadOnly(true);
 
                // Start the Simulator
