@@ -64,7 +64,7 @@ var ProtoHighlightRules = function() {
     var keywordControl = "case|let|let\*|letfed|rep|if|cond|case";
     var keywordOperator = "seq|all|and|or|mux|muxand|muxor|not|xor|loop";
     var constantLanguage = "null|quote|e|pi|inf";
-    var supportFunctions = "select|apply|id|rep|dt|set-dt|fold-time|all-time|any-time|max-time|min-time|int-time|once|neg|mod|pow|exp|log|log10|logN|floor|ceil|max|min|denormalize|denormalizeN|is-zero|is-neg|is-pos|sqrt|abs|sin|cos|tan|asin|acos|atan2|sinh|cosh|tanh|asinh|acosh|atanh|rnd|rndint|vdot|vlen|normalize|polar-to-rect|rect-to-polar|rotate|tuple|len|elt|nul-tup|map|fold|slice|1st|2nd|3rd|find|position|assoc|defstruct|nbr|nbr-range|nbr-angle|nbr-lag|nbr-vec|is-self|infinitesimal|min-hood|min-hood+|max-hood|max-hood+|all-hood|all-hood+|any-hood|any-hood+|sum-hood|int-hood|fold-hood|fold-hood\*|fold-hood-plus|fold-hood-plus\*|mix|mov|speed|bearing|area|hood-radius|flex|mid|distance-to|broadcast|dilate|distance|disperse|dither|elect|flip|timer|tup";
+    var supportFunctions = "select|apply|id|rep|dt|set-dt|fold-time|all-time|any-time|max-time|min-time|int-time|once|neg|mod|pow|exp|log|log10|logN|floor|ceil|max|min|denormalize|denormalizeN|is-zero|is-neg|is-pos|sqrt|abs|sin|cos|tan|asin|acos|atan2|sinh|cosh|tanh|asinh|acosh|atanh|rnd|rndint|vdot|vlen|normalize|polar-to-rect|rect-to-polar|rotate|tuple|len|elt|nul-tup|map|fold|slice|1st|2nd|3rd|find|position|assoc|defstruct|nbr|nbr-range|nbr-angle|nbr-lag|nbr-vec|is-self|infinitesimal|min-hood|min-hood+|max-hood|max-hood+|all-hood|all-hood+|any-hood|any-hood+|sum-hood|int-hood|fold-hood|fold-hood\*|fold-hood-plus|fold-hood-plus\*|mix|mov|speed|bearing|area|hood-radius|flex|mid|distance-to|broadcast|dilate|distance|disperse|dither|elect|flip|timer|tup|blue|red|green|sense";
 
     var keywordMapper = this.createKeywordMapper({
         "keyword.control": keywordControl,
@@ -102,7 +102,7 @@ var ProtoHighlightRules = function() {
         },
         {
                 token : keywordMapper,
-                regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+                regex : "[a-zA-Z_$][\\-a-zA-Z0-9_$]*\\b"
         },
         {
             token : "string",

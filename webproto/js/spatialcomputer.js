@@ -139,7 +139,14 @@ function SpatialComputer() {
     this.updateColors = function() {
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
           // update the color of the device
-          if(this.devices[mid].machine.getSensor(1)) {
+          if(this.devices[mid].machine.red > 0 ||
+                    this.devices[mid].machine.green > 0 ||
+                    this.devices[mid].machine.blue > 0) 
+          {
+             this.devices[mid].material.color.r = this.devices[mid].machine.red;
+             this.devices[mid].material.color.g = this.devices[mid].machine.green;
+             this.devices[mid].material.color.b = this.devices[mid].machine.blue;
+          } else if(this.devices[mid].machine.getSensor(1)) {
              this.devices[mid].material.color = { r:1.0, g:0.5, b:0 };
           } else if(this.devices[mid].machine.getSensor(2)) {
              this.devices[mid].material.color = { r:0.5, g:0, b:1 };
@@ -147,18 +154,11 @@ function SpatialComputer() {
              this.devices[mid].material.color = { r:1, g:0.5, b:1 };
           } else if(this.devices[mid].selected) {
              this.devices[mid].material.color = { r:1, g:1, b:1 };
-          } else if(this.devices[mid].machine.red <= 0 &&
-                    this.devices[mid].machine.green <= 0 &&
-                    this.devices[mid].machine.blue <= 0) 
-          {
+          } else {
              // Default color (red)
              this.devices[mid].material.color.r = 0.8;
              this.devices[mid].material.color.g = 0.0;
              this.devices[mid].material.color.b = 0.0;
-          } else {
-             this.devices[mid].material.color.r = this.devices[mid].machine.red;
-             this.devices[mid].material.color.g = this.devices[mid].machine.green;
-             this.devices[mid].material.color.b = this.devices[mid].machine.blue;
           }
 
        } // end foreach device
