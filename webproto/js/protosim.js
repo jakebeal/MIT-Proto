@@ -120,6 +120,7 @@ function init() {
       event.preventDefault();
       function onMouseClickObject(object) {
          INTERSECTED.selected = true;
+         console.log(INTERSECTED);
       }
       function onMouseUnClickObject(object) {
          INTERSECTED.selected = false;
@@ -199,6 +200,8 @@ function animate() {
           });
        }
     }
+
+    spatialComputer.updateColors();
     
     requestAnimationFrame( animate );
     controls.update();

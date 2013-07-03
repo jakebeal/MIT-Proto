@@ -34,7 +34,7 @@
    #footer{
       color: #fff;
       font-family:Monospace;
-      font-size:13px;
+      font-size:15px;
       background-color: #050505;
       width:100%;
       height: 38px;
@@ -82,10 +82,18 @@
 <body>
 
    <div id="fullpage">
-      <div id="header"> 
-         <img height="100px" src="http://proto.bbn.com/commons/sites/default/files/commons_connect_logo.png"/> 
-         <button id="runProgramButton">Run</button> 
-         <button id="settingsButton">Settings</button> 
+      <div id="header">
+         <table> <tr>
+            <td>
+               <img height="100px" src="http://proto.bbn.com/commons/sites/default/files/commons_connect_logo.png"/> 
+            </td>
+            <td>
+               <button id="runProgramButton">Run</button> 
+            </td>
+            <td>
+               <button id="settingsButton">Settings</button> 
+            </td>
+         </tr> </table>
       </div>
       <div id="sidebar" class="sidebar">
          <span id="position"></span>
@@ -110,7 +118,7 @@
          </div>
       </div>
 
-      <div id="footer"> footer </div>
+      <div id="footer"> Proto is a free and open-source project.  Go to <a href="http://proto.bbn.com">proto.bbn.com</a> to learn more.</div>
 
    </div>
 
@@ -133,133 +141,137 @@
 <script src="js/protosim.js"></script>
 <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
+   var script;
 
-   $(".numeric").numeric();
-   $(".integer").numeric(false, function() { alert("Integers only"); this.value = ""; this.focus(); });
-   $(".positive").numeric({ negative: false }, function() { alert("No negative values"); this.value = ""; this.focus(); });
-   $(".positive-integer").numeric({ decimal: false, negative: false }, function() { alert("Positive integers only"); this.value = ""; this.focus(); });
+   $(document).ready(function() {
+      function getURLParameter(name) {
+         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+      }
 
-    $( "#settingsDialog" ).dialog({
-       autoOpen: false,
-       show: {
-          effect: "slide",
-          duration: 500
-       },
-       hide: {
-          effect: "slide",
-          duration: 500
-       }
-    });
+      $(".numeric").numeric();
+      $(".integer").numeric(false, function() { alert("Integers only"); this.value = ""; this.focus(); });
+      $(".positive").numeric({ negative: false }, function() { alert("No negative values"); this.value = ""; this.focus(); });
+      $(".positive-integer").numeric({ decimal: false, negative: false }, function() { alert("Positive integers only"); this.value = ""; this.focus(); });
 
-    $("#settingsButton").click(function() {
-       $("#settingsDialog").dialog( "open" );
-       $("#numDevicesInput").val(simulatorSettings.numDevices);
-       $("#radiusInput").val(simulatorSettings.radius);
-    });
+      $( "#settingsDialog" ).dialog({
+         autoOpen: false,
+         show: {
+            effect: "slide",
+            duration: 500
+         },
+         hide: {
+            effect: "slide",
+            duration: 500
+         }
+      });
 
-    $("#numDevicesInput").change(function() {
-       simulatorSettings.numDevices = parseInt($("#numDevicesInput").val());
-    });
-    
-    $("#radiusInput").change(function() {
-       simulatorSettings.radius = parseInt($("#radiusInput").val());
-       if(spatialComputer && spatialComputer.devices) {
-          $.each(spatialComputer.devices, function(index, device) {
-             device.machine.radius = simulatorSettings.radius;
-          });
-       }
-    });
+      $("#settingsButton").click(function() {
+         $("#settingsDialog").dialog( "open" );
+         $("#numDevicesInput").val(simulatorSettings.numDevices);
+         $("#radiusInput").val(simulatorSettings.radius);
+      });
 
-    var editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.getSession().setMode("ace/mode/proto");
-    
-    $( "#runProgramButton" ).click(function() {
-       runProgram(editor);
-    });
+      $("#numDevicesInput").change(function() {
+         simulatorSettings.numDevices = parseInt($("#numDevicesInput").val());
+      });
 
-    function runProgram(editor) {
-       var program = "";
-       var editorLines= editor.getValue().split('\n');
-       $.each(editorLines, function(lineNumber, line) {
-          var commentCharAt = line.indexOf(';');
-          if(commentCharAt >= 0) {
-             line = line.substring(0, commentCharAt);
-          }
-          line = $.trim(line);
-          if(line.length > 0) {
-             program += line + ' ';
-          }
-       });
-       runSimulator(program);
-    }
+      $("#radiusInput").change(function() {
+         simulatorSettings.radius = parseInt($("#radiusInput").val());
+         if(spatialComputer && spatialComputer.devices) {
+            $.each(spatialComputer.devices, function(index, device) {
+               device.machine.radius = simulatorSettings.radius;
+            });
+         }
+      });
 
-    var script;
-    function runSimulator(program) {
-       // Hide the IDE
-       //$('#editor').hide();
+      var editor = ace.edit("editor");
+      editor.setTheme("ace/theme/monokai");
+      editor.getSession().setMode("ace/mode/proto");
 
-       // Grab key events
-       $(document).keydown(keyHandlers);
+      $( "#runProgramButton" ).click(function() {
+         runProgram(editor);
+      });
 
-       // Compile the Script
-       script = new Module.Script();
-       $.ajax({
-          type: 'GET',
-          dataType: "json",
-          async: false,
-          url: '/cgi-bin/webcompiler',
-          data: { "program" : program },
-          success: function(data) {
-             console.log(data.script);
-             $.each(data.script, function(index, value) {
-                script.push_back(value);
-             });
+      function runProgram(editor) {
+         var program = "";
+         var editorLines= editor.getValue().split('\n');
+         $.each(editorLines, function(lineNumber, line) {
+            var commentCharAt = line.indexOf(';');
+            if(commentCharAt >= 0) {
+               line = line.substring(0, commentCharAt);
+            }
+            line = $.trim(line);
+            if(line.length > 0) {
+               program += line + ' ';
+            }
+         });
+         runSimulator(program);
+      }
 
-             // Prevent further editing
-             editor.setReadOnly(true);
+      function runSimulator(program) {
+         // Hide the IDE
+         //$('#editor').hide();
 
-             // Start the Simulator
-             init();
-             animate();
-          },
-          error: function(err) {
-             $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
-             console.log("ERROR: " + err);
-             console.log(err);
-          }
-       });
+         // Grab key events
+         $(document).keydown(keyHandlers);
 
+         // Compile the Script
+         script = new Module.Script();
+         $.ajax({
+            type: 'GET',
+            dataType: "json",
+            async: false,
+            url: '/cgi-bin/webcompiler',
+            data: { "program" : program },
+            success: function(data) {
+               console.log(data.script);
+               $.each(data.script, function(index, value) {
+                  script.push_back(value);
+               });
 
-    }
+               // Prevent further editing
+               editor.setReadOnly(true);
 
-    $(document).ready(function() {
-
-       // Dragging dragbar
-       $('#dragbar').mousedown(function(e){
-          e.preventDefault();
-          $(document).mousemove(function(e){
-             //$('#position').html(e.pageX +', '+ e.pageY);
-             $('#sidebar').css("width",e.pageX+2);
-             $('#main').css("left",e.pageX+2);
-          })
-       });
-       $(document).mouseup(function(e){
-          $(document).unbind('mousemove');
-       });
+               // Start the Simulator
+               init();
+               animate();
+            },
+            error: function(err) {
+               $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
+               console.log("ERROR: " + err);
+               console.log(err);
+            }
+         });
 
 
+      }
 
-       // Execute code
-       editor.commands.addCommand({
-          name: 'myCommand',
-          bindKey: {win: 'Ctrl-M',  mac: 'Ctrl-M'},
-          exec: function(editor) {
-             runProgram(editor);
-          },
-          readOnly: false // false if this command should not apply in readOnly mode
-       });
-    });
+
+      // Dragging dragbar
+      $('#dragbar').mousedown(function(e){
+         e.preventDefault();
+         $(document).mousemove(function(e){
+            //$('#position').html(e.pageX +', '+ e.pageY);
+            $('#sidebar').css("width",e.pageX+2);
+            $('#main').css("left",e.pageX+2);
+         })
+      });
+      $(document).mouseup(function(e){
+         $(document).unbind('mousemove');
+      });
+
+
+
+      // Execute code
+      editor.commands.addCommand({
+         name: 'myCommand',
+         bindKey: {win: 'Ctrl-M',  mac: 'Ctrl-M'},
+         exec: function(editor) {
+            runProgram(editor);
+         },
+         readOnly: false // false if this command should not apply in readOnly mode
+      });
+   });
 </script>
 </body>
 </html>

@@ -135,19 +135,51 @@ function SpatialComputer() {
          this.addDevice();
        }
     };
+    
+    this.updateColors = function() {
+       for(mid=0; mid < simulatorSettings.numDevices; mid++) {
+          // update the color of the device
+          if(this.devices[mid].machine.getSensor(1)) {
+             this.devices[mid].material.color = { r:1.0, g:0.5, b:0 };
+          } else if(this.devices[mid].machine.getSensor(2)) {
+             this.devices[mid].material.color = { r:0.5, g:0, b:1 };
+          } else if(this.devices[mid].machine.getSensor(3)) {
+             this.devices[mid].material.color = { r:1, g:0.5, b:1 };
+          } else if(this.devices[mid].selected) {
+             this.devices[mid].material.color = { r:1, g:1, b:1 };
+          } else if(this.devices[mid].machine.red <= 0 &&
+                    this.devices[mid].machine.green <= 0 &&
+                    this.devices[mid].machine.blue <= 0) 
+          {
+             // Default color (red)
+             this.devices[mid].material.color.r = 0.8;
+             this.devices[mid].material.color.g = 0.0;
+             this.devices[mid].material.color.b = 0.0;
+          } else {
+             this.devices[mid].material.color.r = this.devices[mid].machine.red;
+             this.devices[mid].material.color.g = this.devices[mid].machine.green;
+             this.devices[mid].material.color.b = this.devices[mid].machine.blue;
+          }
+
+       } // end foreach device
+    };
 
     this.update = function() {
-      if(simulatorSettings.preUpdateHook) { simulatorSettings.preUpdateHook(); }
+       if(simulatorSettings.preUpdateHook) { simulatorSettings.preUpdateHook(); }
 
        // for each device...
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
 
+          // if it's time to transmit...
           if(this.time >= this.devices[mid].nextTransmitTime) {
-	      neighborMap(this.devices[mid],this.devices,
-			  function (nbr,d) { 
-			    d.machine.deliverMessage(nbr.machine); 
-			  });
-          
+             
+             // deliver messages to my neighbors
+             neighborMap(this.devices[mid],this.devices,
+                         function (nbr,d) { 
+                            d.machine.deliverMessage(nbr.machine); 
+                         });
+          }
+
           // if the machine should execute this timestep
           if(this.time >= this.devices[mid].nextComputeTime) {
 
@@ -163,34 +195,12 @@ function SpatialComputer() {
                 this.devices[mid].deviceTimer.nextTransmit(this.time);
              this.devices[mid].nextComputeTime = 
                 this.devices[mid].deviceTimer.nextCompute(this.time);
-             
+
              // call the deviceExecuteHook
              if(simulatorSettings.deviceExecuteHook) { simulatorSettings.deviceExecuteHook(this.devices[mid]); }
-          }
-	  }
 
-          // update the color of the device
-          if(this.devices[mid].machine.getSensor(1)) {
-             this.devices[mid].material.color = { r:1.0, g:0.5, b:0 };
-          } else if(this.devices[mid].machine.getSensor(2)) {
-             this.devices[mid].material.color = { r:0.5, g:0, b:1 };
-          } else if(this.devices[mid].machine.getSensor(3)) {
-             this.devices[mid].material.color = { r:1, g:0.5, b:1 };
-          } else if(this.devices[mid].selected) {
-             this.devices[mid].material.color = { r:1, g:1, b:1 };
-          } else if(this.devices[mid].machine.red <= 0 &&
-             this.devices[mid].machine.green <= 0 &&
-             this.devices[mid].machine.blue <= 0) {
-            // Default color (red)
-             this.devices[mid].material.color.r = 0.8;
-             this.devices[mid].material.color.g = 0.0;
-             this.devices[mid].material.color.b = 0.0;
-          } else {
-             this.devices[mid].material.color.r = this.devices[mid].machine.red;
-             this.devices[mid].material.color.g = this.devices[mid].machine.green;
-             this.devices[mid].material.color.b = this.devices[mid].machine.blue;
-          }
-
+          } // end if(shouldCompute)
+          
           // update the position of the device
           this.devices[mid].position = {
              x: this.devices[mid].machine.x + (this.devices[mid].machine.dx),
@@ -205,12 +215,14 @@ function SpatialComputer() {
 
           // clone, TODO: die
           if(this.devices[mid].requestClone) {
-            spatialComputer.addDevice();
+             spatialComputer.addDevice();
           }
 
-       }
+       } // end foreach device
 
        // update the simulator time
        this.time = this.time + simulatorSettings.stepSize;
-    };
+
+    }; // end update() function
+
 };
