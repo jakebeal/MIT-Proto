@@ -83,20 +83,20 @@
 
    <div id="fullpage">
       <div id="header">
-         <table> <tr>
-            <td>
-               <img height="100px" src="http://proto.bbn.com/commons/sites/default/files/commons_connect_logo.png"/> 
-            </td>
-            <td>
-               <button id="runProgramButton">Run</button> 
-            </td>
-            <td>
-               <button id="settingsButton">Settings</button> 
-            </td>
-            <td>
-               <button id="linkButton">Create a Link</button> 
-            </td>
-         </tr> </table>
+         <img height="100px" src="http://proto.bbn.com/commons/sites/default/files/commons_connect_logo.png"/> 
+         <div id="headerbuttons" style="float: right;">
+            <table> <tr>
+               <td>
+                  <button id="runProgramButton">Run</button> 
+               </td>
+               <td>
+                  <button id="settingsButton">Settings</button> 
+               </td>
+               <td>
+                  <button id="linkButton">Create a Link</button> 
+               </td>
+            </tr> </table>
+         </div>
       </div>
       <div id="sidebar" class="sidebar">
          <span id="position"></span>
@@ -118,6 +118,10 @@
       <input id="numDevicesInput" class="positive-integer" type="text" /><br />
       Radius:
       <input id="radiusInput" class="positive-integer" type="text" /><br />
+      Step Size:
+      <input id="stepInput" class="positive-integer" type="text" /><br />
+      Show Network Topology:
+      <input id="topologyInput" type="checkbox" /><br />
    </div>
    
    <div id="linkDialog" title="Link">
@@ -144,6 +148,22 @@
    }
 
    $(document).ready(function() {
+
+      // fixing the stupid checkbox behavior
+      (function( $ ) {
+         $.fn.checked = function(value) {
+            if(value === true || value === false) {
+               // Set the value of the checkbox
+               $(this).each(function(){ this.checked = value; });
+            } 
+            else if(value === undefined || value === 'toggle') {
+               // Toggle the checkbox
+               $(this).each(function(){ this.checked = !this.checked; });
+            }
+
+            return this;
+         };
+      })( jQuery );
 
       var prg = getURLParameter('program');
       if(prg) {
@@ -188,6 +208,8 @@
          $("#settingsDialog").dialog( "open" );
          $("#numDevicesInput").val(simulatorSettings.numDevices);
          $("#radiusInput").val(simulatorSettings.radius);
+         $("#topologyInput").checked(simulatorSettings.drawEdges);
+         $("#stepInput").val(simulatorSettings.stepSize);
       });
 
       $("#numDevicesInput").change(function() {
@@ -202,7 +224,15 @@
             });
          }
       });
-
+      
+      $("#topologyInput").change(function() {
+         simulatorSettings.drawEdges = $("#topologyInput").is(':checked');
+      });
+      
+      $("#stepInput").change(function() {
+         simulatorSettings.stepSize = parseInt($("#stepInput").val());
+      });
+      
       editor = ace.edit("editor");
       editor.setTheme("ace/theme/monokai");
       editor.getSession().setMode("ace/mode/proto");
@@ -257,14 +287,13 @@
             },
             error: function(err) {
                $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
-               console.log("ERROR: " + err);
+               if(err && err.responseText) {
+                  $.jnotify(err.responseText, "error");
+               }
                console.log(err);
             }
-         });
-
-
-      }
-
+         }); // end ajax()
+      } // end runSimulator()
 
       // Dragging dragbar
       $('#dragbar').mousedown(function(e){
@@ -279,9 +308,7 @@
          $(document).unbind('mousemove');
       });
 
-
-
-      // Execute code
+      // Execute code by hitting Ctrl-M
       editor.commands.addCommand({
          name: 'myCommand',
          bindKey: {win: 'Ctrl-M',  mac: 'Ctrl-M'},
@@ -290,7 +317,9 @@
          },
          readOnly: false // false if this command should not apply in readOnly mode
       });
+
    });
+
 </script>
 </body>
 </html>
