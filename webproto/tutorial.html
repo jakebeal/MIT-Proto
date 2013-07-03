@@ -155,6 +155,27 @@
    (closest (sense 1)))
 </div></div>
       </article>
+      
+      
+      <article>
+      <h1>Bullseye</h1>
+
+<div class="editorwrapper"/>
+<div id="bullseye" class="editor">;;Bullseye
+(all
+   (def bullseye (src)
+      (let ((d (distance-to src)))
+         (if (< 15 d)
+            (red 1)
+            (if (< d 30)
+               (green 1)
+               (if (< d 45)
+                  (blue 1)
+                  0)))))
+
+   (bullseye (sense 1)))
+</div></div>
+      </article>
 
 
 
