@@ -93,6 +93,9 @@
             <td>
                <button id="settingsButton">Settings</button> 
             </td>
+            <td>
+               <button id="linkButton">Create a Link</button> 
+            </td>
          </tr> </table>
       </div>
       <div id="sidebar" class="sidebar">
@@ -103,19 +106,7 @@
 
 
       <div id="main">
-         Main
-         <div id="editor">
-
-;; Move
-(mov
-   ;; If the time is over 20 ticks
-   (if (< (timer) 20)
-      ;; In the positive x, y, and z directions
-      (tup 1 1 1)
-      ;; otherwise, the negative directions
-      (tup -1 -1 -1)))
-
-         </div>
+         <div id="editor"> </div>
       </div>
 
       <div id="footer"> Proto is a free and open-source project.  Go to <a href="http://proto.bbn.com">proto.bbn.com</a> to learn more.</div>
@@ -127,6 +118,11 @@
       <input id="numDevicesInput" class="positive-integer" type="text" /><br />
       Radius:
       <input id="radiusInput" class="positive-integer" type="text" /><br />
+   </div>
+   
+   <div id="linkDialog" title="Link">
+      Link:
+      <input id="linkInput" type="text" /><br />
    </div>
 
 <script src="js/jquery-2.0.2.min.js"></script>
@@ -141,11 +137,17 @@
 <script src="js/protosim.js"></script>
 <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
-   var script;
+   var script, editor;
+
+   function getURLParameter(name) {
+      return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+   }
 
    $(document).ready(function() {
-      function getURLParameter(name) {
-         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+
+      var prg = getURLParameter('program');
+      if(prg) {
+         $('#editor').text(prg);
       }
 
       $(".numeric").numeric();
@@ -163,6 +165,23 @@
             effect: "slide",
             duration: 500
          }
+      });
+
+      $("#linkDialog").dialog({
+         autoOpen: false,
+         show: {
+            effect: "slide",
+            duration: 500
+         },
+         hide: {
+            effect: "slide",
+            duration: 500
+         }
+      });
+
+      $("#linkButton").click(function() {
+         $("#linkDialog").dialog( "open" );
+         $("#linkInput").val(window.location.host + window.location.pathname + "?program=" + encodeURIComponent(editor.getValue()));
       });
 
       $("#settingsButton").click(function() {
@@ -184,7 +203,7 @@
          }
       });
 
-      var editor = ace.edit("editor");
+      editor = ace.edit("editor");
       editor.setTheme("ace/theme/monokai");
       editor.getSession().setMode("ace/mode/proto");
 
