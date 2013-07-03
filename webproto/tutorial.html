@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      <title>Thinking In Proto</title>
+      <link rel="stylesheet" href="css/tutorialStyle.css">
+      <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+      <script src="js/jquery-2.0.2.min.js"></script>
+      <script src="js/jquery-ui.js"></script>
+      <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
+      <script>
+         var editors = { };
+         $(document).ready(function() {
+            $.each($('.editor'), function(index, editor) {
+               editor = ace.edit(this.id);
+               editor.setTheme("ace/theme/monokai");
+               editor.getSession().setMode("ace/mode/proto");
+               editor.setReadOnly(true);
+               editors[this.id] = editor;
+
+               //now add "see it in action" link
+               $(this).parent().append(
+               "<a target=\"_blank\" href=index.html?program="
+                  + encodeURIComponent(editor.getValue())
+                  + ">See it in action</a>");
+            });
+         });
+      </script>
+   </head>
+   <body>
+      <header class='page-header'>
+         <a href="tutorial.html">Thinking<span>In</span>Proto</a>
+      </header>
+
+      <section class="page-body">
+
+      <article>
+      <h1>Thinking In Proto</h1>
+      <p>
+      The purpose of this tutorial...
+      </p>
+      <p>
+      General assumptions about the reader...
+      </p>
+      </article>
+
+      <article>
+      <h1>What is Proto?</h1>
+      Proto is...
+      </article>
+      
+      <article>
+      <h1>Using the Simulator</h1>
+      How do you use the simulator?
+      </article>
+
+      <article>
+      <h1>Hello World</h1>
+      The simplest Proto program is
+
+<div class="editorwrapper"/>
+<div id="helloworld" class="editor">3
+</div> </div>
+      </article>
+      
+      <article>
+      <h1>Comments</h1>
+      Comments are useful for helping other people to understand your code,
+      but do not change the way the programs behave.
+
+      In Proto, comments are everything after a semi-colon (";").
+
+<div class="editorwrapper"/>
+<div id="comments" class="editor">;; Here is a comment
+3
+</div></div>
+      </article>
+      
+      <article>
+      <h1>Spatial Restriction</h1>
+      Let's say we want some lucky points we select to be at value one, while
+      the others remain at zero.
+
+<div class="editorwrapper"/>
+<div id="restriction" class="editor">;;Spatial Restriction
+(if
+   (sense 1)  ;; conditional statement
+   (blue 1)   ;; executed when conditional evaluates to true
+   (blue 0))  ;; executed when conditional evaluates to false
+</div></div>
+      </article>
+      
+      
+      <article>
+      <h1>Function Definitions</h1>
+
+<div class="editorwrapper"/>
+<div id="functions" class="editor">;;Function Definitions
+(all
+   (def check              ;; name of the function
+      (src)                ;; function arguments
+      (blue (if src 1 0))) ;; function body
+
+   (check (sense 1))) ;; now, call the function
+</div></div>
+      </article>
+      
+      <article>
+      <h1>Nesting</h1>
+
+<div class="editorwrapper"/>
+<div id="nesting" class="editor">;;Nesting
+(all
+   (def check (src) (blue (if src 1 0))) ;; same "check" as before
+
+   (check 
+      (or (sense 1) 
+         (or (sense 2) (sense 3)))))
+</div></div>
+      </article>
+
+      <article>
+      <h1>Using Space</h1>
+
+<div class="editorwrapper"/>
+<div id="close" class="editor">;;Using Space
+(all
+   (def close (src)
+      (let ((d (distance-to src)))
+         (if (and (< d 15) (> d 1))
+            (blue 1)
+            (blue 0))))
+
+   (close (sense 1)))
+</div></div>
+      </article>
+
+      <article>
+      <h1>More with Space</h1>
+
+<div class="editorwrapper"/>
+<div id="closest" class="editor">;;More with Space
+(all
+   (def closest (src)
+      (let ((d (distance-to src)))
+         (min-d (broadcast src (min-hood+ (nbr (distance-to src))))))
+      (if (and (not (= min-d (inf)))
+               (= min-d d))
+         (blue 1)
+         (blue 0)))
+
+   (closest (sense 1)))
+</div></div>
+      </article>
+
+
+
+      </section>
+
+   </body>
+</html
