@@ -15,8 +15,11 @@
                editor = ace.edit(this.id);
                editor.setTheme("ace/theme/monokai");
                editor.getSession().setMode("ace/mode/proto");
+               editor.setFontSize(15);
                editor.setReadOnly(true);
                editors[this.id] = editor;
+
+               $(this).height(editor.getValue().split('\n').length * 1.5 + "em")
 
                //now add "see it in action" link
                $(this).parent().append(

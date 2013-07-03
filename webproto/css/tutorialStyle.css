@@ -54,7 +54,7 @@ header.page-header {
 
 section.page-body {
   padding: 4.5em 1em 1em 1em;
-  width: 38em;
+  width: 50em;
   margin: 0 auto; }
   section.page-body article {
     padding-bottom: 2em; }
@@ -91,7 +91,7 @@ div.page-break {
   border-top: solid 2px #ccc; }
 
 footer {
-  width: 38em;
+  width: 50em;
   padding: 1em;
   margin: 0 auto;
   color: #aaa;
@@ -117,11 +117,11 @@ a.site-info {
     opacity: 1.0; }
 
 .editor {
-   font-size: 17px;
    position: absolute;
    top: 0;
    right: 0;
    bottom: 0;
    left: 0;
    height: 175px;
+   width: 100%;
 }
