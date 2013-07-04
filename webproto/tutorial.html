@@ -40,6 +40,12 @@
                   + "&numDevices=200"
                   + ">See it in action</a>");
             });
+            $.each($('.problemanswer'), function(index, answer) {
+               $(this).accordion({
+                  collapsible:true,
+                  heightStyle: "content",
+               });
+            });
          });
       </script>
    </head>
@@ -158,13 +164,21 @@
       hit the space-bar.
       </p>
       
+      <p>
+      <b>Note:</b> A current limitation of the simulator is that, once
+      executing, the page must be reloaded before you can edit the code and
+      re-run.  Be aware that, when the page reloads, it will reload with the
+      program that was displayed when the page originally loaded (not the
+      currently-running program).
+      </p>
+      
       </article>
 
       <article>
       <h1>Hello World</h1>
       The simplest Proto program is
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="helloworld" class="editor">3
 </div> </div>
 
@@ -189,7 +203,7 @@
 
       In Proto, comments are everything after a semi-colon (";").
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="comments" class="editor">;; Here is a comment
 3 ;; Here is another comment
 </div></div>
@@ -211,7 +225,7 @@
       produced are categorized into four basic types: fields, lambdas, tuples, and scalars.
       Booleans are represented as scalars that evaluate to 0 when false, or
       anything else (true).
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="datatypes" class="editor">;; Data Types
 (tup 0 1 2.2)
 </div></div>
@@ -223,7 +237,7 @@
       Data-types, logic, functions, etc. can all be nested.  A good example is
       a tuple-of-tuples:
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="nesting" class="editor">;; Nesting
 (tup 0 1.1 (tup 2 3 4) (tup 5 6 7))
 </div></div>
@@ -265,7 +279,7 @@
       Try toggling sensor number one on some nodes in the example below:
       </p>
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="sensorsAndActuators" class="editor">;;Sensors and Actuators
 (if
    (sense 1)  ;; If sensor number 1 is enabled,
@@ -287,7 +301,7 @@
       be produced by the following program?
       </p>
       
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="colorblending" class="editor">;;Color Blending
 (all
    (blue 0.5)    ;; turn on the blue LED, half-brightness
@@ -324,7 +338,7 @@
       is evaluated.  The true and false expressions must return the same type.
       </p>
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="restriction" class="editor">;;Spatial Restriction
 (if
    (sense 1)  ;; conditional statement
@@ -342,13 +356,14 @@
       the <tt>if</tt> to a <tt>mux</tt>)?
       </p>
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="muxvsif" class="editor">;;Mux vs. If
 (mux
    (sense 1)  ;; conditional statement
    (blue 1)   ;; executed when conditional evaluates to true
    (green 1))  ;; executed when conditional evaluates to false
 </div></div>
+
 
       </article>
       
@@ -361,7 +376,7 @@
       </p>
       <p>
       Proto doesn't really have <i>variables</i>, like some other programing
-      languages.  Like variables, there is a way to assign a name to a value,
+      languages.  However, like variables, there is a way to assign a name to a value,
       but unlike traditional variables, the value can never change.
       </p>
 
@@ -385,7 +400,7 @@
       </p>
 
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="functions" class="editor">;;Function Definitions
 (all
    (def check              ;; name of the function
@@ -394,28 +409,155 @@
 
    (check (sense 1))) ;; now, call the function
 </div></div>
+
+<p>
+And now... a test!
+</p>
+
+      <div class="problemanswer">
+         <h3>Problem</h3>
+      <div class="problem">
+Write a function such that if any of the senses
+are turned on on a device, that device's LED turns green.
+      </div>
+
+         <h3>Solution</h3>
+<div class="editorwrapper">
+<div id="anysense" class="editor">;;Green if any sensor
+(all
+   (def check
+      (src)
+      (green (if src 1 0)))
+
+   (check (or (sense 1) 
+            (or (sense 2) 
+                (sense 3)))))
+</div></div></div>
+
       </article>
       
       <article>
+      <h1>Thinking about Space</h1>
+      <p>
+      Space is a big part of what Proto is about.  Most of the programs that
+      you write in Proto will manipulate space, doing things like naming
+      regions of space, measuring distances, and moving information around from
+      place to place.  Proto is designed to make this easy by letting you
+      work with <i>fields</i>.
+      </p>
+      
+      <p>
+      A field assigns values to every point in a space.  For example, let's
+      say our space is a rectangular room, with an air conditioner over on the
+      left wall and the sun streaming through the windows on the right wall.
+      We can view the temperature in the room as a field: every location in
+      the room has a temperature, and the temperature may be different from
+      place to place.  The figure below shows a temperature field,
+      shading from coldest (shown as blue) to warmest (shown as red).  The
+      field is the whole collection of temperature values, each associated
+      with its location.
+      </p>
+
+      <img src="figures/heatmap.png" width="50%" />
+      
+      <p>
+      Of course, we may not get to measure temperature everywhere.  If we
+      only have a few devices, and we build our network by scattering them
+      around the room, then we get something more like what is shown
+      below.
+      </p>
+      
+      <img src="figures/heatmap-discrete.png" width="50%" />
+      
+      <p>
+      Now, say you've acquired the field depicted above,
+      <tt>(temperature)</tt>, that lists the temperature at each point in
+      space and you want to perform some operation on the field.  For
+      instance, let's say you want to know all the places where the
+      temperature is over 25 degrees celcius.  In Proto, it's as simple as
+      saying <tt>(> (temperature) 25)</tt>.  Graphically, it would look
+      something like this:
+      </p>
+      
+      <img src="figures/fieldoperation.png" width="78%" />
+
+      <p>
+      What's important to know is two things:
+      (1) The more devices that we have, the better that they approximate
+      space; and
+      (2) Some programs need better approximations than others, but a lot
+      of programs will work well with very crude approximations.
+      </p>
+
+      <p>
+      A big part of the trick of writing good Proto programs is to think
+      about the space, while remembering that it will be approximated.
+      </p>
+
+      </article>
+
+      <article>
       <h1>Using Space</h1>
 
-<div class="editorwrapper"/>
+      <p>
+      Now let's start writing some programs that work with space in more
+      complicated ways.  Take a look at this code:
+      </p>
+
+<div class="editorwrapper">
 <div id="close" class="editor">;;Using Space
 (all
    (def close (src)
       (let ((d (distance-to src)))
-         (if (and (< d 15) (> d 1))
+         (if (and (< d 10) (> d 1))
             (blue 1)
             (blue 0))))
 
    (close (sense 1)))
 </div></div>
+
+      <p>
+      There are several new things in this code. For instance, the <tt>let</tt>
+      assigns the variables inside it to a value.  In this
+      <tt>let</tt> statement, the variable <tt>d</tt> is set as the distance to the
+      source.
+      The function <tt>distance-to</tt>, as its name suggests, gives each
+      device its own value of estimated distance to the source. 
+      </p>
+
+      <p> 
+      If we execute this program, and turn on <tt>sense 1</tt> for a few
+      devices, you will see that only devices within a very small select range
+      from the source turn on their blue LED.  If you turn on <tt>sense
+      1</tt> on a fairly isolated device, you might not have any of the
+      surrounding device LEDs turn blue at all.  The program tells each device
+      to figure out their distance to the <tt>sense 1</tt> device(s), which they
+      should call <tt>d</tt>, and that if their individual value of <tt>d</tt> is
+      less than ten meters and greater than one meter, then they may turn
+      their LEDs blue.  Otherwise, the LEDs remain blank.  Try
+      expanding this range of blue LEDs by increasing the first parameter of
+      the <tt>and</tt> statement.
+      </p>
+      
+
       </article>
 
       <article>
       <h1>More with Space</h1>
+      <p>
+      The previous example shows how to select several close nodes, but what if we
+      wanted to be more precise in our selection?  What if, instead of taking three
+      points or no points, based on how close the randomly placed points were to the
+      src, we wanted just a single closest point, no matter how far or close it is
+      to the src?  This is where the <tt>nbr</tt> and the <tt>hood</tt> functions come
+      in.  These functions are used to tell a device exactly where each point within
+      its communication range is relative to itself and what values these neighbors
+      have calculated, giving the device fields of points and values to work with.
+      Using these functions, we can select the point(s) that we want accurately.
+      This demonstrates that ability:
+      </p>
 
-<div class="editorwrapper"/>
+<div class="editorwrapper">
 <div id="closest" class="editor">;;More with Space
 (all
    (def closest (src)
@@ -428,13 +570,112 @@
 
    (closest (sense 1)))
 </div></div>
+<p>
+This code is built to light up the device LED that is closest to the
+<tt>src</tt> (source) blue, and it introduces a wide variety of new
+functions. 
+</p>
+
+<p>
+We see our <tt>let</tt> operation again, except this time it defines two
+separate variables instead of just one.  The first one we know
+already: variable <tt>d</tt> is the distance to the source device. The
+second definition is where most of the confusing bit comes in.
+</p>
+
+<p>
+We are trying to assign the value of the shortest distance to the
+source to our new variable <tt>min-d</tt> (minimum distance).  Let's work
+from the inside parentheses out in this definition.  First, we have
+our <tt>(distance-to src)</tt>.  Note that you cannot use the predefined
+<tt>d</tt> here, because <tt>let</tt> defines everything at once, and so
+Proto will not recognize this variable as being already defined.
+Now that each device has established its
+own distance value (which happens to be the same as <tt>d</tt>).  The
+<tt>nbr</tt> function gathers up these values from each device's
+neighborhood, returning a field that maps each point in the
+neighborhood to a distance value.  All the functions starting with
+<tt>nbr</tt> in the Proto Language Reference create fields of values
+assigned to neighboring devices.  In fact, instead of putting
+<tt>(nbr (distance-to src))</tt> here, one could instead put
+<tt>(nbr-range)</tt>, which again assigns a field of distances to
+neighbors, with the same outcome since for this program we only care
+about neighbors of the <tt>src</tt>.  The <tt>min-hood+</tt> function takes
+all of these values returned by <tt>nbr</tt> as pairs, (neighbor,
+distance away), and then takes the minimum "distance away" value as
+its return value.  This is important: because of the <tt>+</tt> at the end
+of <tt>min-hood</tt>, the device excludes its own value from the calculation.
+Were this not the case, the closest device to itself would always be
+itself.
+</p>
+<p>
+The broadcast function sends information from the <tt>src</tt> devices to
+all of the other devices.  If there is one <tt>src</tt> device, then
+every device ends up with the same value; if there is more than one
+<tt>src</tt> device, then every device ends up with the value from the
+nearest <tt>src</tt> device.  Here, in our <tt>closest</tt> function, we
+are using broadcast to have the <tt>src</tt> tell every other device
+what the closest device to itself is.  Every device computes the
+<tt>min-hood+</tt> expression, to find out how close is its closest neighbor 
+(besides itself) to the source.  Only the <tt>src</tt> devices send the value.
+</p>
+<p>
+The main part of this function, (after the <tt>let</tt>) is actually
+quite simple.  All it does is have each device ask itself, ``Is my
+distance to the source equal to the minimum distance to the source,
+and is the minimum distance to the source not infinity? If so, turn
+LED blue; if not, leave LED blank.''  This part: <tt>(not (= min-d (inf)))</tt> stops the devices from automatically turning blue, because
+before any source is identified, the minimum distance to the source is
+infinite, and all the devices' <tt>d</tt> variables are also infinite and
+therefore equal to <tt>min-d</tt>.  This test tells the program to wait
+until a <tt>src</tt> exists, which will cause <tt>min-d</tt> become finite.
+Remember that if you want to look over any of the <tt>nbr</tt>,
+<tt>hood</tt>, <tt>broadcast</tt> or <tt>not</tt> functions, or even how to
+use constants such as <tt>inf</tt>, you can find them all in the Proto
+Language Reference.
+</p>
+<p>
+When executed, this produces a field of devices, shown as little red
+dots.  Right now, all the devices know that <tt>min-d</tt> is equal to
+infinity, and therefore all their LEDs are off.  Turn <tt>sense 1</tt>
+on on any device.  After a few seconds, a blue LED goes on on the
+closest device to the <tt>src</tt>, no matter how close or far that
+device may be.  You can turn <tt>sense 1</tt> on or off at several
+devices, and their closest neighbors' LEDs will turn on or off
+accordingly, since the <tt>broadcast</tt> is taking the value from the
+<i>nearest</i> source.  Take note, however,
+that if you isolate a <tt>sense 1</tt> device to the point that all
+other points are outside of its radio-range, no <tt>min-d</tt> can be
+found.  Also, turning on two <tt>sense 1</tt> devices close together may
+allow only a single <tt>min-d</tt> value (depending on where exactly the
+closest neighbors are), so only one of the sensed points may light up
+its closest neighbor.  Similarly, if a <tt>sense 1</tt> device is with
+direct communication range of another <tt>sense 1</tt> device, both will
+light their LEDs, since they both see the other being zero distance
+from the <tt>src</tt>.
+</p>
+
+
       </article>
       
       
       <article>
       <h1>Bullseye</h1>
 
-<div class="editorwrapper"/>
+      <div class="problemanswer">
+         <h3>Problem</h3>
+      <div class="problem">
+         Try this test: Write a program in which all the points create
+         a bullseye target-board using LEDs.  You don't have to use any
+         <tt>nbr</tt>s or <tt>hood</tt>s for this program.  Remember to refer to
+         the Proto Language Reference whenever you get stuck.  You can do
+         this any way you like with any colors you like. 
+         If it seems complicated, you are probably over-thinking things.  
+         <b>Hint:</b> Nested <tt>if</tt>s may prove helpful.
+      </div>
+
+         <h3>Solution</h3>
+<div class="editorwrapper">
 <div id="bullseye" class="editor">;;Bullseye
 (all
    (def bullseye (src)
@@ -448,7 +689,7 @@
                   0)))))
 
    (bullseye (sense 1)))
-</div></div>
+</div></div></div>
       </article>
 
 
