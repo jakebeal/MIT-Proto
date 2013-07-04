@@ -359,19 +359,29 @@
       
       <h2>Control Flow</h2>
       <p>
-      <tt>(all ,@forms)</tt>: 
-      All forms are evaluated in parallel and the value of the last form
-      returned.
+      <tt>(all statement1 statement2 ... statementN)</tt>: 
+      All statements (1-n) are evaluated in parallel and the value of the last
+      statement isreturned.  We'll use <tt>all</tt> a lot for executing multiple
+      statements.
       </p>
+      
+<div class="editorwrapper">
+<div id="allexample" class="editor">;;All Example
+(all
+   (blue 1)    ;; turns blue LED on at highest brightness
+   (green 1))  ;; turns green LED on at highest brightness
+               ;; ... this should produce cyan
+</div></div>
+
       <p>
-      <tt>(mux ,test ,true ,false)</tt>: 
+      <tt>(mux test true-branch false-branch)</tt>: 
       Evaluates both true and false expressions. When test is true, returns
       the result of the true expression, otherwise returns the result of the
       false expression.  The true and false expressions must return the same
       type.
       </p>
       <p>
-      <tt>(if ,test ,true ,false)</tt>: 
+      <tt>(if test true-branch false-branch)</tt>: 
       Restricts execution to subspaces based on test. Where test is true, the
       true expression is evaluated; where test is false, the false expression
       is evaluated.  The true and false expressions must return the same type.
@@ -427,17 +437,24 @@
       </p>
 
       <p>
-      <tt>(def .name (.arg ...) ,@body)</tt>:
-      Define a function name in the current scope, with as many
-      arguments as there are arg identifiers. The body is evaluated within an extended scope where
-      the arg identifiers are bound to arguments to the function. fun, which omits name, creates
-      anonymous functions.
+      <tt>(def function-name (arg1 arg2 ... argN) body-branch)</tt>:
+      Define a function name in the current scope, with as many arguments as
+      there are arg identifiers. The body-branch is evaluated within an
+      extended scope where the arg identifiers are bound to arguments to the
+      function. 
       </p>
 
       <p>
-      <tt>(let ((.var ,value) ...) ,@body)</tt>: 
-      Extends scope, binding all var identifiers to their associated value in parallel. The body is evaluated in the extended scope. let* is like let, except
-      that identifies are bound sequentially, so later ones can use earlier ones in their definition.
+      <tt>(fun (arg1 arg2 ... argN) body-branch)</tt>, is similar to <tt>def</tt> but
+      creates anonymous functions &mdash; hense the lack of the function-name parameter.
+      </p>
+
+      <p>
+      <tt>(let ((var1 value1) (var2 value2) ... (varN valueN)) body-branch)</tt>: 
+      Extends scope, binding all var identifiers to their associated value in
+      parallel. The body is evaluated in the extended scope. <tt>let*</tt> is
+      like let, except that identifies are bound sequentially, so later ones
+      can use earlier ones in their definition.
       </p>
 
 
@@ -584,7 +601,7 @@ are turned on on a device, that device's LED turns green.
       </article>
 
       <article>
-      <h1>More with Space</h1>
+      <h1>Refining Space</h1>
       <p>
       The previous example shows how to select several close nodes, but what if we
       wanted to be more precise in our selection?  What if, instead of taking three
@@ -599,7 +616,7 @@ are turned on on a device, that device's LED turns green.
       </p>
 
 <div class="editorwrapper">
-<div id="closest" class="editor">;;More with Space
+<div id="closest" class="editor">;;Refining Space
 (all
    (def closest (src)
       (let ((d (distance-to src)))
