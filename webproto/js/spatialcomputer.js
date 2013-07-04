@@ -1,6 +1,6 @@
 var simulatorSettings = {
     numDevices : 100,
-    radius : 35,
+    radius : 25,
     drawEdges : false,
     stadiumRegion : { x_min:-50, x_max:50, 
 		      y_min:-50, y_max:50, 
@@ -14,6 +14,8 @@ var simulatorSettings = {
       return new THREE.CubeGeometry(1,1,1);
     },
     stepSize : 1.0,
+    defaultNextComputeIncrement : 1.0,
+    defaultNextTransmitIncrement : 0.5,
     startPaused : false,
     startTime : 0.0,
     distribution : function(mid) {
@@ -118,8 +120,8 @@ function SpatialComputer() {
 
        // Set the device's model of time
        this.devices[mid].deviceTimer = {
-          nextTransmit : function(currentTime) { return 0.5 + currentTime; },
-          nextCompute : function(currentTime) { return 1 + currentTime; }
+          nextTransmit : function(currentTime) { return simulatorSettings.defaultNextTransmitIncrement + currentTime; },
+          nextCompute : function(currentTime) { return simulatorSettings.defaultNextComputeIncrement + currentTime; }
        };
 
        // Initialize the device's next compute/transmit time

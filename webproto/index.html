@@ -120,6 +120,11 @@
       if(stepSizeUrlParam) {
          simulatorSettings.stepSize = parseInt(stepSizeUrlParam);
       }
+      
+      var radiusUrlParam = getURLParameter('radius');
+      if(radiusUrlParam) {
+         simulatorSettings.radius = parseInt(radiusUrlParam);
+      }
 
       $(".numeric").numeric();
       $(".integer").numeric(false, function() { alert("Integers only"); this.value = ""; this.focus(); });
