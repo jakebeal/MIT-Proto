@@ -58,10 +58,11 @@
 
       <article>
       <h1>Thinking In Proto</h1>
+
+      <img src="figures/protorunning.png" width="100%" />
+
       <p><i>Q: Why are you here?</i></p>
-      <p>
-      A: You are looking for a way to program 
-      </p>
+      <p>Supply an answer...</p>
 
       </article>
       <article>
@@ -118,7 +119,8 @@
       </p>
 
       <p>
-      If you want to learn more about Proto, please visit 
+      If, when you're done with the tutorial, you want to learn more about
+      Proto, please visit 
       <a href="http://proto.bbn.com">proto.bbn.com</a>.
       </p>
 
@@ -134,8 +136,9 @@
 
       <p>
       When you open WebProto, you'll see a screen such as:
-      <img src="figures/WebProtoIDE.png" width="78%" />
       </p>
+
+      <img src="figures/WebProtoIDE.png" width="78%" />
 
       <p>
       The gray pane on the right is the <i>Code Pane</i>.  That is where you
@@ -151,8 +154,9 @@
       <p>
       When you run the program, you'll see some devices appear in the
       <i>Simulator Pane</i>.
-      <img src="figures/WebProtoIDE-running.png" width="78%" />
       </p>
+      
+      <img src="figures/WebProtoIDE-running.png" width="78%" />
       
       <p>
       To navigate around the 3-D Simulator Pane, you can click-and-drag to
@@ -176,14 +180,18 @@
 
       <article>
       <h1>Hello World</h1>
+      <p>
       The simplest Proto program is
+      </p>
 
 <div class="editorwrapper">
 <div id="helloworld" class="editor">3
 </div> </div>
 
+      <p>
       It assigns the value of three to the entire space,
       meaning that every device should have a value of three.
+      </p>
 
       </article>
       
@@ -193,15 +201,21 @@
       Compilation errors should give hints to help you debug your
       program.  They are presented in red at the top of the screen if they occur.
       </p>
+
       <img src="figures/error.png" width="78%" />
+
       </article>
 
       <article>
       <h1>Comments</h1>
+      <p>
       Comments are useful for helping other people to understand your code.
       Comments, however, do not change the way your program behaves.
+      </p>
 
+      <p>
       In Proto, comments are everything after a semi-colon (";").
+      </p>
 
 <div class="editorwrapper">
 <div id="comments" class="editor">;; Here is a comment
@@ -212,19 +226,26 @@
       
       <article>
       <h1>Language Essentials</h1>
+      <p>
       Here are some essentials to the Proto language, along with the most
       frequently used functions.
+      </p>
 
       <h2>Evaluation</h2>
+      <p>
       Proto is a purely functional language. Proto is written using s-expressions in a manner very
       similar to Lisp. Evaluating a Proto expression produces a program: a dataflow graph that may be
       evaluated against a space to produce an evolving field of values at every point on the space.
+      </p>
 
       <h2>Data Types</h2>
+      <p>
       All Proto expressions produce fields that map every point in space to a value. The values
       produced are categorized into four basic types: fields, lambdas, tuples, and scalars.
       Booleans are represented as scalars that evaluate to 0 when false, or
       anything else (true).
+      </p>
+
 <div class="editorwrapper">
 <div id="datatypes" class="editor">;; Data Types
 (tup 0 1 2.2)
@@ -234,8 +255,10 @@
 
       <article>
       <h1>Nesting</h1>
+      <p>
       Data-types, logic, functions, etc. can all be nested.  A good example is
       a tuple-of-tuples:
+      </p>
 
 <div class="editorwrapper">
 <div id="nesting" class="editor">;; Nesting
@@ -259,6 +282,7 @@
       activate the sensor(s) in the simulator, select the device upon which
       you want to activate the sensor.  It should turn white when selected.
       </p>
+
       <img src="figures/selectedNode.png" width="50%" />
       
       <p>
@@ -273,6 +297,7 @@
       <p>
       You should see the device's color change when the sensor is enabled.
       </p>
+
       <img src="figures/sensorEnabled.png" width="50%" />
       
       <p>
@@ -308,15 +333,29 @@
    (green 0.5))  ;; turn on the green LED, half-brightness
 </div></div>
 
+      <p>
+      There is also an actuator to control the movement of devices in Proto,
+      <tt>mov</tt>.  Pass <tt>mov</tt> a tuple which represents its velocity
+      (in x, y, z directions respectively).
+      </p>
+      
+<div class="editorwrapper">
+<div id="movement" class="editor">;;Movement
+(mov            ;; Move with velocity
+   (tup 1 2 3)) ;; x=1 m/s, y=2 m/s, z=3 m/s
+</div></div>
+
 </article>
 
       
       <article>
       <h1>Spatial Restriction</h1>
+      <p>
       Let's say we want some lucky points we select to enable their blue LED, while
       the others remain the default color.  How would we accomplish that?  The
       answer is <i>spatial restriction</i>, but that's just one feature of
       Proto's control-flow.
+      </p>
       
       <h2>Control Flow</h2>
       <p>
@@ -381,9 +420,11 @@
       </p>
 
       <h2>Scope and Bindings</h2>
+      <p>
       Proto is a lexically scoped language. Names are not case sensitive. Bindings
       contain values and are looked up by name. Lexical bindings are visible only within the scope in which they
       are bound, and shadow bindings of the same name from enclosing scopes.
+      </p>
 
       <p>
       <tt>(def .name (.arg ...) ,@body)</tt>:
@@ -691,6 +732,100 @@ from the <tt>src</tt>.
    (bullseye (sense 1)))
 </div></div></div>
       </article>
+
+
+      <article>
+      <h1>Thinking in Time</h1>
+      <p>
+      In Proto, as with any programming language, time is an important part
+      of its programs.  The simulator 
+      clock is always running unless, of course, you pause the simulator (using the space-bar).
+      In Proto, our timers will not run in actual seconds, but will run at
+      whatever rate Proto is managing to run through its program.
+      </p>
+      
+      <p>
+      Now we will start working with time directly in our programs as well.
+      Let's start by setting a simple timer on every device.
+      </p>
+      
+<div class="editorwrapper">
+<div id="timer" class="editor">;;Timer
+(rep t 0 (+ t (dt)))
+</div></div>
+
+<p>
+There are a two new functions in here: <tt>rep</tt> and <tt>dt</tt>.  Both
+are defined on page 5 of the Proto Language Reference.  Take a look at
+the form of <tt>rep</tt>.  The <tt>rep</tt> function creates a variable,
+just like <tt>let</tt>, but the variable created by <tt>rep</tt> is used to
+remember information from round to round of the program.  In this
+case, we use the function <tt>rep</tt> to create the feedback variable
+<tt>t</tt>, which will store elapsed time and has the initial value of 0.
+The third argument, <tt>(+ t (dt))</tt>, tells the how the value changes
+over time&mdash;how it ``evolves.''  In this case, Proto reads that every
+time it runs through this code, it should add one <tt>(dt)</tt> to the
+current time.  What is one <tt>dt</tt>?  This <tt>dt</tt> value is the
+amount of time elapsed between rounds in a program.  So we essentially
+add the time of one round every time we go through a round.  The whole
+<tt>rep</tt> expression then returns the value of <tt>t</tt>.  We can also
+make more complicated feedback functions using <tt>letfed</tt>, which can
+make more than one feedback variable and allows you to use them in a
+further part of the program just like variables from a <tt>let</tt>.
+</p>
+
+<p>
+<b>Note:</b> Because this "timer" program is used so frequently, it has it's
+own special operation, <tt>(timer)</tt>.
+</p>
+
+      </article>
+      
+      <article>
+      <h1>Using Time</h1>
+      <p>
+      Now, let's do something interesting using time.
+      </p>
+      
+      <div class="problemanswer">
+         <h3>Problem</h3>
+      <div class="problem">
+Write a program such that devices move after 100 time ticks.
+      </div>
+
+         <h3>Solution</h3>
+<div class="editorwrapper">
+<div id="moveattime" class="editor">;;Move at Time
+(mov
+   (if
+      (> (timer) 100)
+      (tup 1 1 1)
+      (tup 0 0 0))
+</div></div></div>
+
+      </article>
+
+<!--
+      <article>
+      <h1>Microwave Timer</h1>
+
+      <p>
+      Let's say our field is a giant collection of microwave ovens.  Do we
+      want our microwave timer running all the time, and on all the machines?
+      Of course not.  Let's try put some limits on our timer.  We only want
+      this timer to run on the microwaves that are turned on. 
+      </p>
+
+<div class="editorwrapper">
+<div id="microwavetimer" class="editor">;;Microwave Timer
+(all
+   (def MWTimer (src)
+     (if src (rep t 0 (+ t (dt))) 0))
+   (MWTimer (sense 1))
+</div></div>
+
+      </article>
+-->
 
 
 
