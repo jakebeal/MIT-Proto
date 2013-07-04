@@ -58,12 +58,19 @@ function areNeighbors(deviceA, deviceB) {
  * 1) the neighbor device
  * 2) device (i.e., from args)
  */
-function neighborMap(device, allDevices, toCallOnNeighbors) {
-   $.each(allDevices, function(index, value) {
-      if(areNeighbors(device, value)) {
-         if(toCallOnNeighbors) {
-            toCallOnNeighbors(value, device);
+function neighborMap(device, allDevices, toCallOnNeighbors, needToUpdateNeighbors) {
+   if(needToUpdateNeighbors || !device.neighbors) {
+      device.neighbors = new Array();
+      $.each(allDevices, function(index, value) {
+         if(areNeighbors(device, value)) {
+            device.neighbors.push(value);
          }
+      });
+   }
+
+   $.each(device.neighbors, function(index, value) {
+      if(toCallOnNeighbors) {
+         toCallOnNeighbors(value, device);
       }
    });
 }
@@ -167,20 +174,23 @@ function SpatialComputer() {
        } // end foreach device
     };
 
+    this.needToUpdateNeighbors = false;
+
     this.update = function() {
        if(simulatorSettings.preUpdateHook) { simulatorSettings.preUpdateHook(); }
 
+       this.needToUpdateNeighbors = false;
+       
        // for each device...
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
-
+       
           // if it's time to transmit...
           if(this.time >= this.devices[mid].nextTransmitTime) {
-             
              // deliver messages to my neighbors
              neighborMap(this.devices[mid],this.devices,
                          function (nbr,d) { 
                             d.machine.deliverMessage(nbr.machine); 
-                         });
+                         }, this.needToUpdateNeighbors);
           }
 
           // if the machine should execute this timestep
@@ -204,17 +214,25 @@ function SpatialComputer() {
 
           } // end if(shouldCompute)
           
-          // update the position of the device
-          this.devices[mid].position = {
-             x: this.devices[mid].machine.x + (this.devices[mid].machine.dx),
-             y: this.devices[mid].machine.y + (this.devices[mid].machine.dy),
-             z: this.devices[mid].machine.z + (this.devices[mid].machine.dz)
-          };
+          if(this.devices[mid].machine.dx > 0 ||
+             this.devices[mid].machine.dy > 0 ||
+             this.devices[mid].machine.dz > 0) 
+          {
+             // update the position of the device
+             this.devices[mid].position = {
+                x: this.devices[mid].machine.x + (this.devices[mid].machine.dx),
+                y: this.devices[mid].machine.y + (this.devices[mid].machine.dy),
+                z: this.devices[mid].machine.z + (this.devices[mid].machine.dz)
+             };
 
-          // update the position of the Proto VM
-          this.devices[mid].machine.x = this.devices[mid].position.x;
-          this.devices[mid].machine.y = this.devices[mid].position.y;
-          this.devices[mid].machine.z = this.devices[mid].position.z;
+             // update the position of the Proto VM
+             this.devices[mid].machine.x = this.devices[mid].position.x;
+             this.devices[mid].machine.y = this.devices[mid].position.y;
+             this.devices[mid].machine.z = this.devices[mid].position.z;
+
+             // indicate that we need to update the nieghbors because someone moved
+             this.needToUpdateNeighbors = true;
+          }
 
           // clone, TODO: die
           if(this.devices[mid].requestClone) {
