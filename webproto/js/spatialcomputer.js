@@ -101,6 +101,9 @@ function SpatialComputer() {
           this.dx = 0;
           this.dy = 0;
           this.dz = 0;
+          this.red = 0;
+          this.blue = 0;
+          this.green = 0;
        }
 
        // Set the device's internal time

@@ -4,10 +4,21 @@
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
       <title>Thinking In Proto</title>
       <link rel="stylesheet" href="css/tutorialStyle.css">
-      <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-      <script src="js/jquery-2.0.2.min.js"></script>
-      <script src="js/jquery-ui.js"></script>
+      <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css" />
+      <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+      <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
       <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
+      <script type="text/javascript">
+         var _gaq = _gaq || [];
+         _gaq.push(['_setAccount', 'UA-26309611-1']);
+         _gaq.push(['_trackPageview']);
+
+         (function() {
+          var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+          ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+          var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+      </script>
       <script>
          var editors = { };
          $(document).ready(function() {
@@ -41,22 +52,112 @@
 
       <article>
       <h1>Thinking In Proto</h1>
+      <p><i>Q: Why are you here?</i></p>
       <p>
-      The purpose of this tutorial...
+      A: You are looking for a way to program 
+      </p>
+
+      </article>
+      <article>
+      <h1>Assumptions about the Reader</h1>
+      <p>
+      In writing this tutorial, we have made several assumptions about you as
+      a reader.  First, we assume you are, if not entirely new to programming,
+      entirely new to Lisp-like languages and many basic programming
+      statements.
       </p>
       <p>
-      General assumptions about the reader...
+      Realize also that although Proto may be similar to other languages, the
+      way of thinking that must be used by Proto programmers is considerably
+      different.  Proto allows its user to look at both the individual devices
+      separately, and at the group of devices as a whole.
+      </p>
+      <p>
+      Proto is very different from most other programming languages.  For
+      most people, even once they've started writing Proto code, it's a big
+      jump to change how you're thinking and really take advantage of
+      Proto's continuous space/time model.  This tutorial will hopefully
+      help you make that jump.
       </p>
       </article>
 
       <article>
       <h1>What is Proto?</h1>
-      Proto is...
+      <p>
+      Proto is a language that makes it easy to write complex programs for
+      <i>spatial computers</i>.  
+      </p>
+
+      <p>
+      A <b>spatial computer</b> is a collection of devices distributed to fill space,
+      where the difficulty of communicating between devices is strongly
+      dependent on their distance. Examples of spatial computers include sensor networks,
+      robotic swarms, cells during morphogenesis, FPGAs, ad-hoc wireless
+      systems, biofilms, and distributed control systems.
+      </p>
+
+      <img src="figures/continuousModel.jpg" width="45%" />
+      <img src="figures/discreteModel.jpg" width="45%" />
+
+      <p>
+      Proto is a language for programming spatial computers using a continuous
+      space abstraction. Rather than describe the behavior of individual
+      devices, the programmer views the space filled by the devices as an
+      <i>amorphous medium</i> &mdash; a region of continuous space with a computing device
+      at every point &mdash; and describes the behavior of regions of space. These
+      programs are automatically transformed into local actions that are
+      executed approximately by the actual network of devices. When the program
+      obeys the abstraction, these local actions reliably produce an
+      approximation of the desired aggregate behavior.
+      </p>
+
+      <p>
+      If you want to learn more about Proto, please visit 
+      <a href="http://proto.bbn.com">proto.bbn.com</a>.
+      </p>
+
       </article>
       
       <article>
-      <h1>Using the Simulator</h1>
-      How do you use the simulator?
+      <h1>Using WebProto</h1>
+      WebProto is the first version of Proto that runs entirely in a web
+      browser.  It requires that you're running a recent web browser with some
+      HTML5 support.  We suggest using a recent version of
+      <a href="http://www.google.com/chrome">Google Chrome</a> or 
+      <a href="http://www.mozilla.org/en-US/firefox/new/">Mozilla Firefox</a>.
+
+      <p>
+      When you open WebProto, you'll see a screen such as:
+      <img src="figures/WebProtoIDE.png" width="78%" />
+      </p>
+
+      <p>
+      The gray pane on the right is the <i>Code Pane</i>.  That is where you
+      enter the Proto program.
+      </p>
+      
+      <p>
+      The empty black pane on the left is the <i>Simulator Pane</i>.
+      That is where the program will be simulated when you "Run" it.
+      To run the program, click the "Run Program" button in the top right.
+      </p>
+      
+      <p>
+      When you run the program, you'll see some devices appear in the
+      <i>Simulator Pane</i>.
+      <img src="figures/WebProtoIDE-running.png" width="78%" />
+      </p>
+      
+      <p>
+      To navigate around the 3-D Simulator Pane, you can click-and-drag to
+      move or scroll to zoom.
+      </p>
+      
+      <p>
+      If at any time, you want to pause the execution of the Proto VM, just
+      hit the space-bar.
+      </p>
+      
       </article>
 
       <article>
@@ -66,38 +167,223 @@
 <div class="editorwrapper"/>
 <div id="helloworld" class="editor">3
 </div> </div>
+
+      It assigns the value of three to the entire space,
+      meaning that every device should have a value of three.
+
       </article>
       
       <article>
+      <h1>Errors</h1>
+      <p>
+      Compilation errors should give hints to help you debug your
+      program.  They are presented in red at the top of the screen if they occur.
+      </p>
+      <img src="figures/error.png" width="78%" />
+      </article>
+
+      <article>
       <h1>Comments</h1>
-      Comments are useful for helping other people to understand your code,
-      but do not change the way the programs behave.
+      Comments are useful for helping other people to understand your code.
+      Comments, however, do not change the way your program behaves.
 
       In Proto, comments are everything after a semi-colon (";").
 
 <div class="editorwrapper"/>
 <div id="comments" class="editor">;; Here is a comment
-3
+3 ;; Here is another comment
 </div></div>
       </article>
       
+      
+      <article>
+      <h1>Language Essentials</h1>
+      Here are some essentials to the Proto language, along with the most
+      frequently used functions.
+
+      <h2>Evaluation</h2>
+      Proto is a purely functional language. Proto is written using s-expressions in a manner very
+      similar to Lisp. Evaluating a Proto expression produces a program: a dataflow graph that may be
+      evaluated against a space to produce an evolving field of values at every point on the space.
+
+      <h2>Data Types</h2>
+      All Proto expressions produce fields that map every point in space to a value. The values
+      produced are categorized into four basic types: fields, lambdas, tuples, and scalars.
+      Booleans are represented as scalars that evaluate to 0 when false, or
+      anything else (true).
+<div class="editorwrapper"/>
+<div id="datatypes" class="editor">;; Data Types
+(tup 0 1 2.2)
+</div></div>
+
+      </article>
+
+      <article>
+      <h1>Nesting</h1>
+      Data-types, logic, functions, etc. can all be nested.  A good example is
+      a tuple-of-tuples:
+
+<div class="editorwrapper"/>
+<div id="nesting" class="editor">;; Nesting
+(tup 0 1.1 (tup 2 3 4) (tup 5 6 7))
+</div></div>
+      
+      </article>
+
+
+      <article>
+      <h1>Sensors and Actuators</h1>
+      <p>
+      Sensors and actuators are the inputs and outputs (respectively) to the
+      Proto program.
+      </p>
+
+      <p>
+      We have pre-defined a set of test sensors for simulating a boolean
+      sensor (e.g., button-press, motion sensor, etc.).  In code they look like
+      <tt>(sense i)</tt> where <tt>i</tt> is the <i>ith</i> sensor.  To
+      activate the sensor(s) in the simulator, select the device upon which
+      you want to activate the sensor.  It should turn white when selected.
+      </p>
+      <img src="figures/selectedNode.png" width="50%" />
+      
+      <p>
+      Then, hit one of sensor keys:
+      </p>
+      <table border="1px">
+         <tr> <td> <b>Key</b> </td> <td> <b>Sensor Proto Code</b> </td> <td> <b>Color of Device</b> </td> </tr>
+         <tr> <td> t </td> <td> <tt>(sense 1)</tt> </td> <td> orange </td> </tr>
+         <tr> <td> y </td> <td> <tt>(sense 2)</tt> </td> <td> purple </td> </tr>
+         <tr> <td> u </td> <td> <tt>(sense 3)</tt> </td> <td> magenta </td> </tr>
+      </table>
+      <p>
+      You should see the device's color change when the sensor is enabled.
+      </p>
+      <img src="figures/sensorEnabled.png" width="50%" />
+      
+      <p>
+      Try toggling sensor number one on some nodes in the example below:
+      </p>
+
+<div class="editorwrapper"/>
+<div id="sensorsAndActuators" class="editor">;;Sensors and Actuators
+(if
+   (sense 1)  ;; If sensor number 1 is enabled,
+   (blue 1)   ;; turn on the blue LED
+   (blue 0))  ;; otherwise, turn off the blue LED
+</div></div>
+
+      <p>
+      You'll notice that the example also makes use of an actuator, <tt>(blue i)</tt>.
+      The blue actuator toggles a blue LED with the brightness of the LED
+      being indicated by <i>i</i>, a number between 0 and 1 (inclusive).
+      </p>
+      
+      <p>
+      Play around with the <tt>blue</tt> actuator a bit.  There are also
+      <tt>red</tt> and <tt>green</tt> actuators that behave identically.
+      Note that, using the color actuators together results in a "blending" of
+      the colors (think RGB style blending).  What color do you think should
+      be produced by the following program?
+      </p>
+      
+<div class="editorwrapper"/>
+<div id="colorblending" class="editor">;;Color Blending
+(all
+   (blue 0.5)    ;; turn on the blue LED, half-brightness
+   (green 0.5))  ;; turn on the green LED, half-brightness
+</div></div>
+
+</article>
+
+      
       <article>
       <h1>Spatial Restriction</h1>
-      Let's say we want some lucky points we select to be at value one, while
-      the others remain at zero.
+      Let's say we want some lucky points we select to enable their blue LED, while
+      the others remain the default color.  How would we accomplish that?  The
+      answer is <i>spatial restriction</i>, but that's just one feature of
+      Proto's control-flow.
+      
+      <h2>Control Flow</h2>
+      <p>
+      <tt>(all ,@forms)</tt>: 
+      All forms are evaluated in parallel and the value of the last form
+      returned.
+      </p>
+      <p>
+      <tt>(mux ,test ,true ,false)</tt>: 
+      Evaluates both true and false expressions. When test is true, returns
+      the result of the true expression, otherwise returns the result of the
+      false expression.  The true and false expressions must return the same
+      type.
+      </p>
+      <p>
+      <tt>(if ,test ,true ,false)</tt>: 
+      Restricts execution to subspaces based on test. Where test is true, the
+      true expression is evaluated; where test is false, the false expression
+      is evaluated.  The true and false expressions must return the same type.
+      </p>
 
 <div class="editorwrapper"/>
 <div id="restriction" class="editor">;;Spatial Restriction
 (if
    (sense 1)  ;; conditional statement
    (blue 1)   ;; executed when conditional evaluates to true
-   (blue 0))  ;; executed when conditional evaluates to false
+   (green 1))  ;; executed when conditional evaluates to false
 </div></div>
+
+      <p>
+      There is an important distinction here between <tt>mux</tt> and
+      <tt>if</tt>.  The difference is that, while <tt>if</tt> only evaluates
+      the <i>true</i> branch, <tt>mux</tt> evaluates both the <i>true</i>
+      <b>AND</b> <i>false</i> branches.  That doesn't seem very important, but
+      it is, especially when the branches contain actuators.  What do you
+      think will happen in the following program (all we've done is changed
+      the <tt>if</tt> to a <tt>mux</tt>)?
+      </p>
+
+<div class="editorwrapper"/>
+<div id="muxvsif" class="editor">;;Mux vs. If
+(mux
+   (sense 1)  ;; conditional statement
+   (blue 1)   ;; executed when conditional evaluates to true
+   (green 1))  ;; executed when conditional evaluates to false
+</div></div>
+
       </article>
       
       
       <article>
-      <h1>Function Definitions</h1>
+      <h1>Functions and Variables</h1>
+      <p>
+      Functions are a way of naming and re-using a behavior.  They are great
+      for code maintainability and readability.
+      </p>
+      <p>
+      Proto doesn't really have <i>variables</i>, like some other programing
+      languages.  Like variables, there is a way to assign a name to a value,
+      but unlike traditional variables, the value can never change.
+      </p>
+
+      <h2>Scope and Bindings</h2>
+      Proto is a lexically scoped language. Names are not case sensitive. Bindings
+      contain values and are looked up by name. Lexical bindings are visible only within the scope in which they
+      are bound, and shadow bindings of the same name from enclosing scopes.
+
+      <p>
+      <tt>(def .name (.arg ...) ,@body)</tt>:
+      Define a function name in the current scope, with as many
+      arguments as there are arg identifiers. The body is evaluated within an extended scope where
+      the arg identifiers are bound to arguments to the function. fun, which omits name, creates
+      anonymous functions.
+      </p>
+
+      <p>
+      <tt>(let ((.var ,value) ...) ,@body)</tt>: 
+      Extends scope, binding all var identifiers to their associated value in parallel. The body is evaluated in the extended scope. let* is like let, except
+      that identifies are bound sequentially, so later ones can use earlier ones in their definition.
+      </p>
+
 
 <div class="editorwrapper"/>
 <div id="functions" class="editor">;;Function Definitions
@@ -110,20 +396,6 @@
 </div></div>
       </article>
       
-      <article>
-      <h1>Nesting</h1>
-
-<div class="editorwrapper"/>
-<div id="nesting" class="editor">;;Nesting
-(all
-   (def check (src) (blue (if src 1 0))) ;; same "check" as before
-
-   (check 
-      (or (sense 1) 
-         (or (sense 2) (sense 3)))))
-</div></div>
-      </article>
-
       <article>
       <h1>Using Space</h1>
 

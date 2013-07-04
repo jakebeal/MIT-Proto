@@ -4,80 +4,21 @@
 <title>WebProto IDE</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-<style type="text/css" media="screen">
-   body,html{width:100%;height:100%;padding:0;margin:0;}
-   #main{
-      color: #fff;
-      font-family:Monospace;
-      font-size:13px;
-      background-color: #050505;
-      float: right;
-      position: absolute;
-      top:100px;
-      bottom: 38px;
-      right: 0;
-      left: 50%;
-      overflow: hidden;
-   }
-   .sidebar{
-      color: #fff;
-      font-family:Monospace;
-      font-size:13px;
-      background-color: #050505;
-      width: 50%;
-      float: left;
-      position: absolute;
-      top:100px;
-      bottom: 38px;
-      overflow: hidden;
-   }
-   #footer{
-      color: #fff;
-      font-family:Monospace;
-      font-size:15px;
-      background-color: #050505;
-      width:100%;
-      height: 38px;
-      bottom:0;
-      position:absolute;
-   }
-   #header{
-      color: #fff;
-      font-family:Monospace;
-      font-size:13px;
-      background-color: #050505;
-      width:100%;
-      height: 100px;
-   }
-   #dragbar{
-      background-color: gray;
-      height:100%;
-      float: right;
-      width: 6px;
-      cursor: col-resize;
-   }
-   #editor { 
-      font-size:20px;
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-   }
-   #container {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      height: 99%;
-      width: 99%;
-   }
-</style>
 
-<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+<link rel="stylesheet" href="css/webproto.css" />
+<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css" />
 <link rel="stylesheet" type="text/css" href="css/jquery.jnotify.css">
+<script type="text/javascript">
+   var _gaq = _gaq || [];
+   _gaq.push(['_setAccount', 'UA-26309611-1']);
+   _gaq.push(['_trackPageview']);
 
+   (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+</script>
 </head>
 <body>
 
@@ -129,15 +70,15 @@
       <input id="linkInput" type="text" /><br />
    </div>
 
-<script src="js/jquery-2.0.2.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
 <script src="js/jquery.numeric.js"></script>
-<script src="js/jquery-ui.js"></script>
 <script src="js/jquery.jnotify.min.js"></script>
 <script src="js/three.min.js"></script>
+<script src="js/stats.min.js"></script>
+<script src="js/TrackballControls.js"></script>
 <script src="js/spatialcomputer.js"></script>
 <script src="js/webproto.js"></script>
-<script src="js/TrackballControls.js"></script>
-<script src="js/stats.min.js"></script>
 <script src="js/protosim.js"></script>
 <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
