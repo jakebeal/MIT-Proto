@@ -9,7 +9,7 @@ var viewSettings = {
     baseLight : new THREE.AmbientLight(0x202020), // soft white light
     highLight : new THREE.DirectionalLight(0xC0C0C0), // hard white light
     showWebGlStats : true,
-    antialias : true
+    antialias : false
 };
 
 function unpause() {

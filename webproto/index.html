@@ -169,6 +169,16 @@
       if(prg) {
          $('#editor').text(prg);
       }
+      
+      var numDevicesUrlParam = getURLParameter('numDevices');
+      if(numDevicesUrlParam) {
+         simulatorSettings.numDevices = parseInt(numDevicesUrlParam);
+      }
+      
+      var stepSizeUrlParam = getURLParameter('step');
+      if(stepSizeUrlParam) {
+         simulatorSettings.stepSize = parseInt(stepSizeUrlParam);
+      }
 
       $(".numeric").numeric();
       $(".integer").numeric(false, function() { alert("Integers only"); this.value = ""; this.focus(); });

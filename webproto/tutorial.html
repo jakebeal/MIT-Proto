@@ -25,6 +25,8 @@
                $(this).parent().append(
                "<a target=\"_blank\" href=index.html?program="
                   + encodeURIComponent(editor.getValue())
+                  + "&step=10"
+                  + "&numDevices=200"
                   + ">See it in action</a>");
             });
          });
@@ -165,7 +167,7 @@
 (all
    (def bullseye (src)
       (let ((d (distance-to src)))
-         (if (< 15 d)
+         (if (< d 15)
             (red 1)
             (if (< d 30)
                (green 1)
