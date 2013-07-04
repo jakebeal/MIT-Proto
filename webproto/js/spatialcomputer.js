@@ -184,60 +184,59 @@ function SpatialComputer() {
        this.needToUpdateNeighbors = false;
        
        // for each device...
-       for(mid=0; mid < simulatorSettings.numDevices; mid++) {
+       var mid = simulatorSettings.numDevices;
+       while(--mid) {
+          var device = this.devices[mid];
+          var machine = device.machine;
        
           // if it's time to transmit...
-          if(this.time >= this.devices[mid].nextTransmitTime) {
+          if(this.time >= device.nextTransmitTime) {
              // deliver messages to my neighbors
-             neighborMap(this.devices[mid],this.devices,
+             neighborMap(device, this.devices,
                          function (nbr,d) { 
                             d.machine.deliverMessage(nbr.machine); 
                          }, this.needToUpdateNeighbors);
           }
 
           // if the machine should execute this timestep
-          if(this.time >= this.devices[mid].nextComputeTime) {
+          if(this.time >= device.nextComputeTime) {
 
              // zero-out all actuators
-             this.devices[mid].machine.resetActuators();
+             machine.resetActuators();
 
              // while (!machine.finished()) machine.step();
-             this.devices[mid].machine.executeRound(this.time);
+             machine.executeRound(this.time);
 
              // update device time, etc...
-             this.devices[mid].time = this.time;
-             this.devices[mid].nextTransmitTime = 
-                this.devices[mid].deviceTimer.nextTransmit(this.time);
-             this.devices[mid].nextComputeTime = 
-                this.devices[mid].deviceTimer.nextCompute(this.time);
+             device.time = this.time;
+             device.nextTransmitTime = device.deviceTimer.nextTransmit(this.time);
+             device.nextComputeTime = device.deviceTimer.nextCompute(this.time);
 
              // call the deviceExecuteHook
              if(simulatorSettings.deviceExecuteHook) { simulatorSettings.deviceExecuteHook(this.devices[mid]); }
 
           } // end if(shouldCompute)
           
-          if(this.devices[mid].machine.dx > 0 ||
-             this.devices[mid].machine.dy > 0 ||
-             this.devices[mid].machine.dz > 0) 
+          if(machine.dx > 0 || machine.dy > 0 || machine.dz > 0) 
           {
              // update the position of the device
-             this.devices[mid].position = {
-                x: this.devices[mid].machine.x + (this.devices[mid].machine.dx),
-                y: this.devices[mid].machine.y + (this.devices[mid].machine.dy),
-                z: this.devices[mid].machine.z + (this.devices[mid].machine.dz)
+             device.position = {
+                x: machine.x + (machine.dx),
+                y: machine.y + (machine.dy),
+                z: machine.z + (machine.dz)
              };
 
              // update the position of the Proto VM
-             this.devices[mid].machine.x = this.devices[mid].position.x;
-             this.devices[mid].machine.y = this.devices[mid].position.y;
-             this.devices[mid].machine.z = this.devices[mid].position.z;
+             machine.x = device.position.x;
+             machine.y = device.position.y;
+             machine.z = device.position.z;
 
              // indicate that we need to update the nieghbors because someone moved
              this.needToUpdateNeighbors = true;
           }
 
           // clone, TODO: die
-          if(this.devices[mid].requestClone) {
+          if(device.requestClone) {
              spatialComputer.addDevice();
           }
 

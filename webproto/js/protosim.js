@@ -177,6 +177,7 @@ function animate() {
     if(!paused) {
        spatialComputer.update();
 
+       // remove any topology lines
        if(neighborLines.length > 0) {
          $.each(neighborLines, function(index, line) {
             scene.remove(line);
@@ -184,6 +185,7 @@ function animate() {
          neighborLines = new Array();
        }
 
+       // draw topology lines if the option is set
        if(simulatorSettings.drawEdges) {
           $.each(spatialComputer.devices, function(index, device) {
              neighborMap(device, spatialComputer.devices, function(neighbor, d) {
@@ -199,7 +201,9 @@ function animate() {
              });
           });
        }
-    }
+    } // end if(!paused)
+
+    // The remainder will execute regardless of if the simulator is paused
 
     spatialComputer.updateColors();
     
