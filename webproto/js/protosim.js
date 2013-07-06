@@ -43,7 +43,8 @@ function destroy() {
 var paused, spatialComputer, renderer, scene, camera, stats, projector, raycaster, mouse;
 var INTERSECTED;
 
-var neighborLines = new Array();
+var neighborEdges = new Array();
+var neighborLines = null; // will hold a THREE.Geometry
 
 function init() {
    projector = new THREE.Projector();
@@ -178,28 +179,23 @@ function animate() {
        spatialComputer.update();
 
        // remove any topology lines
-       if(neighborLines.length > 0) {
-         $.each(neighborLines, function(index, line) {
-            scene.remove(line);
-         });
-         neighborLines = new Array();
-       }
+      if(neighborLines) { scene.remove(neighborLines); neighborLines = null; }
+      lineset = new THREE.Geometry();
 
        // draw topology lines if the option is set
        if(simulatorSettings.drawEdges) {
           $.each(spatialComputer.devices, function(index, device) {
              neighborMap(device, spatialComputer.devices, function(neighbor, d) {
-                var geom = new THREE.Geometry();
-                geom.vertices.push(new THREE.Vector3(device.position.x, device.position.y, device.position.z));
-                geom.vertices.push(new THREE.Vector3(neighbor.position.x, neighbor.position.y, neighbor.position.z));
-                var line = new THREE.Line(geom, simulatorSettings.lineMaterial, THREE.LinePieces);
-                line.scale.x = line.scale.y = line.scale.z = 1;
-                line.originalScale = 1;
-                line.geometry.__dirtyVerticies = true;
-                scene.add(line);
-                neighborLines.push(line);
+                lineset.vertices.push(new THREE.Vector3(device.position.x, device.position.y, device.position.z));
+                lineset.vertices.push(new THREE.Vector3(neighbor.position.x, neighbor.position.y, neighbor.position.z));
              });
           });
+
+          neighborLines = new THREE.Line(lineset,simulatorSettings.lineMaterial, THREE.LinePieces);
+          neighborLines.scale.x = neighborLines.scale.y = neighborLines.scale.z = 1;
+          neighborLines.originalScale = 1;
+          //line.geometry.__dirtyVerticies = true;
+          scene.add(neighborLines);
        }
     } // end if(!paused)
 
