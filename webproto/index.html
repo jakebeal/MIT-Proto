@@ -210,12 +210,13 @@
                program += line + ' ';
             }
          });
-         runSimulator(program);
+         runSimulator("(all " + program +")");
       }
 
       function runSimulator(program) {
          // Hide the IDE
          //$('#editor').hide();
+         console.log(program);
 
          // Compile the Script
          script = new Module.Script();
@@ -224,7 +225,7 @@
             dataType: "json",
             async: false,
             url: '/cgi-bin/webcompiler',
-            data: { "program" : "(all\n" + program + "\n)" },
+            data: { "program" : program },
             success: function(data) {
                console.log(data.script);
 
