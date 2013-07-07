@@ -157,7 +157,13 @@
 
       $("#linkButton").click(function() {
          $("#linkDialog").dialog( "open" );
-         $("#linkInput").val(window.location.host + window.location.pathname + "?program=" + encodeURIComponent(editor.getValue()));
+         $("#linkInput").val(
+         window.location.host + 
+         window.location.pathname + 
+         "?radius=" + encodeURIComponent(simulatorSettings.radius) +
+         "&numDevices=" + encodeURIComponent(simulatorSettings.numDevices) +
+         "&stepSize=" + encodeURIComponent(simulatorSettings.stepSize) +
+         "&program=" + encodeURIComponent(editor.getValue()));
       });
 
       $("#settingsButton").click(function() {
