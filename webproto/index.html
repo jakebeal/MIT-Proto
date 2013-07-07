@@ -224,7 +224,7 @@
             dataType: "json",
             async: false,
             url: '/cgi-bin/webcompiler',
-            data: { "program" : program },
+            data: { "program" : "(all\n" + program + "\n)" },
             success: function(data) {
                console.log(data.script);
 
