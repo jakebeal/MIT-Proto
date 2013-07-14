@@ -115,26 +115,21 @@ Args::remove(size_t i)
 // ARG_SAFE is used to check if two different things modules request the
 // same argument
 #define ARG_SAFE true
-#define MAX_SWITCHES 200
-
-static int num_switch_tests = 0;
-static char switch_rec[MAX_SWITCHES][64]; // remember a set of <64-byte args
+static vector<string> switch_rec;  // remember a set of switch arguments
 
 bool
 Args::extract_switch(const char *sw, bool warn)
 {
   if (ARG_SAFE && warn) {
+    string s = sw;
     // Warns the user if a switch is overloaded.
-    for (size_t i = 0; i < num_switch_tests; i++)
-      if (strcmp(sw, switch_rec[i]) == 0) {
+    for (size_t i = 0; i < switch_rec.size(); i++)
+      if (s == switch_rec[i]) {
 	debug("WARNING: Switch '%s' used more than once.\n", sw);
         break;
       }
 
-    if (num_switch_tests < MAX_SWITCHES) {
-      num_switch_tests++;
-      strcpy(switch_rec[num_switch_tests-1], sw);
-    }
+    switch_rec.push_back(s);
   }
 
   if (!find_switch(sw))
