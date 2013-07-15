@@ -2,7 +2,9 @@
 var viewSettings = {
     cameraView : {
         angle : 45,
-        aspect : (4 / 3),
+        aspect : function() {
+          return $('#container').width() / $('#container').height();
+        },
         near : 0.1,
         far : 10000
     },
@@ -53,7 +55,7 @@ function init() {
    renderer = new THREE.WebGLRenderer( { antialias: viewSettings.antialias } );
    camera = new THREE.PerspectiveCamera(
                                             viewSettings.cameraView.angle,
-                                            viewSettings.cameraView.aspect,
+                                            viewSettings.cameraView.aspect(),
                                             viewSettings.cameraView.near,
                                             viewSettings.cameraView.far);
    stats = new Stats();
@@ -75,7 +77,7 @@ function init() {
 
    // the camera starts at 0,0,0
    // so pull it back to see the whole arena
-   aspect_ratio = $('#container').width() / $('#container').height();
+   aspect_ratio = viewSettings.cameraView.aspect();
    y_angle = Math.PI/8; // half of 45 degrees, in radians
    width = simulatorSettings.stadiumRegion.x_max - 
 	simulatorSettings.stadiumRegion.x_min;
@@ -212,6 +214,8 @@ function animate() {
 
 function render() {
   renderer.setSize($('#container').width(), $('#container').height());
+  camera.aspect = viewSettings.cameraView.aspect();
+  camera.updateProjectionMatrix();
 
   renderer.render( scene, camera );
 };
