@@ -9,7 +9,7 @@ var simulatorSettings = {
     lineMaterial : new THREE.LineBasicMaterial( { color: 0x00CC00, opacity: 0.8, linewidth: 0.5 } ),
     selectionMaterial : new THREE.MeshBasicMaterial( { color: 0xFFFF00, opacity: 0.5, transparent : true }),
     material : function(mid) {
-      return new THREE.MeshBasicMaterial( { color: 0xCC0000 });
+      return new THREE.MeshBasicMaterial( { color: 0x404040 });
     },
     deviceShape : function(mid) {
       return new THREE.CubeGeometry(1,1,1);
