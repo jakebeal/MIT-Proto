@@ -41,6 +41,14 @@
                   + "&numDevices=200"
                   + ">See it in action</a>");
             });
+            $.each($('.gotryit'), function(index, answer) {
+               $(this).parent().append("<br/><br/><a target=\"_blank\" href=index.html?program="+
+                  encodeURIComponent(this.textContent)
+                  + "&step=10"
+                  + "&radius=15"
+                  + "&numDevices=200"
+                  +">Go try it!</a>");
+            });
             $.each($('.problemanswer'), function(index, answer) {
                $(this).accordion({
                   collapsible:true,
@@ -502,6 +510,15 @@ And now... a test!
       <div class="problem">
 Write a function such that if any of the senses
 are turned on on a device, that device's LED turns green.
+<div class="gotryit" style="display:none">
+(def check (src)
+   ;; You're code here!
+   )
+
+(check (or (sense 1) 
+         (or (sense 2) 
+             (sense 3))))
+</div>
       </div>
 
          <h3>Solution</h3>
