@@ -671,12 +671,13 @@ are turned on on a device, that device's LED turns green.
 <div class="editorwrapper">
 <div id="closest" class="editor">;;Refining Space
 (def closest (src)
-   (let ((d (distance-to src)))
-      (min-d (broadcast src (min-hood+ (nbr (distance-to src))))))
-   (if (and (not (= min-d (inf)))
-            (= min-d d))
-      (blue 1)
-      (blue 0)))
+   (let ((d (distance-to src))
+         (min-d (broadcast src 
+                 (min-hood+ (nbr (distance-to src))))))
+     (if (and (not (= min-d (inf)))
+              (= min-d d))
+         (blue 1)
+         (blue 0))))
 
 (closest (sense 1))
 </div></div>
@@ -832,7 +833,7 @@ from the <tt>src</tt>.
       <p>
       Now we will start working with time directly in our programs as well.
       Let's start by setting a simple timer on every device, and having
-      them turn on their red LED after 10 seconds.
+      them turn on their red LED after 300 simulated seconds.
       </p>
       
 <div class="editorwrapper">
@@ -840,7 +841,7 @@ from the <tt>src</tt>.
 (def timer () 
   (rep t 0 (+ t (dt))))
 
-(if (> (timer) 10)
+(if (> (timer) 300)
   (red 1)
   0)
 </div></div>

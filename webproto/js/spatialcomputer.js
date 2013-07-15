@@ -172,9 +172,9 @@ function SpatialComputer() {
              this.devices[mid].material.color = { r:1, g:0.5, b:1 };
           } else {
              // Default color (red)
-             this.devices[mid].material.color.r = 0.8;
-             this.devices[mid].material.color.g = 0.0;
-             this.devices[mid].material.color.b = 0.0;
+             this.devices[mid].material.color.r = 0.5;
+             this.devices[mid].material.color.g = 0.5;
+             this.devices[mid].material.color.b = 0.5;
           }
 	  // mark if this device is selected
 	  if(this.devices[mid].selected) {
