@@ -831,12 +831,18 @@ from the <tt>src</tt>.
       
       <p>
       Now we will start working with time directly in our programs as well.
-      Let's start by setting a simple timer on every device.
+      Let's start by setting a simple timer on every device, and having
+      them turn on their red LED after 10 seconds.
       </p>
       
 <div class="editorwrapper">
 <div id="timer" class="editor">;;Timer
-(rep t 0 (+ t (dt)))
+(def timer () 
+  (rep t 0 (+ t (dt))))
+
+(if (> (timer) 10)
+  (red 1)
+  0)
 </div></div>
 
 <p>
