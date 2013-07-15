@@ -219,12 +219,12 @@
       </p>
 
 <div class="editorwrapper">
-<div id="helloworld" class="editor">3
+<div id="helloworld" class="editor">(green 1)
 </div> </div>
 
       <p>
-      It assigns the value of three to the entire space,
-      meaning that every device should have a value of three.
+      It assigns the value of one to the entire space (meaning that every
+      device should have a value of one) and enables every device's green LED.
       </p>
 
       </article>
@@ -253,7 +253,7 @@
 
 <div class="editorwrapper">
 <div id="comments" class="editor">;; Here is a comment
-3 ;; Here is another comment
+(green 1) ;; Here is another comment
 </div></div>
       </article>
       
@@ -285,6 +285,11 @@
 (tup 0 1 2.2)
 </div></div>
 
+      <p>
+      While this isn't very interesting to see executing, it assigns the value
+      <tt>[0 1 2.2]</tt> to the entire space (and therefore, each of devices).
+      </p>
+
       </article>
 
       <article>
@@ -299,6 +304,12 @@
 (tup 0 1.1 (tup 2 3 4) (tup 5 6 7))
 </div></div>
       
+      <p>
+      Again, the execution isn't very interesting to see, but under-the-hood,
+      we're assigning the value <tt>[0 1.1 [2 3 4] [5 6 7]]</tt> to the entire space (and
+      therefore, each of devices).
+      </p>
+
       </article>
 
 
