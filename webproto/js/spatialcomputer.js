@@ -185,7 +185,7 @@ function SpatialComputer() {
        
        // for each device...
        var mid = simulatorSettings.numDevices;
-       while(--mid) {
+       while(--mid >= 0) {
           var device = this.devices[mid];
           var machine = device.machine;
        
