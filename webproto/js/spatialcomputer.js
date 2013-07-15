@@ -7,6 +7,7 @@ var simulatorSettings = {
 		      z_min:0, z_max:0 },
     distributionRegion : false, // default to stadiumsize
     lineMaterial : new THREE.LineBasicMaterial( { color: 0x00CC00, opacity: 0.8, linewidth: 0.5 } ),
+    selectionMaterial : new THREE.MeshBasicMaterial( { color: 0xFFFF00, opacity: 0.5, transparent : true }),
     material : function(mid) {
       return new THREE.MeshBasicMaterial( { color: 0xCC0000 });
     },
@@ -79,6 +80,7 @@ function neighborMap(device, allDevices, toCallOnNeighbors, needToUpdateNeighbor
 
 function SpatialComputer() {
     this.devices = new Array();
+    this.selection = new THREE.Geometry();
     this.time = 0.0;
     this.nextMid = 0;
     this.getNextMid = function() {
@@ -149,6 +151,10 @@ function SpatialComputer() {
     };
     
     this.updateColors = function() {
+       if(this.selection) { scene.remove(this.selection); this.selection=null; }
+       var selection_set = null;
+       var selected_position = {x:0,y:0,z:0};
+
        for(mid=0; mid < simulatorSettings.numDevices; mid++) {
           // update the color of the device
           if(this.devices[mid].machine.red > 0 ||
@@ -164,16 +170,24 @@ function SpatialComputer() {
              this.devices[mid].material.color = { r:0.5, g:0, b:1 };
           } else if(this.devices[mid].machine.getSensor(3)) {
              this.devices[mid].material.color = { r:1, g:0.5, b:1 };
-          } else if(this.devices[mid].selected) {
-             this.devices[mid].material.color = { r:1, g:1, b:1 };
           } else {
              // Default color (red)
              this.devices[mid].material.color.r = 0.8;
              this.devices[mid].material.color.g = 0.0;
              this.devices[mid].material.color.b = 0.0;
           }
-
+	  // mark if this device is selected
+	  if(this.devices[mid].selected) {
+	      selection_set = new THREE.SphereGeometry(2);
+	      selected_position = this.devices[mid].position;
+          }
        } // end foreach device
+
+	if(selection_set) {
+	    this.selection = new THREE.Mesh(selection_set,simulatorSettings.selectionMaterial);
+	    this.selection.position = selected_position;
+	    scene.add(this.selection);
+	}
     };
 
     this.needToUpdateNeighbors = false;
