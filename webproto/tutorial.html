@@ -63,29 +63,39 @@
       <img src="figures/protorunning.png" width="100%" />
 
       <p><i>Q: Why are you here?</i></p>
-      <p>Supply an answer...</p>
+      <p>We hope that it's because you want to learn about effective
+	programming of distributed systems, and about how the Proto
+	language makes this possible.</p>
+      <p>Only you, of course, can supply the true answer...</p>
 
       </article>
       <article>
       <h1>Assumptions about the Reader</h1>
       <p>
-      In writing this tutorial, we have made several assumptions about you as
-      a reader.  First, we assume you are, if not entirely new to programming,
-      entirely new to Lisp-like languages and many basic programming
-      statements.
+      In writing this tutorial, we have made several assumptions about
+      you as a reader.  First, we assume that you are either entirely
+      new to programming or at least unfamiliar with Lisp-like
+      languages and with many programming concepts.
       </p>
       <p>
-      Realize also that although Proto may be similar to other languages, the
-      way of thinking that must be used by Proto programmers is considerably
-      different.  Proto allows its user to look at both the individual devices
-      separately, and at the group of devices as a whole.
+      Whether or not you are already an experienced programmer, it is
+      important to realize that Proto is not like most other
+      programming languages.  Although Proto is similar to other
+      languages in many ways, the ways of thinking that are encouraged
+      by Proto are considerably different, because Proto allows its
+      user to think both about individual devices separately, and also
+      about entire collections of interacting devices as an aggregate.
+      Proto is also different because it encourages you to write
+      programs in terms of the continuous space your devices are
+      distributed through and the continuous period of time when they
+      are operating.
       </p>
       <p>
-      Proto is very different from most other programming languages.  For
-      most people, even once they've started writing Proto code, it's a big
-      jump to change how you're thinking and really take advantage of
-      Proto's continuous space/time model.  This tutorial will hopefully
-      help you make that jump.
+      For most people, even once they've started writing Proto
+      code, it's a big jump to change how you're thinking and really
+      take advantage of Proto's aggregate view and continuous
+      space/time model.  This tutorial will hopefully help you make
+      that jump.
       </p>
       </article>
 
@@ -135,8 +145,19 @@
       HTML5 support and WebGL.  We suggest using a recent version of
       <a href="http://www.google.com/chrome">Google Chrome</a> or 
       <a href="http://www.mozilla.org/en-US/firefox/new/">Mozilla Firefox</a>.
-      Furthermore, WebProto will function best in an environment with hardware
+      For other browsers, see the list of 
+      <a href="http://en.wikipedia.org/wiki/WebGL">which browsers
+      support WebGL</a>
+      or <a href="http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation">this
+      page on getting a WebGL implementation.</a>  Furthermore,
+      WebProto will function best in an environment with hardware
       acceleration for graphics.
+      </p>
+
+      <p>
+      The first time you use WebProto, it may load slowly while the
+      application code is downloaded by your web browser.  After
+      that, however, it should be cached and run much more quickly.
       </p>
 
       <p>
@@ -170,7 +191,7 @@
       
       <p>
       If at any time, you want to pause the execution of the Proto VM, just
-      hit the space-bar.
+      hit the space-bar.  Hit the space-bar again to unpause.
       </p>
       
       <p>
@@ -186,7 +207,7 @@
       <article>
       <h1>Hello World</h1>
       <p>
-      The simplest Proto program is
+      An extremely simple Proto program is
       </p>
 
 <div class="editorwrapper">
@@ -465,12 +486,11 @@
 
 <div class="editorwrapper">
 <div id="functions" class="editor">;;Function Definitions
-(all
-   (def check              ;; name of the function
-      (src)                ;; function arguments
-      (blue (if src 1 0))) ;; function body
+(def check              ;; name of the function
+   (src)                ;; function arguments
+   (blue (if src 1 0))) ;; function body
 
-   (check (sense 1))) ;; now, call the function
+(check (sense 1)) ;; now, call the function
 </div></div>
 
 <p>
@@ -478,7 +498,7 @@ And now... a test!
 </p>
 
       <div class="problemanswer">
-         <h3>Problem</h3>
+         <h3>Exercise</h3>
       <div class="problem">
 Write a function such that if any of the senses
 are turned on on a device, that device's LED turns green.
@@ -487,14 +507,12 @@ are turned on on a device, that device's LED turns green.
          <h3>Solution</h3>
 <div class="editorwrapper">
 <div id="anysense" class="editor">;;Green if any sensor
-(all
-   (def check
-      (src)
-      (green (if src 1 0)))
+(def check (src)
+   (green (if src 1 0)))
 
-   (check (or (sense 1) 
-            (or (sense 2) 
-                (sense 3)))))
+(check (or (sense 1) 
+         (or (sense 2) 
+             (sense 3))))
 </div></div></div>
 
       </article>
@@ -537,7 +555,7 @@ are turned on on a device, that device's LED turns green.
       <tt>(temperature)</tt>, that lists the temperature at each point in
       space and you want to perform some operation on the field.  For
       instance, let's say you want to know all the places where the
-      temperature is over 25 degrees celcius.  In Proto, it's as simple as
+      temperature is over 25 degrees Celsius.  In Proto, it's as simple as
       saying <tt>(> (temperature) 25)</tt>.  Graphically, it would look
       something like this:
       </p>
@@ -569,14 +587,13 @@ are turned on on a device, that device's LED turns green.
 
 <div class="editorwrapper">
 <div id="close" class="editor">;;Using Space
-(all
-   (def close (src)
-      (let ((d (distance-to src)))
-         (if (and (< d 10) (> d 1))
-            (blue 1)
-            (blue 0))))
+(def close (src)
+   (let ((d (distance-to src)))
+      (if (and (< d 10) (> d 1))
+         (blue 1)
+         (blue 0))))
 
-   (close (sense 1)))
+(close (sense 1))
 </div></div>
 
       <p>
@@ -622,16 +639,15 @@ are turned on on a device, that device's LED turns green.
 
 <div class="editorwrapper">
 <div id="closest" class="editor">;;Refining Space
-(all
-   (def closest (src)
-      (let ((d (distance-to src)))
-         (min-d (broadcast src (min-hood+ (nbr (distance-to src))))))
-      (if (and (not (= min-d (inf)))
-               (= min-d d))
-         (blue 1)
-         (blue 0)))
+(def closest (src)
+   (let ((d (distance-to src)))
+      (min-d (broadcast src (min-hood+ (nbr (distance-to src))))))
+   (if (and (not (= min-d (inf)))
+            (= min-d d))
+      (blue 1)
+      (blue 0)))
 
-   (closest (sense 1)))
+(closest (sense 1))
 </div></div>
 <p>
 This code is built to light up the device LED that is closest to the
@@ -729,7 +745,7 @@ from the <tt>src</tt>.
       <h1>Bullseye</h1>
 
       <div class="problemanswer">
-         <h3>Problem</h3>
+         <h3>Exercise</h3>
       <div class="problem">
          <p>
          Try this test: Write a program in which all the points create
@@ -748,18 +764,17 @@ from the <tt>src</tt>.
          <h3>Solution</h3>
 <div class="editorwrapper">
 <div id="bullseye" class="editor">;;Bullseye
-(all
-   (def bullseye (src)
-      (let ((d (distance-to src)))
-         (if (< d 15)
-            (red 1)
-            (if (< d 30)
-               (green 1)
-               (if (< d 45)
-                  (blue 1)
-                  0)))))
+(def bullseye (src)
+   (let ((d (distance-to src)))
+      (if (< d 15)
+         (red 1)
+         (if (< d 30)
+            (green 1)
+            (if (< d 45)
+               (blue 1)
+               0)))))
 
-   (bullseye (sense 1)))
+(bullseye (sense 1))
 </div></div></div>
       </article>
 
@@ -818,7 +833,7 @@ own special operation, <tt>(timer)</tt>.
       </p>
       
       <div class="problemanswer">
-         <h3>Problem</h3>
+         <h3>Exercise</h3>
       <div class="problem">
 Write a program such that devices move after 100 time ticks.
       </div>
