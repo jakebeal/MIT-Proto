@@ -14,8 +14,16 @@ addInstruction(curOpcode++, "NBR_RANGE", function(machine) {
     x = machine.current_neighbor.x;
     y = machine.current_neighbor.y;
     z = machine.current_neighbor.z;
-    dist = sqrt(x*x + y*y + z*z);
+    dist = Math.sqrt(x*x + y*y + z*z);
     machine.stack.push(dist);
+});
+
+addInstruction(curOpcode++, "NBR_LAG", function(machine) {
+    machine.stack.push(machine.current_neighbor.dataAge);
+});
+
+addInstruction(curOpcode++, "HOOD_RADIUS", function(machine) {
+    machine.stack.push(machine.radius);
 });
 
 addInstruction(curOpcode++, "MOV", function(machine) {
