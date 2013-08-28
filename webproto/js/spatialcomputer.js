@@ -98,11 +98,14 @@ function SpatialComputer() {
        scene.add(this.devices[mid]);
 
        // initialize the Proto VM
-       this.devices[mid].machine = new Module.Machine(
-                                                      this.devices[mid].position.x, 
-                                                      this.devices[mid].position.y, 
-                                                      this.devices[mid].position.z, 
-                                                      script);
+       this.devices[mid].machine = new Machine();
+       this.devices[mid].machine.x = this.devices[mid].position.x;
+       this.devices[mid].machine.y = this.devices[mid].position.y;
+       this.devices[mid].machine.z = this.devices[mid].position.z;
+       this.devices[mid].machine.install(script);
+       while(!this.devices[mid].machine.finished()) {
+         this.devices[mid].machine.step();
+       }
 
        this.devices[mid].machine.id = mid;
        
@@ -210,6 +213,8 @@ function SpatialComputer() {
                          function (nbr,d) { 
                             d.machine.deliverMessage(nbr.machine); 
                          }, this.needToUpdateNeighbors);
+	     // and to myself
+	     machine.deliverMessage(machine);
           }
 
           // if the machine should execute this timestep
