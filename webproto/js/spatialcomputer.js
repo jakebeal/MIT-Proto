@@ -213,8 +213,6 @@ function SpatialComputer() {
                          function (nbr,d) { 
                             d.machine.deliverMessage(nbr.machine); 
                          }, this.needToUpdateNeighbors);
-	     // and to myself
-	     machine.deliverMessage(machine);
           }
 
           // if the machine should execute this timestep
