@@ -78,7 +78,14 @@
 <script src="js/stats.min.js"></script>
 <script src="js/TrackballControls.js"></script>
 <script src="js/spatialcomputer.js"></script>
-<script src="js/webproto.js"></script>
+<script type="text/javascript" src="js/protojs/util.js"></script>
+<script type="text/javascript" src="js/protojs/binary-parser.js"></script>
+<script type="text/javascript" src="js/protojs/neighbor.js"></script>
+<script type="text/javascript" src="js/protojs/instruction.js"></script>
+<script type="text/javascript" src="js/protojs/instructions.js"></script>
+<script type="text/javascript" src="js/protojs/state.js"></script>
+<script type="text/javascript" src="js/protojs/machine.js"></script>
+<script type="text/javascript" src="js/simulator_instructions.js"></script>
 <script src="js/protosim.js"></script>
 <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
@@ -225,7 +232,7 @@
          console.log(program);
 
          // Compile the Script
-         script = new Module.Script();
+         script = new Array();
          $.ajax({
             type: 'GET',
             dataType: "json",
@@ -240,7 +247,7 @@
 
                // Add the compiler's response to a script
                $.each(data.script, function(index, value) {
-                  script.push_back(value);
+                  script.push(value);
                });
 
                // Prevent further code editing
