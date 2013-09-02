@@ -234,7 +234,7 @@ function SpatialComputer() {
 
           } // end if(shouldCompute)
           
-          if(machine.dx > 0 || machine.dy > 0 || machine.dz > 0) 
+          if(machine.dx != 0 || machine.dy != 0 || machine.dz != 0) 
           {
              // update the position of the device
              device.position = {

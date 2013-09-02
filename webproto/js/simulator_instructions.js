@@ -29,11 +29,19 @@ addInstruction(curOpcode++, "NBR_LAG", function(machine) {
 });
 
 addInstruction(curOpcode++, "NBR_VEC", function(machine) {
-    machine.nextInt();
+    machine.nextInt8();
     machine.stack.push([
       machine.current_neighbor.x,
       machine.current_neighbor.y,
       machine.current_neighbor.z
+      ]);
+});
+
+addInstruction(curOpcode++, "COORD", function(machine) {
+    machine.stack.push([
+      machine.x,
+      machine.y,
+      machine.z
       ]);
 });
 
