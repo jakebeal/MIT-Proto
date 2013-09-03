@@ -60,6 +60,9 @@ function areNeighbors(deviceA, deviceB) {
  * toCallOnNeighbors() will be called with two arguments:
  * 1) the neighbor device
  * 2) device (i.e., from args)
+ *
+ * XXX: needToUpdateNeighbors is not being set correctly in protosim, this is
+ * causing some bugs in rendering the neighborhood.
  */
 function neighborMap(device, allDevices, toCallOnNeighbors, needToUpdateNeighbors) {
    if(needToUpdateNeighbors || !device.neighbors) {

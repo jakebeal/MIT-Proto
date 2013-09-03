@@ -10,6 +10,13 @@ addInstruction(curOpcode++, "BLUE", function(machine) {
    machine.blue = machine.stack.peek();
 });
 
+addInstruction(curOpcode++, "RGB", function(machine) {
+   var rgbTup = machine.stack.peek();
+   machine.red = rgbTup[0];
+   machine.green = rgbTup[1];
+   machine.blue = rgbTup[2];
+});
+
 addInstruction(curOpcode++, "SENSE", function(machine) {
    var sensorNumber = machine.stack.pop();
    var sensorValue = machine.getSensor(sensorNumber);
