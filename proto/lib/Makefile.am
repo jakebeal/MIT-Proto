@@ -25,6 +25,9 @@ protolib_DATA = \
 	flip.proto \
 	gradcast.proto \
 	norm.proto \
-	timer.proto
+	timer.proto \
+	pretty-id.proto \
+	hsv2rgb.proto \
+	waypoint-wander.proto
 
 EXTRA_DIST = $(protolib_DATA)
