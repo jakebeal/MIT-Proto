@@ -38,7 +38,7 @@
                   <button id="linkButton" data-intro="Click here to get a URL for sharing your code and simulation with others." data-step="6" data-position="left">Share</button> 
                </td>
                <td>
-                  <button id="tourButton" data-intro="Click here to repeat this tour" data-step="7" data-position="left">Help</button> 
+                  <button id="tourButton" data-intro="Click here to repeat this tour" data-step="7" data-position="left">First-Time Tour</button> 
                </td>
             </tr> </table>
          </div>
@@ -127,7 +127,10 @@
          $('#editor').text(prg);
       } else {
          var do_tour = getCookie('tour');
-         if(do_tour == 'yes' || do_tour == null) { $('#editor').text(tour_program()); }
+         if(do_tour == 'yes' || do_tour == null) { $('#editor').text(tour_program());
+	 } else {
+	   $('#editor').text("");
+	 }
       }
       
       var numDevicesUrlParam = getURLParameter('numDevices');
@@ -185,7 +188,7 @@
          "&program=" + encodeURIComponent(editor.getValue()));
       });
 
-     $("#tourButton").click(function() { introJs().start(); });
+     $("#tourButton").click(function() { introJs().start(); if(editor.getValue()=="") { editor.setValue(tour_program()); } setCookie('tour','yes',20*365)});
 
       $("#settingsButton").click(function() {
          $("#settingsDialog").dialog( "open" );
