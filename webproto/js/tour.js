@@ -26,6 +26,20 @@ function getCookie(c_name) {
     return c_value;
 }
 
+function tour_program() {
+    var prg = 
+        ";; Here's an example program to help\n;; you get started...\n" +
+	"(let (;; Measure elapsed time\n" +
+        "      (time (timer))\n" +
+	"      ;; Measure distance device 0\n" +
+	"      (phase (distance-to (= (mid) 0))))\n" +
+	"  ;; Add distance & time for a shifting pattern\n" + 
+	"  (let ((wave (sin (* 0.1 (- time phase)))))\n" +
+	"    ;; Display scaled pattern with green LED\n" + 
+	"    (green (+ 0.5 (* 0.5 wave)))))\n";
+    return prg;
+}
+
 function maybe_run_tour() {
     var do_tour = getCookie('tour');
     if(do_tour == 'yes' || do_tour == null) {

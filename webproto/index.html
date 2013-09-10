@@ -125,6 +125,9 @@
       var prg = getURLParameter('program');
       if(prg) {
          $('#editor').text(prg);
+      } else {
+         var do_tour = getCookie('tour');
+         if(do_tour == 'yes' || do_tour == null) { $('#editor').text(tour_program()); }
       }
       
       var numDevicesUrlParam = getURLParameter('numDevices');
