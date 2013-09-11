@@ -1,3 +1,11 @@
+To Install on a Server:
+
+1) svn co <PROTO/trunk>
+2) compile proto (via instructions in SVN repo)
+3) copy webproto/webcompiler into CGI directory (e.g., /usr/lib/cgi-bin) and edit as necessary
+
+
+
 This is a highly experiment scratch project, and should be treated with extreme
 dubiousness.
 
