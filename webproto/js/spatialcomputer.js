@@ -72,6 +72,7 @@ function neighborMap(device, allDevices, toCallOnNeighbors, needToUpdateNeighbor
             device.neighbors.push(value);
          }
       });
+      needToUpdateNeighbors = false;
    }
 
    $.each(device.neighbors, function(index, value) {
@@ -196,13 +197,9 @@ function SpatialComputer() {
 	}
     };
 
-    this.needToUpdateNeighbors = false;
-
     this.update = function() {
        if(simulatorSettings.preUpdateHook) { simulatorSettings.preUpdateHook(); }
 
-       this.needToUpdateNeighbors = false;
-       
        // for each device...
        var mid = simulatorSettings.numDevices;
        while(--mid >= 0) {
@@ -253,6 +250,10 @@ function SpatialComputer() {
 
              // indicate that we need to update the nieghbors because someone moved
              this.needToUpdateNeighbors = true;
+	     // also tell it to all the neighbors
+             neighborMap(device, this.devices,
+                         function (nbr,d) { nbr.needToUpdateNeighbors = true; },
+                         false);
           }
 
           // clone, TODO: die
