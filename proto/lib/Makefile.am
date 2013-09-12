@@ -12,22 +12,7 @@ SUBDIRS = \
 	.
 
 protolib_DATA = \
-	bootstrap.proto \
-	broadcast.proto \
-	brownian.proto \
-	core.ops \
-	core.proto \
-	dilate.proto \
-	distance-to.proto \
-	distance.proto \
-	dither.proto \
-	elect.proto \
-	flip.proto \
-	gradcast.proto \
-	norm.proto \
-	timer.proto \
-	pretty-id.proto \
-	hsv2rgb.proto \
-	waypoint-wander.proto
+	*.proto \
+	core.ops
 
 EXTRA_DIST = $(protolib_DATA)
