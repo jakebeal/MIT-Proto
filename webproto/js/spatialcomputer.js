@@ -72,7 +72,7 @@ function neighborMap(device, allDevices, toCallOnNeighbors, needToUpdateNeighbor
             device.neighbors.push(value);
          }
       });
-      needToUpdateNeighbors = false;
+      device.needToUpdateNeighbors = false;
    }
 
    $.each(device.neighbors, function(index, value) {
@@ -205,14 +205,14 @@ function SpatialComputer() {
        while(--mid >= 0) {
           var device = this.devices[mid];
           var machine = device.machine;
-       
+          
           // if it's time to transmit...
           if(this.time >= device.nextTransmitTime) {
              // deliver messages to my neighbors
              neighborMap(device, this.devices,
                          function (nbr,d) { 
                             d.machine.deliverMessage(nbr.machine); 
-                         }, this.needToUpdateNeighbors);
+                         }, device.needToUpdateNeighbors);
           }
 
           // if the machine should execute this timestep
@@ -249,7 +249,7 @@ function SpatialComputer() {
              machine.z = device.position.z;
 
              // indicate that we need to update the nieghbors because someone moved
-             this.needToUpdateNeighbors = true;
+             device.needToUpdateNeighbors = true;
 	     // also tell it to all the neighbors
              neighborMap(device, this.devices,
                          function (nbr,d) { nbr.needToUpdateNeighbors = true; },
