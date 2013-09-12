@@ -181,6 +181,7 @@ bool Torus::next_location(METERS *loc) {
     loc[0] = rad * cos(theta);
     loc[1] = rad * sin(theta);
   }
+  return true;
 }
 
 /*************** Plugin Library ***************/
