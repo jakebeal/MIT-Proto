@@ -168,6 +168,10 @@ function SpatialComputer() {
 
     this.removeArbitraryDevice = function() {
 	for(var mid in this.devices) {
+	  // mark neighbors to update themselves
+          neighborMap(this.devices[mid], this.devices,
+                    function (nbr,d) { nbr.needToUpdateNeighbors = true; },
+                    true);
 	  scene.remove(this.devices[mid]);
 	  delete this.devices[mid];
 	  break;
