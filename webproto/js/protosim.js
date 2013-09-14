@@ -186,7 +186,7 @@ function animate() {
 
        // draw topology lines if the option is set
        if(simulatorSettings.drawEdges) {
-          $.each(spatialComputer.devices, function(index, device) {
+          spatialComputer.devices.forEach(function(device, index) {
              neighborMap(device, spatialComputer.devices, function(neighbor, d) {
                 lineset.vertices.push(new THREE.Vector3(device.position.x, device.position.y, device.position.z));
                 lineset.vertices.push(new THREE.Vector3(neighbor.position.x, neighbor.position.y, neighbor.position.z));
