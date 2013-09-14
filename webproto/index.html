@@ -50,7 +50,7 @@
       </div>
 
 
-      <a data-intro="Your simulation will show up in this panel" data-step="3" data-location="left"></a>
+      <a data-intro="Your simulation will show up in this panel.  Hit 'space' to pause and unpause." data-step="3" data-location="left"></a>
       <a data-intro="Click and drag to rotate the simulation in 3D" data-step="3.1" data-location="left"></a>
       <a data-intro="Use two fingers or right click to zoom" data-step="3.2" data-location="left"></a>
       <div id="main">
@@ -207,7 +207,7 @@
       $("#radiusInput").change(function() {
          simulatorSettings.radius = parseInt($("#radiusInput").val());
          if(spatialComputer && spatialComputer.devices) {
-            $.each(spatialComputer.devices, function(index, device) {
+            spatialComputer.devices.forEach(function(device, index) {
                device.machine.radius = simulatorSettings.radius;
                device.needToUpdateNeighbors = true;
             });
