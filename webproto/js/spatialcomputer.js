@@ -181,6 +181,12 @@ function SpatialComputer() {
     this.init = function() {
       if(simulatorSettings.preInitHook) { simulatorSettings.preInitHook(); }
 
+	// remove any old devices:
+	for(var i=0; i < simulatorSettings.numDevices; i++) {
+	    spatialComputer.removeArbitraryDevice();
+	}
+
+
        this.time = simulatorSettings.startTime;
 
        // initialize the devices

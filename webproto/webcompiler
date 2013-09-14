@@ -9,7 +9,7 @@ program = form.getvalue('program')
 
 print("Content-type: application/json\n\n")
 
-output = subprocess.Popen(['/opt/httpd/80/proto/cgi-bin//p2b', '--instructions', program], stdout=subprocess.PIPE).communicate()[0]
+output = subprocess.Popen(['/opt/httpd/80/proto/cgi-bin//p2b', '--instructions', '--json', program], stdout=subprocess.PIPE).communicate()[0]
 
 print(output)
 

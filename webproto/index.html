@@ -271,11 +271,11 @@
                });
 
                // Prevent further code editing
-               editor.setReadOnly(true);
+               //editor.setReadOnly(true);
 
                // Start the Simulator
                init();
-               animate();
+               if(!animation_started) { animate(); }
             },
             error: function(err) {
                $.jnotify("There was an error processing the Proto script, please check it and try again", "error");
@@ -287,6 +287,11 @@
          }); // end ajax()
       } // end runSimulator()
 
+      // Taking / Losing focus in editor:
+      $('#editor').click(function(e){
+         e.preventDefault();
+         editor.focus();
+      });
       // Dragging dragbar
       $('#dragbar').mousedown(function(e){
          e.preventDefault();
