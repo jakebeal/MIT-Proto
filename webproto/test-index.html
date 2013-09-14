@@ -201,7 +201,7 @@
       });
 
       $("#numDevicesInput").change(function() {
-         simulatorSettings.numDevices = parseInt($("#numDevicesInput").val());
+         simulatorSettings.adjustNumDevices(parseInt($("#numDevicesInput").val()));
       });
 
       $("#radiusInput").change(function() {
