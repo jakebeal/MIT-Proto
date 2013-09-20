@@ -18,6 +18,7 @@ using namespace std;
 #define D_XGRID "xgrid"
 #define D_HEXGRID "hexgrid"
 #define D_FIXEDPT "fixedpt"
+#define D_FIXEDPTFILE "fixedptfile"
 #define D_CYLINDER "cylinder"
 #define D_OVOID "ovoid"
 #define D_TORUS "torus"
@@ -39,6 +40,48 @@ FixedPoint::~FixedPoint() {
   for(int i=0;i<n_fixes;i++) { free(fixes.get(i)); }
 }
 bool FixedPoint::next_location(METERS *loc) {
+  if(fixed<n_fixes) {
+    METERS* src = (METERS*)fixes.get(fixed);
+    for(int i=0;i<3;i++) loc[i]=src[i];
+    fixed++;
+    return true;
+  } else {
+    return UniformRandom::next_location(loc);
+  }
+}
+
+// Just like fixed point, but it reads the location from a file instead
+FixedPointFile::FixedPointFile(Args* args, int n, Rect* volume):UniformRandom(n,volume){
+  fixed=0; n_fixes=0;
+  char* filename = args->pop_next();
+  FILE* file;
+  if((file = fopen(filename, "r"))==NULL) {
+    debug("WARNING: Couldn't open fixed-point location file %s.\n",filename); 
+  } else {
+    char buf[255]; int line=0;
+    while(fgets(buf,255,file)) {
+      line++;
+      flo x, y, z;
+      if(buf[0]=='#') continue; // comment
+      int n = sscanf(buf,"%f %f %f",&x,&y,&z);
+      if(n==EOF || n==0) continue; // whitespace
+      if(n>=2) {
+	if(n==2) z=0;
+        METERS* loc = (METERS*)calloc(3,sizeof(METERS));
+        loc[0]=x; loc[1]=y; loc[2]=z;
+        fixes.add(loc); n_fixes++;
+      } else {
+	debug("WARNING: bad position at %s line %d; should be X Y [Z]\n",
+	      filename,line);
+      }
+    }
+    fclose(file);
+  }
+}
+FixedPointFile::~FixedPointFile() {
+  for(int i=0;i<n_fixes;i++) { free(fixes.get(i)); }
+}
+bool FixedPointFile::next_location(METERS *loc) {
   if(fixed<n_fixes) {
     METERS* src = (METERS*)fixes.get(fixed);
     for(int i=0;i<3;i++) loc[i]=src[i];
@@ -198,6 +241,8 @@ void* DistributionsPlugin::get_sim_plugin(string type, string name, Args* args,
       return new HexGrid(n,cpu->volume);
     if(name==D_FIXEDPT) // specify location of first k devices
       return new FixedPoint(args,n,cpu->volume);
+    if(name==D_FIXEDPTFILE) // specify location of first k devices
+      return new FixedPointFile(args,n,cpu->volume);
     if(name==D_CYLINDER)
       return new Cylinder(n,cpu->volume);
     if(name==D_OVOID)
@@ -215,6 +260,7 @@ string DistributionsPlugin::inventory() {
   s += registry_entry(DISTRIBUTION_PLUGIN,D_XGRID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_HEXGRID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_FIXEDPT,DLL_NAME);
+  s += registry_entry(DISTRIBUTION_PLUGIN,D_FIXEDPTFILE,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_CYLINDER,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_OVOID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_TORUS,DLL_NAME);

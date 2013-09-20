@@ -14,13 +14,21 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "UniformRandom.h"
 
 /*************** Various Distributions ***************/
-// Y is random
 class FixedPoint : public UniformRandom {
 public:
   int fixed; int n_fixes;
   Population fixes;
   FixedPoint(Args* args, int n, Rect* volume);
   virtual ~FixedPoint();
+  bool next_location(METERS *loc); 
+};
+
+class FixedPointFile : public UniformRandom {
+public:
+  int fixed; int n_fixes;
+  Population fixes;
+  FixedPointFile(Args* args, int n, Rect* volume);
+  virtual ~FixedPointFile();
   bool next_location(METERS *loc); 
 };
 
@@ -32,6 +40,7 @@ public:
   virtual bool next_location(METERS *loc) ;
 };
 
+// Y is random
 class XGrid : public Distribution {
 public:
   int rows,columns,layers;
