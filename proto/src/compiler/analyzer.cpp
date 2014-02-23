@@ -1144,7 +1144,7 @@ public:
     	  V3 << "Store: " << ce2s(store) << endl;
     	  V3 << "Mux output: " << ce2s(mux->output) << endl;
       } else {
-    	  cout << "Delays input is not from a letfedmux!" << endl;
+    	  V1 << "Delays input is not from a letfedmux!" << endl;
       }
     } else if(oi->op==Env::core_op("mux")) {
        // Handle the case where we have a dchange with no delay
