@@ -17,6 +17,7 @@ using namespace std;
 #define D_GRIDEPS "grideps"
 #define D_XGRID "xgrid"
 #define D_HEXGRID "hexgrid"
+#define D_CIRCLE "circle"
 #define D_FIXEDPT "fixedpt"
 #define D_FIXEDPTFILE "fixedptfile"
 #define D_CYLINDER "cylinder"
@@ -179,6 +180,23 @@ bool HexGrid::next_location(METERS *loc) {
 }
 
 
+// Circle is a purely 2D dimension, useful for abstract overlay net sim
+Circle::Circle(int n, Rect* volume) : Distribution(n,volume) {
+  i=0;
+  diameter = min(height, width);
+}
+bool Circle::next_location(METERS *loc) {
+  // if we wrap, start spiraling outward
+  if(i>n) diameter = diameter*(1.0+0.1/n);
+
+  loc[0] = 0.5*diameter*cos((2*M_PI*i)/n);
+  loc[1] = 0.5*diameter*sin((2*M_PI*i)/n);
+  loc[2] = 0;
+  i++;
+  return true;
+}
+
+
 Cylinder::Cylinder(int n, Rect* volume) : Distribution(n,volume) {
   r = min(width, height) / 2;
 }
@@ -239,6 +257,8 @@ void* DistributionsPlugin::get_sim_plugin(string type, string name, Args* args,
       return new XGrid(n,cpu->volume);
     if(name==D_HEXGRID) // plain grid    
       return new HexGrid(n,cpu->volume);
+    if(name==D_CIRCLE) // plain grid    
+      return new Circle(n,cpu->volume);
     if(name==D_FIXEDPT) // specify location of first k devices
       return new FixedPoint(args,n,cpu->volume);
     if(name==D_FIXEDPTFILE) // specify location of first k devices
@@ -259,6 +279,7 @@ string DistributionsPlugin::inventory() {
   s += registry_entry(DISTRIBUTION_PLUGIN,D_GRIDEPS,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_XGRID,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_HEXGRID,DLL_NAME);
+  s += registry_entry(DISTRIBUTION_PLUGIN,D_CIRCLE,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_FIXEDPT,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_FIXEDPTFILE,DLL_NAME);
   s += registry_entry(DISTRIBUTION_PLUGIN,D_CYLINDER,DLL_NAME);

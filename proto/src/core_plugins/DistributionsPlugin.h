@@ -64,6 +64,14 @@ public:
   virtual bool next_location(METERS *loc) ;
 };
 
+class Circle : public Distribution {
+public:
+  METERS diameter;
+  int i;
+  Circle(int n, Rect* volume);
+  bool next_location(METERS *loc);
+};
+
 class Cylinder : public Distribution {
 public:
   METERS r;
