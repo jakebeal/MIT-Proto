@@ -40,12 +40,13 @@ namespace Instructions {
 		Size       state_size = machine.nextInt8 ();
 		Size       stack_size = machine.nextInt16();
 		Size environment_size = machine.nextInt8 ();
-		
+
 		machine.      stack.reset(   stack_size+20); // MIT Proto calculates the stack size slightly different than how DelftProto uses it. Add 20 to be safe.
 		machine.environment.reset(environment_size);
 		machine.    globals.reset(    globals_size);
 		machine.    threads.reset(               1);
 		machine.      state.reset(      state_size);
+		machine.firstFeedbackUpdate.reset(state_size);
 		machine.       hood.reset(    exports_size);
 		
 		machine.current_thread = 0;
@@ -78,6 +79,7 @@ namespace Instructions {
 		machine.    globals.reset(machine.nextInt());
 		machine.    threads.reset(machine.nextInt());
 		machine.      state.reset(machine.nextInt());
+		machine.firstFeedbackUpdate.reset(machine.state.size());
 		machine.       hood.reset(machine.nextInt());
 		
 		machine.current_thread = 0;

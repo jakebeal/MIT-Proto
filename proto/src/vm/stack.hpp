@@ -15,6 +15,8 @@
 #define __STACK_HPP
 
 #include "memory.hpp"
+#include <iostream>
+using namespace std;
 
 template<typename Element>
 class BasicStack {
@@ -69,7 +71,8 @@ class BasicStack {
 		
 		/// Push a new element on the stack.
 		inline void push(Element const & element) {
-			new (top++) Element(element);
+                  if(full()) cerr << "Stack overflow: full with " << size() << " elements\n";
+                  new (top++) Element(element);
 		}
 		
 		/// Pop an element from the stack.
