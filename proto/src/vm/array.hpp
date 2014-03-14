@@ -14,8 +14,8 @@
 #ifndef __ARRAY_HPP
 #define __ARRAY_HPP
 
-#include <types.hpp>
-#include <memory.hpp>
+#include "types.hpp"
+#include "memory.hpp"
 
 /// A simple array.
 /**

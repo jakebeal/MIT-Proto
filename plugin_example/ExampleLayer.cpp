@@ -47,16 +47,16 @@ void FooDevice::dump_state(FILE* out, int verbosity) {
 }
 
 void FooDevice::update() {
-  foo_timer -= (machine->time - machine->last_time);
+  foo_timer -= machine->currentThread().desired_period;
   if(foo_timer<=0) foo_timer += parent->cycle;
 }
 
-BOOL FooDevice::handle_key(KeyEvent* key) {
+bool FooDevice::handle_key(KeyEvent* key) {
   // is this a key recognized internally?
   if(key->normal && !key->ctrl) {
     switch(key->key) {
-    case 'B': foo_timer += 8; return TRUE;
+    case 'B': foo_timer += 8; return true;
     }
   }
-  return FALSE;
+  return false;
 }

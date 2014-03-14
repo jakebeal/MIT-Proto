@@ -14,9 +14,9 @@
 #ifndef __THREAD_HPP
 #define __THREAD_HPP
 
-#include <types.hpp>
-#include <data.hpp>
-#include <time.hpp>
+#include "types.hpp"
+#include "data.hpp"
+#include "time.hpp"
 
 class BasicThread {
 	
@@ -97,7 +97,7 @@ class BasicThread {
 
 /** \cond */
 #define Thread BasicThread
-#include <extensions.hpp>
+#include "extensions.hpp"
 typedef Thread ExtendedThread;
 #undef Thread
 /** \endcond */

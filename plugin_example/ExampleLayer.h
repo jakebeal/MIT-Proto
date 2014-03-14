@@ -22,7 +22,7 @@ class FooDevice : public DeviceLayer {
   float foo_timer;
   FooDevice(FooLayer* parent, Device* container);
   void update();
-  BOOL handle_key(KeyEvent* event);
+  bool handle_key(KeyEvent* event);
   void copy_state(DeviceLayer* src) {} // to be called during cloning
   void dump_state(FILE* out, int verbosity); // print state to log file "out"
 };

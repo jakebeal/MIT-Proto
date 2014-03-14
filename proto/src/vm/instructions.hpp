@@ -58,14 +58,14 @@ namespace Instructions {
 	
 #	define INSTRUCTION(name)                   void name    (Machine &);
 #	define INSTRUCTION_N(name,n) template<int> void name##_N(Machine &);
-#	include <delftproto.instructions>
+#	include "delftproto.instructions"
 #	undef INSTRUCTION
 #	undef INSTRUCTION_N
 	
 	enum {
 #		define INSTRUCTION(name)     name##_OP,
 #		define INSTRUCTION_N(name,n) name##_##n##_OP,
-#		include <delftproto.instructions>
+#		include "delftproto.instructions"
 #		undef INSTRUCTION
 #		undef INSTRUCTION_N
 	};

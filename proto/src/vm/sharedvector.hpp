@@ -14,8 +14,8 @@
 #ifndef __SHAREDVECTOR_HPP
 #define __SHAREDVECTOR_HPP
 
-#include <types.hpp>
-#include <memory.hpp>
+#include "types.hpp"
+#include "memory.hpp"
 
 /// A vector with shared contents.
 /**

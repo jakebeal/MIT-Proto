@@ -9,5 +9,5 @@ class FooDistribution : public Distribution {
  public:
   float rad; float d; int i;
   FooDistribution(int n, Rect* volume, Args* args);
-  BOOL next_location(METERS *loc); // called once per device
+  bool next_location(METERS *loc); // called once per device
 };

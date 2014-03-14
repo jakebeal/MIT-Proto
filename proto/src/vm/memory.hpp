@@ -16,7 +16,7 @@
 #ifndef __MEMORY_HPP
 #define __MEMORY_HPP
 
-#include <types.hpp>
+#include "types.hpp"
 
 /// An interface to the memory (de)allocation functions.
 /**

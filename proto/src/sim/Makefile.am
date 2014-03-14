@@ -46,7 +46,10 @@ pkginclude_HEADERS = \
 	unitdiscradio.h \
 	radio.h \
 	UniformRandom.h \
-	FixedIntervalTime.h
+	FixedIntervalTime.h \
+	dpvm-extension/extensions.hpp \
+	dpvm-extension/sim-machine.hpp \
+	dpvm-extension/sim-neighbour.hpp
 
 #opsim doesn't work yet with Delft VM
 #opsim_SOURCES = opsim.cpp

@@ -14,11 +14,11 @@
 #ifndef __DATA_HPP
 #define __DATA_HPP
 
-#include <memory.hpp>
-#include <types.hpp>
-#include <tuple.hpp>
-#include <address.hpp>
-#include <stack.hpp>
+#include "memory.hpp"
+#include "types.hpp"
+#include "tuple.hpp"
+#include "address.hpp"
+#include "stack.hpp"
 #include "config.h"
 
 /// The main data type of the VM.

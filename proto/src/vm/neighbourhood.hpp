@@ -14,9 +14,9 @@
 #ifndef __NEIGHBOURLIST_HPP
 #define __NEIGHBOURLIST_HPP
 
-#include <memory.hpp>
-#include <types.hpp>
-#include <neighbour.hpp>
+#include "memory.hpp"
+#include "types.hpp"
+#include "neighbour.hpp"
 
 /// A list of Neighbours.
 /**

@@ -14,7 +14,7 @@
 #ifndef __IEEE754_HPP
 #define __IEEE754_HPP
 
-#include <types.hpp>
+#include "types.hpp"
 
 /// An IEEE 754 binary32 floating point number representation.
 /**

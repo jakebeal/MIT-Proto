@@ -14,7 +14,7 @@
 #ifndef __ADDRESS_HPP
 #define __ADDRESS_HPP
 
-#include <types.hpp>
+#include "types.hpp"
 
 /// An address of a constant series of bytes in memory.
 /**

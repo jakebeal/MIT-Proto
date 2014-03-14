@@ -14,7 +14,7 @@
 #ifndef __STACK_HPP
 #define __STACK_HPP
 
-#include <memory.hpp>
+#include "memory.hpp"
 
 template<typename Element>
 class BasicStack {

@@ -14,7 +14,7 @@
 #ifndef __TIME_HPP
 #define __TIME_HPP
 
-#include <types.hpp>
+#include "types.hpp"
 
 /// \class Time
 /// Time in Proto, as used by DT.

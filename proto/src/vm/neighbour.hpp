@@ -14,9 +14,9 @@
 #ifndef __NEIGHBOUR_HPP
 #define __NEIGHBOUR_HPP
 
-#include <array.hpp>
-#include <data.hpp>
-#include <machineid.hpp>
+#include "array.hpp"
+#include "data.hpp"
+#include "machineid.hpp"
 
 class BasicNeighbour {
 	
@@ -35,7 +35,7 @@ class BasicNeighbour {
 
 /** \cond */
 #define Neighbour BasicNeighbour
-#include <extensions.hpp>
+#include "extensions.hpp"
 typedef Neighbour ExtendedNeighbour;
 #undef Neighbour
 /** \endcond */

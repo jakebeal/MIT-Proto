@@ -14,16 +14,16 @@
 #ifndef __MACHINE_HPP
 #define __MACHINE_HPP
 
-#include <types.hpp>
-#include <data.hpp>
-#include <stack.hpp>
-#include <state.hpp>
-#include <script.hpp>
-#include <thread.hpp>
-#include <neighbour.hpp>
-#include <neighbourhood.hpp>
-#include <instructions.hpp>
-#include <machineid.hpp>
+#include "types.hpp"
+#include "data.hpp"
+#include "stack.hpp"
+#include "state.hpp"
+#include "script.hpp"
+#include "thread.hpp"
+#include "neighbour.hpp"
+#include "neighbourhood.hpp"
+#include "instructions.hpp"
+#include "machineid.hpp"
 #include <iostream>
 using namespace std;
 
@@ -308,7 +308,7 @@ class BasicMachine {
 
 /** \cond */
 #define Machine BasicMachine
-#include <extensions.hpp>
+#include "extensions.hpp"
 typedef Machine ExtendedMachine;
 #undef Machine
 /** \endcond */

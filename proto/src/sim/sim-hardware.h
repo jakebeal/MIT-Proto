@@ -12,7 +12,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include <vector>
 #include <string>
 #include <stdint.h>
-#include <machine.hpp>
+#include "machine.hpp"
 
 using namespace std;
 // posts data without pretty nesting
@@ -158,5 +158,10 @@ public:
 // HardwarePatch classes can count on them being set to correct values
 extern SimulatedHardware* hardware;
 extern Device* device;
+extern Machine* machine;
+
+Device* current_device();
+SimulatedHardware* current_hardware();
+Machine* current_machine();
 
 #endif //__SIM_HARDWARE__

@@ -14,8 +14,8 @@
 #ifndef __SCRIPT_HPP
 #define __SCRIPT_HPP
 
-#include <types.hpp>
-#include <array.hpp>
+#include "types.hpp"
+#include "array.hpp"
 
 /// A proto script (bytecode).
 class Script {
