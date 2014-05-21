@@ -41,6 +41,7 @@ libmica2mote_la_LDFLAGS = $(pluginflags)
 # shared library for radio plugin
 libradiomodels_la_SOURCES = \
 	wormhole-radio.cpp \
+	graph_link_radio.cpp \
 	multiradio.cpp \
 	RadioModelsPlugin.cpp
 libradiomodels_la_LIBADD = $(pluginlibs)

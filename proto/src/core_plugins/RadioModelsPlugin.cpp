@@ -9,12 +9,14 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 #include "RadioModelsPlugin.h"
 #include "multiradio.h"
 #include "wormhole-radio.h"
+#include "graph_link_radio.h"
 
 void* RadioModelsPlugin::get_sim_plugin(string type,string name,Args* args, 
                                         SpatialComputer* cpu, int n) {
   if(type == LAYER_PLUGIN) {
     if(name == WORM_HOLES_NAME) { return new WormHoleRadio(args, cpu, n); }
     if(name == MULTI_RADIO_NAME) { return new MultiRadio(args, cpu, n); }
+    if(name == GRAPHLINK_RADIO_NAME) { return new GraphLinkRadio(args, cpu, n); }
   }
   return NULL;
 }
@@ -22,7 +24,8 @@ void* RadioModelsPlugin::get_sim_plugin(string type,string name,Args* args,
 string RadioModelsPlugin::inventory() {
   return "# More complex radio models\n" +
     registry_entry(LAYER_PLUGIN,WORM_HOLES_NAME,DLL_NAME) +
-    registry_entry(LAYER_PLUGIN,MULTI_RADIO_NAME,DLL_NAME);
+    registry_entry(LAYER_PLUGIN,MULTI_RADIO_NAME,DLL_NAME) +
+    registry_entry(LAYER_PLUGIN,GRAPHLINK_RADIO_NAME,DLL_NAME);
 }
 
 extern "C" {

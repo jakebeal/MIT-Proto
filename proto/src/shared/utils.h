@@ -85,6 +85,9 @@ extern void  FREE(void *ptr);
 #define for_set(t, x, i)                                        \
   for (std::set<t>::iterator i = (x).begin() ; i != (x).end(); ++i)
 
+#define for_vec(t, x, i)                                        \
+  for (std::vector<t>::iterator i = (x).begin() ; i != (x).end(); ++i)
+
 #define for_map(tk, td, x, i)                                           \
   for (std::map<tk, td>::iterator i = (x).begin(); i != (x).end(); ++i)
 

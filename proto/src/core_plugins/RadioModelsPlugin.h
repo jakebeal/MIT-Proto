@@ -13,6 +13,7 @@ in the file LICENSE in the MIT Proto distribution's top directory. */
 
 #define WORM_HOLES_NAME "wormholes"
 #define MULTI_RADIO_NAME "multiradio"
+#define GRAPHLINK_RADIO_NAME "graphnetwork"
 #define DLL_NAME "libradiomodels"
 
 // Plugin class
