@@ -7,6 +7,7 @@ pkginclude_HEADERS = \
 	address.hpp \
 	array.hpp \
 	data.hpp \
+	field.hpp \
 	ieee754.hpp \
 	instructions.hpp \
 	machine.hpp \

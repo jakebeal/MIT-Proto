@@ -19,6 +19,7 @@
 #include "tuple.hpp"
 #include "address.hpp"
 #include "stack.hpp"
+#include "field.hpp"
 #include "config.h"
 
 /// The main data type of the VM.
@@ -26,7 +27,8 @@
  * It can hold
  * \li a Number;
  * \li a Tuple;
- * \li an Address; or
+ * \li an Address;
+ * \li a FieldData; or
  * \li nothing at all (ie. 'undefined' or 'not set').
  */
 class Data {
@@ -37,7 +39,8 @@ class Data {
 			Type_undefined,
 			Type_number,
 			Type_tuple,
-			Type_address
+			Type_address,
+                        Type_field
 		};
 		
 	protected:
@@ -45,7 +48,7 @@ class Data {
 		// The value_type specifies how the value should be interpreted.
 		Type value_type;
 		
-		// The value can contain a Number, a Tuple or an Address.
+		// The value can contain a Number, a Tuple, an Address, or a FieldData.
 		// Because some of these types have non-trivial constructors, the union does not (and can not) contain members of these types.
 		// So, instead, it only contains members of the same size as the types it should be able to contain.
 		// A reinterpret_cast should be used to interface the value as a specific type.
@@ -55,6 +58,7 @@ class Data {
 			char  number_data[sizeof(Number )];
 			char   tuple_data[sizeof(Tuple  )];
 			char address_data[sizeof(Address)];
+			char   field_data[sizeof(FieldData)];
 		} value;
 		
 	public:
@@ -63,6 +67,7 @@ class Data {
 		inline Data(Number  const & number ) : value_type(Type_number   ) { new (&value) Number (number ); } ///< Get a Data object containing a Number.
 		inline Data(Tuple   const & tuple  ) : value_type(Type_tuple    ) { new (&value) Tuple  (tuple  ); } ///< Get a Data object containing a Tuple.
 		inline Data(Address const & address) : value_type(Type_address  ) { new (&value) Address(address); } ///< Get a Data object containing an Address.
+		inline Data(FieldData const & field) : value_type(Type_field  ) { new (&value) FieldData(field); } ///< Get a Data object containing a FieldData.
 		
 		/// Copy a Data object.
 		inline Data & operator = (Data const & data) {
@@ -71,6 +76,7 @@ class Data {
 				case Type_number   : reset(data.asNumber ()); break;
 				case Type_tuple    : reset(data.asTuple  ()); break;
 				case Type_address  : reset(data.asAddress()); break;
+				case Type_field    : reset(data.asField()); break;
 			}
 			return *this;
 		}
@@ -98,6 +104,9 @@ class Data {
 		
 		inline Address       & asAddress()       { return *reinterpret_cast<      Address *>(&value); } ///< Interpret this Data object as an Address.
 		inline Address const & asAddress() const { return *reinterpret_cast<const Address *>(&value); } ///< Interpret this Data object as an Address.
+
+		inline FieldData     & asField  ()       { return *reinterpret_cast<      FieldData *>(&value); } ///< Interpret this Data object as a FieldData.
+		inline FieldData const & asField() const { return *reinterpret_cast<const FieldData *>(&value); } ///< Interpret this Data object as a FieldData.
 		
 		/// Reset the value to 'undefined' (ie. 'not set').
 		inline void reset() {
@@ -107,6 +116,7 @@ class Data {
 			  case Type_number   : resetNumber (); break;
 			  case Type_tuple    : resetTuple  (); break;
 			  case Type_address  : resetAddress(); break;
+			  case Type_field    : resetField  (); break;
 		    }
 #endif
 		}
@@ -114,6 +124,7 @@ class Data {
 		inline void reset(Number  const & number ) { reset(); value_type = Type_number ; new (&value) Number (number ); } ///< Set the value to a Number.
 		inline void reset(Tuple   const & tuple  ) { reset(); value_type = Type_tuple  ; new (&value) Tuple  (tuple  ); } ///< Set the value to a Tuple.
 		inline void reset(Address const & address) { reset(); value_type = Type_address; new (&value) Address(address); } ///< Set the value to an Address.
+		inline void reset(FieldData   const & field  ) { reset(); value_type = Type_field  ; new (&value) FieldData  (field  ); } ///< Set the value to a Field.
 		
 		/// Make a 'real' copy of the data.
 		/**
@@ -123,6 +134,7 @@ class Data {
 		 */
 		inline Data copy() const {
 			if (value_type == Type_tuple) return Data(asTuple().copy());
+			if (value_type == Type_field) return Data(asField().copy());
 			return *this;
 		}
 		
@@ -135,6 +147,7 @@ class Data {
 		inline void resetNumber () { asNumber ().~Number (); value_type = Type_undefined; }
 		inline void resetTuple  () { asTuple  ().~Tuple  (); value_type = Type_undefined; }
 		inline void resetAddress() { asAddress().~Address(); value_type = Type_undefined; }
+		inline void resetField  () { asField  ().~FieldData  (); value_type = Type_undefined; }
 		
 		friend class Stack<Data>;
 		
@@ -149,6 +162,7 @@ class Stack<Data> : public BasicStack<Data> {
 		inline Number  popNumber () { return pop().asNumber();  }
 		inline Tuple   popTuple  () { return pop().asTuple();   }
 		inline Address popAddress() { return pop().asAddress(); }
+		inline FieldData popField() { return pop().asField();   }
 		
 };
 
