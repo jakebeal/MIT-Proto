@@ -149,11 +149,8 @@ namespace Instructions {
 #if MIT_COMPATIBILITY != NO_MIT
 	/// \deprecated_mitproto{MUX}
 	void VMUX(Machine & machine){
-		machine.nextInt8();
-		Data false_value = machine.stack.pop();
-		Data  true_value = machine.stack.pop();
-		Number condition = machine.stack.popNumber();
-		machine.stack.push(condition ? true_value : false_value);
+          machine.nextInt8(); // discard obsolete opcode
+          MUX(machine);
 	}
 #endif
 	

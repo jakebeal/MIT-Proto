@@ -77,7 +77,13 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void EQ(Machine & machine){
-		machine.stack.push(compare(machine) == 0 ? 1 : 0);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,EQ,a,b);
+          } else {
+            machine.stack.push(compare(a,b) == 0 ? 1 : 0);
+          }
 	}
 	
 #if MIT_COMPATIBILITY != MIT_ONLY
@@ -90,7 +96,13 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void NEQ(Machine & machine){
-		machine.stack.push(compare(machine) != 0 ? 1 : 0);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,NEQ,a,b);
+          } else {
+            machine.stack.push(compare(a,b) != 0 ? 1 : 0);
+          }
 	}
 #endif
 	
@@ -103,11 +115,17 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void LT(Machine & machine){
-      float c = compare(machine);
-      if (isNaN(c))
-         machine.stack.push(0);
-      else
-         machine.stack.push(c == -1 ? 1 : 0);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,LT,a,b);
+          } else {
+            float c = compare(a,b);
+            if (isNaN(c))
+              machine.stack.push(0);
+            else
+              machine.stack.push(c == -1 ? 1 : 0);
+          }
 	}
 	
 	/// Check if a number or vector is (lexicographically) less than or equal to another one.
@@ -119,11 +137,17 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void LTE(Machine & machine){
-      float c = compare(machine);
-      if (isNaN(c))
-         machine.stack.push(0);
-      else
-         machine.stack.push(c != 1 ? 1 : 0);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,LTE,a,b);
+          } else {
+            float c = compare(a,b);
+            if (isNaN(c))
+              machine.stack.push(0);
+            else
+              machine.stack.push(c != 1 ? 1 : 0);
+          }
 	}
 	
 	/// Check if a number or vector is (lexicographically) greater than another one.
@@ -135,11 +159,17 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void GT(Machine & machine){
-      float c = compare(machine);
-      if (isNaN(c))
-         machine.stack.push(0);
-      else
-         machine.stack.push(c == 1 ? 1 : 0);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,GT,a,b);
+          } else {
+            float c = compare(a,b);
+            if (isNaN(c))
+              machine.stack.push(0);
+            else
+              machine.stack.push(c == 1 ? 1 : 0);
+          }
 	}
 	
 	/// Check if a number or vector is (lexicographically) greater than or equal to another one.
@@ -151,11 +181,17 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void GTE(Machine & machine){
-      float c = compare(machine);
-      if (isNaN(c))
-         machine.stack.push(0);
-      else
-         machine.stack.push(c != -1 ? 1 : 0);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,GTE,a,b);
+          } else {
+            float c = compare(a,b);
+            if (isNaN(c))
+              machine.stack.push(0);
+            else
+              machine.stack.push(c != -1 ? 1 : 0);
+          }
 	}
 	
 	/// Get the inverse boolean value of a number.
@@ -164,8 +200,13 @@ namespace Instructions {
 	 * \return \m{\left\lbrace\begin{array}{ll}1&a=0\\0&a\neq0\end{array}\right.}
 	 */
 	void NOT(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(a ? 0 : 1);
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,NOT,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(a ? 0 : 1);
+          }
 	}
 	
 	/// \}
@@ -184,7 +225,9 @@ namespace Instructions {
 	void ADD(Machine & machine){
 		Data b = machine.stack.pop();
 		Data a = machine.stack.pop();
-		if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
+                if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+                  FieldData::pointwise_instruction(machine,ADD,a,b);
+                } else if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
 			Number aa = a.asNumber();
 			Number bb = b.asNumber();
 			machine.stack.push(aa + bb);
@@ -213,7 +256,9 @@ namespace Instructions {
 	void SUB(Machine & machine){
 		Data b = machine.stack.pop();
 		Data a = machine.stack.pop();
-		if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
+                if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+                  FieldData::pointwise_instruction(machine,SUB,a,b);
+                } else if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
 			Number aa = a.asNumber();
 			Number bb = b.asNumber();
 			machine.stack.push(aa - bb);
@@ -240,7 +285,9 @@ namespace Instructions {
 	void MUL(Machine & machine){
 		Data b = machine.stack.pop();
 		Data a = machine.stack.pop();
-		if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
+		if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+                  FieldData::pointwise_instruction(machine,MUL,a,b);
+                } else if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
 			Number aa = a.asNumber();
 			Number bb = b.asNumber();
 			machine.stack.push(aa * bb);
@@ -262,7 +309,9 @@ namespace Instructions {
 	void DIV(Machine & machine){
 		Data b = machine.stack.pop();
 		Data a = machine.stack.pop();
-		if (a.type() == Data::Type_number) {
+		if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+                  FieldData::pointwise_instruction(machine,DIV,a,b);
+                } else if (a.type() == Data::Type_number) {
 			machine.stack.push(a.asNumber() / b.asNumber());
 		} else {
 			Number        divisor = b.asNumber();
@@ -280,16 +329,22 @@ namespace Instructions {
 	 * \return \m{\vec a \cdot \vec b}
 	 */
 	void DOT(Machine & machine){
-		Tuple a = ensureTuple(machine.stack.pop());
-		Tuple b = ensureTuple(machine.stack.pop());
-		Size size = a.size() > b.size() ? a.size() : b.size();
-		Tuple result(size);
-		for(Index i = 0; i < size; i++){
-			Number a_element = i < a.size() ? a[i].asNumber() : 0;
-			Number b_element = i < b.size() ? b[i].asNumber() : 0;
-			result.push(a_element * b_element);
-		}
-		machine.stack.push(result);
+          Data rawa = machine.stack.pop();
+          Data rawb = machine.stack.pop();
+          if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,DOT,rawa,rawb);
+          } else {
+            Tuple a = ensureTuple(rawa);
+            Tuple b = ensureTuple(rawb);
+            Size size = a.size() > b.size() ? a.size() : b.size();
+            Tuple result(size);
+            for(Index i = 0; i < size; i++){
+              Number a_element = i < a.size() ? a[i].asNumber() : 0;
+              Number b_element = i < b.size() ? b[i].asNumber() : 0;
+              result.push(a_element * b_element);
+            }
+            machine.stack.push(result);
+          }
 	}
 	
 	/// \}
@@ -303,19 +358,21 @@ namespace Instructions {
 	 * \return \m{|a|}
 	 */
 	void ABS(Machine & machine){
-		Data a = machine.stack.pop();
-		if (a.type() == Data::Type_number) {
-			Number aa = a.asNumber();
-			machine.stack.push(aa < 0 ? -aa : aa);
-		} else {
-			Number s = 0;
-			Tuple const & vector = a.asTuple();
-			for(Index i = 0; i < vector.size(); i++) {
-				Number e = vector[i].asNumber();
-				s += e*e;
-			}
-			machine.stack.push(sqrt(s));
-		}
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,ABS,a);
+          } else if (a.type() == Data::Type_number) {
+            Number aa = a.asNumber();
+            machine.stack.push(aa < 0 ? -aa : aa);
+          } else {
+            Number s = 0;
+            Tuple const & vector = a.asTuple();
+            for(Index i = 0; i < vector.size(); i++) {
+              Number e = vector[i].asNumber();
+              s += e*e;
+            }
+            machine.stack.push(sqrt(s));
+          }
 	}
 	
 	/// Get the (lexicographical) maximum of two numbers or vectors.
@@ -327,9 +384,13 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void MAX(Machine & machine){
-		Data b = machine.stack.pop();
-		Data a = machine.stack.pop();
-		machine.stack.push(compare(a,b) > 0 ? a : b);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,MAX,a,b);
+          } else {
+            machine.stack.push(compare(a,b) > 0 ? a : b);
+          }
 	}
 	
 	/// Get the (lexicographical) minimum of two numbers or vectors.
@@ -341,9 +402,13 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void MIN(Machine & machine){
-		Data b = machine.stack.pop();
-		Data a = machine.stack.pop();
-		machine.stack.push(compare(a,b) < 0 ? a : b);
+          Data b = machine.stack.pop();
+          Data a = machine.stack.pop();
+          if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,MIN,a,b);
+          } else {
+            machine.stack.push(compare(a,b) < 0 ? a : b);
+          }
 	}
 	
 	/// Get a number to the power of another.
@@ -353,9 +418,14 @@ namespace Instructions {
 	 * \return \m{a^b}
 	 */
 	void POW(Machine & machine){
-		Number b = machine.stack.popNumber();
-		Number a = machine.stack.popNumber();
-		machine.stack.push(pow(a,b));
+          Data rawb = machine.stack.pop();
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,POW,rawa,rawb);
+          } else {
+            Number a = rawa.asNumber(), b = rawb.asNumber();
+            machine.stack.push(pow(a,b));
+          }
 	}
 	
 	/// Get the remainder of a number divided by another.
@@ -365,9 +435,14 @@ namespace Instructions {
 	 * \return \m{x \equiv a \pmod{|b|}\,\quad \left\lbrace\begin{array}{ll} -|b| < x \leq 0 & a < 0 \\ 0 \leq x < |b| & a \geq 0 \end{array}\right.}
 	 */
 	void REM(Machine & machine){
-		Number b = machine.stack.popNumber();
-		Number a = machine.stack.popNumber();
-		machine.stack.push(fmod(a,b));
+          Data rawb = machine.stack.pop();
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,REM,rawa,rawb);
+          } else {
+            Number a = rawa.asNumber(), b = rawb.asNumber();
+            machine.stack.push(fmod(a,b));
+          }
 	}
 	
 	/// Get the (positive) remainder of a number divided by another.
@@ -377,11 +452,16 @@ namespace Instructions {
 	 * \return \m{x \equiv a \pmod{|b|}\,\quad 0 \leq x < |b|}
 	 */
 	void MOD(Machine & machine){
-		Number b = machine.stack.popNumber();
-		Number a = machine.stack.popNumber();
-		Number x = fmod(a,b);
-		if (x < 0) x += b; // fmod gives the remainder, not the modulus.
-		machine.stack.push(x);
+          Data rawb = machine.stack.pop();
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,MOD,rawa,rawb);
+          } else {
+            Number a = rawa.asNumber(), b = rawb.asNumber();
+            Number x = fmod(a,b);
+            if (x < 0) x += b; // fmod gives the remainder, not the modulus.
+            machine.stack.push(x);
+          }
 	}
 	
 	/// Get the floor of a number.
@@ -390,8 +470,13 @@ namespace Instructions {
 	 * \return \m{\left\lfloor a \right\rfloor}
 	 */
 	void FLOOR(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(floor(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,FLOOR,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(floor(a));
+          }
 	}
 	
 	/// Get the ceiling of a number.
@@ -400,8 +485,13 @@ namespace Instructions {
 	 * \return \m{\left\lceil a \right\rceil}
 	 */
 	void CEIL(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(ceil(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,CEIL,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(ceil(a));
+          }
 	}
 	
 	/// Round a number.
@@ -410,8 +500,13 @@ namespace Instructions {
 	 * \return \m{\left\lfloor a + \frac12 \right\rfloor}
 	 */
 	void ROUND(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(rint(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,ROUND,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(rint(a));
+          }
 	}
 	
 	/// Calculate the natural logarithm of a number.
@@ -420,8 +515,13 @@ namespace Instructions {
 	 * \return \m{\log_e a}
 	 */
 	void LOG(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(log(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,LOG,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(log(a));
+          }
 	}
 	
 	/// Calculate the square root of a number.
@@ -430,8 +530,13 @@ namespace Instructions {
 	 * \return \m{\sqrt a}
 	 */
 	void SQRT(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(sqrt(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,SQRT,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(sqrt(a));
+          }
 	}
 	
 	/// Calculate the sine of an angle.
@@ -440,8 +545,13 @@ namespace Instructions {
 	 * \return \m{\sin a}
 	 */
 	void SIN(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(sin(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,SIN,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(sin(a));
+          }
 	}
 	
 	/// Calculate the cosine of an angle.
@@ -450,8 +560,13 @@ namespace Instructions {
 	 * \return \m{\cos a}
 	 */
 	void COS(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(cos(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,COS,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(cos(a));
+          }
 	}
 	
 	/// Calculate the tangent of an angle.
@@ -460,8 +575,13 @@ namespace Instructions {
 	 * \return \m{\tan a}
 	 */
 	void TAN(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(tan(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,TAN,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(tan(a));
+          }
 	}
 	
 	/// Calculate the hyperbolic sine of an angle.
@@ -470,8 +590,13 @@ namespace Instructions {
 	 * \return \m{\sinh a}
 	 */
 	void SINH(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(sinh(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,SINH,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(sinh(a));
+          }
 	}
 	
 	/// Calculate the hyperbolic cosine of an angle.
@@ -480,8 +605,13 @@ namespace Instructions {
 	 * \return \m{\cosh a}
 	 */
 	void COSH(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(cosh(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,COSH,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(cosh(a));
+          }
 	}
 	
 	/// Calculate the hyperbolic tangent of an angle.
@@ -490,8 +620,13 @@ namespace Instructions {
 	 * \return \m{\tanh a}
 	 */
 	void TANH(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(tanh(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,TANH,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(tanh(a));
+          }
 	}
 	
 	/// Calculate the angle of a sine.
@@ -500,8 +635,13 @@ namespace Instructions {
 	 * \return \m{\arcsin a}
 	 */
 	void ASIN(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(asin(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,ASIN,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(asin(a));
+          }
 	}
 	
 	/// Calculate the angle of a cosine.
@@ -510,8 +650,13 @@ namespace Instructions {
 	 * \return \m{\arccos a}
 	 */
 	void ACOS(Machine & machine){
-		Number a = machine.stack.popNumber();
-		machine.stack.push(acos(a));
+          Data rawa = machine.stack.pop();
+          if (rawa.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,ACOS,rawa);
+          } else {
+            Number a = rawa.asNumber();
+            machine.stack.push(acos(a));
+          }
 	}
 	
 	/// Calculate the angle of a tangent.
@@ -521,9 +666,14 @@ namespace Instructions {
 	 * \return \m{\arctan \frac y x}
 	 */
 	void ATAN2(Machine & machine){
-		Number x = machine.stack.popNumber();
-		Number y = machine.stack.popNumber();
-		machine.stack.push(atan2(y,x));
+          Data rawx = machine.stack.pop();
+          Data rawy = machine.stack.pop();
+          if (rawx.type() == Data::Type_field || rawy.type() == Data::Type_field) {
+            FieldData::pointwise_instruction(machine,MOD,rawx,rawy);
+          } else {
+            Number x = rawx.asNumber(), y = rawy.asNumber();
+            machine.stack.push(atan2(y,x));
+          }
 	}
 	
 	/// Generate a (pseudo) random number or vector.
@@ -538,7 +688,9 @@ namespace Instructions {
 	void RND(Machine & machine){
 		Data max = machine.stack.pop();
 		Data min = machine.stack.pop();
-		if (min.type() == Data::Type_number && max.type() == Data::Type_number) {
+                if (min.type() == Data::Type_field || max.type() == Data::Type_field) {
+                  FieldData::pointwise_instruction(machine,RND,min,max);
+                } else if (min.type() == Data::Type_number && max.type() == Data::Type_number) {
 			Number a = min.asNumber();
 			Number b = max.asNumber();
 			machine.stack.push(Random::number(a,b));
