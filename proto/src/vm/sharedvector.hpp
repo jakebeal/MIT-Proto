@@ -119,7 +119,7 @@ class SharedVector {
 		
 		/// Get constant access the elements.
 		inline operator Element const * () const { return *data; }
-		
+
 		/// Add an element to the back of the vector.
 		inline void push(Element const & element) {
 			data->push(element);

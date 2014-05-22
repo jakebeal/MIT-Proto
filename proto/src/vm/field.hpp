@@ -16,9 +16,12 @@
 
 #include "types.hpp"
 #include "machineid.hpp"
-
+#include "sharedvector.hpp"
+#include "instructions.hpp"
+#include <assert.h>
 
 class Data;
+class Machine;
 
 /** \class FieldData
  * \brief Essentially a SharedVector of MachineId,Data pairs.
@@ -32,8 +35,26 @@ protected:
   SharedVector<Data> values;
 
 public:
-  //  class iterator {
-  // }
+  class const_iterator {
+  protected:
+    const FieldData* source;
+    int index;
+    friend class FieldData;
+    
+  public:
+    inline const_iterator(FieldData const * source) : source(source) {index=0;}
+
+    inline bool hasNext() { return index < source->size(); }
+    inline const_iterator & operator ++ () { index++; return *this;}
+    inline const_iterator & operator ++ (int) { index++; return *this;}
+    inline MachineId const & id() const { return source->ids[index]; }
+    inline Data const &   value();
+  };
+
+  // 1 and 2 input pointwise applications of instructions:
+  static void pointwise_instruction(Machine &machine,Instruction instruction,Data & a);
+  static void pointwise_instruction(Machine &machine,Instruction instruction,Data & a, Data & b);
+  inline const_iterator begin() const { return const_iterator(this); }
 
 public:
   /// Construct an empty field.

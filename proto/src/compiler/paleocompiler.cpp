@@ -1635,6 +1635,10 @@ void init_ops () {
 
   add_op("MID", MID_OP, 0, 0, new FUN_TYPE(NUMT,0));
 
+  // New experimental field operations
+  add_op("NBR-IDS", NBR_IDS_OP, 0, 0, new FUN_TYPE(NUMT,0));
+  add_op("NEW-MIN-HOOD", MIN_HOOD_OP, 0, 0, new FUN_TYPE(NUMT,NUMT,0));
+
   user_ops = ops;
 
   // LOW LEVEL

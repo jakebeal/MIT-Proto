@@ -95,10 +95,36 @@ struct HoodInstructions {
 		fold_hood_filter_next(machine);
 	}
 	
+  static void fold_field(Machine & machine, Data& init, Instruction fuser) {
+    Data f = machine.stack.pop();
+    FieldData::const_iterator fi = f.asField().begin();
+    machine.stack.push(init);
+    while(fi.hasNext()) {
+      machine.stack.push(fi.value());
+      fuser(machine); // run fuser instruction, leaving result on stack for next
+      fi++;
+    }
+  }
 };
 
 namespace Instructions {
 	
+  void MIN_HOOD(Machine & machine) {
+    Data init = Data(Number_infinity);
+    HoodInstructions::fold_field(machine,init,Instructions::MIN);
+  }
+
+  // WARNING: THIS IS A TEST INSTRUCTION AND NOT COMPATIBLE WITH IF
+  void NBR_IDS(Machine & machine) {
+    NeighbourHood::iterator nbr = machine.hood.begin();
+    FieldData result = FieldData();
+    while(nbr != machine.hood.end()) {
+      result.push(nbr->id,nbr->id);
+      nbr++;
+    }
+    machine.stack.push(result);
+  }
+
 	/// \name Hood instructions
 	/// \{
 	
@@ -194,4 +220,68 @@ namespace Instructions {
 	
 	/// \}
 	
+}
+
+Data const &   FieldData::const_iterator::value() { return source->values[index]; }
+
+// Two input pointwise:
+void FieldData::pointwise_instruction(Machine &machine,Instruction instruction,Data & a) {
+  FieldData::const_iterator ia = a.asField().begin();
+  FieldData result = FieldData(a.asField().size());
+  while(ia.hasNext()) {
+    assert(ia.value().type() != Data::Type_field);
+    machine.stack.push(ia.value());
+    instruction(machine);
+    result.push(ia.id(),machine.stack.pop());
+    ia++;
+  }
+  machine.stack.push(result);
+}
+
+// Three cases: a, b, or both are fields
+void FieldData::pointwise_instruction(Machine &machine,Instruction instruction,Data & a, Data & b) {
+  bool a_field = a.type() == Data::Type_field;
+  bool b_field = b.type() == Data::Type_field;
+  assert(a_field || b_field);
+  
+  if(a_field && b_field) { // Both arguments are fields:
+    FieldData::const_iterator ia = a.asField().begin();
+    FieldData::const_iterator ib = b.asField().begin();
+    FieldData result = FieldData(a.asField().size());
+    while(ia.hasNext() && ib.hasNext()) {
+      assert(ia.id() == ib.id());
+      assert(ia.value().type() != Data::Type_field && ib.value().type() != Data::Type_field);
+      machine.stack.push(ia.value());
+      machine.stack.push(ib.value());
+      instruction(machine);
+      result.push(ia.id(),machine.stack.pop());
+      ia++; ib++;
+    }
+    assert(!ia.hasNext() && !ib.hasNext());
+    machine.stack.push(result);
+  } else if(a_field) { // Only first argument is field:
+    FieldData::const_iterator ia = a.asField().begin();
+    FieldData result = FieldData(a.asField().size());
+    while(ia.hasNext()) {
+      assert(ia.value().type() != Data::Type_field);
+      machine.stack.push(ia.value());
+      machine.stack.push(b);
+      instruction(machine);
+      result.push(ia.id(),machine.stack.pop());
+      ia++;
+    }
+    machine.stack.push(result);
+  } else { // Only second argument is field:
+    FieldData::const_iterator ib = b.asField().begin();
+    FieldData result = FieldData(b.asField().size());
+    while(ib.hasNext()) {
+      assert(ib.value().type() != Data::Type_field);
+      machine.stack.push(a);
+      machine.stack.push(ib.value());
+      instruction(machine);
+      result.push(ib.id(),machine.stack.pop());
+      ib++;
+    }
+    machine.stack.push(result);
+  }
 }
