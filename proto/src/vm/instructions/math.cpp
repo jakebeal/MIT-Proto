@@ -17,7 +17,7 @@
 #include <instructions.hpp>
 
 namespace {
-	
+
    bool isNaN(float f) {
       volatile float a = f;
       return a != a;
@@ -77,8 +77,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void EQ(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,EQ,a,b);
           } else {
@@ -96,8 +96,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void NEQ(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,NEQ,a,b);
           } else {
@@ -115,8 +115,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void LT(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,LT,a,b);
           } else {
@@ -137,8 +137,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void LTE(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,LTE,a,b);
           } else {
@@ -159,8 +159,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void GT(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,GT,a,b);
           } else {
@@ -181,8 +181,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void GTE(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,GTE,a,b);
           } else {
@@ -200,7 +200,7 @@ namespace Instructions {
 	 * \return \m{\left\lbrace\begin{array}{ll}1&a=0\\0&a\neq0\end{array}\right.}
 	 */
 	void NOT(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,NOT,rawa);
           } else {
@@ -223,15 +223,17 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void ADD(Machine & machine){
-		Data b = machine.stack.pop();
-		Data a = machine.stack.pop();
-                if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
-                  FieldData::pointwise_instruction(machine,ADD,a,b);
-                } else if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
+		Data& b = machine.stack.pop();
+		Data& a = machine.stack.pop();
+		//Data& a = machine.stack.peek();
+                if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
 			Number aa = a.asNumber();
 			Number bb = b.asNumber();
 			machine.stack.push(aa + bb);
-		} else {
+                        //machine.stack.replaceNumber(aa + bb);
+		} else if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
+                  FieldData::pointwise_instruction(machine,ADD,a,b);
+                } else { 
 			Tuple aa = ensureTuple(a);
 			Tuple bb = ensureTuple(b);
 			Size size = aa.size() > bb.size() ? aa.size() : bb.size();
@@ -254,8 +256,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void SUB(Machine & machine){
-		Data b = machine.stack.pop();
-		Data a = machine.stack.pop();
+		Data& b = machine.stack.pop();
+		Data& a = machine.stack.pop();
                 if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
                   FieldData::pointwise_instruction(machine,SUB,a,b);
                 } else if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
@@ -283,8 +285,8 @@ namespace Instructions {
 	 * \return \m{a \cdot b}
 	 */
 	void MUL(Machine & machine){
-		Data b = machine.stack.pop();
-		Data a = machine.stack.pop();
+		Data& b = machine.stack.pop();
+		Data& a = machine.stack.pop();
 		if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
                   FieldData::pointwise_instruction(machine,MUL,a,b);
                 } else if (a.type() == Data::Type_number && b.type() == Data::Type_number) {
@@ -307,8 +309,8 @@ namespace Instructions {
 	 * \return \m{\frac a b}
 	 */
 	void DIV(Machine & machine){
-		Data b = machine.stack.pop();
-		Data a = machine.stack.pop();
+		Data& b = machine.stack.pop();
+		Data& a = machine.stack.pop();
 		if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
                   FieldData::pointwise_instruction(machine,DIV,a,b);
                 } else if (a.type() == Data::Type_number) {
@@ -329,8 +331,8 @@ namespace Instructions {
 	 * \return \m{\vec a \cdot \vec b}
 	 */
 	void DOT(Machine & machine){
-          Data rawa = machine.stack.pop();
-          Data rawb = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
+          Data& rawb = machine.stack.pop();
           if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,DOT,rawa,rawb);
           } else {
@@ -358,7 +360,7 @@ namespace Instructions {
 	 * \return \m{|a|}
 	 */
 	void ABS(Machine & machine){
-          Data a = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,ABS,a);
           } else if (a.type() == Data::Type_number) {
@@ -384,8 +386,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void MAX(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,MAX,a,b);
           } else {
@@ -402,8 +404,8 @@ namespace Instructions {
 	 * \note If used on tuples, when one of the tuples is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void MIN(Machine & machine){
-          Data b = machine.stack.pop();
-          Data a = machine.stack.pop();
+          Data& b = machine.stack.pop();
+          Data& a = machine.stack.pop();
           if (a.type() == Data::Type_field || b.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,MIN,a,b);
           } else {
@@ -418,8 +420,8 @@ namespace Instructions {
 	 * \return \m{a^b}
 	 */
 	void POW(Machine & machine){
-          Data rawb = machine.stack.pop();
-          Data rawa = machine.stack.pop();
+          Data& rawb = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,POW,rawa,rawb);
           } else {
@@ -435,8 +437,8 @@ namespace Instructions {
 	 * \return \m{x \equiv a \pmod{|b|}\,\quad \left\lbrace\begin{array}{ll} -|b| < x \leq 0 & a < 0 \\ 0 \leq x < |b| & a \geq 0 \end{array}\right.}
 	 */
 	void REM(Machine & machine){
-          Data rawb = machine.stack.pop();
-          Data rawa = machine.stack.pop();
+          Data& rawb = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,REM,rawa,rawb);
           } else {
@@ -452,8 +454,8 @@ namespace Instructions {
 	 * \return \m{x \equiv a \pmod{|b|}\,\quad 0 \leq x < |b|}
 	 */
 	void MOD(Machine & machine){
-          Data rawb = machine.stack.pop();
-          Data rawa = machine.stack.pop();
+          Data& rawb = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field || rawb.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,MOD,rawa,rawb);
           } else {
@@ -470,7 +472,7 @@ namespace Instructions {
 	 * \return \m{\left\lfloor a \right\rfloor}
 	 */
 	void FLOOR(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,FLOOR,rawa);
           } else {
@@ -485,7 +487,7 @@ namespace Instructions {
 	 * \return \m{\left\lceil a \right\rceil}
 	 */
 	void CEIL(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,CEIL,rawa);
           } else {
@@ -500,7 +502,7 @@ namespace Instructions {
 	 * \return \m{\left\lfloor a + \frac12 \right\rfloor}
 	 */
 	void ROUND(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,ROUND,rawa);
           } else {
@@ -515,7 +517,7 @@ namespace Instructions {
 	 * \return \m{\log_e a}
 	 */
 	void LOG(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,LOG,rawa);
           } else {
@@ -530,7 +532,7 @@ namespace Instructions {
 	 * \return \m{\sqrt a}
 	 */
 	void SQRT(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,SQRT,rawa);
           } else {
@@ -545,7 +547,7 @@ namespace Instructions {
 	 * \return \m{\sin a}
 	 */
 	void SIN(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,SIN,rawa);
           } else {
@@ -560,7 +562,7 @@ namespace Instructions {
 	 * \return \m{\cos a}
 	 */
 	void COS(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,COS,rawa);
           } else {
@@ -575,7 +577,7 @@ namespace Instructions {
 	 * \return \m{\tan a}
 	 */
 	void TAN(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,TAN,rawa);
           } else {
@@ -590,7 +592,7 @@ namespace Instructions {
 	 * \return \m{\sinh a}
 	 */
 	void SINH(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,SINH,rawa);
           } else {
@@ -605,7 +607,7 @@ namespace Instructions {
 	 * \return \m{\cosh a}
 	 */
 	void COSH(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,COSH,rawa);
           } else {
@@ -620,7 +622,7 @@ namespace Instructions {
 	 * \return \m{\tanh a}
 	 */
 	void TANH(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,TANH,rawa);
           } else {
@@ -635,7 +637,7 @@ namespace Instructions {
 	 * \return \m{\arcsin a}
 	 */
 	void ASIN(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,ASIN,rawa);
           } else {
@@ -650,7 +652,7 @@ namespace Instructions {
 	 * \return \m{\arccos a}
 	 */
 	void ACOS(Machine & machine){
-          Data rawa = machine.stack.pop();
+          Data& rawa = machine.stack.pop();
           if (rawa.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,ACOS,rawa);
           } else {
@@ -666,8 +668,8 @@ namespace Instructions {
 	 * \return \m{\arctan \frac y x}
 	 */
 	void ATAN2(Machine & machine){
-          Data rawx = machine.stack.pop();
-          Data rawy = machine.stack.pop();
+          Data& rawx = machine.stack.pop();
+          Data& rawy = machine.stack.pop();
           if (rawx.type() == Data::Type_field || rawy.type() == Data::Type_field) {
             FieldData::pointwise_instruction(machine,MOD,rawx,rawy);
           } else {
@@ -686,8 +688,8 @@ namespace Instructions {
 	 * \note If used on vectors, when one of the vectors is shorter, the remaining of the elements will be interpreted as 0.
 	 */
 	void RND(Machine & machine){
-		Data max = machine.stack.pop();
-		Data min = machine.stack.pop();
+		Data& max = machine.stack.pop();
+		Data& min = machine.stack.pop();
                 if (min.type() == Data::Type_field || max.type() == Data::Type_field) {
                   FieldData::pointwise_instruction(machine,RND,min,max);
                 } else if (min.type() == Data::Type_number && max.type() == Data::Type_number) {

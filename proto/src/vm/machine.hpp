@@ -37,15 +37,15 @@ class BasicMachine {
 		
 		/// The standard stack.
 		/** \memberof Machine */
-		Stack<Data> stack;
+                DataStack stack;
 		
 		/// The environment stack.
 		/** \memberof Machine */
-		Stack<Data> environment;
+                DataStack environment;
 		
 		/// The globals.
 		/** \memberof Machine */
-		Stack<Data> globals;
+                DataStack globals;
 		
 		/// The threads.
 		/**
@@ -258,6 +258,18 @@ class BasicMachine {
 			}
 			
 			inline void print_stack(Stack<Data> *s) {
+				if (s->empty()) {
+				  cout << " Empty " << endl;
+				} else {
+			      for(Index i = 0; i < s->size(); i++) {
+					Data el = s->peek(i);
+					print_data(el);
+					cout << " ";
+				  }
+				  cout << endl;
+				}
+			}
+			inline void print_stack(DataStack *s) {
 				if (s->empty()) {
 				  cout << " Empty " << endl;
 				} else {

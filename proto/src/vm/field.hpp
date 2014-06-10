@@ -48,7 +48,7 @@ public:
     inline const_iterator & operator ++ () { index++; return *this;}
     inline const_iterator & operator ++ (int) { index++; return *this;}
     inline MachineId const & id() const { return source->ids[index]; }
-    inline Data const &   value();
+    inline Data const &   value(); // defined in instructions/hood.cpp
   };
 
   // 1 and 2 input pointwise applications of instructions:
@@ -58,7 +58,7 @@ public:
 
 public:
   /// Construct an empty field.
-  inline FieldData() {}
+  inline FieldData() {};
   
   /// Allocate a new field with the specified initial capacity.
   inline explicit FieldData(Size capacity) : ids(capacity), values(capacity) {}

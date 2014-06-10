@@ -123,15 +123,15 @@ void Device::dump_state(FILE* out, int verbosity) {
     char buf[1000];
     // First number of neighboring devices
     if(verbosity==0) { 
-      fprintf(out," %i",vm->hood.size());
+      fprintf(out," %i",(int)vm->hood.size());
     } else {
-      fprintf(out,"Number of neighbors: %i\n",vm->hood.size());
+      fprintf(out,"Number of neighbors: %i\n",(int)vm->hood.size());
     }
     // Then IDs of all neighboring devices
     if(verbosity>=1) { fprintf(out,"Neighbor IDs:"); }
     for(NeighbourHood::iterator i=vm->hood.begin(); i != vm->hood.end(); i++) {
       Neighbour const & nbr = *i;
-      fprintf(out," %i",nbr.id);
+      fprintf(out," %i",(int)nbr.id);
     }
     if(verbosity>=1) { fprintf(out,"\n"); }
   }
@@ -240,16 +240,17 @@ void Device::internal_event(SECONDS time, DeviceEvent type) {
               break;
             }
           }
-    	}
-    	if (is_print_stack) {
-    	  cout << " Stack (" << iStep << "): ";
-    	  vm->print_stack(&vm->stack);
-    	}
-    	if (is_print_env_stack) {
-    	  cout << " Environment Stack (" << iStep << "): ";
-    	  vm->print_stack(&vm->environment);
-    	}
-    	iStep++;
+
+          if (is_print_stack) {
+            cout << " Stack (" << iStep << "): ";
+            vm->print_stack(&vm->stack);
+          }
+          if (is_print_env_stack) {
+            cout << " Environment Stack (" << iStep << "): ";
+            vm->print_stack(&vm->environment);
+          }
+          iStep++;
+        }
     	vm->step();
       }
       if (is_print_stack || is_print_env_stack) {

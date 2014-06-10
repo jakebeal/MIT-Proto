@@ -49,23 +49,25 @@ class Data {
 		Type value_type;
 		
 		// The value can contain a Number, a Tuple, an Address, or a FieldData.
-		// Because some of these types have non-trivial constructors, the union does not (and can not) contain members of these types.
+		// Because some of these types have non-trivial constructors, the union does not (and can not) contain members of the non-trivial types.
 		// So, instead, it only contains members of the same size as the types it should be able to contain.
 		// A reinterpret_cast should be used to interface the value as a specific type.
 		// Please note that we have to take care of calling constructors and deconstructors ourselves.
 		union Value {
-			Alignment alignment;
-			char  number_data[sizeof(Number )];
-			char   tuple_data[sizeof(Tuple  )];
-			char address_data[sizeof(Address)];
-			char   field_data[sizeof(FieldData)];
+                  Alignment alignment;
+                  Number number;
+                  char tuple_data[sizeof(Tuple)];
+                  char address_data[sizeof(Address)];
+                  char   field_data[sizeof(FieldData)];
 		} value;
 		
 	public:
 		
-		inline Data(                       ) : value_type(Type_undefined) {                                } ///< Get a Data object representing 'undefined' (ie. 'not set').
-		inline Data(Number  const & number ) : value_type(Type_number   ) { new (&value) Number (number ); } ///< Get a Data object containing a Number.
-		inline Data(Tuple   const & tuple  ) : value_type(Type_tuple    ) { new (&value) Tuple  (tuple  ); } ///< Get a Data object containing a Tuple.
+  ///< Get a Data object representing 'undefined' (ie. 'not set').
+  inline Data(                       ) : value_type(Type_undefined) { } 
+  ///< Get a Data object containing a Number.
+  inline Data(Number  const & number ) : value_type(Type_number   ) { value.number = number; } 
+  inline Data(Tuple   const & tuple  ) : value_type(Type_tuple    ) { new (&value) Tuple  (tuple  ); } ///< Get a Data object containing a Tuple.
 		inline Data(Address const & address) : value_type(Type_address  ) { new (&value) Address(address); } ///< Get a Data object containing an Address.
 		inline Data(FieldData const & field) : value_type(Type_field  ) { new (&value) FieldData(field); } ///< Get a Data object containing a FieldData.
 		
@@ -96,8 +98,9 @@ class Data {
 			return value_type;
 		}
 		
-		inline Number        & asNumber ()       { return *reinterpret_cast<      Number  *>(&value); } ///< Interpret this Data object as a Number.
-		inline Number  const & asNumber () const { return *reinterpret_cast<const Number  *>(&value); } ///< Interpret this Data object as a Number.
+  ///< Interpret this Data object as a Number.
+  inline Number        & asNumber ()       { return value.number; }
+  inline Number  const & asNumber () const { return value.number; }
 		
 		inline Tuple         & asTuple  ()       { return *reinterpret_cast<      Tuple   *>(&value); } ///< Interpret this Data object as a Tuple.
 		inline Tuple   const & asTuple  () const { return *reinterpret_cast<const Tuple   *>(&value); } ///< Interpret this Data object as a Tuple.
@@ -121,7 +124,7 @@ class Data {
 #endif
 		}
 		
-		inline void reset(Number  const & number ) { reset(); value_type = Type_number ; new (&value) Number (number ); } ///< Set the value to a Number.
+  inline void reset(Number  const & number ) { reset(); value_type = Type_number ; value.number = number; } ///< Set the value to a Number.
 		inline void reset(Tuple   const & tuple  ) { reset(); value_type = Type_tuple  ; new (&value) Tuple  (tuple  ); } ///< Set the value to a Tuple.
 		inline void reset(Address const & address) { reset(); value_type = Type_address; new (&value) Address(address); } ///< Set the value to an Address.
 		inline void reset(FieldData   const & field  ) { reset(); value_type = Type_field  ; new (&value) FieldData  (field  ); } ///< Set the value to a Field.
@@ -144,26 +147,122 @@ class Data {
 		}
 		
 	protected:
-		inline void resetNumber () { asNumber ().~Number (); value_type = Type_undefined; }
+		inline void resetNumber () { value_type = Type_undefined; }
 		inline void resetTuple  () { asTuple  ().~Tuple  (); value_type = Type_undefined; }
 		inline void resetAddress() { asAddress().~Address(); value_type = Type_undefined; }
 		inline void resetField  () { asField  ().~FieldData  (); value_type = Type_undefined; }
 		
 		friend class Stack<Data>;
+		friend class DataStack;
 		
 };
 
 template<>
 class Stack<Data> : public BasicStack<Data> {
 	
-	public:
-		inline explicit Stack(Size capacity = 0) : BasicStack<Data>(capacity) {}
-		
+public:
+  inline explicit Stack(Size capacity = 0) : BasicStack<Data>(capacity) {}
+  
 		inline Number  popNumber () { return pop().asNumber();  }
 		inline Tuple   popTuple  () { return pop().asTuple();   }
 		inline Address popAddress() { return pop().asAddress(); }
 		inline FieldData popField() { return pop().asField();   }
+};
+
+class DataStack {
+protected:
+  Data* contents;
+  Size capacity, subcapacity; // subcapacity optimizes size checks
+  Size top;
+
+public:
+  inline explicit DataStack(Size capacity = 0) {
+    this->capacity = 0; reset(capacity);
+  }
+  inline ~DataStack() { delete[] contents; }
+
+  inline void reset(Size new_capacity = 0) {
+    if(capacity) delete[] contents;
+    capacity = new_capacity; subcapacity = capacity-1;
+    if(new_capacity) { contents = new Data[capacity]; }
+    top = -1; // nothing in stack
+  }
+
+  /// The number of elements currently stored.
+  inline Size size() const {
+    return top + 1;
+  }
 		
+  /// Check whether there are currently elements stored (false) or not (true).
+  inline bool empty() const {
+    return top < 0;
+  }
+		
+  /// The number of elements that can be pushed before the stack is full.
+  inline Size free() const {
+    return subcapacity - top;
+  }
+  
+  /// Check whether the stack is full.
+  inline bool full() const {
+    return top == subcapacity;
+  }
+		
+  /// Push a new element on the stack.
+  inline void push(Data const & element) {
+    if(full()) cerr << "Stack overflow: full with " << size() << " elements\n";
+    contents[++top] = element;
+  }
+
+  // Assumption that all stack elements are reset/scratch
+  inline void push(Number const number) {
+    if(full()) cerr << "Stack overflow: full with " << size() << " elements\n";
+    top++;
+    contents[top].value_type = Data::Type_number;
+    contents[top].value.number = number;
+  }
+  
+  inline void set_top(Data const & element) {
+    contents[top] = element;
+  }
+  inline void replaceNumber(Number const number) {
+    // ensure we are replacing a number
+    assert(contents[top].value_type == Data::Type_number);
+    // just swap the contents
+    contents[top].value.number = number;
+  }
+//   inline void replaceTuple(Tuple const & tuple) {
+//     // ensure we are replacing a number
+//     assert(contents[top].value_type == Data::Type_tuple);
+//     // just swap the contents
+//     contents[top].value.tuple = tuple;
+//   }
+  
+  /// Pop an element from the stack.
+  inline Data& pop() {
+    return contents[top--];
+  }
+  
+  /// Remove multiple elements from the stack.
+  inline void pop(Size elements) {
+    top -= elements; // memory leak spot
+  }
+  
+  /// Access an element by its offset from the top of the stack.
+  inline Data       & peek(Size offset = 0)       { return contents[top-offset]; }
+  /// Get an element by its offset from the top of the stack.
+  inline Data const & peek(Size offset = 0) const { return contents[top-offset]; }
+		
+  /// Access an element by its offset from the base of the stack.
+  inline Data       & operator [] (Index index)       { return contents[index]; }
+  /// Get an element by its offset from the base of the stack.
+  inline Data const & operator [] (Index index) const { return contents[index]; }
+  
+  
+  inline Number  popNumber () { return pop().asNumber();  }
+  inline Tuple   popTuple  () { return pop().asTuple();   }
+  inline Address popAddress() { return pop().asAddress(); }
+  inline FieldData popField() { return pop().asField();   }
 };
 
 #endif

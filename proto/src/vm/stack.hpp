@@ -74,7 +74,7 @@ class BasicStack {
                   if(full()) cerr << "Stack overflow: full with " << size() << " elements\n";
                   new (top++) Element(element);
 		}
-		
+
 		/// Pop an element from the stack.
 		inline Element pop() {
 			Element element = *--top;

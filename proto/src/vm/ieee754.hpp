@@ -23,26 +23,10 @@
  * This implementation assumes that on the used platform \c float is already an IEEE 754 binary32 floating point number.
  * Platforms can \ref fileoverloading "overload this file" if any conversion is needed.
  */
-class IEEE754binary32 {
-		
-	private:
-		float value;
-		
-	public:
-		
-		/// Convert from a Number.
-		IEEE754binary32(Number number) : value(number) {}
-		
-		/// Convert to a Number.
-		operator Number() { return value; }
-		
-		/// Convert from the IEEE 754 binary32 4 byte representation.
-		IEEE754binary32(Int8 data[4]) : value(*reinterpret_cast<float *>(data)) {}
-		
-		/// Convert to the IEEE 754 binary32 4 byte representation.
-		operator Int8 * () { return reinterpret_cast<Int8 *>(&value); }
-		
-};
+
+inline Number IEEE754binary32(Int8 data[4]) {
+  return *reinterpret_cast<float*>(data);
+}
 
 #endif
 

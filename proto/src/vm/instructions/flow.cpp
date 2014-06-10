@@ -140,8 +140,8 @@ namespace Instructions {
 	 * \return Data The 'false' value when the condition is 0, the 'true' value otherwise.
 	 */
 	void MUX(Machine & machine){
-		Data false_value = machine.stack.pop();
-		Data  true_value = machine.stack.pop();
+		Data& false_value = machine.stack.pop();
+		Data&  true_value = machine.stack.pop();
 		Number condition = machine.stack.popNumber();
 		machine.stack.push(condition ? true_value : false_value);
 	}
@@ -209,7 +209,7 @@ namespace Instructions {
 	namespace {
 		
 		void FUNCALL_end(Machine & machine){
-			Data result    = machine.stack.pop();
+			Data& result    = machine.stack.pop();
 			Size arguments = machine.stack.popNumber();
 			machine.environment.pop(arguments);
 			machine.stack.push(result);
@@ -226,11 +226,13 @@ namespace Instructions {
 	 */
 	template<int arguments>
 	void FUNCALL_N(Machine & machine){
-		Address function = machine.stack.popAddress();
+		const Address& function = machine.stack.popAddress();
 		for(Size i = 0; i < arguments; i++){
 			machine.environment.push(machine.stack.peek(arguments-i-1));
 		}
+                // Wipes the chunk of stack that had contained the arguments
 		machine.stack.pop(arguments);
+                // Puts the number of arguments onto the stack
 		machine.stack.push(arguments);
 		machine.call(function,FUNCALL_end);
 	}
@@ -243,12 +245,14 @@ namespace Instructions {
 	 * \return The return value of the function.
 	 */
 	void FUNCALL(Machine & machine){
-		Address function = machine.stack.popAddress();
+		const Address& function = machine.stack.popAddress();
 		Size arguments = machine.nextInt();
 		for(Size i = 0; i < arguments; i++){
 			machine.environment.push(machine.stack.peek(arguments-i-1));
 		}
+                // Wipes the chunk of stack that had contained the arguments
 		machine.stack.pop(arguments);
+                // Puts the number of arguments onto the stack
 		machine.stack.push(arguments);
 		machine.call(function,FUNCALL_end);
 	}

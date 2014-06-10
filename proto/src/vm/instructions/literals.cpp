@@ -74,7 +74,7 @@ namespace Instructions {
 		float_data[1] = machine.nextInt8();
 		float_data[2] = machine.nextInt8();
 		float_data[3] = machine.nextInt8();
-		machine.stack.push(Number(IEEE754binary32(float_data)));
+		machine.stack.push(IEEE754binary32(float_data));
 	}
 	
 	/// Positive infinity.
