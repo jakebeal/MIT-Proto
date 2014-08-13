@@ -166,6 +166,7 @@ int Signature::parameter_id(SE_Symbol* p, bool err) {
   }
   if(names[p->name]>=-1) return names[p->name];
   ierror("Bad parameter #:"+i2s(names[p->name])+" in "+ce2s(this));
+  return 0; // dummy return: terminates on error
 }
 
 ProtoType* Signature::parameter_type(SE_Symbol* p, bool err) {
@@ -176,6 +177,7 @@ ProtoType* Signature::parameter_type(SE_Symbol* p, bool err) {
   if(names[p->name]==-1) return output;
   if(names[p->name]>=0) return nth_type(names[p->name]);
   ierror("Bad parameter #:"+i2s(names[p->name])+" in "+ce2s(this));
+  return NULL; // dummy return: terminates on error
 }
 
 bool Signature::legal_length(int n) { 
@@ -309,6 +311,7 @@ Operator* LocalFieldOp::get_local_op(Operator* op) {
 ProtoType* localop_type(ProtoType* base) {
   if(base->isA("ProtoField")) return F_VAL(base);
   ierror("Tried to localize non-field type: "+base->to_str());
+  return NULL; // dummy return: terminates on error
 }
 LocalFieldOp::LocalFieldOp(Operator* base) : Primitive(base) {
   this->base = base; name = "Local~~"+base->name;

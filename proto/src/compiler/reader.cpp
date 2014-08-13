@@ -73,6 +73,10 @@ print_token(Token *token)
   case Token_symbol: post("N(%s)", token->name); break;
   case Token_string: post("S(%s)", token->name); break;
   case Token_eof: post("EF"); break;
+  case Token_true: post("TRUE"); break;
+  case Token_false: post("FALSE"); break;
+  case Token_quote: post("QUOTE"); break;
+  case Token_char: post("C(%s)", token->name); break;
   }
 }
 
@@ -174,6 +178,7 @@ read_token (const char *string, int *start)
       is_esc   = 0;
     }
     uerror("unable to find end of string %s\n", buf);
+    return NULL;
   } else {
     while (i < len) {
       c      = string[i++];
@@ -203,10 +208,12 @@ read_list(const char *string, int *start)
     Obj   *expr;
     // print_token(token); debug(" READ LIST TOKEN %d\n", *start);
     switch (token->type) {
-      case Token_right_paren:
-      case Token_eof:
-	// debug("DONE READING LIST\n");
-	return lst_rev(_list);
+    case Token_right_paren:
+    case Token_eof:
+      // debug("DONE READING LIST\n");
+      return lst_rev(_list);
+    default:
+      break; // do nothing
     }
     expr = read_from(token, string, start);
     // post("PAIRING "); print_object(list); post("\n");
@@ -236,8 +243,10 @@ new_sym_or_num(const char *name)
       res = sscanf(name, "%d", &inum);
       if (res == 1) {
 	return new Number(inum);
-      } else
+      } else {
 	uerror("UNABLE TO PARSE NUM %s", name);
+	return NULL;
+      }
     }
   } else
     return new Symbol(name);
@@ -357,6 +366,7 @@ qq_lookup(const char *name, List *env)
       return lst_elt(&binding, 1);
   }
   uerror("Unable to find qq_binding %s", name);
+  return NULL;
 }
 
 static Obj *
@@ -391,6 +401,7 @@ copy_eval_quasi_quote(Obj *obj, List *env)
     return lst_rev(args);
   } else
     uerror("Unknown quasi quote element %s", obj->typeName());
+  return NULL;
 }
 
 Obj *

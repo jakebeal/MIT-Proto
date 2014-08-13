@@ -31,7 +31,7 @@ struct Path {
   void add_default_path(const std::string &srcdir);
   void add_to_path(const std::string &addition) { dirs.push_back(addition); }
   std::ifstream *find_in_path(const char *filename) const
-    { std::string s(filename); find_in_path(s); }
+    { std::string s(filename); return find_in_path(s); }
   std::ifstream *find_in_path(const std::string &filename) const;
 };
 

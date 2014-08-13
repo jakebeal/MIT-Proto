@@ -410,7 +410,7 @@ struct AST_LIT : public AST{
     val = num; name="LIT";
     type = new ONE_NUM_TYPE(num);
     unsigned int n = (unsigned int)num;
-    kind = (n == num && (n >= 0 && n <= 0xffffffff)) ? LIT_INT : LIT_FLO;
+    kind = (n == num && (n <= 0xffffffff)) ? LIT_INT : LIT_FLO;
   }
 
   void print() { fprintf(error_log(),"%.1f", val); }
@@ -668,6 +668,7 @@ AST* null_of(TYPE* t) {
   }
   default:
     uerror("unable to build null of type %s", t->name());
+    return NULL;
   }
 }
 
@@ -691,6 +692,7 @@ AST* real_null_of(TYPE* t) {
   }
   default:
     uerror("unable to build null of type %s", t->name());
+    return NULL;
   }
 }
 
@@ -931,6 +933,7 @@ int add_offset (AST_OP_CALL *ast, int offset) {
     if (ast->offsets[i] == -1)
       return ast->offsets[i] = offset;
   cerror((AST*)ast, "UNABLE TO ASSIGN OFFSET %d", offset);
+  return 0; // scratch value - never reached due to error
 }
 
 AST *new_ast_op_call_offset(AST_OP *op, list<AST*> *args, int offset) {
@@ -964,8 +967,10 @@ AST *insert_def_tup (AST *tup_) {
     return new AST_OP_CALL(def_tup_op, tup->args);
   } else if (tup->op == fab_vec_op)
     return new_ast_op_call_offset(def_vec_op, tup->args, len);
-  else
+  else {
     cerror(tup_, "UNABLE TO FIND TUP DEF");
+    return NULL;
+  }
 }
 
 void map_lift (AST_OP_CALL *ast, LIFT_DATA *data) {
@@ -1015,6 +1020,7 @@ AST_OP_CALL *feedback_init(AST_OP_CALL *ast) {
     return (AST_OP_CALL*)arg;
   } else {
     cerror((AST*)ast, "UNKNOWN INIT-FEEDBACK FROM FEEDBACK");
+    return NULL;
   }
 }
 
@@ -1231,7 +1237,7 @@ AST *ast_call_walk (AST_WALKER_KIND action, AST *ast_, void *arg) {
 AST_CALL::AST_CALL(AST *fun, list<AST*> *argv) : args(argv) {
   name="CALL";
   walkers[0]=walkers[1]=&ast_call_walk;
-  if(!fun->ast_class() == AST_FUN_CLASS) cerror(this,"CALL OF NON-FUNCTION");
+  if(!(fun->ast_class() == AST_FUN_CLASS)) cerror(this,"CALL OF NON-FUNCTION");
   this->fun=(AST_FUN*)fun; 
   type = this->fun->ast_body->type;
 }
@@ -1319,7 +1325,9 @@ int tup_type_len (TYPE* type) {
   switch (type->kind) {
   case TUP_KIND: return ((TUP_TYPE*)type)->len;
   case VEC_KIND: return ((VEC_TYPE*)type)->len;
-  default: uerror("EXPECTED TUP/VEC TYPE %s\n", type->name());
+  default: 
+    uerror("EXPECTED TUP/VEC TYPE %s\n", type->name());
+    return 0; // scratch value - never reached due to error
   }
 }
 
@@ -1327,7 +1335,9 @@ TYPE* tup_type_elt (TYPE* type, int i) {
   switch (type->kind) {
   case TUP_KIND: return ((TUP_TYPE*)type)->elt_types[i];
   case VEC_KIND: return ((VEC_TYPE*)type)->elt_type;
-  default: uerror("EXPECTED TUP/VEC TYPE %s\n", type->name());
+  default:
+    uerror("EXPECTED TUP/VEC TYPE %s\n", type->name());
+    return NULL;
   }
 }
 
@@ -1386,9 +1396,11 @@ TYPE* elt_type_infer (AST* ast_) {
       return res;
     } else {
       cerror(ast_, "ELT: TYPE ERROR EXPECTED VEC/TUP GOT %s", elts->name());
+      return NULL;
     }
   } else {
     cerror(ast_, "ELT: UNABLE TO TYPE ELT %s %s", idx->name(), elts->name());
+    return NULL;
   }
 }
 
@@ -1708,14 +1720,16 @@ char* sym_elt (List *e, int offset) {
   Obj *n = lst_elt((List*)e, offset);
   if (symbolp(n))
     return strdup(((Symbol*)n)->getName().c_str());
-  else
+  else {
     uerror("LOOKING FOR STRING FOUND OTHER TYPE %s", n->typeName());
+    return NULL;
+  }
 }
 
 list<VAR*> *globals;
 
 struct ltstr {
-  bool operator()(const char *s1, const char *s2) {
+  bool operator()(const char *s1, const char *s2) const {
     return strcmp(s1, s2) < 0;
   }
 };
@@ -2019,6 +2033,7 @@ Obj* hood_folder (const char *name, List *args, Obj *merge, Obj *cmp) {
                    qq_env("$elt", lst_elt(args, 1), "$cmp", cmp, NULL));
   default:
     clerror(name, /* args */ new list<AST*>(), "MAX-HOOD: WRONG NUM ARGS %d", lst_len(args));
+    return NULL;
   }
 }
 
@@ -2605,8 +2620,11 @@ AST* parse_special_form (const char *name, Obj *e, List *args, list<VAR*> *env) 
     list<VAR*> *vars   = params_to_vars(params);
     AST  *abody  = vars->size() > 0 ? NULL : parse_fun_body(vars, body, env);
     return new AST_FUN("fun", vars, body, abody);
-  } else
+  } else {
     return NULL;
+  }
+  uerror("Unknown or unhandled special form");
+  return NULL;
 }
 
 int type_check (AST *arg, TYPE *type) {
@@ -2668,6 +2686,7 @@ AST *ast_gop_call_check (AST_GOP *gop, list<AST*> *args) {
   }
   fprintf(error_log(),": ");
   clerror("GOP-CALL", args, "NO APPLICABLE METHODS ERROR FOR %s", gop->name);
+  return NULL;
 }
 
 AST* parse (Obj *e, list<VAR*> *env) {
@@ -2712,6 +2731,8 @@ AST* parse (Obj *e, list<VAR*> *env) {
             return ast_op_call_check(((ONE_OP_TYPE*)type)->op, ast_args); 
           case ONE_GOP_KIND: 
             return ast_gop_call_check(((ONE_GOP_TYPE*)type)->gop, ast_args); 
+	  default:
+	    break; // fall through on all other cases
           }
           var->n_refs -= 1;
         }
@@ -2752,6 +2773,8 @@ AST* parse (Obj *e, list<VAR*> *env) {
       // uerror("UNKNOWN CALL TYPE %d", type->kind);
     }
   }
+  uerror("Unknown or unhandled form");
+  return NULL;
 }
 
 Script* compile (Obj *e, int is_dump_ast) {
@@ -2915,6 +2938,7 @@ TYPE* name_to_type (SExpr* ex) {
     if(*ex=="boolean") return NUMT;
   }
   uerror("Unhandled or unknown type %s",ex->to_str().c_str());
+  return NULL;
 }
 
 void

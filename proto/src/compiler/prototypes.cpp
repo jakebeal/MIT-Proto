@@ -59,6 +59,7 @@ ProtoType* ProtoType::clone(ProtoType* t) {
     newt->inherit_attributes(t); return newt;
   }
   ierror("Don't know how to clone ProtoType "+t->type_of());
+  return NULL; // dummy return: terminates on error
 }
 
 /*****************************************************************************
@@ -236,6 +237,7 @@ ProtoType* ProtoType::gcs(ProtoType* t1, ProtoType* t2) {
 
 ProtoType* ProtoType::gcs(ProtoType* t) {
   ierror("GCS dispatch failed for "+this->to_str()+" and "+t->to_str());
+  return NULL; // dummy return: terminates on error
 }
 ProtoType* ProtoLocal::gcs(ProtoType* t) { return NULL; }
 ProtoType* ProtoSymbol::gcs(ProtoType* t) { return NULL; }
