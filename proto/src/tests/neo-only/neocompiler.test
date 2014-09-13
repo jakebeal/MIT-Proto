@@ -29,11 +29,11 @@ is 0 _ Testing type relations:
 is 1 _ Generic types:
 is 2 _ <Any> > <Any>: TRUE, reverse: TRUE
 is 3 _ <Any> > <Local>: TRUE, reverse: FALSE
-is 4 _ <Any> > <Field <Any>>: TRUE, reverse: FALSE
+is 4 _ <Any> > <Field <Local>>: TRUE, reverse: FALSE
 is 5 _ <Any> > <Lambda>: TRUE, reverse: FALSE
 is 6 _ <Any> > <Scalar>: TRUE, reverse: FALSE
 is 7 _ <Scalar> > <Number>: FALSE, reverse: TRUE
-is 8 _ <Scalar> > <Field <Any>>: FALSE, reverse: FALSE
+is 8 _ <Scalar> > <Field <Local>>: FALSE, reverse: FALSE
 is 9 _ <Vector<Scalar>...> > <Tuple<Any>...>: FALSE, reverse: TRUE
 is 10 _ <Scalar> > <Boolean>: TRUE, reverse: FALSE
 is 11 _ <Scalar> > <Symbol>: FALSE, reverse: FALSE
@@ -42,116 +42,119 @@ is 13 _ <Vector<Scalar>...> > <Number>: FALSE, reverse: TRUE
 is 14 _ <Vector<Scalar>...> > <Boolean>: FALSE, reverse: FALSE
 is 15 _ <Symbol> > <Boolean>: FALSE, reverse: FALSE
 is 16 _ <Symbol> > <Local>: FALSE, reverse: TRUE
-is 17 _ <Field <Any>> > <Local>: FALSE, reverse: FALSE
+is 17 _ <Field <Local>> > <Local>: FALSE, reverse: FALSE
 is 18 _ <Lambda> > <Local>: FALSE, reverse: TRUE
-is 19 _ <Tuple<Any>...> > <Local>: FALSE, reverse: TRUE
-is 20 _ Literals:
-is 21 _ <Scalar 3> > <Local>: FALSE, reverse: TRUE
-is 22 _ <Scalar 4> > <Scalar 5>: FALSE, reverse: FALSE
-is 23 _ <Scalar 4> > <Boolean>: FALSE, reverse: FALSE
-is 24 _ <Scalar> > <Scalar 3>: TRUE, reverse: FALSE
-is 25 _ <Boolean true> > <Boolean>: FALSE, reverse: TRUE
-is 26 _ <Boolean false> > <Symbol>: FALSE, reverse: FALSE
-is 27 _ <Boolean> > <Boolean false>: TRUE, reverse: FALSE
-is 28 _ <Boolean false> > <Boolean true>: FALSE, reverse: FALSE
-is 29 _ <Boolean false> > <Scalar 1>: FALSE, reverse: FALSE
-is 30 _ <Boolean false> > <Scalar 0>: FALSE, reverse: TRUE
-is 31 _ <Boolean true> > <Scalar 1>: FALSE, reverse: TRUE
-is 32 _ <Boolean true> > <Scalar 0>: FALSE, reverse: FALSE
-is 33 _ <Symbol foo> > <Number>: FALSE, reverse: FALSE
-is 34 _ <Symbol bar> > <Symbol>: FALSE, reverse: TRUE
-is 35 _ <Any> > <Symbol foo>: TRUE, reverse: FALSE
-is 36 _ <Symbol foo> > <Symbol bar>: FALSE, reverse: FALSE
-is 37 _ Tuples:
-is 38 _ <2-Tuple<Scalar 3>,<Symbol>> > <Tuple<Scalar 3>,<Any>,<Field <Any>>...>: FALSE, reverse: TRUE
-is 39 _ <2-Tuple<Scalar 3>,<Symbol>> > <Tuple<Any>...>: FALSE, reverse: TRUE
-is 40 _ <Tuple<Scalar 3>,<Any>,<Field <Any>>...> > <Tuple<Any>...>: FALSE, reverse: TRUE
-is 41 _ <Tuple<Any>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: TRUE, reverse: FALSE
-is 42 _ <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
-is 43 _ <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
-is 44 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: FALSE
-is 45 _ <2-Tuple<Scalar 3>,<Scalar 4>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
-is 46 _ <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: FALSE
-is 47 _ <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: TRUE
-is 48 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: FALSE
-is 49 _ <2-Tuple<Scalar 3>,<Scalar 4>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: FALSE
-is 50 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: TRUE, reverse: FALSE
-is 51 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <2-Tuple<Scalar 3>,<Scalar 4>>: FALSE, reverse: FALSE
-is 52 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>: TRUE, reverse: FALSE
-is 53 _ <Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: TRUE, reverse: TRUE
-is 54 _ <Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: TRUE, reverse: FALSE
-is 55 _ <Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: TRUE, reverse: FALSE
-is 56 _ <Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <2-Tuple<Scalar 3>,<Scalar 4>>: FALSE, reverse: FALSE
-is 57 _ Vectors:
-is 58 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: FALSE, reverse: TRUE
-is 59 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <2-Tuple<Scalar 3>,<Scalar 4>>: FALSE, reverse: FALSE
-is 60 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: TRUE
-is 61 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <3-Tuple<Scalar 3>,<Any>,<Scalar 5>>: FALSE, reverse: TRUE
-is 62 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>: TRUE, reverse: FALSE
-is 63 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: FALSE, reverse: FALSE
-is 64 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
-is 65 _ Fields:
-is 66 _ <Field <Scalar 3>> > <Field <Any>>: FALSE, reverse: TRUE
-is 67 _ <Field <Scalar 3>> > <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>: FALSE, reverse: FALSE
-is 68 _ <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field <Any>>: FALSE, reverse: TRUE
-is 69 _ <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field <3-Tuple<Scalar 3>,<Any>,<Scalar 5>>>: FALSE, reverse: TRUE
-is 70 _ Testing least-common-supertype:
-is 71 _ LCS ordered pairs:
-is 72 _ LCS(<Any>,<Field <Scalar 3>>) = <Any>; inverse match = TRUE
-is 73 _ LCS(<Scalar 3>,<Local>) = <Local>; inverse match = TRUE
-is 74 _ LCS(<Number>,<Boolean>) = <Number>; inverse match = TRUE
-is 75 _ LCS cross-class:
-is 76 _ LCS(<Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <Any>; inverse match = TRUE
-is 77 _ LCS(<Boolean false>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <Local>; inverse match = TRUE
-is 78 _ LCS(<Boolean>,<Vector<Scalar>...>) = <Number>; inverse match = TRUE
-is 79 _ LCS(<Boolean true>,<Scalar 5>) = <Scalar>; inverse match = TRUE
-is 80 _ LCS(<Vector<Scalar>...>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <Tuple<Local>...>; inverse match = TRUE
-is 81 _ LCS(<Boolean>,<Lambda>) = <Local>; inverse match = TRUE
-is 82 _ LCS(<Vector<Scalar>...>,<Field <Any>>) = <Any>; inverse match = TRUE
-is 83 _ LCS in-class generalization:
-is 84 _ LCS(<Boolean false>,<Boolean true>) = <Boolean>; inverse match = TRUE
-is 85 _ LCS(<Boolean true>,<Scalar 1>) = <Scalar 1>; inverse match = TRUE
-is 86 _ LCS(<Scalar 1>,<Scalar 3>) = <Scalar>; inverse match = TRUE
-is 87 _ LCS(<2-Tuple<Scalar 3>,<Scalar 1>>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = <Tuple<Scalar 3>,<Scalar>,<Scalar 5>...>; inverse match = TRUE
-is 88 _ LCS(<Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>; inverse match = TRUE
-is 89 _ LCS(<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = <3-Tuple<Scalar 3>,<Local>,<Scalar 5>>; inverse match = TRUE
-is 90 _ LCS(<Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>,<2-Tuple<Scalar 3>,<Scalar 4>>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>; inverse match = TRUE
-is 91 _ LCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Vector<Scalar 1>,<Scalar 4>,<Scalar 5>>) = <Vector<Scalar>,<Scalar 4>,<Scalar>...>; inverse match = TRUE
-is 92 _ LCS(<3-Vector<Scalar 1>,<Scalar 4>,<Scalar 5>>,<Scalar 3>) = <Number>; inverse match = TRUE
-is 93 _ LCS(<3-Vector<Scalar 1>,<Scalar 4>,<Scalar 5>>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = <3-Tuple<Scalar>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
-is 94 _ LCS(<Symbol foo>,<Symbol bar>) = <Symbol>; inverse match = TRUE
-is 95 _ LCS(<Field <Scalar 3>>,<Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>) = <Field <Local>>; inverse match = TRUE
-is 96 _ Testing greatest-common-subtype:
-is 97 _ GCS ordered pairs:
-is 98 _ GCS(<Any>,<Field <Scalar 3>>) = <Field <Scalar 3>>; inverse match = TRUE
-is 99 _ GCS(<Scalar 3>,<Local>) = <Scalar 3>; inverse match = TRUE
-is 100 _ GCS(<Number>,<Boolean>) = <Boolean>; inverse match = TRUE
-is 101 _ GCS cross-class:
-is 102 _ GCS(<Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = NULL; inverse match = TRUE
-is 103 _ GCS(<Vector<Scalar>...>,<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = NULL; inverse match = TRUE
-is 104 _ GCS(<Boolean>,<Lambda>) = NULL; inverse match = TRUE
-is 105 _ GCS(<Vector<Scalar>...>,<Field <Any>>) = NULL; inverse match = TRUE
-is 106 _ GCS(<Number>,<Tuple<Any>...>) = <Vector<Scalar>...>; inverse match = TRUE
-is 107 _ GCS(<3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>,<Number>) = NULL; inverse match = TRUE
-is 108 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Number>) = <3-Vector<Scalar 3>,<Scalar>,<Scalar 5>>; inverse match = TRUE
-is 109 _ GCS in-class specialization:
-is 110 _ GCS(<Boolean false>,<Boolean true>) = NULL; inverse match = TRUE
-is 111 _ GCS(<Boolean true>,<Scalar 1>) = <Boolean true>; inverse match = TRUE
-is 112 _ GCS(<Scalar 1>,<Scalar 3>) = NULL; inverse match = TRUE
-is 113 _ GCS(<2-Tuple<Scalar 3>,<Scalar 4>>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = NULL; inverse match = TRUE
-is 114 _ GCS(<2-Tuple<Scalar 3>,<Scalar 4>>,<Tuple<Scalar 3>,<Scalar 4>,<Scalar>...>) = <2-Tuple<Scalar 3>,<Scalar 4>>; inverse match = TRUE
-is 115 _ GCS(<2-Tuple<Scalar 3>,<Scalar 4>>,<Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>) = NULL; inverse match = TRUE
-is 116 _ GCS(<Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
-is 117 _ GCS(<Tuple<Scalar 3>,<Scalar 4>,<Any>...>,<Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>; inverse match = TRUE
-is 118 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
-is 119 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>; inverse match = TRUE
-is 120 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field <Any>>...>) = NULL; inverse match = TRUE
-is 121 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field <Any>>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Field <Any>>...>; inverse match = TRUE
-is 122 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
-is 123 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
-is 124 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Vector<Scalar>,<Scalar 4>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
-is 125 _ GCS(<Symbol foo>,<Symbol bar>) = NULL; inverse match = TRUE
-is 126 _ GCS(<Field <3-Tuple<Scalar 3>,<Any>,<Scalar 5>>>,<Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>) = <Field <3-Tuple<Scalar 3>,<3-Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>; inverse match = TRUE
+is 19 _ <Tuple<Any>...> > <Local>: FALSE, reverse: FALSE
+is 20 _ <LocalTuple<Local>...> > <Local>: FALSE, reverse: TRUE
+is 21 _ Literals:
+is 22 _ <Scalar 3> > <Local>: FALSE, reverse: TRUE
+is 23 _ <Scalar 4> > <Scalar 5>: FALSE, reverse: FALSE
+is 24 _ <Scalar 4> > <Boolean>: FALSE, reverse: FALSE
+is 25 _ <Scalar> > <Scalar 3>: TRUE, reverse: FALSE
+is 26 _ <Boolean true> > <Boolean>: FALSE, reverse: TRUE
+is 27 _ <Boolean false> > <Symbol>: FALSE, reverse: FALSE
+is 28 _ <Boolean> > <Boolean false>: TRUE, reverse: FALSE
+is 29 _ <Boolean false> > <Boolean true>: FALSE, reverse: FALSE
+is 30 _ <Boolean false> > <Scalar 1>: FALSE, reverse: FALSE
+is 31 _ <Boolean false> > <Scalar 0>: FALSE, reverse: TRUE
+is 32 _ <Boolean true> > <Scalar 1>: FALSE, reverse: TRUE
+is 33 _ <Boolean true> > <Scalar 0>: FALSE, reverse: FALSE
+is 34 _ <Symbol foo> > <Number>: FALSE, reverse: FALSE
+is 35 _ <Symbol bar> > <Symbol>: FALSE, reverse: TRUE
+is 36 _ <Any> > <Symbol foo>: TRUE, reverse: FALSE
+is 37 _ <Symbol foo> > <Symbol bar>: FALSE, reverse: FALSE
+is 38 _ Tuples:
+is 39 _ <2-LocalTuple<Scalar 3>,<Symbol>> > <Tuple<Scalar 3>,<Any>,<Field <Local>>...>: FALSE, reverse: TRUE
+is 40 _ <2-LocalTuple<Scalar 3>,<Symbol>> > <Tuple<Any>...>: FALSE, reverse: TRUE
+is 41 _ <Tuple<Scalar 3>,<Any>,<Field <Local>>...> > <Tuple<Any>...>: FALSE, reverse: TRUE
+is 42 _ <Tuple<Any>...> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: TRUE, reverse: FALSE
+is 43 _ <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
+is 44 _ <3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
+is 45 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: FALSE
+is 46 _ <2-LocalTuple<Scalar 3>,<Scalar 4>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
+is 47 _ <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: FALSE
+is 48 _ <3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: TRUE
+is 49 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: FALSE
+is 50 _ <2-LocalTuple<Scalar 3>,<Scalar 4>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: FALSE
+is 51 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: TRUE, reverse: FALSE
+is 52 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <2-LocalTuple<Scalar 3>,<Scalar 4>>: FALSE, reverse: FALSE
+is 53 _ <3-Tuple<Scalar 3>,<Any>,<Scalar 5>> > <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>: TRUE, reverse: FALSE
+is 54 _ <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: TRUE, reverse: TRUE
+is 55 _ <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: TRUE, reverse: FALSE
+is 56 _ <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: TRUE, reverse: FALSE
+is 57 _ <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...> > <2-LocalTuple<Scalar 3>,<Scalar 4>>: FALSE, reverse: FALSE
+is 58 _ Vectors:
+is 59 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: FALSE, reverse: TRUE
+is 60 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <2-LocalTuple<Scalar 3>,<Scalar 4>>: FALSE, reverse: FALSE
+is 61 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>: FALSE, reverse: TRUE
+is 62 _ <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>> > <3-Tuple<Scalar 3>,<Any>,<Scalar 5>>: FALSE, reverse: TRUE
+is 63 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>: TRUE, reverse: FALSE
+is 64 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>: FALSE, reverse: FALSE
+is 65 _ <Vector<Scalar 3>,<Scalar 4>,<Scalar>...> > <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>: FALSE, reverse: TRUE
+is 66 _ Fields:
+is 67 _ <Field <Scalar 3>> > <Field <Local>>: FALSE, reverse: TRUE
+is 68 _ <Field <Scalar 3>> > <Field <3-LocalTuple<Scalar 3>,<Local>,<Scalar 5>>>: FALSE, reverse: FALSE
+is 69 _ <Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field <Local>>: FALSE, reverse: TRUE
+is 70 _ <Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>> > <Field <3-LocalTuple<Scalar 3>,<Local>,<Scalar 5>>>: FALSE, reverse: TRUE
+is 71 _ Testing least-common-supertype:
+is 72 _ LCS ordered pairs:
+is 73 _ LCS(<Any>,<Field <Scalar 3>>) = <Any>; inverse match = TRUE
+is 74 _ LCS(<Scalar 3>,<Local>) = <Local>; inverse match = TRUE
+is 75 _ LCS(<Number>,<Boolean>) = <Number>; inverse match = TRUE
+is 76 _ LCS cross-class:
+is 77 _ LCS(<Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>,<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <Any>; inverse match = TRUE
+is 78 _ LCS(<Boolean false>,<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <Local>; inverse match = TRUE
+is 79 _ LCS(<Boolean>,<Vector<Scalar>...>) = <Number>; inverse match = TRUE
+is 80 _ LCS(<Boolean true>,<Scalar 5>) = <Scalar>; inverse match = TRUE
+is 81 _ LCS(<Vector<Scalar>...>,<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = <LocalTuple<Local>...>; inverse match = TRUE
+is 82 _ LCS(<Boolean>,<Lambda>) = <Local>; inverse match = TRUE
+is 83 _ LCS(<Vector<Scalar>...>,<Field <Local>>) = <Any>; inverse match = TRUE
+is 84 _ LCS in-class generalization:
+is 85 _ LCS(<Boolean false>,<Boolean true>) = <Boolean>; inverse match = TRUE
+is 86 _ LCS(<Boolean true>,<Scalar 1>) = <Scalar 1>; inverse match = TRUE
+is 87 _ LCS(<Scalar 1>,<Scalar 3>) = <Scalar>; inverse match = TRUE
+is 88 _ LCS(<2-LocalTuple<Scalar 3>,<Scalar 1>>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = <LocalTuple<Scalar 3>,<Scalar>,<Scalar 5>...>; inverse match = TRUE
+is 89 _ LCS(<LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>; inverse match = TRUE
+is 90 _ LCS(<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = <3-LocalTuple<Scalar 3>,<Local>,<Scalar 5>>; inverse match = TRUE
+is 91 _ LCS(<LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>,<2-LocalTuple<Scalar 3>,<Scalar 4>>) = <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>; inverse match = TRUE
+is 92 _ LCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Vector<Scalar 1>,<Scalar 4>,<Scalar 5>>) = <Vector<Scalar>,<Scalar 4>,<Scalar>...>; inverse match = TRUE
+is 93 _ LCS(<3-Vector<Scalar 1>,<Scalar 4>,<Scalar 5>>,<Scalar 3>) = <Number>; inverse match = TRUE
+is 94 _ LCS(<3-Vector<Scalar 1>,<Scalar 4>,<Scalar 5>>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = <3-LocalTuple<Scalar>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
+is 95 _ LCS(<Symbol foo>,<Symbol bar>) = <Symbol>; inverse match = TRUE
+is 96 _ LCS(<Field <Scalar 3>>,<Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>) = <Field <Local>>; inverse match = TRUE
+is 97 _ Testing greatest-common-subtype:
+is 98 _ GCS ordered pairs:
+is 99 _ GCS(<Any>,<Field <Scalar 3>>) = <Field <Scalar 3>>; inverse match = TRUE
+is 100 _ GCS(<Scalar 3>,<Local>) = <Scalar 3>; inverse match = TRUE
+is 101 _ GCS(<Number>,<Boolean>) = <Boolean>; inverse match = TRUE
+is 102 _ GCS cross-class:
+is 103 _ GCS(<Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>,<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = NULL; inverse match = TRUE
+is 104 _ GCS(<Vector<Scalar>...>,<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>) = NULL; inverse match = TRUE
+is 105 _ GCS(<Boolean>,<Lambda>) = NULL; inverse match = TRUE
+is 106 _ GCS(<Vector<Scalar>...>,<Field <Local>>) = NULL; inverse match = TRUE
+is 107 _ GCS(<Number>,<Tuple<Any>...>) = <Vector<Scalar>...>; inverse match = TRUE
+is 108 _ GCS(<3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>,<Number>) = NULL; inverse match = TRUE
+is 109 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Number>) = <3-Vector<Scalar 3>,<Scalar>,<Scalar 5>>; inverse match = TRUE
+is 110 _ GCS in-class specialization:
+is 111 _ GCS(<Boolean false>,<Boolean true>) = NULL; inverse match = TRUE
+is 112 _ GCS(<Boolean true>,<Scalar 1>) = <Boolean true>; inverse match = TRUE
+is 113 _ GCS(<Scalar 1>,<Scalar 3>) = NULL; inverse match = TRUE
+is 114 _ GCS(<2-LocalTuple<Scalar 3>,<Scalar 4>>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>) = NULL; inverse match = TRUE
+is 115 _ GCS(<2-LocalTuple<Scalar 3>,<Scalar 4>>,<LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>...>) = <2-LocalTuple<Scalar 3>,<Scalar 4>>; inverse match = TRUE
+is 116 _ GCS(<2-LocalTuple<Scalar 3>,<Scalar 4>>,<LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>) = NULL; inverse match = TRUE
+is 117 _ GCS(<LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
+is 118 _ GCS(<Tuple<Scalar 3>,<Scalar 4>,<Any>...>,<LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>) = <LocalTuple<Scalar 3>,<Scalar 4>,<Scalar>,<Scalar>...>; inverse match = TRUE
+is 119 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
+is 120 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Vector<Scalar 3>,<Scalar 4>,<Scalar 5>,<Scalar>...>; inverse match = TRUE
+is 121 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Scalar>...>,<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field <Local>>...>) = NULL; inverse match = TRUE
+is 122 _ GCS(<Tuple<Scalar 3>,<Any>,<Scalar 5>,<Field <Local>>...>,<Tuple<Scalar 3>,<Scalar 4>,<Any>...>) = <Tuple<Scalar 3>,<Scalar 4>,<Scalar 5>,<Field <Local>>...>; inverse match = TRUE
+is 123 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
+is 124 _ GCS(<3-Tuple<Scalar 3>,<Any>,<Scalar 5>>,<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
+is 125 _ GCS(<Vector<Scalar 3>,<Scalar 4>,<Scalar>...>,<3-Vector<Scalar>,<Scalar 4>,<Scalar 5>>) = <3-Vector<Scalar 3>,<Scalar 4>,<Scalar 5>>; inverse match = TRUE
+is 126 _ GCS(<Symbol foo>,<Symbol bar>) = NULL; inverse match = TRUE
+is 127 _ GCS(<Field <3-LocalTuple<Scalar 3>,<Local>,<Scalar 5>>>,<Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>) = <Field <3-LocalTuple<Scalar 3>,<3-LocalTuple<Scalar 3>,<Scalar 4>,<Scalar 5>>,<Scalar 5>>>; inverse match = TRUE
+is 128 _ GCS(<Tuple<Any>...>,<2-LocalTuple<Scalar 3>,<Scalar 4>>) = <2-LocalTuple<Scalar 3>,<Scalar 4>>; inverse match = TRUE
+is 129 _ GCS(<Tuple<Any>...>,<Local>) = <LocalTuple<LocaL>...>; inverse match = TRUE
 
 ////////////////////////////////////////////////////////////////////////////
 test: $(P2B) -CDall '(+ ,) zeros 3 4, `)'
@@ -831,10 +834,10 @@ test: $(P2B) -CDall "(nbr 3)"
 is 0 _ Amorphous Mediums:
 is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
-is 3 _   Bravo: Alfa --> <Field <Any>> OUTPUT
+is 3 _   Bravo: Alfa --> <Field <Local>> OUTPUT
 is 4 _   Charlie: Alfa --> <Scalar 3>
 is 5 _ Operator Instances:
-is 6 _   Charlie<Scalar 3> --> [nbr] --> Bravo<Field <Any>> OUTPUT
+is 6 _   Charlie<Scalar 3> --> [nbr] --> Bravo<Field <Local>> OUTPUT
 is 7 _   [Lit: <Scalar 3>] --> Charlie<Scalar 3>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -926,13 +929,13 @@ is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Number> OUTPUT
 is 4 _   Charlie: Alfa --> <Number>
 is 5 _   Delta: Alfa --> <Scalar 1>
-is 6 _   Echo: Alfa --> <Field <Any>>
+is 6 _   Echo: Alfa --> <Field <Local>>
 is 7 _   Foxtrot: Alfa --> <Scalar 2>
 is 8 _ Operator Instances:
 is 9 _   Charlie<Number> --> [min-hood] --> Bravo<Number> OUTPUT
-is 10 _   Delta<Scalar 1>, Echo<Field <Any>> --> [+] --> Charlie<Number>
+is 10 _   Delta<Scalar 1>, Echo<Field <Local>> --> [+] --> Charlie<Number>
 is 11 _   [Lit: <Scalar 1>] --> Delta<Scalar 1>
-is 12 _   Foxtrot<Scalar 2> --> [nbr] --> Echo<Field <Any>>
+is 12 _   Foxtrot<Scalar 2> --> [nbr] --> Echo<Field <Local>>
 is 13 _   [Lit: <Scalar 2>] --> Foxtrot<Scalar 2>
 is 14 _ Amorphous Mediums:
 is 15 _   [Medium: Alfa = root]
@@ -1017,13 +1020,13 @@ is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Vector<Scalar 4>...> OUTPUT
 is 4 _   Charlie: Alfa --> <Tuple<Any>...>
 is 5 _   Delta: Alfa --> <Scalar 3>
-is 6 _   Echo: Alfa --> <Field <Any>>
+is 6 _   Echo: Alfa --> <Field <Local>>
 is 7 _   Foxtrot: Alfa --> <Scalar 5>
 is 8 _ Operator Instances:
 is 9 _   Charlie<Tuple<Any>...> --> [tupzer] --> Bravo<Vector<Scalar 4>...> OUTPUT
-is 10 _   Delta<Scalar 3>, Echo<Field <Any>> --> [tup] --> Charlie<Tuple<Any>...>
+is 10 _   Delta<Scalar 3>, Echo<Field <Local>> --> [tup] --> Charlie<Tuple<Any>...>
 is 11 _   [Lit: <Scalar 3>] --> Delta<Scalar 3>
-is 12 _   Foxtrot<Scalar 5> --> [nbr] --> Echo<Field <Any>>
+is 12 _   Foxtrot<Scalar 5> --> [nbr] --> Echo<Field <Local>>
 is 13 _   [Lit: <Scalar 5>] --> Foxtrot<Scalar 5>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1041,12 +1044,12 @@ is 1 _   [Medium: Alfa = root]
 is 2 _ Fields:
 is 3 _   Bravo: Alfa --> <Scalar> OUTPUT
 is 4 _   Charlie: Alfa --> <Any>
-is 5 _   Delta: Alfa --> <Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>
+is 5 _   Delta: Alfa --> <Lambda [Op[Signature: <Scalar> &rest <Field <Local>> --> <Local>]]>
 is 6 _   Echo: Alfa --> <Scalar 2>
 is 7 _ Operator Instances:
 is 8 _   Charlie<Any> --> [sin] --> Bravo<Scalar> OUTPUT
-is 9 _   Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>, Echo<Scalar 2> --> [apply] --> Charlie<Any>
-is 10 _   [ltest] --> Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Any>> --> <Local>]]>
+is 9 _   Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Local>> --> <Local>]]>, Echo<Scalar 2> --> [apply] --> Charlie<Any>
+is 10 _   [ltest] --> Delta<Lambda [Op[Signature: <Scalar> &rest <Field <Local>> --> <Local>]]>
 is 11 _   [Lit: <Scalar 2>] --> Echo<Scalar 2>
 is 12 _ Stopping before analysis
 

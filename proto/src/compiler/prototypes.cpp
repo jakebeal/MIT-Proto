@@ -239,7 +239,12 @@ ProtoType* ProtoType::gcs(ProtoType* t) {
   ierror("GCS dispatch failed for "+this->to_str()+" and "+t->to_str());
   return NULL; // dummy return: terminates on error
 }
-ProtoType* ProtoLocal::gcs(ProtoType* t) { return NULL; }
+ProtoType* ProtoLocal::gcs(ProtoType* t) { 
+//   if(t->isA("ProtoTuple")) {
+//     return t->gcs(this);
+//   }
+  return NULL;
+}
 ProtoType* ProtoSymbol::gcs(ProtoType* t) { return NULL; }
 ProtoType* ProtoScalar::gcs(ProtoType* t) { return NULL; } // covers boolean
 
@@ -268,7 +273,7 @@ bool element_gcs(ProtoTuple *a, ProtoTuple* b, ProtoTuple* out) {
   return true;
 }
 
-ProtoType* ProtoTuple::gcs(ProtoType* t) { // covers vectors, localtuples too
+ProtoType* ProtoTuple::gcs(ProtoType* t) { // covers locals, vectors, localtuples too
   if(t->isA("ProtoTuple")) {
     ProtoTuple* tt = &dynamic_cast<ProtoTuple &>(*t);
     ProtoTuple* newt = new ProtoTuple(false);
@@ -286,6 +291,18 @@ ProtoType* ProtoTuple::gcs(ProtoType* t) { // covers vectors, localtuples too
     }
     if(!ctused) delete constraint;
     return newv;
+  }
+  // Generic local --> convert to localtuple if possible
+  if(t->isA("ProtoLocal")) {
+    ProtoLocalTuple* newt = new ProtoLocalTuple(bounded);
+    ProtoLocal *constraint = new ProtoLocal(); bool ctused=false;
+    for(int i=0;i<types.size();i++) {
+      ProtoType* sub = ProtoType::gcs(types[i],constraint);
+      if(sub==constraint) ctused=true; // don't delete if needed
+      if(sub) newt->add(sub); else {delete newt;delete constraint; return NULL;}
+    }
+    if(!ctused) delete constraint;
+    return newt;
   }
   return NULL;
 }
@@ -325,7 +342,10 @@ ProtoTuple* ProtoTuple::specialize_tuple_class(ProtoTuple* t) {
       if(!subtuple->isA("ProtoLocalTuple")) all_local = false;
       copied_types.push_back(subtuple);
     } else {
-      if(!t->types[i]->isA("ProtoLocal")) all_local = false;
+      if(!t->types[i]->isA("ProtoLocal")) {
+        all_local = false;
+        all_scalar = false;
+      }
       copied_types.push_back(t->types[i]);
     }
   }
@@ -423,6 +443,7 @@ void type_system_tests() {
   *cpout << typeorder_test(&field,&local) << endl;
   *cpout << typeorder_test(&lambda,&local) << endl;
   *cpout << typeorder_test(&tuple,&local) << endl;
+  *cpout << typeorder_test(&ltuple,&local) << endl;
   // next some literals
   *cpout << "Literals:\n";
   ProtoScalar l3(3), l4(4), l5(5), l1(1), l0(0);
@@ -457,7 +478,7 @@ void type_system_tests() {
   ProtoLocalTuple t34(true); t34.add(&l3); t34.add(&l4);
   ProtoLocalTuple t345(true); t345.add(&l3); t345.add(&l4); t345.add(&l5);
   ProtoTuple t3x5(true); t3x5.add(&l3); t3x5.add(&top); t3x5.add(&l5);
-  ProtoLocalTuple t3l5(true); t3x5.add(&l3); t3x5.add(&local); t3x5.add(&l5);
+  ProtoLocalTuple t3l5(true); t3l5.add(&l3); t3l5.add(&local); t3l5.add(&l5);
   ProtoLocalTuple t3t5(true); t3t5.add(&l3); t3t5.add(&t345); t3t5.add(&l5);
   *cpout << typeorder_test(&tuple,&t34s) << endl;
   *cpout << typeorder_test(&t345s,&t34s) << endl;
@@ -509,7 +530,7 @@ void type_system_tests() {
   *cpout << lcs_test(&vector,&field) << endl; // = any
   // finally, in-class generalizations
   *cpout << "LCS in-class generalization:\n";
-  ProtoTuple t31(true); t31.add(&l3); t31.add(&l1);
+  ProtoLocalTuple t31(true); t31.add(&l3); t31.add(&l1);
   ProtoVector v145(true); v145.add(&l1); v145.add(&l4); v145.add(&l5);
   *cpout << lcs_test(&bf,&bt) << endl; // = boolean
   *cpout << lcs_test(&bt,&l1) << endl; // = <Scalar 1>
@@ -562,4 +583,5 @@ void type_system_tests() {
   *cpout << gcs_test(&sf,&sb) << endl; // = null
   *cpout << gcs_test(&f3l5,&f3t5) << endl; // = F<T<3,T<3,4,5>,5>>
   *cpout << gcs_test(&tuple,&t34) << endl; // = T<3,4>
+  *cpout << gcs_test(&tuple,&local) << endl; // = Local
 }

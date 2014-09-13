@@ -450,7 +450,8 @@ Population::clear()
 void *
 Population::get(size_t i) const
 {
-  if (0 <= i && i < vector_.size())
+  // Note: i is always non-negative because it is a size_t, which is unsigned
+  if (i < vector_.size()) // 0 <= i && 
     return vector_[i];
   uerror("Attempted to access out of bounds member of Population!");
   return 0;

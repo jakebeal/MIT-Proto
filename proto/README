@@ -150,6 +150,10 @@ C. MacOS X
 * If OpenGL and GNU tools aren't already installed, install the
   following Xcode packages: DevSDK.pkg and OpenGLSDK.pkg.  For recent OS
   versions (e.g., 10.6), everything is provided by the XCode distribution.
+* If autotools or GNU libtool are not included, use you favorite
+  package manager to install them (brew is recommended).
+  You will also likely need to modify your CPATH to point to their location
+  (e.g, with brew, make sure /usr/local is in your CPATH)
 * If you can't right click (e.g. to zoom), then check the application
   preferences and make sure that multi-button mouse emulation is
   turned on.

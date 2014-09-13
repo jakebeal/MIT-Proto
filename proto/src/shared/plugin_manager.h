@@ -64,7 +64,7 @@ class ProtoPluginManager {
   void ensure_initialized(Args *args);
 
  private:
-  bool initialized;
+  int initialized;
   PluginInventory registry;
   LibraryCollection open_libs;
   ProtoPluginLibrary *get_plugin_lib(std::string type, std::string name,

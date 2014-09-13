@@ -100,7 +100,7 @@ struct ProtoTuple : virtual public ProtoType {
 
 struct ProtoLocalTuple : virtual public ProtoLocal, public ProtoTuple {
   reflection_sub2(ProtoLocalTuple,ProtoLocal,ProtoTuple);
-  ProtoLocalTuple() : ProtoTuple() {};
+  ProtoLocalTuple() : ProtoTuple(false) { this->bounded=false; this->types.push_back(new ProtoLocal()); }
   ProtoLocalTuple(bool bounded) : ProtoTuple(bounded) { }
   virtual ~ProtoLocalTuple() {}
   virtual void print(std::ostream* out=0);

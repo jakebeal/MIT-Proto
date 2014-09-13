@@ -861,6 +861,10 @@ bool TypeConstraintApplicator::assert_range(Field* f,ProtoType* range) {
       ProtoType *a = get_ref(oi,aref), *b = get_ref(oi,bref);
       V3<<"apply_constraint: aref("<<ce2s(aref)<<")="<<ce2s(a)
          <<", bref("<<ce2s(bref)<<")="<<ce2s(b) << endl;
+      // if either is null, then we have reference failure and cannot possible get a good GCS:
+      if(a==NULL || b==NULL) {
+        return false;
+      }
       // first, take the GCS
       ProtoType *joint = ProtoType::gcs(a,b);
       if(joint==NULL) { // if GCS shows conflict, attempt to correct
