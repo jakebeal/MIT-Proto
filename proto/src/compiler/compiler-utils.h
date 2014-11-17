@@ -179,6 +179,7 @@ struct IntAttribute : Attribute { reflection_sub(IntAttribute, Attribute);
   int value;
   bool inherit;
   IntAttribute(bool inherit_ = false) : inherit(inherit_) {}
+  IntAttribute(int v) : inherit(false) { value = v; }
 
   void print(std::ostream *out = cpout) { *out << "MARK"; }
   virtual Attribute *inherited() { return (inherit ? this : 0); }
