@@ -69,16 +69,20 @@ pp_indent()
 void
 ierror(const string &msg)
 {
-  *cperr << "COMPILER INTERNAL ERROR: " << msg << endl;
+  *cperr << "COMPILER INTERNAL ERROR: " << msg << endl << flush;
   exit(1);
 }
 
 void
 ierror(CompilationElement *where, const string &msg)
 {
-  *cperr << "COMPILER INTERNAL ERROR (";
-  where->attributes["CONTEXT"]->print(cperr);
-  *cperr << "): " << msg << endl;
+  *cperr << "COMPILER INTERNAL ERROR (" << flush;
+  if(where->attributes.count("CONTEXT")) {
+    where->attributes["CONTEXT"]->print(cperr);
+  } else {
+    *cperr << "**CONTEXT MISSING**";
+  }
+  *cperr << "): " << msg << endl << flush;
   exit(1);
 }
 
