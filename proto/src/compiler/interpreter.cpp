@@ -465,7 +465,7 @@ void parse_primitive_attributes(SE_List_iter* li,Primitive* p) {
     if(!v->isKeyword()) {compile_error(v,v->to_str()+" not a keyword"); return;}
     const string &name = dynamic_cast<SE_Symbol &>(*v).name;
     if(p->attributes.count(name))
-      compile_warn("Primitive "+p->name+" overriding duplicate '"
+      compile_warn("Primitive '"+p->name+"' overriding duplicate '"
                    +name+"' attribute");
     if(li->has_next() && !li->peek_next()->isKeyword()) {
       p->attributes[name]=new SExprAttribute(li->get_next());
